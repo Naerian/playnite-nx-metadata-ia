@@ -1,4 +1,4 @@
-# Metadata IA
+﻿# Metadata IA
 
 Metadata IA is a Playnite metadata provider extension that uses AI and external media sources to generate consistent game descriptions, metadata lists, links, sorting names, and artwork in the language and structure you choose.
 
@@ -138,6 +138,7 @@ Community translation contributions are welcome.
 
 ## Support
 
-If you find Metadata IA useful, you can support development with a coffee:
+If you find this project useful and want to support its development, consider buying me a coffee!
 
-[ko-fi.com/naerian](https://ko-fi.com/naerian)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/naerian)
+
