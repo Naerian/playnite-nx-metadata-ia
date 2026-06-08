@@ -70,6 +70,12 @@ Selection criteria include:
 - Prefer square grids for square icons.
 - Prefer backgrounds with or without logos.
 
+## Logos and trailers
+
+Metadata AI focuses on Playnite's standard media fields: covers, icons, and backgrounds.
+
+For clear logos, trailer videos, microtrailers, and theme-specific extra media, use Extra Metadata Loader together with a compatible Playnite theme. Many custom themes already support Extra Metadata Loader controls, so it is better to let that extension handle those assets instead of duplicating a separate logo system here.
+
 ## Installation
 
 Download the `.pext` package from releases and install it in Playnite.
