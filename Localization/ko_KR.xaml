@@ -336,4 +336,11 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_TokenToneHelp">어조: 진지함, 유머러스함, 어두움, 여유로움 등</sys:String>
     <sys:String x:Key="MTDA_Unknown">알려지지 않은</sys:String>
     <sys:String x:Key="MTDA_Yes">예</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">짧게</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">보통</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">길게</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">어드벤처</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">인디</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">에뮬레이션</sys:String>
 </ResourceDictionary>

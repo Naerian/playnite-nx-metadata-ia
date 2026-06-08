@@ -336,4 +336,11 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Ton : sérieux, humoristique, sombre, détendu, etc.</sys:String>
     <sys:String x:Key="MTDA_Unknown">Inconnu</sys:String>
     <sys:String x:Key="MTDA_Yes">Oui</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">Courte</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">Moyenne</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">Longue</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">Aventure</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">Indé</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">Émulation</sys:String>
 </ResourceDictionary>

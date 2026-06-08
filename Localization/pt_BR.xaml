@@ -336,4 +336,11 @@ Planos de fundo: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Tom: sério, bem-humorado, sombrio, descontraído, etc.</sys:String>
     <sys:String x:Key="MTDA_Unknown">Desconhecido</sys:String>
     <sys:String x:Key="MTDA_Yes">Sim</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">Curta</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">Média</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">Longa</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">Aventura</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">Emulação</sys:String>
 </ResourceDictionary>

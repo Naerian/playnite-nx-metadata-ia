@@ -336,6 +336,11 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Tone: serious, humorous, dark, relaxed, etc.</sys:String>
     <sys:String x:Key="MTDA_Unknown">Unknown</sys:String>
     <sys:String x:Key="MTDA_Yes">Yes</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">Short</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">Medium</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">Long</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">Adventure</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">Emulation</sys:String>
 </ResourceDictionary>
-
-

@@ -336,4 +336,11 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_TokenToneHelp">Тон: серьезный, юмористический, мрачный, расслабленный и т. д.</sys:String>
     <sys:String x:Key="MTDA_Unknown">Неизвестный</sys:String>
     <sys:String x:Key="MTDA_Yes">Да</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">Короткий</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">Средний</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">Длинный</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">Приключение</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">Инди</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">Эмуляция</sys:String>
 </ResourceDictionary>

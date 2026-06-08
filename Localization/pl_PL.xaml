@@ -336,4 +336,11 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Ton: poważny, humorystyczny, mroczny, zrelaksowany itp.</sys:String>
     <sys:String x:Key="MTDA_Unknown">Nieznany</sys:String>
     <sys:String x:Key="MTDA_Yes">Tak</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">Krótka</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">Średnia</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">Długa</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">Przygodowa</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">Emulacja</sys:String>
 </ResourceDictionary>

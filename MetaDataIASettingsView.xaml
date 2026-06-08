@@ -189,7 +189,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <ComboBox ItemsSource="{Binding Settings.Templates}"
                                   SelectedItem="{Binding SelectedTemplate}"
-                                  DisplayMemberPath="Name"
+                                  DisplayMemberPath="DisplayName"
                                   MinWidth="220"
                                   Margin="0,0,8,0"/>
                         <Button Content="{DynamicResource MTDA_New}" MinWidth="80" Margin="0,0,8,0" Click="AddTemplate_OnClick"/>

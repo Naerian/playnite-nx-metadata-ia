@@ -336,4 +336,11 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_TokenToneHelp">口調：シリアス、ユーモラス、ダーク、リラックスなど。</sys:String>
     <sys:String x:Key="MTDA_Unknown">未知</sys:String>
     <sys:String x:Key="MTDA_Yes">はい</sys:String>
+    <sys:String x:Key="MTDA_TemplateShort">短め</sys:String>
+    <sys:String x:Key="MTDA_TemplateMedium">標準</sys:String>
+    <sys:String x:Key="MTDA_TemplateLong">長め</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateAdventure">アドベンチャー</sys:String>
+    <sys:String x:Key="MTDA_TemplateIndie">インディー</sys:String>
+    <sys:String x:Key="MTDA_TemplateEmulation">エミュレーション</sys:String>
 </ResourceDictionary>

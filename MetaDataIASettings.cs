@@ -13,7 +13,17 @@ namespace MetaDataIAPlugin
         private string name;
         private string template;
 
-        public string Name { get { return name; } set { SetValue(ref name, value); } }
+        public string Name
+        {
+            get { return name; }
+            set
+            {
+                SetValue(ref name, value);
+                OnPropertyChanged("DisplayName");
+            }
+        }
+
+        public string DisplayName { get { return LocalizeTemplateName(Name); } }
         public string Template { get { return template; } set { SetValue(ref template, value); } }
 
         public TemplateProfile()
@@ -28,7 +38,47 @@ namespace MetaDataIAPlugin
 
         public override string ToString()
         {
-            return Name;
+            return DisplayName;
+        }
+
+        private static string LocalizeTemplateName(string value)
+        {
+            if (string.Equals(value, "Corta", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateShort", "Short");
+            }
+
+            if (string.Equals(value, "Media", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateMedium", "Medium");
+            }
+
+            if (string.Equals(value, "Larga", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateLong", "Long");
+            }
+
+            if (string.Equals(value, "RPG", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateRpg", "RPG");
+            }
+
+            if (string.Equals(value, "Aventura", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateAdventure", "Adventure");
+            }
+
+            if (string.Equals(value, "Indie", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateIndie", "Indie");
+            }
+
+            if (string.Equals(value, "Emulacion", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginLocalization.GetString("MTDA_TemplateEmulation", "Emulation");
+            }
+
+            return value ?? string.Empty;
         }
     }
 
