@@ -84,13 +84,13 @@
     <sys:String x:Key="MTDA_SquareIconPreferGridHelp">This last option avoids many round icons or transparent logos: it prioritizes a square image and converts it to a 256x256 icon.</sys:String>
     <sys:String x:Key="MTDA_MaxMediaResults">Maximum results to review per game</sys:String>
     <sys:String x:Key="MTDA_MaxMediaResultsHelp">How many candidates from all sources are evaluated before choosing the closest one to the preset. Higher values can improve selection, but take a little longer.</sys:String>
-    <sys:String x:Key="MTDA_AutoImportNewGames">Import metadata with AI Metadata when new games are detected</sys:String>
+    <sys:String x:Key="MTDA_AutoImportNewGames">Import metadata with Metadata IA when new games are detected</sys:String>
     <sys:String x:Key="MTDA_AutoImportNewGamesHelp">The plugin remembers existing games and, after a library update, processes only new IDs. It runs after Playnite, so it can overwrite or complete what Playnite downloaded according to the configured apply modes.</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMetadata">Generate text metadata and lists with AI</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">Uses the settings from the AI, Templates, Fields and Rules tabs. If AI is not configured, this part is skipped.</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMedia">Download media automatically</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMediaHelp">Uses the Media tab settings. For Steam games it can use official Steam without a key; SteamGridDB is used as an additional source if an API key is configured.</sys:String>
-    <sys:String x:Key="MTDA_AutoImportPlayniteNote">Note: Playnite does not offer a reliable way for a plugin to globally disable its metadata download on import. AI Metadata runs afterwards and follows your overwrite, append or fill-empty rules.</sys:String>
+    <sys:String x:Key="MTDA_AutoImportPlayniteNote">Note: Playnite does not offer a reliable way for a plugin to globally disable its metadata download on import. Metadata IA runs afterwards and follows your overwrite, append or fill-empty rules.</sys:String>
     <sys:String x:Key="MTDA_GenerateAndApply">Generate and apply</sys:String>
     <sys:String x:Key="MTDA_ExistingOnly">Existing only</sys:String>
     <sys:String x:Key="MTDA_Description">Description</sys:String>
