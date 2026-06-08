@@ -154,7 +154,7 @@ namespace MetaDataIAPlugin
 
             if (!settings.IsConfigured)
             {
-                throw new InvalidOperationException("Metadata IA no esta configurado. Abre los ajustes del plugin y define endpoint, modelo y API key.");
+                throw new InvalidOperationException(PluginLocalization.GetString("MTDA_ErrorMetadataProviderNotConfigured", "Metadata AI is not configured. Open the plugin settings and set endpoint, model and API key."));
             }
 
             cachedResult = new MetadataGenerationService(settings).GenerateAsync(options.GameData).GetAwaiter().GetResult();
@@ -165,7 +165,7 @@ namespace MetaDataIAPlugin
         {
             if (!settings.IsMediaConfigured)
             {
-                throw new InvalidOperationException("Metadata IA media no esta configurado. Abre los ajustes del plugin y define la API key de SteamGridDB.");
+                throw new InvalidOperationException(PluginLocalization.GetString("MTDA_ErrorMediaProviderNotConfigured", "Metadata AI media is not configured. Open the plugin settings and configure at least one usable media source."));
             }
 
             var media = new MediaGenerationService(settings).GenerateAsync(options.GameData, kind).GetAwaiter().GetResult();
@@ -173,4 +173,3 @@ namespace MetaDataIAPlugin
         }
     }
 }
-

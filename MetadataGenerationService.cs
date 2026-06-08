@@ -95,9 +95,10 @@ namespace MetaDataIAPlugin
 
             throw new AiProviderException(
                 primaryError.Message +
-                "\n\nMetadata IA intento usar fallback local gratuito, pero no hubo ningun proveedor local disponible.\n\n" +
-                "Comprueba que LM Studio tenga el servidor local activo en http://localhost:1234 o que Ollama este arrancado en http://localhost:11434.\n\n" +
-                "Errores de fallback:\n" + string.Join("\n", errors.Select(SanitizeForUser)),
+                "\n\n" +
+                string.Format(
+                    Loc("MTDA_ErrorLocalFallbackUnavailable", "Metadata AI tried to use the free local fallback, but no local provider was available.\n\nCheck that LM Studio has the local server active at http://localhost:1234 or that Ollama is running at http://localhost:11434.\n\nFallback errors:\n{0}"),
+                    string.Join("\n", errors.Select(SanitizeForUser))),
                 true,
                 string.Join("\n", errors));
         }
@@ -389,7 +390,7 @@ namespace MetaDataIAPlugin
             var content = choices == null || choices.Count == 0 ? null : choices[0]["message"]["content"].ToString();
             if (string.IsNullOrWhiteSpace(content))
             {
-                throw new InvalidOperationException("El proveedor IA no devolvio contenido util.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorAiNoUsefulContent", "The AI provider did not return useful content."));
             }
 
             return content.Trim();
@@ -401,7 +402,7 @@ namespace MetaDataIAPlugin
             var blocks = json["content"] as JArray;
             if (blocks == null || blocks.Count == 0)
             {
-                throw new InvalidOperationException("El proveedor IA no devolvio contenido util.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorAiNoUsefulContent", "The AI provider did not return useful content."));
             }
 
             var texts = blocks
@@ -412,7 +413,7 @@ namespace MetaDataIAPlugin
 
             if (texts.Count == 0)
             {
-                throw new InvalidOperationException("El proveedor IA no devolvio texto util.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorAiNoUsefulText", "The AI provider did not return useful text."));
             }
 
             return string.Join("\n", texts).Trim();
@@ -450,12 +451,12 @@ namespace MetaDataIAPlugin
                     return loose;
                 }
 
-                throw parseError ?? new InvalidOperationException("No se pudo interpretar la respuesta IA.");
+                throw parseError ?? new InvalidOperationException(Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted."));
             }
 
             if (json == null)
             {
-                throw new InvalidOperationException("No se pudo interpretar la respuesta IA.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted."));
             }
 
             return new AiMetadataResult
@@ -696,9 +697,7 @@ namespace MetaDataIAPlugin
         {
             var detail = originalError == null ? error.Message : originalError.Message;
             return new InvalidOperationException(
-                "La IA devolvio una respuesta con formato incorrecto y no se pudo interpretar.\n\n" +
-                "El plugin continuara con el resto de juegos. Puedes volver a intentar este juego, reducir la longitud de los textos o cambiar a un modelo que respete mejor JSON.\n\n" +
-                "Detalle breve: " + SanitizeForUser(detail));
+                Loc("MTDA_ErrorMalformedAiJson", "The AI returned a response with an invalid format and it could not be interpreted.\n\nThe plugin will continue with the rest of the games. You can retry this game, reduce text length, or switch to a model that follows JSON more reliably.\n\nBrief detail: ") + SanitizeForUser(detail));
         }
 
         private static string EscapeRawControlCharactersInJsonStrings(string content)
@@ -897,16 +896,7 @@ namespace MetaDataIAPlugin
             if (string.Equals(providerCode, "insufficient_quota", StringComparison.OrdinalIgnoreCase))
             {
                 return new AiProviderException(
-                    "Tu proveedor IA ha rechazado la peticion porque la cuenta no tiene cuota disponible.\n\n" +
-                    "Con OpenAI esto suele significar que no hay saldo/creditos activos o que el limite mensual esta agotado.\n\n" +
-                    "Opciones sin pagar:\n" +
-                    "- Usar un proveedor local compatible con OpenAI, como LM Studio u Ollama, y cambiar el endpoint en los ajustes del plugin.\n" +
-                    "- Reducir el numero de juegos procesados y los campos generados, aunque si la cuota esta a cero esto no bastara.\n" +
-                    "- Usar un modelo local pequeno para metadatos y dejar OpenAI solo para casos puntuales.\n\n" +
-                    "Ejemplos de endpoint local si tienes esas apps instaladas:\n" +
-                    "LM Studio: http://localhost:1234/v1/chat/completions\n" +
-                    "Ollama: http://localhost:11434/v1/chat/completions\n\n" +
-                    "En proveedores locales puedes dejar la API key vacia.",
+                    Loc("MTDA_ErrorProviderQuota", "Your AI provider rejected the request because the account has no available quota.\n\nWith OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.\n\nFree options:\n- Use a local OpenAI-compatible provider such as LM Studio or Ollama and change the endpoint in the plugin settings.\n- Process fewer games and fewer generated fields, although this will not help if the quota is zero.\n- Use a small local model for metadata and keep cloud AI only for occasional cases.\n\nLocal endpoint examples:\nLM Studio: http://localhost:1234/v1/chat/completions\nOllama: http://localhost:11434/v1/chat/completions\n\nFor local providers, the API key can be empty."),
                     true);
             }
 
@@ -917,12 +907,7 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("does not exist", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
-                    "El proveedor o modelo configurado no existe, o no esta disponible para tu cuenta.\n\n" +
-                    "Comprueba que el proveedor, endpoint y nombre del modelo esten bien escritos. Si has escrito el modelo a mano, copia el nombre exacto desde la documentacion o consola del proveedor.\n\n" +
-                    "Ejemplos:\n" +
-                    "- Gemini: gemini-2.5-flash o gemini-2.5-flash-lite\n" +
-                    "- Ollama: el nombre que aparece al ejecutar 'ollama list'\n" +
-                    "- LM Studio: el modelo cargado en el servidor local",
+                    Loc("MTDA_ErrorProviderModelNotFound", "The configured provider or model does not exist, or is not available for your account.\n\nCheck that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.\n\nExamples:\n- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite\n- Ollama: the name shown by 'ollama list'\n- LM Studio: the model loaded in the local server"),
                     true,
                     responseText);
             }
@@ -930,8 +915,7 @@ namespace MetaDataIAPlugin
             if (statusCode == 429)
             {
                 return new AiProviderException(
-                    "El proveedor IA ha limitado temporalmente las peticiones.\n\n" +
-                    "Prueba a esperar unos minutos, procesar menos juegos de golpe o usar un modelo/local endpoint con menos restricciones.",
+                    Loc("MTDA_ErrorProviderRateLimit", "The AI provider has temporarily limited requests.\n\nTry waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions."),
                     true,
                     responseText);
             }
@@ -942,13 +926,7 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("unavailable", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
-                    "El proveedor IA esta saturado o el modelo elegido no esta disponible temporalmente.\n\n" +
-                    "Si estas usando Gemini, esto puede pasar aunque tengas Gemini Pro/Google AI Pro en la app: la API de Gemini tiene sus propios limites y disponibilidad, separados de la suscripcion de la app.\n\n" +
-                    "Que puedes hacer sin pagar:\n" +
-                    "- Esperar unos minutos y probar otra vez.\n" +
-                    "- Cambiar el modelo a gemini-2.5-flash o gemini-2.5-flash-lite si estabas usando un modelo Pro.\n" +
-                    "- Procesar menos juegos de golpe.\n" +
-                    "- Usar LM Studio u Ollama en local si quieres evitar cuotas externas.",
+                    Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
                     true,
                     responseText);
             }
@@ -956,15 +934,13 @@ namespace MetaDataIAPlugin
             if (statusCode == 401 || statusCode == 403)
             {
                 return new AiProviderException(
-                    "El proveedor IA no ha aceptado la autenticacion.\n\n" +
-                    "Revisa la API key, el endpoint y el modelo configurado. Si usas LM Studio u Ollama en local, normalmente puedes dejar la API key vacia.",
+                    Loc("MTDA_ErrorProviderAuth", "The AI provider did not accept the authentication.\n\nCheck the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty."),
                     false,
                     responseText);
             }
 
             return new AiProviderException(
-                "El proveedor IA devolvio un error (" + statusCode + ").\n\n" +
-                "Revisa el proveedor, endpoint, modelo y API key configurados. Si el problema continua, prueba otro modelo o un proveedor local.",
+                string.Format(Loc("MTDA_ErrorProviderGeneric", "The AI provider returned an error ({0}).\n\nCheck the configured provider, endpoint, model and API key. If the problem continues, try another model or a local provider."), statusCode),
                 false,
                 responseText);
         }
@@ -972,9 +948,7 @@ namespace MetaDataIAPlugin
         private static Exception CreateConnectionException(HttpRequestException ex)
         {
             return new AiProviderException(
-                "No se ha podido conectar con el proveedor configurado.\n\n" +
-                "Comprueba que el endpoint este bien escrito y que el proveedor exista. Si usas LM Studio u Ollama, asegurate de que la aplicacion esta abierta, el servidor local esta activo y el modelo esta cargado o descargado.\n\n" +
-                "Detalle breve: " + SanitizeForUser(ex.Message),
+                Loc("MTDA_ErrorProviderConnection", "Could not connect to the configured provider.\n\nCheck that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.\n\nBrief detail: ") + SanitizeForUser(ex.Message),
                 true,
                 ex.ToString());
         }
@@ -983,13 +957,13 @@ namespace MetaDataIAPlugin
         {
             if (string.IsNullOrWhiteSpace(message))
             {
-                return "Error no especificado.";
+                return Loc("MTDA_ErrorUnspecified", "Unspecified error.");
             }
 
             var text = message.Trim();
             if (text.StartsWith("{", StringComparison.Ordinal) || text.StartsWith("[", StringComparison.Ordinal))
             {
-                return "El proveedor ha devuelto un error tecnico. Revisa la configuracion o prueba otro modelo.";
+                return Loc("MTDA_ErrorProviderTechnical", "The provider returned a technical error. Check the configuration or try another model.");
             }
 
             var jsonStart = text.IndexOf('{');
@@ -1013,6 +987,10 @@ namespace MetaDataIAPlugin
                 ? new List<string>()
                 : items.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name)).Select(x => x.Name).ToList();
         }
+
+        private static string Loc(string key, string fallback)
+        {
+            return PluginLocalization.GetString(key, fallback);
+        }
     }
 }
-

@@ -9,7 +9,7 @@ namespace MetaDataIAPlugin
         public Game Game { get; private set; }
         public AiMetadataResult Result { get; private set; }
 
-        public string Title { get { return Game == null ? "Metadata IA" : Game.Name; } }
+        public string Title { get { return Game == null ? "Metadata AI" : Game.Name; } }
         public string Description { get { return Result == null ? string.Empty : Result.Description; } }
         public string Detail
         {
@@ -62,4 +62,3 @@ namespace MetaDataIAPlugin
         }
     }
 }
-

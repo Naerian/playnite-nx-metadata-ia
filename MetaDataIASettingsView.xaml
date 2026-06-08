@@ -31,7 +31,9 @@
                         <TextBlock Text="{DynamicResource MTDA_Provider}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
                             <ComboBox ItemsSource="{Binding Settings.ProviderPresetOptions}"
-                                      SelectedItem="{Binding Settings.ProviderPreset}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Settings.ProviderPreset}"
                                       MinWidth="260"
                                       Margin="0,0,8,0"/>
                             <Button Content="{DynamicResource MTDA_ApplyProvider}" MinWidth="140" Click="ApplyProvider_OnClick"/>
@@ -92,10 +94,10 @@
                                   Margin="0,2,0,10"/>
 
                         <TextBlock Text="{DynamicResource MTDA_Tone}"/>
-                        <ComboBox ItemsSource="{Binding Settings.ToneOptions}" SelectedItem="{Binding Settings.Tone}" Margin="0,2,0,10"/>
+                        <ComboBox ItemsSource="{Binding Settings.ToneOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Tone}" Margin="0,2,0,10"/>
 
                         <TextBlock Text="{DynamicResource MTDA_Length}"/>
-                        <ComboBox ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.Length}" Margin="0,2,0,10"/>
+                        <ComboBox ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Length}" Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_LengthHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
@@ -125,40 +127,40 @@
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Text="{}{short}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.ShortLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ShortLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="0" Grid.Column="3" Text="{}{synopsis}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.SynopsisLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="0" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SynopsisLength}" Margin="0,0,0,4"/>
 
                             <TextBlock Grid.Row="1" Text="{}{premise}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.PremiseLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PremiseLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="1" Grid.Column="3" Text="{}{gameplay}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.GameplayLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="1" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GameplayLength}" Margin="0,0,0,4"/>
 
                             <TextBlock Grid.Row="2" Text="{}{tone}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.ToneLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ToneLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="2" Grid.Column="3" Text="{}{setting}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.SettingLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="2" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SettingLength}" Margin="0,0,0,4"/>
 
                             <TextBlock Grid.Row="3" Text="{}{perspective}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.PerspectiveLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PerspectiveLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="3" Grid.Column="3" Text="{}{playModes}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.PlayModesLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="3" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PlayModesLength}" Margin="0,0,0,4"/>
 
                             <TextBlock Grid.Row="4" Text="{}{estimatedLength}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.EstimatedLengthLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.EstimatedLengthLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="4" Grid.Column="3" Text="{}{similarGames}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.SimilarGamesLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="4" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SimilarGamesLength}" Margin="0,0,0,4"/>
 
                             <TextBlock Grid.Row="5" Text="{}{notes}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.NotesLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.NotesLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="5" Grid.Column="3" Text="{}{recommendedFor}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
                         </Grid>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" SelectedItem="{Binding Settings.ExistingMetadataMode}" Margin="0,2,0,10"/>
+                        <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ExistingMetadataMode}" Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0,0,0,12"/>
 
@@ -265,45 +267,45 @@
                             <TextBlock Text="{DynamicResource MTDA_Token}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Reference}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Row="1" Text="{}{short}"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Resumen breve del juego." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource MTDA_TokenShortHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="2" Text="{}{synopsis}"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Sinopsis general." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{DynamicResource MTDA_TokenSynopsisHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="3" Text="{}{premise}"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Premisa narrativa o concepto principal." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{DynamicResource MTDA_TokenPremiseHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="4" Text="{}{gameplay}"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="Como se juega y bucle principal." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{DynamicResource MTDA_TokenGameplayHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="5" Text="{}{tone}"/>
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="Tono: serio, comico, oscuro, relajado, etc." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{DynamicResource MTDA_TokenToneHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="6" Text="{}{setting}"/>
-                            <TextBlock Grid.Row="6" Grid.Column="1" Text="Ambientacion o mundo." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{DynamicResource MTDA_TokenSettingHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="7" Text="{}{perspective}"/>
-                            <TextBlock Grid.Row="7" Grid.Column="1" Text="Perspectiva/camara o vista principal." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{DynamicResource MTDA_TokenPerspectiveHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="8" Text="{}{playModes}"/>
-                            <TextBlock Grid.Row="8" Grid.Column="1" Text="Modos de juego conocidos." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="8" Grid.Column="1" Text="{DynamicResource MTDA_TokenPlayModesHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="9" Text="{}{estimatedLength}"/>
-                            <TextBlock Grid.Row="9" Grid.Column="1" Text="Duracion aproximada cuando se pueda inferir." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="9" Grid.Column="1" Text="{DynamicResource MTDA_TokenEstimatedLengthHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="10" Text="{}{similarGames}"/>
-                            <TextBlock Grid.Row="10" Grid.Column="1" Text="Juegos similares o referencias utiles." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="10" Grid.Column="1" Text="{DynamicResource MTDA_TokenSimilarGamesHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="11" Text="{}{notes}"/>
-                            <TextBlock Grid.Row="11" Grid.Column="1" Text="Notas editoriales adicionales." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="11" Grid.Column="1" Text="{DynamicResource MTDA_TokenNotesHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="12" Text="{}{features}"/>
-                            <TextBlock Grid.Row="12" Grid.Column="1" Text="Lista de caracteristicas principales." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="12" Grid.Column="1" Text="{DynamicResource MTDA_TokenFeaturesHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="13" Text="{}{recommendedFor}"/>
-                            <TextBlock Grid.Row="13" Grid.Column="1" Text="Tipo de jugador al que puede interesar." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="13" Grid.Column="1" Text="{DynamicResource MTDA_TokenRecommendedForHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="14" Text="{}{genres}"/>
-                            <TextBlock Grid.Row="14" Grid.Column="1" Text="Generos generados." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="14" Grid.Column="1" Text="{DynamicResource MTDA_TokenGenresHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="15" Text="{}{tags}"/>
-                            <TextBlock Grid.Row="15" Grid.Column="1" Text="Etiquetas generadas." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="15" Grid.Column="1" Text="{DynamicResource MTDA_TokenTagsHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="16" Text="{}{developers}"/>
-                            <TextBlock Grid.Row="16" Grid.Column="1" Text="Desarrolladores." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="16" Grid.Column="1" Text="{DynamicResource MTDA_TokenDevelopersHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="17" Text="{}{publishers}"/>
-                            <TextBlock Grid.Row="17" Grid.Column="1" Text="Editores/companias publicadoras." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="17" Grid.Column="1" Text="{DynamicResource MTDA_TokenPublishersHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="18" Text="{}{ageRatings}"/>
-                            <TextBlock Grid.Row="18" Grid.Column="1" Text="Calificaciones por edad." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="18" Grid.Column="1" Text="{DynamicResource MTDA_TokenAgeRatingsHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="19" Text="{}{regions}"/>
-                            <TextBlock Grid.Row="19" Grid.Column="1" Text="Regiones." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="19" Grid.Column="1" Text="{DynamicResource MTDA_TokenRegionsHelp}" TextWrapping="Wrap"/>
                             <TextBlock Grid.Row="20" Text="{}{categories}"/>
-                            <TextBlock Grid.Row="20" Grid.Column="1" Text="Categorias generadas." TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="20" Grid.Column="1" Text="{DynamicResource MTDA_TokenCategoriesHelp}" TextWrapping="Wrap"/>
                         </Grid>
                             </ScrollViewer>
                         </Border>
@@ -379,18 +381,18 @@
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Cover}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.DownloadCoverImage}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.CoverImageApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" SelectedItem="{Binding Settings.CoverImagePreset}" Margin="0,4,0,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImageApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImagePreset}" Margin="0,4,0,0"/>
 
                             <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Icon}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.DownloadIcon}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.IconApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" SelectedItem="{Binding Settings.IconPreset}" Margin="0,4,0,0"/>
+                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconPreset}" Margin="0,4,0,0"/>
 
                             <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Background}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.DownloadBackgroundImage}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" SelectedItem="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
+                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
                         </Grid>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
@@ -423,7 +425,9 @@
                             <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <ComboBox ItemsSource="{Binding Settings.BackgroundLogoPreferenceOptions}"
-                                  SelectedItem="{Binding Settings.BackgroundLogoPreference}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Value"
+                                  SelectedValue="{Binding Settings.BackgroundLogoPreference}"
                                   HorizontalAlignment="Left"
                                   MinWidth="220"
                                   Margin="0,2,0,8"/>
@@ -519,49 +523,49 @@
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.DescriptionApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DescriptionApplyMode}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Genres}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.GenerateGenres}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.GenresApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GenresApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Settings.MaxGenres}" Margin="0,4,8,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingGenres}" Margin="0,8,0,0"/>
 
                             <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Tags}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.GenerateTags}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.TagsApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.TagsApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Settings.MaxTags}" Margin="0,4,8,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingTags}" Margin="0,8,0,0"/>
 
                             <TextBlock Grid.Row="4" Text="{DynamicResource MTDA_Features}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.GenerateFeatures}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.FeaturesApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.FeaturesApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Settings.MaxFeatures}" Margin="0,4,8,0"/>
                             <CheckBox Grid.Row="4" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingFeatures}" Margin="0,8,0,0"/>
 
                             <TextBlock Grid.Row="5" Text="{DynamicResource MTDA_Developers}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.GenerateDevelopers}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.DevelopersApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DevelopersApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Settings.MaxDevelopers}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="6" Text="{DynamicResource MTDA_Publishers}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.GeneratePublishers}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.PublishersApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PublishersApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Settings.MaxPublishers}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="7" Text="{DynamicResource MTDA_Age}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.GenerateAgeRatings}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.AgeRatingsApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="7" Grid.Column="3" Text="{Binding Settings.MaxAgeRatings}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="8" Text="{DynamicResource MTDA_Region}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.GenerateRegions}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.RegionsApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RegionsApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="8" Grid.Column="3" Text="{Binding Settings.MaxRegions}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="9" Text="{DynamicResource MTDA_Categories}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.GenerateCategories}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.CategoriesApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CategoriesApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Settings.MaxCategories}" Margin="0,4,8,0"/>
                             <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}" Margin="0,8,0,0"/>
 
@@ -583,11 +587,11 @@
 
                             <TextBlock Grid.Row="0" Text="{DynamicResource MTDA_SortingName}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.SortingNameApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="0" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,4,8,0"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Links}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" SelectedItem="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,4,8,0"/>
                         </Grid>
                         <TextBlock Text="{DynamicResource MTDA_CompaniesLimitHelp}"
@@ -665,4 +669,3 @@
         </TabControl>
     </Grid>
 </UserControl>
-

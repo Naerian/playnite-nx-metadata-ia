@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -43,7 +43,7 @@ namespace MetaDataIAPlugin
                 var alreadyLoaded = Application.Current.Resources.MergedDictionaries
                     .OfType<ResourceDictionary>()
                     .Any(a => ReferenceEquals(a, englishFallbackResources) ||
-                        a.Contains("MTDA_PluginName") && Equals(a["MTDA_PluginName"], "Metadata IA"));
+                        a.Contains("MTDA_PluginName") && Equals(a["MTDA_PluginName"], "Metadata AI"));
 
                 if (!alreadyLoaded)
                 {
@@ -54,7 +54,7 @@ namespace MetaDataIAPlugin
             {
                 if (logger != null)
                 {
-                    logger.Warn(ex, "Failed to load Metadata IA English fallback resources.");
+                    logger.Warn(ex, "Failed to load Metadata AI English fallback resources.");
                 }
             }
         }

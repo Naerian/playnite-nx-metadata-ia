@@ -168,23 +168,19 @@ namespace MetaDataIAPlugin
                 if (count > 0)
                 {
                     MessageBox.Show(
-                        sourceName + " responde correctamente.\n\n" +
-                        "Juego de prueba: " + testGame.Name + "\n" +
-                        "Portadas: " + coverCount + "\n" +
-                        "Iconos: " + iconCount + "\n" +
-                        "Fondos: " + backgroundCount,
-                        "Metadata IA",
+                        string.Format(Loc("MTDA_TestMediaSuccess", "{0} is responding correctly.\n\nTest game: {1}\nCovers: {2}\nIcons: {3}\nBackgrounds: {4}"), sourceName, testGame.Name, coverCount, iconCount, backgroundCount),
+                        PluginTitle,
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show(sourceName + " responde, pero no devolvio candidatos para el juego de prueba (" + testGame.Name + "). La conexion parece funcionar, pero esta fuente no encontro media util con los criterios actuales.", "Metadata IA", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(string.Format(Loc("MTDA_TestMediaNoCandidates", "{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria."), sourceName, testGame.Name), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), "Metadata IA", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
@@ -234,15 +230,15 @@ namespace MetaDataIAPlugin
                 testSettings.GenerateCategories = false;
                 testSettings.Length = "Corta";
                 testSettings.EnableLocalFallback = false;
-                testSettings.ExtraInstructions = "Prueba de conexion: responde con el minimo texto posible.";
+                testSettings.ExtraInstructions = Loc("MTDA_TestProviderInstruction", "Connection test: answer with the minimum possible text.");
 
                 var game = new Game { Name = "Pong" };
                 await new MetadataGenerationService(testSettings).GenerateAsync(game);
-                MessageBox.Show("El proveedor responde correctamente.", "Metadata IA", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc("MTDA_TestProviderSuccess", "The provider is responding correctly."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), "Metadata IA", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
@@ -275,6 +271,15 @@ namespace MetaDataIAPlugin
             ApiKeyBox.Password = string.Empty;
         }
 
+        private static string PluginTitle
+        {
+            get { return Loc("MTDA_PluginName", "Metadata AI"); }
+        }
+
+        private static string Loc(string key, string fallback)
+        {
+            return PluginLocalization.GetString(key, fallback);
+        }
+
     }
 }
-

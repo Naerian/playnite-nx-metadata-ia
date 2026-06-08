@@ -40,5 +40,4 @@ Copy-Item -LiteralPath (Join-Path $buildOutput "extension.yaml") -Destination $t
 Copy-Item -LiteralPath (Join-Path $buildOutput "icon.png") -Destination $target
 Copy-Item -LiteralPath (Join-Path $buildOutput "Localization") -Destination $target -Recurse
 
-Write-Host "Metadata IA instalado en $target"
-
+Write-Host "Metadata AI instalado en $target"

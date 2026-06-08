@@ -89,14 +89,14 @@ namespace MetaDataIAPlugin
             var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
             if (candidates.Count == 0)
             {
-                throw new InvalidOperationException("No se encontraron imagenes para este juego en las fuentes de media configuradas.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorNoImagesFound", "No images were found for this game in the configured media sources."));
             }
 
             var selected = ChooseCandidate(candidates, kind);
             var selectedBytes = await DownloadBestBytes(candidates, selected, kind, cancelToken).ConfigureAwait(false);
             if (selectedBytes.Candidate == null || string.IsNullOrWhiteSpace(selectedBytes.Candidate.Url))
             {
-                throw new InvalidOperationException("La fuente de media devolvio una imagen sin URL utilizable.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorMediaWithoutUrl", "The media source returned an image without a usable URL."));
             }
 
             var processed = ProcessImage(selectedBytes.Content, kind, selectedBytes.Candidate.Extension);
@@ -282,7 +282,7 @@ namespace MetaDataIAPlugin
         {
             if (string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
             {
-                throw new InvalidOperationException("Configura la API key de SteamGridDB en la pestana Media antes de descargar imagenes.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorSteamGridDbApiKeyRequired", "Configure the SteamGridDB API key in the Media tab before downloading images."));
             }
         }
 
@@ -1031,7 +1031,7 @@ namespace MetaDataIAPlugin
                 {
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new InvalidOperationException("SteamGridDB no pudo devolver imagenes (" + (int)response.StatusCode + "). Comprueba la API key o vuelve a intentarlo mas tarde.");
+                        throw new InvalidOperationException(string.Format(Loc("MTDA_ErrorSteamGridDbImagesFailed", "SteamGridDB could not return images ({0}). Check the API key or try again later."), (int)response.StatusCode));
                     }
 
                     var text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -1238,7 +1238,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            throw lastError ?? new InvalidOperationException("No se pudo descargar ningun candidato de media.");
+            throw lastError ?? new InvalidOperationException(Loc("MTDA_ErrorNoMediaCandidateDownloaded", "No media candidate could be downloaded."));
         }
 
         private async Task<DownloadedCandidate> TryDownloadNonConsoleCover(List<MediaCandidate> candidates, MediaCandidate preferred, CancellationToken cancelToken)
@@ -1914,6 +1914,11 @@ namespace MetaDataIAPlugin
             public string SourceName { get; set; }
             public int SourcePriority { get; set; }
             public bool IsOfficial { get; set; }
+        }
+
+        private static string Loc(string key, string fallback)
+        {
+            return PluginLocalization.GetString(key, fallback);
         }
 
         private class DownloadedCandidate

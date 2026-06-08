@@ -1,6 +1,6 @@
-﻿# Metadata IA
+﻿# Metadata AI
 
-Metadata IA is a Playnite metadata provider extension that uses AI and external media sources to generate consistent game descriptions, metadata lists, links, sorting names, and artwork in the language and structure you choose.
+Metadata AI is a Playnite metadata provider extension that uses AI and external media sources to generate consistent game descriptions, metadata lists, links, sorting names, and artwork in the language and structure you choose.
 
 It is designed for users who want a Playnite library with a unified editorial style instead of mixed descriptions and tags from multiple stores.
 
@@ -21,7 +21,7 @@ It is designed for users who want a Playnite library with a unified editorial st
 
 ## Supported AI providers
 
-Metadata IA can work with several OpenAI-compatible or provider-specific endpoints:
+Metadata AI can work with several OpenAI-compatible or provider-specific endpoints:
 
 - OpenAI
 - Google Gemini
@@ -38,7 +38,7 @@ For free local usage, use LM Studio or Ollama with a local model running on your
 
 ## Supported media sources
 
-Metadata IA can fetch covers, icons, and backgrounds from:
+Metadata AI can fetch covers, icons, and backgrounds from:
 
 - Official Steam public assets
 - Official Steam screenshots
@@ -82,7 +82,7 @@ For manual installation during development:
 
 ## Configuration overview
 
-Open Playnite, go to the add-ons/extensions settings, and configure Metadata IA.
+Open Playnite, go to the add-ons/extensions settings, and configure Metadata AI.
 
 The main sections are:
 
@@ -141,4 +141,3 @@ Community translation contributions are welcome.
 If you find this project useful and want to support its development, consider buying me a coffee!
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/naerian)
-

@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
-    <sys:String x:Key="MTDA_PluginName">Metadata IA</sys:String>
+    <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">AI</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">模板</sys:String>
     <sys:String x:Key="MTDA_TabMedia">媒体</sys:String>
@@ -84,13 +84,13 @@
     <sys:String x:Key="MTDA_SquareIconPreferGridHelp">最后一个选项避免了许多圆形图标或透明徽标：它优先考虑方形图像并将其转换为 256x256 图标。</sys:String>
     <sys:String x:Key="MTDA_MaxMediaResults">每场比赛可查看的最大结果</sys:String>
     <sys:String x:Key="MTDA_MaxMediaResultsHelp">在选择最接近预设的候选者之前，需要对所有来源的候选者进行评估。较高的值可以改善选择，但需要更长的时间。</sys:String>
-    <sys:String x:Key="MTDA_AutoImportNewGames">检测到新游戏时使用 Metadata IA 导入元数据</sys:String>
+    <sys:String x:Key="MTDA_AutoImportNewGames">检测到新游戏时使用 Metadata AI 导入元数据</sys:String>
     <sys:String x:Key="MTDA_AutoImportNewGamesHelp">该插件会记住现有的游戏，并且在库更新后仅处理新的 ID。它在Playnite之后运行，因此它可以根据配置的应用模式覆盖或完成Playnite下载的内容。</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMetadata">使用 AI 生成文本元数据和列表</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">使用 AI、模板、字段和规则选项卡中的设置。如果没有配置AI，则跳过此部分。</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMedia">自动下载媒体</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMediaHelp">使用“媒体”选项卡设置。对于Steam游戏，无需密钥即可使用官方Steam；如果配置了 API 密钥，SteamGridDB 将用作附加源。</sys:String>
-    <sys:String x:Key="MTDA_AutoImportPlayniteNote">注意：Playnite 没有可靠方式让插件在导入时全局禁用元数据下载。Metadata IA 会在之后运行，并遵循覆盖、追加或仅填充空字段的规则。</sys:String>
+    <sys:String x:Key="MTDA_AutoImportPlayniteNote">注意：Playnite 没有可靠方式让插件在导入时全局禁用元数据下载。Metadata AI 会在之后运行，并遵循覆盖、追加或仅填充空字段的规则。</sys:String>
     <sys:String x:Key="MTDA_GenerateAndApply">生成并应用</sys:String>
     <sys:String x:Key="MTDA_ExistingOnly">仅现有</sys:String>
     <sys:String x:Key="MTDA_Description">描述</sys:String>
@@ -141,4 +141,199 @@
     <sys:String x:Key="MTDA_MenuSetCovers">设置封面</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcons">设置图标</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackgrounds">设置背景</sys:String>
+    <sys:String x:Key="MTDA_ApplyMedia">Apply media</sys:String>
+    <sys:String x:Key="MTDA_ConfirmApplyScope">Metadata AI will be applied to {0} game(s) from {1}.
+
+This may take a while and consume usage from the configured API. Do you want to continue?</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiNoUsefulContent">The AI provider did not return useful content.</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiNoUsefulText">The AI provider did not return useful text.</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiResponseNotParsed">The AI response could not be interpreted.</sys:String>
+    <sys:String x:Key="MTDA_ErrorConfigureBeforeGenerate">Configure the endpoint, model and API key for Metadata AI before generating metadata.</sys:String>
+    <sys:String x:Key="MTDA_ErrorLocalFallbackUnavailable">Metadata AI tried to use the free local fallback, but no local provider was available.
+
+Check that LM Studio has the local server active at http://localhost:1234 or that Ollama is running at http://localhost:11434.
+
+Fallback errors:
+{0}</sys:String>
+    <sys:String x:Key="MTDA_ErrorMalformedAiJson">The AI returned a response with an invalid format and it could not be interpreted.
+
+The plugin will continue with the rest of the games. You can retry this game, reduce text length, or switch to a model that follows JSON more reliably.
+
+Brief detail: </sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaProviderNotConfigured">Metadata AI media is not configured. Open the plugin settings and configure at least one usable media source.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaWithoutUrl">The media source returned an image without a usable URL.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Metadata AI is not configured. Open the plugin settings and set endpoint, model and API key.</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoImagesFound">No images were found for this game in the configured media sources.</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">No media candidate could be downloaded.</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">No media candidates were found for this game in the configured sources.</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoMediaSources">There are no configured or available media sources.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
+
+Check the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderConnection">Could not connect to the configured provider.
+
+Check that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.
+
+Brief detail: </sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderGeneric">The AI provider returned an error ({0}).
+
+Check the configured provider, endpoint, model and API key. If the problem continues, try another model or a local provider.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderModelNotFound">The configured provider or model does not exist, or is not available for your account.
+
+Check that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.
+
+Examples:
+- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
+- Ollama: the name shown by &amp;apos;ollama list&amp;apos;
+- LM Studio: the model loaded in the local server</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderQuota">Your AI provider rejected the request because the account has no available quota.
+
+With OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.
+
+Free options:
+- Use a local OpenAI-compatible provider such as LM Studio or Ollama and change the endpoint in the plugin settings.
+- Process fewer games and fewer generated fields, although this will not help if the quota is zero.
+- Use a small local model for metadata and keep cloud AI only for occasional cases.
+
+Local endpoint examples:
+LM Studio: http://localhost:1234/v1/chat/completions
+Ollama: http://localhost:11434/v1/chat/completions
+
+For local providers, the API key can be empty.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderRateLimit">The AI provider has temporarily limited requests.
+
+Try waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderTechnical">The provider returned a technical error. Check the configuration or try another model.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderUnavailable">The AI provider is overloaded or the selected model is temporarily unavailable.
+
+If you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.
+
+What you can do without paying:
+- Wait a few minutes and try again.
+- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.
+- Process fewer games at once.
+- Use LM Studio or Ollama locally if you want to avoid external quotas.</sys:String>
+    <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure the SteamGridDB API key in the Media tab before downloading images.</sys:String>
+    <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
+    <sys:String x:Key="MTDA_ErrorUnspecified">Unspecified error.</sys:String>
+    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam when the game has a Steam AppID, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, logo, score and filter preferences.</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoOfficial">Official</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoScore">Score</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoSize">Size</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoStyle">Style</sys:String>
+    <sys:String x:Key="MTDA_MediaPickerTitle">Choose media</sys:String>
+    <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI applied {0} media file(s).</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI updated {0} game(s). Errors: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI updated media for {0} game(s). Applied files: {1}.</sys:String>
+    <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI updated {0} game(s).</sys:String>
+    <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">There are no candidates for this media type.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesCurrentList">There are no games in the current list.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesMedia">There are no games to apply media to.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesMetadata">There are no games to apply Metadata AI to.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesSortingName">There are no games to apply sorting names to.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoMediaTypesEnabled">No media type is enabled in the selected configuration.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoSelectedGames">No games are selected.</sys:String>
+    <sys:String x:Key="MTDA_MessageSelectMediaBeforeApply">Select at least one media item before applying changes.</sys:String>
+    <sys:String x:Key="MTDA_MessageSortingNameUpdated">Metadata AI updated sorting names for {0} game(s).</sys:String>
+    <sys:String x:Key="MTDA_NoCommunity">No / community</sys:String>
+    <sys:String x:Key="MTDA_NotSpecified">Not specified</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyAppend">Append without deleting</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyEmptyOnly">Only if empty</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyOverwrite">Overwrite</sys:String>
+    <sys:String x:Key="MTDA_OptionApplySkip">Do not touch</sys:String>
+    <sys:String x:Key="MTDA_OptionBackground4K">Fullscreen 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundFullHd">Fullscreen Full HD (1920x1080)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoAny">Any</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">Prefer without logo</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoWithLogo">Prefer with logo</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundQhd">Fullscreen QHD (2560x1440)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundSteamHero">Steam hero (3840x1240)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundSteamHeroSmall">Light Steam hero (1920x620)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverHorizontal">Horizontal/banner (920x430)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite vertical (600x900)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverSquare">Playnite square (600x600)</sys:String>
+    <sys:String x:Key="MTDA_OptionIconCircle">Circle 256</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">Original/transparent</sys:String>
+    <sys:String x:Key="MTDA_OptionIconRounded">Rounded 256</sys:String>
+    <sys:String x:Key="MTDA_OptionIconSquare">Square 256</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthExtraLong">Extra long</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthLong">Long</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthMedium">Medium</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthShort">Short</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaMultipleSources">Multiple sources</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaSteamGridDb">SteamGridDB</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataContext">Use as context</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataIgnore">Ignore</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataNormalize">Normalize</sys:String>
+    <sys:String x:Key="MTDA_OptionOriginal">Original</sys:String>
+    <sys:String x:Key="MTDA_OptionToneBrief">Brief</sys:String>
+    <sys:String x:Key="MTDA_OptionToneCritical">Critical</sys:String>
+    <sys:String x:Key="MTDA_OptionToneEncyclopedic">Encyclopedic</sys:String>
+    <sys:String x:Key="MTDA_OptionToneEnthusiastic">Enthusiastic</sys:String>
+    <sys:String x:Key="MTDA_OptionToneFamily">Family-friendly</sys:String>
+    <sys:String x:Key="MTDA_OptionToneGamer">Gamer</sys:String>
+    <sys:String x:Key="MTDA_OptionToneNeutral">Neutral</sys:String>
+    <sys:String x:Key="MTDA_OptionToneRetro">Retro</sys:String>
+    <sys:String x:Key="MTDA_OptionToneStore">Store</sys:String>
+    <sys:String x:Key="MTDA_OptionToneTechnical">Technical</sys:String>
+    <sys:String x:Key="MTDA_ProgressApplyingMediaKind">Applying {0}...</sys:String>
+    <sys:String x:Key="MTDA_ProgressDownloadingMedia">Downloading media: </sys:String>
+    <sys:String x:Key="MTDA_ProgressGeneratingMetadata">Generating AI metadata...</sys:String>
+    <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">Generating AI metadata: </sys:String>
+    <sys:String x:Key="MTDA_ProgressSearchingMediaKind">Searching for {0} in media sources...</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingClaude">Claude API usually requires its own billing; having Claude Pro on the web does not mean you have API credit.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingCustom">Check the provider terms before processing large libraries.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingFreeQuota">It may work without paying if you choose a free model/quota, but if you hit limits or high demand you will need to wait, switch to a more available model, or enable billing depending on the provider.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingLocal">Recommended option if you do not want to pay: the cost is your own hardware. Speed and quality depend on the model and your PC.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingOpenAI">Signing in with ChatGPT Plus is not enough for this plugin: you need an OpenAI Platform API key and API billing/credit. Plus only gives benefits inside ChatGPT.</sys:String>
+    <sys:String x:Key="MTDA_ProviderClaude">Claude Anthropic</sys:String>
+    <sys:String x:Key="MTDA_ProviderCustom">Custom OpenAI-compatible</sys:String>
+    <sys:String x:Key="MTDA_ProviderGemini">Google Gemini</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroq">Groq</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpClaude">Claude Anthropic: create the key in Anthropic Console. The claude.ai subscription and the API are separate products.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCustom">Custom provider: use the URL, model, and API key specified by that OpenAI-compatible provider.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGemini">Google Gemini: create the key in Google AI Studio. Gemini Pro/Google AI Pro in the app does not automatically increase API quota or availability; the API has its own tiers and limits.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGroq">Groq: create the key in GroqCloud Console. It usually offers a free start with usage limits.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio local: no API key is needed. Open LM Studio, load a model, and enable the local server in the Developer tab.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOllama">Ollama local: no API key is needed. Install Ollama, download a model with &amp;apos;ollama pull&amp;apos;, and keep the local service running.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouter">OpenRouter: create the key in OpenRouter. You can choose free models if the model ends in :free or appears as Free, but they have limits and variable availability.</sys:String>
+    <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio local</sys:String>
+    <sys:String x:Key="MTDA_ProviderOllama">Ollama local</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenAI">OpenAI</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouter">OpenRouter</sys:String>
+    <sys:String x:Key="MTDA_ScopeAllGamesInList">all games in the list</sys:String>
+    <sys:String x:Key="MTDA_Select">Select</sys:String>
+    <sys:String x:Key="MTDA_Selected">Selected</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaSuccess">{0} is responding correctly.
+
+Test game: {1}
+Covers: {2}
+Icons: {3}
+Backgrounds: {4}</sys:String>
+    <sys:String x:Key="MTDA_TestProviderInstruction">Connection test: answer with the minimum possible text.</sys:String>
+    <sys:String x:Key="MTDA_TestProviderSuccess">The provider is responding correctly.</sys:String>
+    <sys:String x:Key="MTDA_TokenAgeRatingsHelp">Age ratings.</sys:String>
+    <sys:String x:Key="MTDA_TokenCategoriesHelp">Generated categories.</sys:String>
+    <sys:String x:Key="MTDA_TokenDevelopersHelp">Developers.</sys:String>
+    <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Estimated length when it can be inferred.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeaturesHelp">Main feature list.</sys:String>
+    <sys:String x:Key="MTDA_TokenGameplayHelp">How it plays and the main gameplay loop.</sys:String>
+    <sys:String x:Key="MTDA_TokenGenresHelp">Generated genres.</sys:String>
+    <sys:String x:Key="MTDA_TokenNotesHelp">Additional editorial notes.</sys:String>
+    <sys:String x:Key="MTDA_TokenPerspectiveHelp">Perspective/camera or main view.</sys:String>
+    <sys:String x:Key="MTDA_TokenPlayModesHelp">Known play modes.</sys:String>
+    <sys:String x:Key="MTDA_TokenPremiseHelp">Narrative premise or main concept.</sys:String>
+    <sys:String x:Key="MTDA_TokenPublishersHelp">Publishers/companies.</sys:String>
+    <sys:String x:Key="MTDA_TokenRecommendedForHelp">Type of player who may enjoy it.</sys:String>
+    <sys:String x:Key="MTDA_TokenRegionsHelp">Regions.</sys:String>
+    <sys:String x:Key="MTDA_TokenSettingHelp">Setting or world.</sys:String>
+    <sys:String x:Key="MTDA_TokenShortHelp">Brief game summary.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Similar games or useful references.</sys:String>
+    <sys:String x:Key="MTDA_TokenSynopsisHelp">General synopsis.</sys:String>
+    <sys:String x:Key="MTDA_TokenTagsHelp">Generated tags.</sys:String>
+    <sys:String x:Key="MTDA_TokenToneHelp">Tone: serious, humorous, dark, relaxed, etc.</sys:String>
+    <sys:String x:Key="MTDA_Unknown">Unknown</sys:String>
+    <sys:String x:Key="MTDA_Yes">Yes</sys:String>
 </ResourceDictionary>

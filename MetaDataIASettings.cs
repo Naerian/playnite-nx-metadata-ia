@@ -44,6 +44,23 @@ namespace MetaDataIAPlugin
         }
     }
 
+    public class LocalizedOption
+    {
+        public string Value { get; set; }
+        public string DisplayName { get; set; }
+
+        public LocalizedOption(string value, string displayName)
+        {
+            Value = value;
+            DisplayName = displayName;
+        }
+
+        public override string ToString()
+        {
+            return DisplayName;
+        }
+    }
+
     public class MetaDataIASettings : ObservableObject
     {
         public const string ApplySkip = "No tocar";
@@ -702,15 +719,37 @@ namespace MetaDataIAPlugin
         }
 
         [DontSerialize]
-        public List<string> ApplyModeOptions
+        public List<LocalizedOption> ApplyModeOptions
         {
-            get { return new List<string> { ApplySkip, ApplyEmptyOnly, ApplyAppend, ApplyOverwrite }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(ApplySkip, "MTDA_OptionApplySkip", "Do not touch"),
+                    Option(ApplyEmptyOnly, "MTDA_OptionApplyEmptyOnly", "Only if empty"),
+                    Option(ApplyAppend, "MTDA_OptionApplyAppend", "Append without deleting"),
+                    Option(ApplyOverwrite, "MTDA_OptionApplyOverwrite", "Overwrite")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> ProviderPresetOptions
+        public List<LocalizedOption> ProviderPresetOptions
         {
-            get { return new List<string> { ProviderOpenAI, ProviderGemini, ProviderClaude, ProviderLmStudio, ProviderOllama, ProviderOpenRouter, ProviderGroq, ProviderCustom }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(ProviderOpenAI, "MTDA_ProviderOpenAI", "OpenAI"),
+                    Option(ProviderGemini, "MTDA_ProviderGemini", "Google Gemini"),
+                    Option(ProviderClaude, "MTDA_ProviderClaude", "Claude Anthropic"),
+                    Option(ProviderLmStudio, "MTDA_ProviderLmStudio", "LM Studio local"),
+                    Option(ProviderOllama, "MTDA_ProviderOllama", "Ollama local"),
+                    Option(ProviderOpenRouter, "MTDA_ProviderOpenRouter", "OpenRouter"),
+                    Option(ProviderGroq, "MTDA_ProviderGroq", "Groq"),
+                    Option(ProviderCustom, "MTDA_ProviderCustom", "Custom OpenAI-compatible")
+                };
+            }
         }
 
         [DontSerialize]
@@ -752,40 +791,40 @@ namespace MetaDataIAPlugin
             {
                 if (ProviderPreset == ProviderOpenAI)
                 {
-                    return "OpenAI: crea la clave en platform.openai.com/api-keys. ChatGPT Plus/Pro no incluye uso de API; la API usa facturacion separada en la plataforma de OpenAI.";
+                    return Loc("MTDA_ProviderHelpOpenAI", "OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.");
                 }
 
                 if (ProviderPreset == ProviderGemini)
                 {
-                    return "Google Gemini: crea la clave en Google AI Studio. Gemini Pro/Google AI Pro de la app no aumenta automaticamente la cuota ni la disponibilidad de la API; la API usa sus propios tiers y limites.";
+                    return Loc("MTDA_ProviderHelpGemini", "Google Gemini: create the key in Google AI Studio. Gemini Pro/Google AI Pro in the app does not automatically increase API quota or availability; the API has its own tiers and limits.");
                 }
 
                 if (ProviderPreset == ProviderClaude)
                 {
-                    return "Claude Anthropic: crea la clave en Anthropic Console. La suscripcion de claude.ai y la API son productos separados.";
+                    return Loc("MTDA_ProviderHelpClaude", "Claude Anthropic: create the key in Anthropic Console. The claude.ai subscription and the API are separate products.");
                 }
 
                 if (ProviderPreset == ProviderOpenRouter)
                 {
-                    return "OpenRouter: crea la clave en OpenRouter. Puedes elegir modelos gratuitos si el modelo termina en :free o aparece como Free, pero tienen limites y disponibilidad variable.";
+                    return Loc("MTDA_ProviderHelpOpenRouter", "OpenRouter: create the key in OpenRouter. You can choose free models if the model ends in :free or appears as Free, but they have limits and variable availability.");
                 }
 
                 if (ProviderPreset == ProviderGroq)
                 {
-                    return "Groq: crea la clave en GroqCloud Console. Tiene opcion de empezar gratis, normalmente con limites de uso.";
+                    return Loc("MTDA_ProviderHelpGroq", "Groq: create the key in GroqCloud Console. It usually offers a free start with usage limits.");
                 }
 
                 if (ProviderPreset == ProviderLmStudio)
                 {
-                    return "LM Studio local: no necesitas API key. Abre LM Studio, carga un modelo y activa el servidor local en la pestana Developer.";
+                    return Loc("MTDA_ProviderHelpLmStudio", "LM Studio local: no API key is needed. Open LM Studio, load a model, and enable the local server in the Developer tab.");
                 }
 
                 if (ProviderPreset == ProviderOllama)
                 {
-                    return "Ollama local: no necesitas API key. Instala Ollama, descarga un modelo con 'ollama pull' y deja el servicio local arrancado.";
+                    return Loc("MTDA_ProviderHelpOllama", "Ollama local: no API key is needed. Install Ollama, download a model with 'ollama pull', and keep the local service running.");
                 }
 
-                return "Proveedor personalizado: usa la URL, modelo y API key que indique ese proveedor compatible con la API de OpenAI.";
+                return Loc("MTDA_ProviderHelpCustom", "Custom provider: use the URL, model, and API key specified by that OpenAI-compatible provider.");
             }
         }
 
@@ -840,80 +879,159 @@ namespace MetaDataIAPlugin
             {
                 if (ProviderPreset == ProviderOpenAI)
                 {
-                    return "Para usar tu ChatGPT Plus en este plugin no basta con iniciar sesion: necesitas una API key de OpenAI Platform y saldo/facturacion de API. Plus solo te da ventajas dentro de ChatGPT.";
+                    return Loc("MTDA_ProviderBillingOpenAI", "Signing in with ChatGPT Plus is not enough for this plugin: you need an OpenAI Platform API key and API billing/credit. Plus only gives benefits inside ChatGPT.");
                 }
 
                 if (ProviderPreset == ProviderLmStudio || ProviderPreset == ProviderOllama)
                 {
-                    return "Opcion recomendada si no quieres pagar: el coste es tu propio hardware. La velocidad y calidad dependen del modelo y del PC.";
+                    return Loc("MTDA_ProviderBillingLocal", "Recommended option if you do not want to pay: the cost is your own hardware. Speed and quality depend on the model and your PC.");
                 }
 
                 if (ProviderPreset == ProviderGemini || ProviderPreset == ProviderGroq || ProviderPreset == ProviderOpenRouter)
                 {
-                    return "Puede funcionar sin pagar si eliges un modelo/cuota gratuitos, pero si superas limites o hay alta demanda tendras que esperar, cambiar a un modelo mas disponible o activar facturacion segun el proveedor.";
+                    return Loc("MTDA_ProviderBillingFreeQuota", "It may work without paying if you choose a free model/quota, but if you hit limits or high demand you will need to wait, switch to a more available model, or enable billing depending on the provider.");
                 }
 
                 if (ProviderPreset == ProviderClaude)
                 {
-                    return "Claude API suele requerir facturacion propia; tener Claude Pro en la web no equivale a tener saldo de API.";
+                    return Loc("MTDA_ProviderBillingClaude", "Claude API usually requires its own billing; having Claude Pro on the web does not mean you have API credit.");
                 }
 
-                return "Consulta las condiciones del proveedor antes de procesar bibliotecas grandes.";
+                return Loc("MTDA_ProviderBillingCustom", "Check the provider terms before processing large libraries.");
             }
         }
 
         [DontSerialize]
-        public List<string> ToneOptions
+        public List<LocalizedOption> ToneOptions
         {
-            get { return new List<string> { "Neutral", "Enciclopedico", "Tienda", "Critico", "Breve", "Gamer", "Entusiasta", "Retro", "Tecnico", "Familiar" }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option("Neutral", "MTDA_OptionToneNeutral", "Neutral"),
+                    Option("Enciclopedico", "MTDA_OptionToneEncyclopedic", "Encyclopedic"),
+                    Option("Tienda", "MTDA_OptionToneStore", "Store"),
+                    Option("Critico", "MTDA_OptionToneCritical", "Critical"),
+                    Option("Breve", "MTDA_OptionToneBrief", "Brief"),
+                    Option("Gamer", "MTDA_OptionToneGamer", "Gamer"),
+                    Option("Entusiasta", "MTDA_OptionToneEnthusiastic", "Enthusiastic"),
+                    Option("Retro", "MTDA_OptionToneRetro", "Retro"),
+                    Option("Tecnico", "MTDA_OptionToneTechnical", "Technical"),
+                    Option("Familiar", "MTDA_OptionToneFamily", "Family-friendly")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> LengthOptions
+        public List<LocalizedOption> LengthOptions
         {
-            get { return new List<string> { "Corta", "Media", "Larga", "Extra larga" }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option("Corta", "MTDA_OptionLengthShort", "Short"),
+                    Option("Media", "MTDA_OptionLengthMedium", "Medium"),
+                    Option("Larga", "MTDA_OptionLengthLong", "Long"),
+                    Option("Extra larga", "MTDA_OptionLengthExtraLong", "Extra long")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> ExistingMetadataModeOptions
+        public List<LocalizedOption> ExistingMetadataModeOptions
         {
-            get { return new List<string> { "Usar como contexto", "Normalizar", "Ignorar" }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option("Usar como contexto", "MTDA_OptionMetadataContext", "Use as context"),
+                    Option("Normalizar", "MTDA_OptionMetadataNormalize", "Normalize"),
+                    Option("Ignorar", "MTDA_OptionMetadataIgnore", "Ignore")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> MediaProviderOptions
+        public List<LocalizedOption> MediaProviderOptions
         {
-            get { return new List<string> { "Varias fuentes", MediaProviderSteamGridDb }; }
+            get { return new List<LocalizedOption> { Option("Varias fuentes", "MTDA_OptionMediaMultipleSources", "Multiple sources"), Option(MediaProviderSteamGridDb, "MTDA_OptionMediaSteamGridDb", "SteamGridDB") }; }
         }
 
         [DontSerialize]
-        public List<string> CoverImagePresetOptions
+        public List<LocalizedOption> CoverImagePresetOptions
         {
-            get { return new List<string> { CoverPresetPlayniteVertical, CoverPresetOriginal, CoverPresetSquare, CoverPresetHorizontal }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(CoverPresetPlayniteVertical, "MTDA_OptionCoverPlayniteVertical", "Playnite vertical (600x900)"),
+                    Option(CoverPresetOriginal, "MTDA_OptionOriginal", "Original"),
+                    Option(CoverPresetSquare, "MTDA_OptionCoverSquare", "Playnite square (600x600)"),
+                    Option(CoverPresetHorizontal, "MTDA_OptionCoverHorizontal", "Horizontal/banner (920x430)")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> IconPresetOptions
+        public List<LocalizedOption> IconPresetOptions
         {
-            get { return new List<string> { IconPresetOriginal, IconPresetSquare, IconPresetRounded, IconPresetCircle }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(IconPresetOriginal, "MTDA_OptionIconOriginal", "Original/transparent"),
+                    Option(IconPresetSquare, "MTDA_OptionIconSquare", "Square 256"),
+                    Option(IconPresetRounded, "MTDA_OptionIconRounded", "Rounded 256"),
+                    Option(IconPresetCircle, "MTDA_OptionIconCircle", "Circle 256")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> BackgroundImagePresetOptions
+        public List<LocalizedOption> BackgroundImagePresetOptions
         {
-            get { return new List<string> { BackgroundPresetSteamHero, BackgroundPresetSteamHeroSmall, BackgroundPresetFullHd, BackgroundPresetQhd, BackgroundPreset4K, BackgroundPresetOriginal }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(BackgroundPresetSteamHero, "MTDA_OptionBackgroundSteamHero", "Steam hero (3840x1240)"),
+                    Option(BackgroundPresetSteamHeroSmall, "MTDA_OptionBackgroundSteamHeroSmall", "Light Steam hero (1920x620)"),
+                    Option(BackgroundPresetFullHd, "MTDA_OptionBackgroundFullHd", "Fullscreen Full HD (1920x1080)"),
+                    Option(BackgroundPresetQhd, "MTDA_OptionBackgroundQhd", "Fullscreen QHD (2560x1440)"),
+                    Option(BackgroundPreset4K, "MTDA_OptionBackground4K", "Fullscreen 4K (3840x2160)"),
+                    Option(BackgroundPresetOriginal, "MTDA_OptionOriginal", "Original")
+                };
+            }
         }
 
         [DontSerialize]
-        public List<string> BackgroundLogoPreferenceOptions
+        public List<LocalizedOption> BackgroundLogoPreferenceOptions
         {
-            get { return new List<string> { BackgroundLogoAny, BackgroundLogoPreferNoLogo, BackgroundLogoPreferLogo }; }
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(BackgroundLogoAny, "MTDA_OptionBackgroundLogoAny", "Any"),
+                    Option(BackgroundLogoPreferNoLogo, "MTDA_OptionBackgroundLogoNoLogo", "Prefer without logo"),
+                    Option(BackgroundLogoPreferLogo, "MTDA_OptionBackgroundLogoWithLogo", "Prefer with logo")
+                };
+            }
         }
 
         [DontSerialize]
         public string SteamGridDbHelp
         {
-            get { return "El plugin mezcla fuentes de media: Steam oficial cuando el juego tiene AppID de Steam, SteamGridDB como fuente comunitaria si configuras su API key, y capturas oficiales de Steam como fondo alternativo. En automatico prioriza assets oficiales y despues aplica formato, logo, puntuacion y filtros."; }
+            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam when the game has a Steam AppID, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, logo, score and filter preferences."); }
+        }
+
+        private static LocalizedOption Option(string value, string key, string fallback)
+        {
+            return new LocalizedOption(value, Loc(key, fallback));
+        }
+
+        private static string Loc(string key, string fallback)
+        {
+            return PluginLocalization.GetString(key, fallback);
         }
 
         [DontSerialize]

@@ -96,9 +96,10 @@ namespace MetaDataIAPlugin
             }
         }
 
-        public override string Name { get { return "Metadata IA"; } }
+        public override string Name { get { return "Metadata AI"; } }
 
-        private string MenuRoot { get { return "@" + Loc("MTDA_PluginName", "Metadata IA"); } }
+        private string MenuRoot { get { return "@" + Loc("MTDA_PluginName", "Metadata AI"); } }
+        private string PluginTitle { get { return Loc("MTDA_PluginName", "Metadata AI"); } }
 
         public MetaDataIAPlugin(IPlayniteAPI api) : base(api)
         {
@@ -183,7 +184,7 @@ namespace MetaDataIAPlugin
             {
                 Description = Loc("MTDA_MenuApplyAllList", "Aplicar a todos los juegos de la lista"),
                 MenuSection = MenuRoot,
-                Action = actionArgs => GenerateAndApplyWithConfirmation(GetFilteredGames(), settings.Settings, "todos los juegos de la lista")
+                Action = actionArgs => GenerateAndApplyWithConfirmation(GetFilteredGames(), settings.Settings, Loc("MTDA_ScopeAllGamesInList", "all games in the list"))
             };
 
             yield return new MainMenuItem
@@ -229,14 +230,14 @@ namespace MetaDataIAPlugin
                 {
                     try
                     {
-                        progress.Text = "Generando metadatos IA...";
+                        progress.Text = Loc("MTDA_ProgressGeneratingMetadata", "Generating AI metadata...");
                         result = new MetadataGenerationService(settings.Settings).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
                     {
                         generationError = ex;
                     }
-                }, new GlobalProgressOptions("Metadata IA", false) { IsIndeterminate = true });
+                }, new GlobalProgressOptions(PluginTitle, false) { IsIndeterminate = true });
 
                 if (generationError != null)
                 {
@@ -253,7 +254,7 @@ namespace MetaDataIAPlugin
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to generate AI metadata.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
             }
         }
 
@@ -263,7 +264,7 @@ namespace MetaDataIAPlugin
             {
                 if (games == null || games.Count == 0)
                 {
-                    PlayniteApi.Dialogs.ShowMessage("No hay juegos sobre los que aplicar Metadata IA.", "Metadata IA");
+                    PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMetadata", "There are no games to apply Metadata AI to."), PluginTitle);
                 }
 
                 return;
@@ -283,7 +284,7 @@ namespace MetaDataIAPlugin
                             break;
                         }
 
-                        progress.Text = "Generando metadatos IA: " + game.Name;
+                        progress.Text = Loc("MTDA_ProgressGeneratingMetadataGame", "Generating AI metadata: ") + game.Name;
                         try
                         {
                             var result = new MetadataGenerationService(activeSettings).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
@@ -307,7 +308,7 @@ namespace MetaDataIAPlugin
 
                         progress.CurrentProgressValue = processed + errors.Count;
                     }
-                }, new GlobalProgressOptions("Metadata IA", true));
+                }, new GlobalProgressOptions(PluginTitle, true));
 
                 if (errors.Count > 0)
                 {
@@ -315,13 +316,13 @@ namespace MetaDataIAPlugin
                 }
                 else
                 {
-                    PlayniteApi.Dialogs.ShowMessage("Metadata IA actualizo " + processed + " juego(s).", "Metadata IA");
+                    PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMetadataUpdated", "Metadata AI updated {0} game(s)."), processed), PluginTitle);
                 }
             }
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to generate and apply AI metadata.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
             }
         }
 
@@ -329,13 +330,13 @@ namespace MetaDataIAPlugin
         {
             if (games == null || games.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay juegos sobre los que aplicar media.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMedia", "There are no games to apply media to."), PluginTitle);
                 return;
             }
 
             if (!activeSettings.IsMediaConfigured)
             {
-                PlayniteApi.Dialogs.ShowErrorMessage("No hay fuentes de media configuradas o disponibles.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
                 OpenSettingsView();
                 return;
             }
@@ -356,7 +357,7 @@ namespace MetaDataIAPlugin
                             break;
                         }
 
-                        progress.Text = "Descargando media: " + game.Name;
+                        progress.Text = Loc("MTDA_ProgressDownloadingMedia", "Downloading media: ") + game.Name;
                         try
                         {
                             var appliedForGame = ApplyEnabledMedia(service, game, progress);
@@ -371,7 +372,7 @@ namespace MetaDataIAPlugin
 
                         progress.CurrentProgressValue = processed + errors.Count;
                     }
-                }, new GlobalProgressOptions("Metadata IA - Media", true));
+                }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true));
 
                 if (errors.Count > 0)
                 {
@@ -379,13 +380,13 @@ namespace MetaDataIAPlugin
                 }
                 else
                 {
-                    PlayniteApi.Dialogs.ShowMessage("Metadata IA actualizo media en " + processed + " juego(s). Archivos aplicados: " + appliedMedia + ".", "Metadata IA");
+                    PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMediaUpdated", "Metadata AI updated media for {0} game(s). Applied files: {1}."), processed, appliedMedia), PluginTitle);
                 }
             }
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to apply media.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
             }
         }
 
@@ -393,7 +394,7 @@ namespace MetaDataIAPlugin
         {
             if (games == null || games.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay juegos sobre los que aplicar media.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMedia", "There are no games to apply media to."), PluginTitle);
                 return;
             }
 
@@ -415,7 +416,7 @@ namespace MetaDataIAPlugin
 
             if (!activeSettings.IsMediaConfigured)
             {
-                PlayniteApi.Dialogs.ShowErrorMessage("No hay fuentes de media configuradas o disponibles.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
                 OpenSettingsView();
                 return;
             }
@@ -423,7 +424,7 @@ namespace MetaDataIAPlugin
             var kinds = GetEnabledMediaKinds(activeSettings).ToList();
             if (kinds.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay ningun tipo de media activado en la configuracion elegida.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoMediaTypesEnabled", "No media type is enabled in the selected configuration."), PluginTitle);
                 return;
             }
 
@@ -439,7 +440,7 @@ namespace MetaDataIAPlugin
                         break;
                     }
 
-                    progress.Text = "Buscando " + MediaKindName(kind).ToLowerInvariant() + " en fuentes de media...";
+                    progress.Text = string.Format(Loc("MTDA_ProgressSearchingMediaKind", "Searching for {0} in media sources..."), MediaKindName(kind).ToLowerInvariant());
                     try
                     {
                         optionsByKind[kind] = service.GetPreviewOptionsAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
@@ -451,18 +452,18 @@ namespace MetaDataIAPlugin
                         loadError = ex;
                     }
                 }
-            }, new GlobalProgressOptions("Metadata IA - Media", true) { IsIndeterminate = true });
+            }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true) { IsIndeterminate = true });
 
             if (optionsByKind.Values.All(x => x.Count == 0))
             {
-                PlayniteApi.Dialogs.ShowErrorMessage(loadError == null ? "No se encontraron candidatos de media para este juego en Steam ni SteamGridDB." : UserError(loadError), "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(loadError == null ? Loc("MTDA_ErrorNoMediaCandidatesForGame", "No media candidates were found for this game in the configured sources.") : UserError(loadError), PluginTitle);
                 return;
             }
 
             var selectedOptions = new Dictionary<MediaKind, MediaPreviewOption>();
             var window = new Window
             {
-                Title = "Metadata IA - Elegir media - " + game.Name,
+                Title = PluginTitle + " - " + Loc("MTDA_MediaPickerTitle", "Choose media") + " - " + game.Name,
                 Width = 1060,
                 Height = 760,
                 MinWidth = 820,
@@ -523,7 +524,7 @@ namespace MetaDataIAPlugin
             {
                 if (selectedOptions.Count == 0)
                 {
-                    PlayniteApi.Dialogs.ShowMessage("Selecciona al menos un elemento de media antes de aplicar cambios.", "Metadata IA");
+                    PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageSelectMediaBeforeApply", "Select at least one media item before applying changes."), PluginTitle);
                     return;
                 }
 
@@ -561,7 +562,7 @@ namespace MetaDataIAPlugin
             {
                 return new TextBlock
                 {
-                    Text = "No hay candidatos para este tipo de media.",
+                    Text = Loc("MTDA_MessageNoCandidatesForMediaType", "There are no candidates for this media type."),
                     Margin = new Thickness(12),
                     TextWrapping = TextWrapping.Wrap
                 };
@@ -596,7 +597,7 @@ namespace MetaDataIAPlugin
                 {
                     foreach (var button in optionButtons)
                     {
-                        button.Content = "Seleccionar";
+                        button.Content = Loc("MTDA_Select", "Select");
                     }
 
                     foreach (var border in optionBorders)
@@ -605,7 +606,7 @@ namespace MetaDataIAPlugin
                         ApplyDynamicResource(border, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
                     }
 
-                    selectedButton.Content = "Seleccionada";
+                    selectedButton.Content = Loc("MTDA_Selected", "Selected");
                     selectedBorder.BorderThickness = new Thickness(3);
                     selectedBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(105, 176, 255));
 
@@ -683,15 +684,15 @@ namespace MetaDataIAPlugin
                 FontWeight = FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             });
-            infoPanel.Children.Add(CreateMediaInfoLine("Tamano", option.Width > 0 && option.Height > 0 ? option.Width + " x " + option.Height : "desconocido"));
-            infoPanel.Children.Add(CreateMediaInfoLine("Estilo", string.IsNullOrWhiteSpace(option.Style) ? "sin indicar" : option.Style));
-            infoPanel.Children.Add(CreateMediaInfoLine("Puntuacion", option.Score.ToString()));
-            infoPanel.Children.Add(CreateMediaInfoLine("Oficial", option.IsOfficial ? "Si" : "No / comunidad"));
+            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoSize", "Size"), option.Width > 0 && option.Height > 0 ? option.Width + " x " + option.Height : Loc("MTDA_Unknown", "Unknown")));
+            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoStyle", "Style"), string.IsNullOrWhiteSpace(option.Style) ? Loc("MTDA_NotSpecified", "Not specified") : option.Style));
+            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoScore", "Score"), option.Score.ToString()));
+            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoOfficial", "Official"), option.IsOfficial ? Loc("MTDA_Yes", "Yes") : Loc("MTDA_NoCommunity", "No / community")));
             stack.Children.Add(infoPanel);
 
             var localSelectButton = new Button
             {
-                Content = "Seleccionar",
+                Content = Loc("MTDA_Select", "Select"),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0, 4, 0, 0)
             };
@@ -746,7 +747,7 @@ namespace MetaDataIAPlugin
                                 break;
                             }
 
-                            progress.Text = "Aplicando " + MediaKindName(option.Kind).ToLowerInvariant() + "...";
+                            progress.Text = string.Format(Loc("MTDA_ProgressApplyingMediaKind", "Applying {0}..."), MediaKindName(option.Kind).ToLowerInvariant());
                             var media = service.GenerateFromOptionAsync(game, option, progress.CancelToken).GetAwaiter().GetResult();
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
@@ -767,19 +768,19 @@ namespace MetaDataIAPlugin
                     {
                         applyError = ex;
                     }
-                }, new GlobalProgressOptions("Metadata IA - Aplicar media", true) { IsIndeterminate = true });
+                }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_ApplyMedia", "Apply media"), true) { IsIndeterminate = true });
 
                 if (applyError != null)
                 {
                     throw applyError;
                 }
 
-                PlayniteApi.Dialogs.ShowMessage("Metadata IA aplico " + appliedCount + " archivo(s) de media.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageAppliedMediaFiles", "Metadata AI applied {0} media file(s)."), appliedCount), PluginTitle);
             }
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to apply selected media.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), "Metadata IA");
+                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
             }
         }
 
@@ -795,19 +796,19 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private static string MediaKindName(MediaKind kind)
+        private string MediaKindName(MediaKind kind)
         {
             if (kind == MediaKind.Cover)
             {
-                return "Portada";
+                return Loc("MTDA_Cover", "Cover");
             }
 
             if (kind == MediaKind.Icon)
             {
-                return "Icono";
+                return Loc("MTDA_Icon", "Icon");
             }
 
-            return "Fondo";
+            return Loc("MTDA_Background", "Background");
         }
 
         private static void ApplyPlayniteWindowStyle(Window window)
@@ -837,7 +838,7 @@ namespace MetaDataIAPlugin
         {
             if (games == null || games.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay juegos sobre los que aplicar orden de nombre.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesSortingName", "There are no games to apply sorting names to."), PluginTitle);
                 return;
             }
 
@@ -855,7 +856,7 @@ namespace MetaDataIAPlugin
                 processed++;
             }
 
-            PlayniteApi.Dialogs.ShowMessage("Metadata IA actualizo el orden de nombre en " + processed + " juego(s).", "Metadata IA");
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageSortingNameUpdated", "Metadata AI updated sorting names for {0} game(s)."), processed), PluginTitle);
         }
 
         private int ApplyEnabledMedia(MediaGenerationService service, Game game, GlobalProgressActionArgs progress)
@@ -945,11 +946,11 @@ namespace MetaDataIAPlugin
             SavePluginSettings(settings.Settings);
         }
 
-        private static string UserError(Exception ex)
+        private string UserError(Exception ex)
         {
             if (ex == null)
             {
-                return "Se ha producido un error no especificado.";
+                return Loc("MTDA_ErrorUnspecified", "An unspecified error occurred.");
             }
 
             return MetadataGenerationService.SanitizeForUser(ex.Message);
@@ -958,12 +959,12 @@ namespace MetaDataIAPlugin
         private void ShowBatchErrors(int processed, List<string> errors)
         {
             var separator = "\n\n" + new string('-', 90) + "\n\n";
-            var message = "Metadata IA actualizo " + processed + " juego(s). Errores: " + errors.Count + "\n\n" +
+            var message = string.Format(Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"), processed, errors.Count) + "\n\n" +
                           string.Join(separator, errors);
 
             var window = new Window
             {
-                Title = "Metadata IA",
+                Title = PluginTitle,
                 Width = 980,
                 Height = 700,
                 MinWidth = 720,
@@ -1018,10 +1019,10 @@ namespace MetaDataIAPlugin
 
         private void ShowReviewWindow(Game game, AiMetadataResult result, MetaDataIASettings activeSettings)
         {
-            logger.Info("Metadata IA review window opening for " + game.Name);
+            logger.Info("Metadata AI review window opening for " + game.Name);
 
             var window = new Window();
-            window.Title = "Metadata IA - " + game.Name;
+            window.Title = "Metadata AI - " + game.Name;
             window.Content = CreateReviewContent(window, result);
 
             var owner = PlayniteApi.Dialogs.GetCurrentAppWindow();
@@ -1044,14 +1045,14 @@ namespace MetaDataIAPlugin
 
             if (window.ShowDialog() == true)
             {
-                logger.Info("Metadata IA review accepted for " + game.Name);
+                logger.Info("Metadata AI review accepted for " + game.Name);
                 MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
             }
         }
 
         private void OpenNativeEditReview(Game game, AiMetadataResult result, MetaDataIASettings activeSettings)
         {
-            logger.Info("Metadata IA native edit review opening for " + game.Name);
+            logger.Info("Metadata AI native edit review opening for " + game.Name);
 
             var original = Serialization.GetClone(game);
             var reviewSettings = CreateNativeReviewSettings(activeSettings);
@@ -1062,12 +1063,12 @@ namespace MetaDataIAPlugin
                 var accepted = PlayniteApi.MainView.OpenEditDialog(game.Id);
                 if (accepted != true)
                 {
-                    logger.Info("Metadata IA native edit review cancelled for " + game.Name);
+                    logger.Info("Metadata AI native edit review cancelled for " + game.Name);
                     PlayniteApi.Database.Games.Update(original);
                 }
                 else
                 {
-                    logger.Info("Metadata IA native edit review accepted for " + game.Name);
+                    logger.Info("Metadata AI native edit review accepted for " + game.Name);
                 }
             }
             catch
@@ -1345,7 +1346,7 @@ namespace MetaDataIAPlugin
                 return true;
             }
 
-            PlayniteApi.Dialogs.ShowErrorMessage("Configura el endpoint, modelo y API key de Metadata IA antes de generar metadatos.", "Metadata IA");
+            PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorConfigureBeforeGenerate", "Configure the endpoint, model and API key for Metadata AI before generating metadata."), PluginTitle);
             OpenSettingsView();
             return false;
         }
@@ -1438,13 +1439,13 @@ namespace MetaDataIAPlugin
         {
             if (games == null || games.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay juegos en la lista actual.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesCurrentList", "There are no games in the current list."), PluginTitle);
                 return;
             }
 
             var result = PlayniteApi.Dialogs.ShowMessage(
-                "Se va a aplicar Metadata IA a " + games.Count + " juego(s) de " + scopeName + ".\n\nEsto puede tardar y consumir uso de la API configurada. Quieres continuar?",
-                "Metadata IA",
+                string.Format(Loc("MTDA_ConfirmApplyScope", "Metadata AI will be applied to {0} game(s) from {1}.\n\nThis may take a while and consume usage from the configured API. Do you want to continue?"), games.Count, scopeName),
+                PluginTitle,
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -1461,7 +1462,7 @@ namespace MetaDataIAPlugin
             var selected = GetSelectedGames();
             if (selected.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage("No hay juegos seleccionados.", "Metadata IA");
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoSelectedGames", "No games are selected."), PluginTitle);
                 return;
             }
 
@@ -1604,4 +1605,3 @@ namespace MetaDataIAPlugin
         }
     }
 }
-
