@@ -135,3 +135,9 @@ The plugin uses Playnite localization resource dictionaries under `Localization/
 Translations are stored as locale-specific XAML resource dictionaries. To add or update a translation, copy an existing locale file, rename it to the target locale, and translate the string values while keeping the same resource keys.
 
 Community translation contributions are welcome.
+
+## Support
+
+If you find Metadata IA useful, you can support development with a coffee:
+
+[ko-fi.com/naerian](https://ko-fi.com/naerian)
