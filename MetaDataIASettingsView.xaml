@@ -5,12 +5,28 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="720" d:DesignWidth="900">
+    <UserControl.Resources>
+        <Style x:Key="SectionHeaderBorder" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#666666"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="0,0,0,6"/>
+            <Setter Property="Margin" Value="0,18,0,10"/>
+        </Style>
+        <Style x:Key="FirstSectionHeaderBorder" TargetType="Border" BasedOn="{StaticResource SectionHeaderBorder}">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="SectionHeaderText" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </UserControl.Resources>
     <Grid Margin="12">
         <TabControl>
             <TabItem Header="{DynamicResource MTDA_TabAI}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="820">
-                        <TextBlock Text="{DynamicResource MTDA_OpenAICompatibleProvider}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_OpenAICompatibleProvider}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
 
                         <TextBlock Text="{DynamicResource MTDA_Provider}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
@@ -50,7 +66,9 @@
 
                         <Border BorderBrush="#444444" BorderThickness="1" Padding="10" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource MTDA_FreeLocalFallback}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_FreeLocalFallback}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
                                 <CheckBox Content="{DynamicResource MTDA_LocalFallbackCheckbox}" IsChecked="{Binding Settings.EnableLocalFallback}" Margin="0,0,0,8"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                     <CheckBox Content="LM Studio" IsChecked="{Binding Settings.TryLmStudioFallback}" Width="110"/>
@@ -80,7 +98,9 @@
                         <ComboBox ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.Length}" Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_LengthHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="130"/>
@@ -135,12 +155,16 @@
                             <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" SelectedItem="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
                         </Grid>
 
-                        <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" SelectedItem="{Binding Settings.ExistingMetadataMode}" Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_ExtraInstructions}"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_ExtraInstructions}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBox Text="{Binding Settings.ExtraInstructions, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
@@ -199,7 +223,9 @@
                     </Grid>
 
                     <StackPanel Grid.Row="2" Margin="0,8,0,0">
-                        <TextBlock Text="{DynamicResource MTDA_DescriptionTokensTitle}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_DescriptionTokensTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <Border BorderBrush="#666666" BorderThickness="1">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="190">
                         <Grid ShowGridLines="True" Margin="0">
@@ -288,10 +314,14 @@
             <TabItem Header="{DynamicResource MTDA_TabMedia}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="840">
-                        <TextBlock Text="{DynamicResource MTDA_ImageSources}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_ImageSources}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{Binding Settings.SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{DynamicResource MTDA_OfficialSteam}"/>
                         <TextBlock Text="{DynamicResource MTDA_OfficialSteamHelp}" TextWrapping="Wrap" Margin="0,2,0,6"/>
                         <Button Content="{DynamicResource MTDA_TestOfficialSteam}" HorizontalAlignment="Left" MinWidth="150" Margin="0,0,0,12" Click="TestSteamMedia_OnClick"/>
@@ -321,7 +351,9 @@
                         <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,16" Click="TestIgdbMedia_OnClick"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_Media}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_Media}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -361,7 +393,9 @@
                             <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" SelectedItem="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
                         </Grid>
 
-                        <TextBlock Text="{DynamicResource MTDA_ActiveSources}" FontWeight="SemiBold" Margin="0,16,0,6"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_ActiveSources}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <CheckBox Content="{DynamicResource MTDA_SourceSteamOfficial}"
                                   IsChecked="{Binding Settings.MediaUseSteamOfficial}"
                                   Margin="0,0,0,4"/>
@@ -385,7 +419,9 @@
                                   Margin="0,0,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_MissingApiKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Margin="0,16,0,0"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <ComboBox ItemsSource="{Binding Settings.BackgroundLogoPreferenceOptions}"
                                   SelectedItem="{Binding Settings.BackgroundLogoPreference}"
                                   HorizontalAlignment="Left"
@@ -393,7 +429,9 @@
                                   Margin="0,2,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreferenceHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_SelectionCriteria}" FontWeight="SemiBold" Margin="0,8,0,6"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_SelectionCriteria}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <CheckBox Content="{DynamicResource MTDA_AvoidNsfw}"
                                   IsChecked="{Binding Settings.MediaAvoidNsfw}"
                                   Margin="0,0,0,4"/>
@@ -421,6 +459,9 @@
             <TabItem Header="{DynamicResource MTDA_TabImport}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="820">
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_TabImport}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <CheckBox Content="{DynamicResource MTDA_AutoImportNewGames}"
                                   IsChecked="{Binding Settings.AutoImportNewGames}"
                                   Margin="0,0,0,6"/>
@@ -446,7 +487,9 @@
             <TabItem Header="{DynamicResource MTDA_TabFields}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="860">
-                        <TextBlock Text="{DynamicResource MTDA_GenerateAndApply}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_GenerateAndApply}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -523,7 +566,9 @@
                             <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}" Margin="0,8,0,0"/>
 
                         </Grid>
-                        <TextBlock Text="{DynamicResource MTDA_SpecialFields}" FontWeight="SemiBold" Margin="0,16,0,6"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_SpecialFields}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -573,6 +618,9 @@
             <TabItem Header="{DynamicResource MTDA_TabRules}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="820">
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_TabRules}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <CheckBox Content="{DynamicResource MTDA_EnableTemplateRules}"
                                   IsChecked="{Binding Settings.EnableTemplateRules}"
                                   Margin="0,0,0,4"/>
@@ -580,7 +628,9 @@
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,14"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_GenreTemplateRules}" FontWeight="SemiBold"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_GenreTemplateRules}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{DynamicResource MTDA_GenreTemplateRulesHelp}" TextWrapping="Wrap" Margin="0,2,0,4"/>
                         <TextBox Text="{Binding Settings.GenreTemplateRules, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
@@ -589,7 +639,9 @@
                                  VerticalScrollBarVisibility="Auto"
                                  Margin="0,0,0,12"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_PlatformRules}" FontWeight="SemiBold"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_PlatformRules}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{DynamicResource MTDA_PlatformRulesHelp}" TextWrapping="Wrap" Margin="0,2,0,4"/>
                         <TextBox Text="{Binding Settings.PlatformTemplateRules, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
@@ -598,7 +650,9 @@
                                  VerticalScrollBarVisibility="Auto"
                                  Margin="0,0,0,12"/>
 
-                        <TextBlock Text="{DynamicResource MTDA_SourceRules}" FontWeight="SemiBold"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_SourceRules}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{DynamicResource MTDA_SourceRulesHelp}" TextWrapping="Wrap" Margin="0,2,0,4"/>
                         <TextBox Text="{Binding Settings.SourceTemplateRules, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"

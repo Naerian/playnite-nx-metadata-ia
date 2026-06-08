@@ -72,33 +72,13 @@ Selection criteria include:
 
 ## Installation
 
-1. Close Playnite.
-2. Build the project in Release mode.
-3. Copy the compiled extension files to your Playnite extensions folder.
+Download the `.pext` package from releases and install it in Playnite.
 
-The included helper script can build and install directly to `C:\Playnite\Extensions\MetaDataIAPlugin`:
+For manual installation during development:
 
-```powershell
-.\BuildAndInstall.ps1
-```
-
-If your Playnite installation is in a different path, adjust the script before running it.
-
-## Build requirements
-
-- Windows
-- Playnite installed
-- .NET Framework 4.6.2 compatible build environment
-- MSBuild
-
-The project references Playnite assemblies from:
-
-```text
-C:\Playnite\Playnite.SDK.dll
-C:\Playnite\Newtonsoft.Json.dll
-```
-
-If your Playnite installation is elsewhere, update the references in `MetaDataIAPlugin.csproj`.
+1. Build the project in Release mode.
+2. Copy the build output into a folder under Playnite's Extensions directory.
+3. Restart Playnite.
 
 ## Configuration overview
 
@@ -117,28 +97,28 @@ The main sections are:
 
 Templates can use HTML because Playnite renders HTML descriptions. This keeps generated descriptions readable instead of appearing as a single block of text.
 
-Common tokens include:
-
-- `{short}`
-- `{synopsis}`
-- `{premise}`
-- `{gameplay}`
-- `{tone}`
-- `{setting}`
-- `{perspective}`
-- `{playModes}`
-- `{estimatedLength}`
-- `{similarGames}`
-- `{notes}`
-- `{features}`
-- `{recommendedFor}`
-- `{genres}`
-- `{tags}`
-- `{developers}`
-- `{publishers}`
-- `{ageRatings}`
-- `{regions}`
-- `{categories}`
+| Token | Description |
+| --- | --- |
+| `{short}` | Brief one-block summary of the game. |
+| `{synopsis}` | Broader synopsis of the game, usually one or more paragraphs depending on the selected token length. |
+| `{premise}` | Narrative or conceptual premise. |
+| `{gameplay}` | Main gameplay loop, mechanics, and how the game is played. |
+| `{tone}` | Tone or mood, such as serious, humorous, dark, cozy, arcade-like, or competitive. |
+| `{setting}` | World, setting, period, or fictional context. |
+| `{perspective}` | Camera, viewpoint, or presentation style. |
+| `{playModes}` | Known play modes, such as single-player, co-op, online multiplayer, local multiplayer, or PvP. |
+| `{estimatedLength}` | Estimated completion or playtime information when it can be inferred. |
+| `{similarGames}` | Comparable games or useful reference points. |
+| `{notes}` | Extra editorial notes that do not fit another token. |
+| `{features}` | Concise feature list generated for the game. |
+| `{recommendedFor}` | Type of player or audience the game may appeal to. |
+| `{genres}` | Generated genre list. |
+| `{tags}` | Generated tag list. |
+| `{developers}` | Developer or studio names. |
+| `{publishers}` | Publisher names. |
+| `{ageRatings}` | Age rating values. |
+| `{regions}` | Region values. |
+| `{categories}` | Generated category list. |
 
 Example:
 
@@ -150,30 +130,8 @@ Example:
 
 ## Localization
 
-The extension uses Playnite's native localization pattern:
+The plugin uses Playnite localization resource dictionaries under `Localization/`.
 
-```text
-Localization/en_US.xaml
-Localization/es_ES.xaml
-Localization/pl_PL.xaml
-```
+Translations are stored as locale-specific XAML resource dictionaries. To add or update a translation, copy an existing locale file, rename it to the target locale, and translate the string values while keeping the same resource keys.
 
-XAML uses `DynamicResource` keys and code uses `PlayniteApi.Resources.GetString(...)`.
-
-Currently included languages:
-
-- English
-- Spanish
-- Polish
-
-## Repository
-
-Recommended repository name:
-
-```text
-playnite-nx-metadata-ia
-```
-
-## Author
-
-Narian
+Community translation contributions are welcome.
