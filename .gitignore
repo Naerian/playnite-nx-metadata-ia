@@ -10,3 +10,4 @@ obj/
 *.7z
 *.log
 TestResults/
+dist/
