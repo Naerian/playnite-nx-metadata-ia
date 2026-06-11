@@ -98,7 +98,7 @@ namespace MetaDataIAPlugin
 
         public override string Name { get { return "Metadata AI"; } }
 
-        private string MenuRoot { get { return "@" + Loc("MTDA_PluginName", "Metadata AI"); } }
+        private string MenuRoot { get { return Loc("MTDA_PluginName", "Metadata AI"); } }
         private string PluginTitle { get { return Loc("MTDA_PluginName", "Metadata AI"); } }
 
         public MetaDataIAPlugin(IPlayniteAPI api) : base(api)
