@@ -474,7 +474,6 @@
                             <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
                         </Grid>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_ActiveSources}" Style="{StaticResource SectionHeaderText}"/>
@@ -501,7 +500,6 @@
                                   IsChecked="{Binding Settings.MediaUseIgdb}"
                                   Margin="0,0,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_MissingApiKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
