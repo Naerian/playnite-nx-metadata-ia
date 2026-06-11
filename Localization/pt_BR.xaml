@@ -345,4 +345,6 @@ Planos de fundo: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulação</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Carregar mais ({0} restantes)</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Modo avançado</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
 </ResourceDictionary>

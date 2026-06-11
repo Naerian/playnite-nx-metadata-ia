@@ -345,4 +345,6 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">模拟器</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">加载更多（剩余 {0}）</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">高级模式</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
 </ResourceDictionary>

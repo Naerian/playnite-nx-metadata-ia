@@ -254,6 +254,7 @@ namespace MetaDataIAPlugin
             context["maxPublishers"] = settings.MaxPublishers;
             context["companyPolicy"] = "developers must contain only the main credited developer studio for the base game. publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty.";
             context["canonicalTerms"] = BuildCanonicalTerms();
+            context["localVocabulary"] = settings.GetVocabularyTerms(settings.Language);
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
             context["categoryPrefix"] = settings.CategoryPrefix;
@@ -293,7 +294,7 @@ namespace MetaDataIAPlugin
                    "For other text fields: Corta/Short = 1 brief sentence; Media/Medium = 1 paragraph of 3 to 5 sentences; Larga/Long = 2 paragraphs of 3 to 5 sentences; Extra larga/Extra long = 3 paragraphs of 3 to 5 sentences. " +
                    "For lists, length controls how many useful items to return within each max value: Corta/Short = few essentials; Media/Medium = balanced coverage; Larga/Long = broad coverage; Extra larga/Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
-                   "Use canonicalTerms to keep terms stable across games when the list is provided. If canonicalTerms is empty, create stable terms directly in the requested language and reuse the same wording consistently. " +
+                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games. If both are empty for a field, create stable terms directly in the requested language and reuse the same wording consistently. " +
                    "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
@@ -411,6 +412,27 @@ namespace MetaDataIAPlugin
         }
 
         private Dictionary<string, List<string>> BuildCanonicalTerms()
+        {
+            var vocabulary = settings.GetVocabularyTerms(settings.Language);
+            var canonical = BuildDefaultCanonicalTerms();
+            foreach (var pair in vocabulary)
+            {
+                if (!canonical.ContainsKey(pair.Key))
+                {
+                    canonical[pair.Key] = new List<string>();
+                }
+
+                canonical[pair.Key] = pair.Value
+                    .Concat(canonical[pair.Key])
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            return canonical;
+        }
+
+        private Dictionary<string, List<string>> BuildDefaultCanonicalTerms()
         {
             if (!string.IsNullOrWhiteSpace(settings.Language) &&
                 settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))

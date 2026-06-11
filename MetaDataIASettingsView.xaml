@@ -676,6 +676,16 @@
                                  TextWrapping="Wrap"
                                  MinHeight="90"
                                  VerticalScrollBarVisibility="Auto"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}" Margin="0,18,0,8">
+                            <TextBlock Text="{DynamicResource MTDA_VocabularyMemory}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_VocabularyMemoryHelp}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+                        <TextBox Text="{Binding Settings.VocabularyMemory, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="140"
+                                 VerticalScrollBarVisibility="Auto"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

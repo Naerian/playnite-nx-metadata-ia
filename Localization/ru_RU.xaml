@@ -345,4 +345,6 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_TemplateEmulation">Эмуляция</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Загрузить ещё (осталось {0})</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Расширенный режим</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
 </ResourceDictionary>

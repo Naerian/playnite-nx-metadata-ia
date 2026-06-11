@@ -291,6 +291,7 @@ namespace MetaDataIAPlugin
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
                                 MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
+                                LearnVocabulary(activeSettings, result);
                             }));
                             processed++;
                         }
@@ -388,6 +389,18 @@ namespace MetaDataIAPlugin
                 logger.Error(ex, "Failed to apply media.");
                 PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
             }
+        }
+
+        private void LearnVocabulary(MetaDataIASettings activeSettings, AiMetadataResult result)
+        {
+            if (settings == null || settings.Settings == null || result == null)
+            {
+                return;
+            }
+
+            var language = activeSettings == null ? settings.Settings.Language : activeSettings.Language;
+            settings.Settings.LearnVocabulary(language, result);
+            SavePluginSettings(settings.Settings);
         }
 
         private void ApplyMediaInteractive(List<Game> games, MetaDataIASettings activeSettings)
@@ -1111,6 +1124,7 @@ namespace MetaDataIAPlugin
             {
                 logger.Info("Metadata AI review accepted for " + game.Name);
                 MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
+                LearnVocabulary(activeSettings, result);
             }
         }
 
@@ -1133,6 +1147,7 @@ namespace MetaDataIAPlugin
                 else
                 {
                     logger.Info("Metadata AI native edit review accepted for " + game.Name);
+                    LearnVocabulary(reviewSettings, result);
                 }
             }
             catch

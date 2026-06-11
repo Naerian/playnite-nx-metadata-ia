@@ -139,6 +139,7 @@ namespace MetaDataIAPlugin
         private string genreTemplateRules = "RPG=RPG\nRol=RPG\nAventura=Aventura\nIndie=Indie\nEmulacion=Emulacion\nRetro=Emulacion";
         private string platformTemplateRules = string.Empty;
         private string sourceTemplateRules = string.Empty;
+        private string vocabularyMemory = string.Empty;
         private bool overwriteExistingDescription = false;
         private bool overwriteExistingLists = false;
         private bool includeExistingMetadata = true;
@@ -295,6 +296,7 @@ namespace MetaDataIAPlugin
         public string GenreTemplateRules { get { return genreTemplateRules; } set { SetValue(ref genreTemplateRules, value); } }
         public string PlatformTemplateRules { get { return platformTemplateRules; } set { SetValue(ref platformTemplateRules, value); } }
         public string SourceTemplateRules { get { return sourceTemplateRules; } set { SetValue(ref sourceTemplateRules, value); } }
+        public string VocabularyMemory { get { return vocabularyMemory; } set { SetValue(ref vocabularyMemory, value); } }
         public bool OverwriteExistingDescription { get { return overwriteExistingDescription; } set { SetValue(ref overwriteExistingDescription, value); } }
         public bool OverwriteExistingLists { get { return overwriteExistingLists; } set { SetValue(ref overwriteExistingLists, value); } }
         public bool IncludeExistingMetadata { get { return includeExistingMetadata; } set { SetValue(ref includeExistingMetadata, value); } }
@@ -541,6 +543,201 @@ namespace MetaDataIAPlugin
         private static string EnsureOption(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        public Dictionary<string, List<string>> GetVocabularyTerms(string language)
+        {
+            var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var field in new[] { "genres", "tags", "features", "categories" })
+            {
+                result[field] = new List<string>();
+            }
+
+            var code = NormalizeLanguageCode(language);
+            var all = ParseVocabularyMemory();
+            Dictionary<string, List<string>> byField;
+            if (all.TryGetValue(code, out byField))
+            {
+                foreach (var pair in byField)
+                {
+                    if (!result.ContainsKey(pair.Key))
+                    {
+                        result[pair.Key] = new List<string>();
+                    }
+
+                    result[pair.Key].AddRange(pair.Value);
+                }
+            }
+
+            Dictionary<string, List<string>> shared;
+            if (all.TryGetValue("*", out shared))
+            {
+                foreach (var pair in shared)
+                {
+                    if (!result.ContainsKey(pair.Key))
+                    {
+                        result[pair.Key] = new List<string>();
+                    }
+
+                    result[pair.Key].AddRange(pair.Value);
+                }
+            }
+
+            return result.ToDictionary(
+                x => x.Key,
+                x => x.Value
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Select(v => v.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(200)
+                    .ToList(),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        public void LearnVocabulary(string language, AiMetadataResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            var code = NormalizeLanguageCode(language);
+            var all = ParseVocabularyMemory();
+            Dictionary<string, List<string>> byField;
+            if (!all.TryGetValue(code, out byField))
+            {
+                byField = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                all[code] = byField;
+            }
+
+            AddVocabularyTerms(byField, "genres", result.Genres, 120);
+            AddVocabularyTerms(byField, "tags", result.Tags, 200);
+            AddVocabularyTerms(byField, "features", result.Features, 200);
+            AddVocabularyTerms(byField, "categories", result.Categories, 120);
+            VocabularyMemory = FormatVocabularyMemory(all);
+        }
+
+        private Dictionary<string, Dictionary<string, List<string>>> ParseVocabularyMemory()
+        {
+            var result = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(VocabularyMemory))
+            {
+                return result;
+            }
+
+            var lines = VocabularyMemory
+                .Replace("\r", string.Empty)
+                .Split('\n')
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#", StringComparison.Ordinal))
+                .ToList();
+
+            foreach (var line in lines)
+            {
+                var separator = line.IndexOf('=');
+                if (separator <= 0)
+                {
+                    continue;
+                }
+
+                var key = line.Substring(0, separator).Trim();
+                var value = line.Substring(separator + 1).Trim();
+                var keyParts = key.Split('.');
+                var language = keyParts.Length > 1 ? NormalizeLanguageCode(keyParts[0]) : "*";
+                var field = keyParts.Length > 1 ? keyParts[1].Trim() : keyParts[0].Trim();
+
+                if (!IsVocabularyField(field))
+                {
+                    continue;
+                }
+
+                Dictionary<string, List<string>> byField;
+                if (!result.TryGetValue(language, out byField))
+                {
+                    byField = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    result[language] = byField;
+                }
+
+                if (!byField.ContainsKey(field))
+                {
+                    byField[field] = new List<string>();
+                }
+
+                byField[field].AddRange(SplitVocabularyValues(value));
+            }
+
+            return result;
+        }
+
+        private static string FormatVocabularyMemory(Dictionary<string, Dictionary<string, List<string>>> values)
+        {
+            var lines = new List<string>();
+            foreach (var language in values.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+            {
+                var byField = values[language];
+                foreach (var field in new[] { "genres", "tags", "features", "categories" })
+                {
+                    List<string> terms;
+                    if (!byField.TryGetValue(field, out terms))
+                    {
+                        continue;
+                    }
+
+                    var clean = terms
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase)
+                        .Take(200)
+                        .ToList();
+
+                    if (clean.Count > 0)
+                    {
+                        lines.Add(language + "." + field + "=" + string.Join("; ", clean));
+                    }
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private static void AddVocabularyTerms(Dictionary<string, List<string>> byField, string field, IEnumerable<string> terms, int maxItems)
+        {
+            if (!byField.ContainsKey(field))
+            {
+                byField[field] = new List<string>();
+            }
+
+            byField[field].AddRange((terms ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim()));
+
+            byField[field] = byField[field]
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(maxItems)
+                .ToList();
+        }
+
+        private static IEnumerable<string> SplitVocabularyValues(string value)
+        {
+            return (value ?? string.Empty)
+                .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+        }
+
+        private static bool IsVocabularyField(string field)
+        {
+            return string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(field, "features", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(field, "categories", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeLanguageCode(string language)
+        {
+            return string.IsNullOrWhiteSpace(language) ? "es" : language.Trim().ToLowerInvariant();
         }
 
         public void ResetTemplates()
