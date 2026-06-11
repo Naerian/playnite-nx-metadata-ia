@@ -577,54 +577,134 @@ namespace MetaDataIAPlugin
 
         private string LocalizeDefaultTemplate(string template)
         {
-            if (string.IsNullOrWhiteSpace(template) || IsSpanishOutputLanguage())
+            if (string.IsNullOrWhiteSpace(template))
             {
                 return template;
             }
 
             if (string.Equals(template, DefaultShortTemplate, StringComparison.Ordinal))
             {
-                return "<p>{short}</p>\n\n<h3>Main features</h3>\n{features}";
+                return "<p>{short}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}";
             }
 
             if (string.Equals(template, DefaultMediumTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Brief description</h3>\n<p>{short}</p>\n\n<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Main features</h3>\n{features}\n\n<h3>Play modes</h3>\n<p>{playModes}</p>\n\n<h3>Estimated length</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>";
+                return "<h3>" + Header("brief") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("playModes") + "</h3>\n<p>{playModes}</p>\n\n<h3>" + Header("estimatedLength") + "</h3>\n<p>{estimatedLength}</p>\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
             if (string.Equals(template, DefaultLongTemplate, StringComparison.Ordinal) ||
                 string.Equals(template, LegacyDefaultLongTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Brief description</h3>\n<p>{short}</p>\n\n<h3>Premise</h3>\n<p>{premise}</p>\n\n<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Gameplay</h3>\n<p>{gameplay}</p>\n\n<h3>Tone and setting</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>Perspective and modes</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>Main features</h3>\n{features}\n\n<h3>Estimated length</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>\n\n<h3>Notes</h3>\n<p>{notes}</p>";
+                return "<h3>" + Header("brief") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("premise") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("gameplay") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("toneSetting") + "</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>" + Header("perspectiveModes") + "</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("estimatedLength") + "</h3>\n<p>{estimatedLength}</p>\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>\n\n<h3>" + Header("notes") + "</h3>\n<p>{notes}</p>";
             }
 
             if (string.Equals(template, DefaultRpgTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Role-playing and progression</h3>\n<p>{gameplay}</p>\n\n<h3>World and tone</h3>\n<p>{setting}</p>\n<p>{tone}</p>\n\n<h3>RPG features</h3>\n{features}\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>";
+                return "<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("roleProgression") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("worldTone") + "</h3>\n<p>{setting}</p>\n<p>{tone}</p>\n\n<h3>" + Header("rpgFeatures") + "</h3>\n{features}\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
             if (string.Equals(template, DefaultAdventureTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Premise</h3>\n<p>{premise}</p>\n\n<h3>Adventure</h3>\n<p>{synopsis}</p>\n\n<h3>Exploration and pacing</h3>\n<p>{gameplay}</p>\n\n<h3>Features</h3>\n{features}\n\n<h3>Ideal for</h3>\n<p>{recommendedFor}</p>";
+                return "<h3>" + Header("premise") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("adventure") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("explorationPacing") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("idealFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
             if (string.Equals(template, DefaultIndieTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Summary</h3>\n<p>{short}</p>\n\n<h3>Concept</h3>\n<p>{premise}</p>\n\n<h3>Style</h3>\n<p>{tone}</p>\n\n<h3>Key elements</h3>\n{features}\n\n<h3>For players who like</h3>\n<p>{recommendedFor}</p>";
+                return "<h3>" + Header("summary") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("concept") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("style") + "</h3>\n<p>{tone}</p>\n\n<h3>" + Header("keyElements") + "</h3>\n{features}\n\n<h3>" + Header("forPlayers") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
             if (string.Equals(template, DefaultEmulationTemplate, StringComparison.Ordinal))
             {
-                return "<h3>Summary</h3>\n<p>{short}</p>\n\n<h3>Context</h3>\n<p>{synopsis}</p>\n\n<h3>Gameplay</h3>\n<p>{gameplay}</p>\n\n<h3>Useful details</h3>\n<p>Platform/perspective: {perspective}</p>\n<p>Modes: {playModes}</p>\n\n<h3>Features</h3>\n{features}";
+                return "<h3>" + Header("summary") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("context") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("gameplay") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("usefulDetails") + "</h3>\n<p>" + Header("platformPerspective") + ": {perspective}</p>\n<p>" + Header("modes") + ": {playModes}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}";
             }
 
             return template;
         }
 
-        private bool IsSpanishOutputLanguage()
+        private string Header(string key)
         {
-            return string.IsNullOrWhiteSpace(Language) ||
-                   Language.StartsWith("es", StringComparison.OrdinalIgnoreCase);
+            var language = (Language ?? "es").Trim().ToLowerInvariant();
+            var table = HeaderTranslations(language);
+            return table.ContainsKey(key) ? table[key] : HeaderTranslations("en")[key];
+        }
+
+        private static Dictionary<string, string> HeaderTranslations(string language)
+        {
+            if (language.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Descripcion breve", "Sinopsis", "Caracteristicas principales", "Modos de juego", "Duracion estimada", "Recomendado para", "Premisa", "Jugabilidad", "Tono y ambientacion", "Perspectiva y modos", "Notas", "Rol y progresion", "Mundo y tono", "Caracteristicas RPG", "Aventura", "Exploracion y ritmo", "Ideal para", "Resumen", "Propuesta", "Estilo", "Elementos clave", "Para quien es", "Contexto", "Datos utiles", "Plataforma/perspectiva", "Modos");
+            }
+            if (language.StartsWith("fr", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Description breve", "Synopsis", "Caracteristiques principales", "Modes de jeu", "Duree estimee", "Recommande pour", "Premisse", "Gameplay", "Ton et univers", "Perspective et modes", "Notes", "Role et progression", "Monde et ton", "Caracteristiques RPG", "Aventure", "Exploration et rythme", "Ideal pour", "Resume", "Concept", "Style", "Elements cles", "Pour les joueurs qui aiment", "Contexte", "Details utiles", "Plateforme/perspective", "Modes");
+            }
+            if (language.StartsWith("de", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Kurzbeschreibung", "Synopsis", "Hauptmerkmale", "Spielmodi", "Geschatzte Spielzeit", "Empfohlen fur", "Pramisse", "Gameplay", "Ton und Schauplatz", "Perspektive und Modi", "Notizen", "Rollenspiel und Fortschritt", "Welt und Ton", "RPG-Merkmale", "Abenteuer", "Erkundung und Tempo", "Ideal fur", "Zusammenfassung", "Konzept", "Stil", "Kernelemente", "Fur Spieler, die mogen", "Kontext", "Nutzliche Details", "Plattform/Perspektive", "Modi");
+            }
+            if (language.StartsWith("it", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Descrizione breve", "Sinossi", "Caratteristiche principali", "Modalita di gioco", "Durata stimata", "Consigliato per", "Premessa", "Gameplay", "Tono e ambientazione", "Prospettiva e modalita", "Note", "Ruolo e progressione", "Mondo e tono", "Caratteristiche RPG", "Avventura", "Esplorazione e ritmo", "Ideale per", "Riepilogo", "Concept", "Stile", "Elementi chiave", "Per giocatori che amano", "Contesto", "Dettagli utili", "Piattaforma/prospettiva", "Modalita");
+            }
+            if (language.StartsWith("pt", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Descricao breve", "Sinopse", "Caracteristicas principais", "Modos de jogo", "Duracao estimada", "Recomendado para", "Premissa", "Jogabilidade", "Tom e ambientacao", "Perspectiva e modos", "Notas", "RPG e progressao", "Mundo e tom", "Caracteristicas de RPG", "Aventura", "Exploracao e ritmo", "Ideal para", "Resumo", "Proposta", "Estilo", "Elementos-chave", "Para quem gosta de", "Contexto", "Detalhes uteis", "Plataforma/perspectiva", "Modos");
+            }
+            if (language.StartsWith("pl", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Krotki opis", "Streszczenie", "Glowne cechy", "Tryby gry", "Szacowany czas", "Polecane dla", "Zalozenie", "Rozgrywka", "Ton i swiat", "Perspektywa i tryby", "Notatki", "RPG i progresja", "Swiat i ton", "Cechy RPG", "Przygoda", "Eksploracja i tempo", "Idealne dla", "Podsumowanie", "Koncepcja", "Styl", "Kluczowe elementy", "Dla graczy lubiacych", "Kontekst", "Przydatne szczegoly", "Platforma/perspektywa", "Tryby");
+            }
+            if (language.StartsWith("ru", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("Краткое описание", "Синопсис", "Основные особенности", "Режимы игры", "Примерная длительность", "Рекомендуется для", "Завязка", "Геймплей", "Тон и сеттинг", "Перспектива и режимы", "Заметки", "Роль и прогрессия", "Мир и тон", "Особенности RPG", "Приключение", "Исследование и темп", "Идеально для", "Кратко", "Концепция", "Стиль", "Ключевые элементы", "Для игроков, которым нравится", "Контекст", "Полезные детали", "Платформа/перспектива", "Режимы");
+            }
+            if (language.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("短い説明", "概要", "主な特徴", "プレイモード", "推定プレイ時間", "おすすめのプレイヤー", "前提", "ゲームプレイ", "雰囲気と舞台", "視点とモード", "メモ", "ロールプレイと成長", "世界観と雰囲気", "RPG要素", "アドベンチャー", "探索とテンポ", "向いている人", "要約", "コンセプト", "スタイル", "重要要素", "おすすめ対象", "背景", "便利な情報", "プラットフォーム/視点", "モード");
+            }
+            if (language.StartsWith("ko", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("짧은 설명", "시놉시스", "주요 특징", "플레이 모드", "예상 플레이 시간", "추천 대상", "전제", "게임플레이", "분위기와 배경", "시점과 모드", "메모", "역할과 성장", "세계와 분위기", "RPG 특징", "어드벤처", "탐험과 흐름", "적합한 대상", "요약", "콘셉트", "스타일", "핵심 요소", "이런 플레이어에게 추천", "맥락", "유용한 정보", "플랫폼/시점", "모드");
+            }
+            if (language.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+            {
+                return Headers("简短描述", "剧情简介", "主要特色", "游戏模式", "预计时长", "推荐给", "设定前提", "玩法", "氛围与背景", "视角与模式", "备注", "角色扮演与成长", "世界与氛围", "RPG 特色", "冒险", "探索与节奏", "适合", "概要", "概念", "风格", "关键元素", "适合的玩家", "背景信息", "实用信息", "平台/视角", "模式");
+            }
+
+            return Headers("Brief description", "Synopsis", "Main features", "Play modes", "Estimated length", "Recommended for", "Premise", "Gameplay", "Tone and setting", "Perspective and modes", "Notes", "Role-playing and progression", "World and tone", "RPG features", "Adventure", "Exploration and pacing", "Ideal for", "Summary", "Concept", "Style", "Key elements", "For players who like", "Context", "Useful details", "Platform/perspective", "Modes");
+        }
+
+        private static Dictionary<string, string> Headers(string brief, string synopsis, string features, string playModes, string estimatedLength, string recommendedFor, string premise, string gameplay, string toneSetting, string perspectiveModes, string notes, string roleProgression, string worldTone, string rpgFeatures, string adventure, string explorationPacing, string idealFor, string summary, string concept, string style, string keyElements, string forPlayers, string context, string usefulDetails, string platformPerspective, string modes)
+        {
+            return new Dictionary<string, string>
+            {
+                { "brief", brief },
+                { "synopsis", synopsis },
+                { "features", features },
+                { "playModes", playModes },
+                { "estimatedLength", estimatedLength },
+                { "recommendedFor", recommendedFor },
+                { "premise", premise },
+                { "gameplay", gameplay },
+                { "toneSetting", toneSetting },
+                { "perspectiveModes", perspectiveModes },
+                { "notes", notes },
+                { "roleProgression", roleProgression },
+                { "worldTone", worldTone },
+                { "rpgFeatures", rpgFeatures },
+                { "adventure", adventure },
+                { "explorationPacing", explorationPacing },
+                { "idealFor", idealFor },
+                { "summary", summary },
+                { "concept", concept },
+                { "style", style },
+                { "keyElements", keyElements },
+                { "forPlayers", forPlayers },
+                { "context", context },
+                { "usefulDetails", usefulDetails },
+                { "platformPerspective", platformPerspective },
+                { "modes", modes }
+            };
         }
 
         private static List<string> Names(IEnumerable<DatabaseObject> items)

@@ -293,7 +293,7 @@ namespace MetaDataIAPlugin
                    "For other text fields: Corta/Short = 1 brief sentence; Media/Medium = 1 paragraph of 3 to 5 sentences; Larga/Long = 2 paragraphs of 3 to 5 sentences; Extra larga/Extra long = 3 paragraphs of 3 to 5 sentences. " +
                    "For lists, length controls how many useful items to return within each max value: Corta/Short = few essentials; Media/Medium = balanced coverage; Larga/Long = broad coverage; Extra larga/Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
-                   "Use canonicalTerms to keep terms stable across games. If a concept fits a canonical term, use exactly that term instead of synonyms or variants, and translate only when the canonical list clearly uses the requested language. " +
+                   "Use canonicalTerms to keep terms stable across games when the list is provided. If canonicalTerms is empty, create stable terms directly in the requested language and reuse the same wording consistently. " +
                    "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
@@ -390,7 +390,7 @@ namespace MetaDataIAPlugin
         private Dictionary<string, List<string>> BuildCanonicalTerms()
         {
             if (!string.IsNullOrWhiteSpace(settings.Language) &&
-                !settings.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+                settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
             {
                 return new Dictionary<string, List<string>>
                 {
@@ -434,6 +434,12 @@ namespace MetaDataIAPlugin
                         }
                     }
                 };
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.Language) &&
+                !settings.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Dictionary<string, List<string>>();
             }
 
             return new Dictionary<string, List<string>>
