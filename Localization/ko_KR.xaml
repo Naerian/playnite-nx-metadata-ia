@@ -343,4 +343,5 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_TemplateAdventure">어드벤처</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">인디</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">에뮬레이션</sys:String>
+    <sys:String x:Key="MTDA_LoadMoreMedia">더 불러오기 ({0}개 남음)</sys:String>
 </ResourceDictionary>

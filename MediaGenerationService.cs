@@ -119,7 +119,7 @@ namespace MetaDataIAPlugin
             var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
 
             return OrderCandidates(candidates, kind)
-                .Take(Math.Max(1, Math.Min(24, settings.MediaSearchMaxResults)))
+                .Take(Math.Max(1, settings.MediaSearchMaxResults))
                 .Select(x => new MediaPreviewOption
                 {
                     Kind = kind,

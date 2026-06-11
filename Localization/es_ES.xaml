@@ -121,8 +121,8 @@
     <sys:String x:Key="MTDA_PlatformRulesHelp">Sirve para elegir plantilla segun la plataforma del juego. Tiene prioridad sobre las reglas por tipo de juego. Formato: Plataforma=NombrePlantilla. Ejemplo: Nintendo Switch=Corta. Util para descripciones mas breves en portatiles, mas tecnicas en PC, o plantillas especiales para emulacion.</sys:String>
     <sys:String x:Key="MTDA_SourceRules">Reglas por fuente</sys:String>
     <sys:String x:Key="MTDA_SourceRulesHelp">Sirve para elegir plantilla segun la fuente o biblioteca desde la que se importo el juego, por ejemplo Steam, GOG, Epic, Xbox, PlayStation o una fuente personalizada. Tiene prioridad sobre plataforma y tipo. Formato: Fuente=NombrePlantilla. Ejemplo: Steam=Larga.</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateReview">Generar y revisar metadatos IA</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateApply">Generar y aplicar metadatos IA</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateReview">Generar y revisar con Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateApply">Generar y aplicar con Metadata AI</sys:String>
     <sys:String x:Key="MTDA_MenuApplyAllList">Aplicar a todos los juegos de la lista</sys:String>
     <sys:String x:Key="MTDA_MenuApplySelected">Aplicar a seleccionados</sys:String>
     <sys:String x:Key="MTDA_MenuSetDescriptions">Establecer descripciones</sys:String>
@@ -316,4 +316,5 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateAdventure">Aventura</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulación</sys:String>
+    <sys:String x:Key="MTDA_LoadMoreMedia">Cargar más (quedan {0})</sys:String>
 </ResourceDictionary>

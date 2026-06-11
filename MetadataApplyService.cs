@@ -23,42 +23,42 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.GenreIds = MergeIds(game.GenreIds, Ensure(api.Database.Genres, result.Genres, settings.PreferExistingGenres), settings.GenresApplyMode);
+                game.GenreIds = MergeIds(game.GenreIds, Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres), settings.GenresApplyMode, settings.MaxGenres);
             }
 
             if (settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.TagIds = MergeIds(game.TagIds, Ensure(api.Database.Tags, result.Tags, settings.PreferExistingTags), settings.TagsApplyMode);
+                game.TagIds = MergeIds(game.TagIds, Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags), settings.TagsApplyMode, settings.MaxTags);
             }
 
             if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.FeatureIds = MergeIds(game.FeatureIds, Ensure(api.Database.Features, result.Features, settings.PreferExistingFeatures), settings.FeaturesApplyMode);
+                game.FeatureIds = MergeIds(game.FeatureIds, Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures), settings.FeaturesApplyMode, settings.MaxFeatures);
             }
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, result.Developers, false), settings.DevelopersApplyMode);
+                game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), false), settings.DevelopersApplyMode, settings.MaxDevelopers);
             }
 
             if (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, result.Publishers, false), settings.PublishersApplyMode);
+                game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), false), settings.PublishersApplyMode, settings.MaxPublishers);
             }
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, result.AgeRatings, false), settings.AgeRatingsApplyMode);
+                game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), false), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, result.Regions, false), settings.RegionsApplyMode);
+                game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), false), settings.RegionsApplyMode, settings.MaxRegions);
             }
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.CategoryIds = MergeIds(game.CategoryIds, Ensure(api.Database.Categories, result.Categories, settings.PreferExistingCategories), settings.CategoriesApplyMode);
+                game.CategoryIds = MergeIds(game.CategoryIds, Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories), settings.CategoriesApplyMode, settings.MaxCategories);
             }
 
             if (settings.GenerateSortingName && settings.SortingNameApplyMode != MetaDataIASettings.ApplySkip)
@@ -72,7 +72,7 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateLinks && settings.LinksApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.Links = MergeLinks(game.Links, result.Links, settings.LinksApplyMode);
+                game.Links = MergeLinks(game.Links, result.Links, settings.LinksApplyMode, settings.MaxLinks);
             }
 
             api.Database.Games.Update(game);
@@ -101,9 +101,17 @@ namespace MetaDataIAPlugin
             return ids;
         }
 
-        private static List<Guid> MergeIds(List<Guid> current, IEnumerable<Guid> generated, string mode)
+        private static IEnumerable<string> Limit(IEnumerable<string> names, int maxItems)
+        {
+            return (names ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Take(Math.Max(1, maxItems));
+        }
+
+        private static List<Guid> MergeIds(List<Guid> current, IEnumerable<Guid> generated, string mode, int maxItems)
         {
             var generatedList = generated == null ? new List<Guid>() : generated.Where(x => x != Guid.Empty).Distinct().ToList();
+            var max = Math.Max(1, maxItems);
             if (mode == MetaDataIASettings.ApplySkip)
             {
                 return current ?? new List<Guid>();
@@ -116,10 +124,10 @@ namespace MetaDataIAPlugin
 
             if (mode == MetaDataIASettings.ApplyOverwrite)
             {
-                return generatedList;
+                return generatedList.Take(max).ToList();
             }
 
-            return (current ?? new List<Guid>()).Concat(generatedList).Distinct().ToList();
+            return (current ?? new List<Guid>()).Concat(generatedList).Distinct().Take(max).ToList();
         }
 
         private static bool ShouldApplyScalar(string mode, string current)
@@ -137,12 +145,14 @@ namespace MetaDataIAPlugin
             return mode == MetaDataIASettings.ApplyAppend || mode == MetaDataIASettings.ApplyOverwrite;
         }
 
-        private static ObservableCollection<Link> MergeLinks(ObservableCollection<Link> current, IEnumerable<AiMetadataLink> generated, string mode)
+        private static ObservableCollection<Link> MergeLinks(ObservableCollection<Link> current, IEnumerable<AiMetadataLink> generated, string mode, int maxItems)
         {
+            var max = Math.Max(1, maxItems);
             var currentList = current == null ? new List<Link>() : current.Where(x => x != null).ToList();
             var generatedList = (generated ?? Enumerable.Empty<AiMetadataLink>())
                 .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
                 .Select(x => new Link(x.Name, x.Url))
+                .Take(max)
                 .ToList();
 
             if (mode == MetaDataIASettings.ApplySkip)
@@ -157,10 +167,10 @@ namespace MetaDataIAPlugin
 
             if (mode == MetaDataIASettings.ApplyOverwrite)
             {
-                return new ObservableCollection<Link>(DeduplicateLinks(generatedList));
+                return new ObservableCollection<Link>(DeduplicateLinks(generatedList).Take(max));
             }
 
-            return new ObservableCollection<Link>(DeduplicateLinks(currentList.Concat(generatedList)));
+            return new ObservableCollection<Link>(DeduplicateLinks(currentList.Concat(generatedList)).Take(max));
         }
 
         private static List<Link> DeduplicateLinks(IEnumerable<Link> links)

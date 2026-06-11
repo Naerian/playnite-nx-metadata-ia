@@ -240,7 +240,8 @@ namespace MetaDataIAPlugin
 
         public const string DefaultShortTemplate = "<p>{short}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}";
         public const string DefaultMediumTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Modos de juego</h3>\n<p>{playModes}</p>\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>";
-        public const string DefaultLongTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Premisa</h3>\n<p>{premise}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Jugabilidad</h3>\n<p>{gameplay}</p>\n\n<h3>Tono y ambientacion</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>Perspectiva y modos</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Juegos similares</h3>\n<p>{similarGames}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>\n\n<h3>Notas</h3>\n<p>{notes}</p>";
+        public const string DefaultLongTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Premisa</h3>\n<p>{premise}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Jugabilidad</h3>\n<p>{gameplay}</p>\n\n<h3>Tono y ambientacion</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>Perspectiva y modos</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>\n\n<h3>Notas</h3>\n<p>{notes}</p>";
+        private const string LegacyDefaultLongTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Premisa</h3>\n<p>{premise}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Jugabilidad</h3>\n<p>{gameplay}</p>\n\n<h3>Tono y ambientacion</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>Perspectiva y modos</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Juegos similares</h3>\n<p>{similarGames}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>\n\n<h3>Notas</h3>\n<p>{notes}</p>";
         public const string DefaultRpgTemplate = "<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Rol y progresion</h3>\n<p>{gameplay}</p>\n\n<h3>Mundo y tono</h3>\n<p>{setting}</p>\n<p>{tone}</p>\n\n<h3>Caracteristicas RPG</h3>\n{features}\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>";
         public const string DefaultAdventureTemplate = "<h3>Premisa</h3>\n<p>{premise}</p>\n\n<h3>Aventura</h3>\n<p>{synopsis}</p>\n\n<h3>Exploracion y ritmo</h3>\n<p>{gameplay}</p>\n\n<h3>Caracteristicas</h3>\n{features}\n\n<h3>Ideal para</h3>\n<p>{recommendedFor}</p>";
         public const string DefaultIndieTemplate = "<h3>Resumen</h3>\n<p>{short}</p>\n\n<h3>Propuesta</h3>\n<p>{premise}</p>\n\n<h3>Estilo</h3>\n<p>{tone}</p>\n\n<h3>Elementos clave</h3>\n{features}\n\n<h3>Para quien es</h3>\n<p>{recommendedFor}</p>";
@@ -568,10 +569,62 @@ namespace MetaDataIAPlugin
 
             if (profile != null && !string.IsNullOrWhiteSpace(profile.Template))
             {
-                return profile.Template;
+                return LocalizeDefaultTemplate(profile.Template);
             }
 
-            return string.IsNullOrWhiteSpace(DescriptionTemplate) ? DefaultMediumTemplate : DescriptionTemplate;
+            return LocalizeDefaultTemplate(string.IsNullOrWhiteSpace(DescriptionTemplate) ? DefaultMediumTemplate : DescriptionTemplate);
+        }
+
+        private string LocalizeDefaultTemplate(string template)
+        {
+            if (string.IsNullOrWhiteSpace(template) || IsSpanishOutputLanguage())
+            {
+                return template;
+            }
+
+            if (string.Equals(template, DefaultShortTemplate, StringComparison.Ordinal))
+            {
+                return "<p>{short}</p>\n\n<h3>Main features</h3>\n{features}";
+            }
+
+            if (string.Equals(template, DefaultMediumTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Brief description</h3>\n<p>{short}</p>\n\n<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Main features</h3>\n{features}\n\n<h3>Play modes</h3>\n<p>{playModes}</p>\n\n<h3>Estimated length</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>";
+            }
+
+            if (string.Equals(template, DefaultLongTemplate, StringComparison.Ordinal) ||
+                string.Equals(template, LegacyDefaultLongTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Brief description</h3>\n<p>{short}</p>\n\n<h3>Premise</h3>\n<p>{premise}</p>\n\n<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Gameplay</h3>\n<p>{gameplay}</p>\n\n<h3>Tone and setting</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>Perspective and modes</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>Main features</h3>\n{features}\n\n<h3>Estimated length</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>\n\n<h3>Notes</h3>\n<p>{notes}</p>";
+            }
+
+            if (string.Equals(template, DefaultRpgTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Synopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Role-playing and progression</h3>\n<p>{gameplay}</p>\n\n<h3>World and tone</h3>\n<p>{setting}</p>\n<p>{tone}</p>\n\n<h3>RPG features</h3>\n{features}\n\n<h3>Recommended for</h3>\n<p>{recommendedFor}</p>";
+            }
+
+            if (string.Equals(template, DefaultAdventureTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Premise</h3>\n<p>{premise}</p>\n\n<h3>Adventure</h3>\n<p>{synopsis}</p>\n\n<h3>Exploration and pacing</h3>\n<p>{gameplay}</p>\n\n<h3>Features</h3>\n{features}\n\n<h3>Ideal for</h3>\n<p>{recommendedFor}</p>";
+            }
+
+            if (string.Equals(template, DefaultIndieTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Summary</h3>\n<p>{short}</p>\n\n<h3>Concept</h3>\n<p>{premise}</p>\n\n<h3>Style</h3>\n<p>{tone}</p>\n\n<h3>Key elements</h3>\n{features}\n\n<h3>For players who like</h3>\n<p>{recommendedFor}</p>";
+            }
+
+            if (string.Equals(template, DefaultEmulationTemplate, StringComparison.Ordinal))
+            {
+                return "<h3>Summary</h3>\n<p>{short}</p>\n\n<h3>Context</h3>\n<p>{synopsis}</p>\n\n<h3>Gameplay</h3>\n<p>{gameplay}</p>\n\n<h3>Useful details</h3>\n<p>Platform/perspective: {perspective}</p>\n<p>Modes: {playModes}</p>\n\n<h3>Features</h3>\n{features}";
+            }
+
+            return template;
+        }
+
+        private bool IsSpanishOutputLanguage()
+        {
+            return string.IsNullOrWhiteSpace(Language) ||
+                   Language.StartsWith("es", StringComparison.OrdinalIgnoreCase);
         }
 
         private static List<string> Names(IEnumerable<DatabaseObject> items)

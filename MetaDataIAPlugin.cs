@@ -589,7 +589,8 @@ namespace MetaDataIAPlugin
 
             var optionButtons = new List<Button>();
             var optionBorders = new List<Border>();
-            foreach (var option in options)
+            var visibleCount = Math.Min(24, options.Count);
+            Action<MediaPreviewOption> addOption = option =>
             {
                 Button optionButton;
                 Border optionBorder;
@@ -617,6 +618,38 @@ namespace MetaDataIAPlugin
                 }, out optionButton, out optionBorder));
                 optionButtons.Add(optionButton);
                 optionBorders.Add(optionBorder);
+            };
+
+            for (var index = 0; index < visibleCount; index++)
+            {
+                addOption(options[index]);
+            }
+
+            if (visibleCount < options.Count)
+            {
+                var loadMoreButton = new Button
+                {
+                    Content = string.Format(Loc("MTDA_LoadMoreMedia", "Load more ({0} remaining)"), options.Count - visibleCount),
+                    MinHeight = 34,
+                    Margin = new Thickness(6)
+                };
+                loadMoreButton.Click += (sender, args) =>
+                {
+                    var oldIndex = visibleCount;
+                    visibleCount = Math.Min(visibleCount + 24, options.Count);
+                    panel.Children.Remove(loadMoreButton);
+                    for (var index = oldIndex; index < visibleCount; index++)
+                    {
+                        addOption(options[index]);
+                    }
+
+                    if (visibleCount < options.Count)
+                    {
+                        loadMoreButton.Content = string.Format(Loc("MTDA_LoadMoreMedia", "Load more ({0} remaining)"), options.Count - visibleCount);
+                        panel.Children.Add(loadMoreButton);
+                    }
+                };
+                panel.Children.Add(loadMoreButton);
             }
 
             return scroll;
@@ -1081,57 +1114,6 @@ namespace MetaDataIAPlugin
         private static MetaDataIASettings CreateNativeReviewSettings(MetaDataIASettings activeSettings)
         {
             var reviewSettings = Serialization.GetClone(activeSettings);
-
-            if (reviewSettings.GenerateDescription)
-            {
-                reviewSettings.DescriptionApplyMode = MetaDataIASettings.ApplyOverwrite;
-            }
-
-            if (reviewSettings.GenerateGenres)
-            {
-                reviewSettings.GenresApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateTags)
-            {
-                reviewSettings.TagsApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateFeatures)
-            {
-                reviewSettings.FeaturesApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateCategories)
-            {
-                reviewSettings.CategoriesApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateDevelopers)
-            {
-                reviewSettings.DevelopersApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GeneratePublishers)
-            {
-                reviewSettings.PublishersApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateAgeRatings)
-            {
-                reviewSettings.AgeRatingsApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateRegions)
-            {
-                reviewSettings.RegionsApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
-            if (reviewSettings.GenerateLinks)
-            {
-                reviewSettings.LinksApplyMode = MetaDataIASettings.ApplyAppend;
-            }
-
             return reviewSettings;
         }
 
