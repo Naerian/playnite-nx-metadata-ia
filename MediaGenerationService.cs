@@ -323,6 +323,10 @@ namespace MetaDataIAPlugin
                         }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
                     // SteamGridDB can reject specific filters with 400. Keep candidates from Steam or other sources.
@@ -335,6 +339,10 @@ namespace MetaDataIAPlugin
                 {
                     candidates.AddRange(await GetRawgCandidates(game, kind, cancelToken).ConfigureAwait(false));
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch
                 {
                 }
@@ -345,6 +353,10 @@ namespace MetaDataIAPlugin
                 try
                 {
                     candidates.AddRange(await GetMobyGamesCandidates(game, kind, cancelToken).ConfigureAwait(false));
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch
                 {
@@ -358,6 +370,10 @@ namespace MetaDataIAPlugin
                 try
                 {
                     candidates.AddRange(await GetIgdbCandidates(game, kind, cancelToken).ConfigureAwait(false));
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch
                 {
@@ -674,6 +690,10 @@ namespace MetaDataIAPlugin
             try
             {
                 return await GetJson(url, cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch
             {

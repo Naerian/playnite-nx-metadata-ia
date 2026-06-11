@@ -433,30 +433,38 @@ namespace MetaDataIAPlugin
             var cancelled = false;
             PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
             {
-                var service = new MediaGenerationService(activeSettings);
-                foreach (var kind in kinds)
+                using (progress.CancelToken.Register(() => cancelled = true))
                 {
-                    if (progress.CancelToken.IsCancellationRequested)
+                    var service = new MediaGenerationService(activeSettings);
+                    foreach (var kind in kinds)
                     {
-                        cancelled = true;
-                        break;
-                    }
+                        if (progress.CancelToken.IsCancellationRequested)
+                        {
+                            cancelled = true;
+                            break;
+                        }
 
-                    progress.Text = string.Format(Loc("MTDA_ProgressSearchingMediaKind", "Searching for {0} in media sources..."), MediaKindName(kind).ToLowerInvariant());
-                    try
-                    {
-                        optionsByKind[kind] = service.GetPreviewOptionsAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        cancelled = true;
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex, "Failed to load media options.");
-                        optionsByKind[kind] = new List<MediaPreviewOption>();
-                        loadError = ex;
+                        progress.Text = string.Format(Loc("MTDA_ProgressSearchingMediaKind", "Searching for {0} in media sources..."), MediaKindName(kind).ToLowerInvariant());
+                        try
+                        {
+                            optionsByKind[kind] = service.GetPreviewOptionsAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
+                            if (progress.CancelToken.IsCancellationRequested)
+                            {
+                                cancelled = true;
+                                break;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            cancelled = true;
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, "Failed to load media options.");
+                            optionsByKind[kind] = new List<MediaPreviewOption>();
+                            loadError = ex;
+                        }
                     }
                 }
             }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true) { IsIndeterminate = true });
