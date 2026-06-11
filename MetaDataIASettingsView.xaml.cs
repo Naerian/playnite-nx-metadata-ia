@@ -16,9 +16,31 @@ namespace MetaDataIAPlugin
                 var viewModel = DataContext as MetaDataIASettingsViewModel;
                 if (viewModel != null)
                 {
-                    ApiKeyBox.Password = viewModel.Settings.ApiKey ?? string.Empty;
+                    LoadPasswordBoxes(viewModel.Settings);
                 }
             };
+        }
+
+        private void LoadPasswordBoxes(MetaDataIASettings settings)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            SetPassword(ApiKeyBox, settings.ApiKey);
+            SetPassword(SteamGridDbApiKeyBox, settings.SteamGridDbApiKey);
+            SetPassword(RawgApiKeyBox, settings.RawgApiKey);
+            SetPassword(MobyGamesApiKeyBox, settings.MobyGamesApiKey);
+            SetPassword(IgdbClientSecretBox, settings.IgdbClientSecret);
+        }
+
+        private static void SetPassword(PasswordBox box, string value)
+        {
+            if (box != null && box.Password != (value ?? string.Empty))
+            {
+                box.Password = value ?? string.Empty;
+            }
         }
 
         private void ApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
@@ -27,6 +49,42 @@ namespace MetaDataIAPlugin
             if (viewModel != null)
             {
                 viewModel.Settings.ApiKey = ApiKeyBox.Password;
+            }
+        }
+
+        private void SteamGridDbApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.SteamGridDbApiKey = SteamGridDbApiKeyBox.Password;
+            }
+        }
+
+        private void RawgApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.RawgApiKey = RawgApiKeyBox.Password;
+            }
+        }
+
+        private void MobyGamesApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.MobyGamesApiKey = MobyGamesApiKeyBox.Password;
+            }
+        }
+
+        private void IgdbClientSecretBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.IgdbClientSecret = IgdbClientSecretBox.Password;
             }
         }
 
@@ -63,7 +121,7 @@ namespace MetaDataIAPlugin
             if (viewModel != null)
             {
                 viewModel.Settings.ApplyProviderPreset();
-                ApiKeyBox.Password = viewModel.Settings.ApiKey ?? string.Empty;
+                LoadPasswordBoxes(viewModel.Settings);
             }
         }
 
@@ -268,7 +326,7 @@ namespace MetaDataIAPlugin
             }
 
             viewModel.Settings.ApplyFreeLocalPreset(provider);
-            ApiKeyBox.Password = string.Empty;
+            LoadPasswordBoxes(viewModel.Settings);
         }
 
         private static string PluginTitle

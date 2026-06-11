@@ -22,23 +22,38 @@
         <Style x:Key="ThemedPasswordBox" TargetType="PasswordBox">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource TextBrushDarker}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="4,3"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}"/>
+            <Setter Property="Padding" Value="3"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Style="{DynamicResource HighlightBorder}">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
-                                          Background="{TemplateBinding Background}"/>
+                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="MediaDottedSeparator" TargetType="Line">
             <Setter Property="X1" Value="0"/>
@@ -376,7 +391,10 @@
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="SteamGridDB"/>
-                        <TextBox Text="{Binding Settings.SteamGridDbApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                        <PasswordBox x:Name="SteamGridDbApiKeyBox"
+                                     Style="{StaticResource ThemedPasswordBox}"
+                                     PasswordChanged="SteamGridDbApiKeyBox_OnPasswordChanged"
+                                     Margin="0,2,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Button Content="{DynamicResource MTDA_OpenSteamGridDb}" MinWidth="140" Margin="0,0,8,0" Click="OpenSteamGridDbPage_OnClick"/>
@@ -385,13 +403,19 @@
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="RAWG"/>
-                        <TextBox Text="{Binding Settings.RawgApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
+                        <PasswordBox x:Name="RawgApiKeyBox"
+                                     Style="{StaticResource ThemedPasswordBox}"
+                                     PasswordChanged="RawgApiKeyBox_OnPasswordChanged"
+                                     Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_RawgHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,12" Click="TestRawgMedia_OnClick"/>
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="MobyGames"/>
-                        <TextBox Text="{Binding Settings.MobyGamesApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
+                        <PasswordBox x:Name="MobyGamesApiKeyBox"
+                                     Style="{StaticResource ThemedPasswordBox}"
+                                     PasswordChanged="MobyGamesApiKeyBox_OnPasswordChanged"
+                                     Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_MobyGamesHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Margin="0,0,0,12" Click="TestMobyGamesMedia_OnClick"/>
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
@@ -399,7 +423,10 @@
                         <TextBlock Text="IGDB Client ID"/>
                         <TextBox Text="{Binding Settings.IgdbClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
                         <TextBlock Text="IGDB Client Secret"/>
-                        <TextBox Text="{Binding Settings.IgdbClientSecret, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
+                        <PasswordBox x:Name="IgdbClientSecretBox"
+                                     Style="{StaticResource ThemedPasswordBox}"
+                                     PasswordChanged="IgdbClientSecretBox_OnPasswordChanged"
+                                     Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,16" Click="TestIgdbMedia_OnClick"/>
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
