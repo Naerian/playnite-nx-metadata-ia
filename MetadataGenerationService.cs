@@ -299,6 +299,7 @@ namespace MetaDataIAPlugin
                    "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
                    "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
+                   "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
                    "If existingMetadataMode is Normalizar/Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
@@ -369,6 +370,7 @@ namespace MetaDataIAPlugin
                 case "de": return "German";
                 case "it": return "Italian";
                 case "pt": return "Portuguese";
+                case "pt-br": return "Brazilian Portuguese";
                 case "nl": return "Dutch";
                 case "ru": return "Russian";
                 case "uk": return "Ukrainian";
@@ -383,6 +385,27 @@ namespace MetaDataIAPlugin
                 case "cs": return "Czech";
                 case "hu": return "Hungarian";
                 case "ro": return "Romanian";
+                case "sk": return "Slovak";
+                case "sl": return "Slovenian";
+                case "hr": return "Croatian";
+                case "sr": return "Serbian";
+                case "bg": return "Bulgarian";
+                case "el": return "Greek";
+                case "ca": return "Catalan";
+                case "gl": return "Galician";
+                case "eu": return "Basque";
+                case "et": return "Estonian";
+                case "lv": return "Latvian";
+                case "lt": return "Lithuanian";
+                case "ar": return "Arabic";
+                case "he": return "Hebrew";
+                case "hi": return "Hindi";
+                case "id": return "Indonesian";
+                case "ms": return "Malay";
+                case "th": return "Thai";
+                case "vi": return "Vietnamese";
+                case "zh-cn": return "Simplified Chinese";
+                case "zh-tw": return "Traditional Chinese";
                 default: return string.IsNullOrWhiteSpace(code) ? "Spanish" : code;
             }
         }
