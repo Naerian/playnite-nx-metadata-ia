@@ -573,6 +573,13 @@ namespace MetaDataIAPlugin
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
+
+            var root = new Grid();
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(scroll, 0);
+            root.Children.Add(scroll);
+
             var panel = new UniformGrid
             {
                 Margin = new Thickness(4),
@@ -630,14 +637,14 @@ namespace MetaDataIAPlugin
                 var loadMoreButton = new Button
                 {
                     Content = string.Format(Loc("MTDA_LoadMoreMedia", "Load more ({0} remaining)"), options.Count - visibleCount),
-                    MinHeight = 34,
-                    Margin = new Thickness(6)
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Padding = new Thickness(14, 9, 14, 9),
+                    Margin = new Thickness(10, 8, 10, 2)
                 };
                 loadMoreButton.Click += (sender, args) =>
                 {
                     var oldIndex = visibleCount;
                     visibleCount = Math.Min(visibleCount + 24, options.Count);
-                    panel.Children.Remove(loadMoreButton);
                     for (var index = oldIndex; index < visibleCount; index++)
                     {
                         addOption(options[index]);
@@ -646,13 +653,17 @@ namespace MetaDataIAPlugin
                     if (visibleCount < options.Count)
                     {
                         loadMoreButton.Content = string.Format(Loc("MTDA_LoadMoreMedia", "Load more ({0} remaining)"), options.Count - visibleCount);
-                        panel.Children.Add(loadMoreButton);
+                    }
+                    else
+                    {
+                        loadMoreButton.Visibility = Visibility.Collapsed;
                     }
                 };
-                panel.Children.Add(loadMoreButton);
+                Grid.SetRow(loadMoreButton, 1);
+                root.Children.Add(loadMoreButton);
             }
 
-            return scroll;
+            return root;
         }
 
         private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Button, Border> selectAction, out Button selectButton, out Border optionBorder)
