@@ -347,4 +347,6 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Advanced mode</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
+    <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
+    <sys:String x:Key="MTDA_Discard">Discard</sys:String>
 </ResourceDictionary>

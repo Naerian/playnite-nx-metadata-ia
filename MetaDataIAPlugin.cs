@@ -5,6 +5,7 @@ using Playnite.SDK.Plugins;
 using Playnite.SDK.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -533,6 +534,16 @@ namespace MetaDataIAPlugin
                     {
                         applyChangesButton.IsEnabled = true;
                     }
+                }, option =>
+                {
+                    if (selectedOptions.ContainsKey(option.Kind) && string.Equals(selectedOptions[option.Kind].Url, option.Url, StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedOptions.Remove(option.Kind);
+                        if (applyChangesButton != null)
+                        {
+                            applyChangesButton.IsEnabled = selectedOptions.Count > 0;
+                        }
+                    }
                 })));
             }
 
@@ -589,7 +600,7 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction)
+        private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction, Action<MediaPreviewOption> discardAction)
         {
             if (options == null || options.Count == 0)
             {
@@ -655,6 +666,13 @@ namespace MetaDataIAPlugin
                     {
                         selectAction(selectedOption);
                     }
+                }, discardedOption =>
+                {
+                    options.Remove(discardedOption);
+                    if (discardAction != null)
+                    {
+                        discardAction(discardedOption);
+                    }
                 }, out optionButton, out optionBorder));
                 optionButtons.Add(optionButton);
                 optionBorders.Add(optionBorder);
@@ -699,7 +717,7 @@ namespace MetaDataIAPlugin
             return root;
         }
 
-        private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Button, Border> selectAction, out Button selectButton, out Border optionBorder)
+        private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Button, Border> selectAction, Action<MediaPreviewOption> discardAction, out Button selectButton, out Border optionBorder)
         {
             var tileRoot = new Grid
             {
@@ -783,7 +801,52 @@ namespace MetaDataIAPlugin
             selectButton = localSelectButton;
             stack.Children.Add(localSelectButton);
 
+            var secondaryButtons = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            secondaryButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            secondaryButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var openButton = new Button
+            {
+                Content = Loc("MTDA_OpenInBrowser", "Open"),
+                Margin = new Thickness(0, 0, 4, 0)
+            };
+            openButton.Click += (sender, args) => OpenUrl(option.Url);
+            secondaryButtons.Children.Add(openButton);
+
+            var discardButton = new Button
+            {
+                Content = Loc("MTDA_Discard", "Discard"),
+                Margin = new Thickness(4, 0, 0, 0)
+            };
+            discardButton.Click += (sender, args) =>
+            {
+                tileRoot.Visibility = Visibility.Collapsed;
+                if (discardAction != null)
+                {
+                    discardAction(option);
+                }
+            };
+            Grid.SetColumn(discardButton, 1);
+            secondaryButtons.Children.Add(discardButton);
+            stack.Children.Add(secondaryButtons);
+
             return tileRoot;
+        }
+
+        private static void OpenUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch
+            {
+            }
         }
 
         private static TextBlock CreateMediaInfoLine(string label, string value)

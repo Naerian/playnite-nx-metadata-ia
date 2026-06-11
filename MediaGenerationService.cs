@@ -60,6 +60,8 @@ namespace MetaDataIAPlugin
     {
         private const string ApiBase = "https://www.steamgriddb.com/api/v2";
         private static readonly HttpClient Client = new HttpClient();
+        private static readonly object CandidateCacheLock = new object();
+        private static readonly Dictionary<string, List<MediaCandidate>> CandidateCache = new Dictionary<string, List<MediaCandidate>>();
         private readonly MetaDataIASettings settings;
         private string generatedIgdbAccessToken;
 
@@ -288,6 +290,16 @@ namespace MetaDataIAPlugin
 
         private async Task<List<MediaCandidate>> GetCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
         {
+            var cacheKey = BuildCandidateCacheKey(game, kind);
+            lock (CandidateCacheLock)
+            {
+                List<MediaCandidate> cached;
+                if (CandidateCache.TryGetValue(cacheKey, out cached))
+                {
+                    return cached.Select(CloneCandidate).ToList();
+                }
+            }
+
             var candidates = new List<MediaCandidate>();
             var steamId = await ResolveSteamAppId(game, cancelToken).ConfigureAwait(false);
 
@@ -385,7 +397,69 @@ namespace MetaDataIAPlugin
                 EnsureConfigured();
             }
 
-            return DeduplicateCandidates(candidates);
+            var result = DeduplicateCandidates(candidates);
+            lock (CandidateCacheLock)
+            {
+                if (CandidateCache.Count > 120)
+                {
+                    CandidateCache.Clear();
+                }
+
+                CandidateCache[cacheKey] = result.Select(CloneCandidate).ToList();
+            }
+
+            return result;
+        }
+
+        private string BuildCandidateCacheKey(Game game, MediaKind kind)
+        {
+            var parts = new[]
+            {
+                (game == null ? string.Empty : game.Id.ToString()),
+                (game == null ? string.Empty : game.Name),
+                (game == null ? string.Empty : game.GameId),
+                (game == null || game.Source == null ? string.Empty : game.Source.Name),
+                kind.ToString(),
+                settings.CoverImagePreset,
+                settings.IconPreset,
+                settings.BackgroundImagePreset,
+                settings.BackgroundLogoPreference,
+                settings.MediaAvoidNsfw.ToString(),
+                settings.MediaAvoidBlurred.ToString(),
+                settings.MediaPreferOfficial.ToString(),
+                settings.MediaAvoidConsoleCovers.ToString(),
+                settings.IconSquarePreferGrid.ToString(),
+                settings.MediaUseSteamOfficial.ToString(),
+                settings.MediaUseSteamScreenshots.ToString(),
+                settings.MediaUseSteamGridDb.ToString(),
+                settings.MediaUseSteamGridDbBackgroundGrids.ToString(),
+                settings.MediaUseRawg.ToString(),
+                settings.MediaUseMobyGames.ToString(),
+                settings.MediaUseIgdb.ToString()
+            };
+
+            return string.Join("|", parts.Select(x => x ?? string.Empty));
+        }
+
+        private static MediaCandidate CloneCandidate(MediaCandidate candidate)
+        {
+            return candidate == null
+                ? null
+                : new MediaCandidate
+                {
+                    Url = candidate.Url,
+                    Width = candidate.Width,
+                    Height = candidate.Height,
+                    Style = candidate.Style,
+                    Mime = candidate.Mime,
+                    IsNsfw = candidate.IsNsfw,
+                    IsHumor = candidate.IsHumor,
+                    Score = candidate.Score,
+                    Extension = candidate.Extension,
+                    SourceName = candidate.SourceName,
+                    SourcePriority = candidate.SourcePriority,
+                    IsOfficial = candidate.IsOfficial
+                };
         }
 
         private async Task<string> ResolveSteamAppId(Game game, CancellationToken cancelToken)
