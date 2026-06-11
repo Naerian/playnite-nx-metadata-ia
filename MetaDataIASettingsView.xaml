@@ -19,6 +19,37 @@
         <Style x:Key="SectionHeaderText" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+        <Style x:Key="ThemedPasswordBox" TargetType="PasswordBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TextBrushDarker}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4,3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          Background="{TemplateBinding Background}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="MediaDottedSeparator" TargetType="Line">
+            <Setter Property="X1" Value="0"/>
+            <Setter Property="X2" Value="1"/>
+            <Setter Property="Stretch" Value="Fill"/>
+            <Setter Property="Stroke" Value="#555555"/>
+            <Setter Property="StrokeThickness" Value="1"/>
+            <Setter Property="StrokeDashArray" Value="1,4"/>
+            <Setter Property="Opacity" Value="0.45"/>
+            <Setter Property="Margin" Value="0,2,0,16"/>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -32,7 +63,7 @@
         <TabControl Grid.Row="1">
             <TabItem Header="{DynamicResource MTDA_TabAI}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" MaxWidth="820">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_OpenAICompatibleProvider}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -65,9 +96,7 @@
                         <TextBlock Text="{DynamicResource MTDA_ApiKey}"/>
                         <PasswordBox x:Name="ApiKeyBox"
                                      PasswordChanged="ApiKeyBox_OnPasswordChanged"
-                                     Foreground="{DynamicResource TextBrush}"
-                                     Background="{DynamicResource ControlBackgroundBrush}"
-                                     BorderBrush="{DynamicResource TextBrushDarker}"
+                                     Style="{StaticResource ThemedPasswordBox}"
                                      Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_ApiKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
@@ -332,7 +361,7 @@
 
             <TabItem Header="{DynamicResource MTDA_TabMedia}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" MaxWidth="840">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_ImageSources}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -344,6 +373,7 @@
                         <TextBlock Text="{DynamicResource MTDA_OfficialSteam}"/>
                         <TextBlock Text="{DynamicResource MTDA_OfficialSteamHelp}" TextWrapping="Wrap" Margin="0,2,0,6"/>
                         <Button Content="{DynamicResource MTDA_TestOfficialSteam}" HorizontalAlignment="Left" MinWidth="150" Margin="0,0,0,12" Click="TestSteamMedia_OnClick"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="SteamGridDB"/>
                         <TextBox Text="{Binding Settings.SteamGridDbApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
@@ -352,16 +382,19 @@
                             <Button Content="{DynamicResource MTDA_OpenSteamGridDb}" MinWidth="140" Margin="0,0,8,0" Click="OpenSteamGridDbPage_OnClick"/>
                             <Button Content="{DynamicResource MTDA_TestSteamGridDb}" MinWidth="140" Click="TestSteamGridDbMedia_OnClick"/>
                         </StackPanel>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="RAWG"/>
                         <TextBox Text="{Binding Settings.RawgApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_RawgHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,12" Click="TestRawgMedia_OnClick"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="MobyGames"/>
                         <TextBox Text="{Binding Settings.MobyGamesApiKey, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_MobyGamesHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Margin="0,0,0,12" Click="TestMobyGamesMedia_OnClick"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="IGDB Client ID"/>
                         <TextBox Text="{Binding Settings.IgdbClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
@@ -369,6 +402,7 @@
                         <TextBox Text="{Binding Settings.IgdbClientSecret, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                         <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,16" Click="TestIgdbMedia_OnClick"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_Media}" Style="{StaticResource SectionHeaderText}"/>
@@ -411,6 +445,7 @@
                             <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
                         </Grid>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_ActiveSources}" Style="{StaticResource SectionHeaderText}"/>
@@ -437,6 +472,7 @@
                                   IsChecked="{Binding Settings.MediaUseIgdb}"
                                   Margin="0,0,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_MissingApiKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
@@ -449,6 +485,7 @@
                                   MinWidth="220"
                                   Margin="0,2,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreferenceHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SelectionCriteria}" Style="{StaticResource SectionHeaderText}"/>
@@ -479,7 +516,7 @@
 
             <TabItem Header="{DynamicResource MTDA_TabImport}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" MaxWidth="820">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_TabImport}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -507,7 +544,7 @@
 
             <TabItem Header="{DynamicResource MTDA_TabFields}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" MaxWidth="860">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_GenerateAndApply}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -639,7 +676,7 @@
             <TabItem Header="{DynamicResource MTDA_TabRules}"
                      Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" MaxWidth="820">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_TabRules}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
