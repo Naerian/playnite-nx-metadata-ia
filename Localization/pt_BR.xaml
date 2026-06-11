@@ -344,4 +344,5 @@ Planos de fundo: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulação</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Carregar mais ({0} restantes)</sys:String>
+    <sys:String x:Key="MTDA_AdvancedMode">Modo avançado</sys:String>
 </ResourceDictionary>

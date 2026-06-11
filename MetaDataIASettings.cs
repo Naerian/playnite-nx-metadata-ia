@@ -131,6 +131,7 @@ namespace MetaDataIAPlugin
         private string apiKey = string.Empty;
         private string model = "gpt-4.1-mini";
         private string language = "es";
+        private bool showAdvancedOptions = false;
         private string descriptionTemplate = DefaultMediumTemplate;
         private ObservableCollection<TemplateProfile> templates;
         private string activeTemplateName = "Media";
@@ -148,8 +149,8 @@ namespace MetaDataIAPlugin
         private bool generateFeatures = true;
         private bool generateDevelopers = true;
         private bool generatePublishers = true;
-        private bool generateAgeRatings = true;
-        private bool generateRegions = true;
+        private bool generateAgeRatings = false;
+        private bool generateRegions = false;
         private bool generateCategories = true;
         private bool generateSortingName = true;
         private bool generateLinks = false;
@@ -179,7 +180,7 @@ namespace MetaDataIAPlugin
         private bool preferExistingGenres = false;
         private bool preferExistingTags = false;
         private bool preferExistingFeatures = false;
-        private bool preferExistingCategories = false;
+        private bool preferExistingCategories = true;
         private string tone = "Neutral";
         private string length = "Media";
         private string shortLength = "Media";
@@ -203,6 +204,7 @@ namespace MetaDataIAPlugin
         private string lmStudioFallbackModel = "local-model";
         private string ollamaFallbackModel = "llama3.1";
         private bool companyLimitDefaultsMigrated = false;
+        private bool safeDefaultsMigrated = false;
         private bool autoImportNewGames = false;
         private bool autoImportGenerateMetadata = true;
         private bool autoImportGenerateMedia = false;
@@ -285,6 +287,7 @@ namespace MetaDataIAPlugin
         public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
         public string Model { get { return model; } set { SetValue(ref model, value); } }
         public string Language { get { return language; } set { SetValue(ref language, value); } }
+        public bool ShowAdvancedOptions { get { return showAdvancedOptions; } set { SetValue(ref showAdvancedOptions, value); } }
         public string DescriptionTemplate { get { return descriptionTemplate; } set { SetValue(ref descriptionTemplate, value); } }
         public ObservableCollection<TemplateProfile> Templates { get { return templates; } set { SetValue(ref templates, value); } }
         public string ActiveTemplateName { get { return activeTemplateName; } set { SetValue(ref activeTemplateName, value); } }
@@ -357,6 +360,7 @@ namespace MetaDataIAPlugin
         public string LmStudioFallbackModel { get { return lmStudioFallbackModel; } set { SetValue(ref lmStudioFallbackModel, value); } }
         public string OllamaFallbackModel { get { return ollamaFallbackModel; } set { SetValue(ref ollamaFallbackModel, value); } }
         public bool CompanyLimitDefaultsMigrated { get { return companyLimitDefaultsMigrated; } set { SetValue(ref companyLimitDefaultsMigrated, value); } }
+        public bool SafeDefaultsMigrated { get { return safeDefaultsMigrated; } set { SetValue(ref safeDefaultsMigrated, value); } }
         public bool AutoImportNewGames { get { return autoImportNewGames; } set { SetValue(ref autoImportNewGames, value); } }
         public bool AutoImportGenerateMetadata { get { return autoImportGenerateMetadata; } set { SetValue(ref autoImportGenerateMetadata, value); } }
         public bool AutoImportGenerateMedia { get { return autoImportGenerateMedia; } set { SetValue(ref autoImportGenerateMedia, value); } }
@@ -406,6 +410,7 @@ namespace MetaDataIAPlugin
 
             EnsureTextLengthDefaults();
             EnsureCompanyLimitDefaults();
+            EnsureSafeDefaults();
             EnsureMediaDefaults();
 
             if (Templates == null || Templates.Count == 0)
@@ -491,6 +496,26 @@ namespace MetaDataIAPlugin
             }
 
             CompanyLimitDefaultsMigrated = true;
+        }
+
+        private void EnsureSafeDefaults()
+        {
+            if (SafeDefaultsMigrated)
+            {
+                return;
+            }
+
+            StrictCompanyAgeRegion = true;
+            GenerateAgeRatings = false;
+            GenerateRegions = false;
+            MaxDevelopers = 1;
+            MaxPublishers = 1;
+            MaxTags = Math.Min(Math.Max(8, MaxTags), 10);
+            MaxFeatures = Math.Min(Math.Max(6, MaxFeatures), 8);
+            MaxCategories = Math.Min(Math.Max(4, MaxCategories), 6);
+            CategoriesApplyMode = ApplyAppend;
+            PreferExistingCategories = true;
+            SafeDefaultsMigrated = true;
         }
 
         private static string EnsureLengthValue(string value, string fallback)

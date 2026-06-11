@@ -344,4 +344,5 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_TemplateIndie">インディー</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">エミュレーション</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">さらに読み込む（残り {0}）</sys:String>
+    <sys:String x:Key="MTDA_AdvancedMode">詳細モード</sys:String>
 </ResourceDictionary>

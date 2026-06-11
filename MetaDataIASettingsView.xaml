@@ -6,6 +6,7 @@
              mc:Ignorable="d"
              d:DesignHeight="720" d:DesignWidth="900">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <Style x:Key="SectionHeaderBorder" TargetType="Border">
             <Setter Property="BorderBrush" Value="#666666"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
@@ -20,7 +21,15 @@
         </Style>
     </UserControl.Resources>
     <Grid Margin="12">
-        <TabControl>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <CheckBox Content="{DynamicResource MTDA_AdvancedMode}"
+                  IsChecked="{Binding Settings.ShowAdvancedOptions}"
+                  HorizontalAlignment="Right"
+                  Margin="0,0,0,8"/>
+        <TabControl Grid.Row="1">
             <TabItem Header="{DynamicResource MTDA_TabAI}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="820">
@@ -66,7 +75,8 @@
                             <Button Content="{DynamicResource MTDA_UseOllamaFree}" MinWidth="140" Click="UseOllama_OnClick"/>
                         </StackPanel>
 
-                        <Border BorderBrush="#444444" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+                        <Border BorderBrush="#444444" BorderThickness="1" Padding="10" Margin="0,0,0,12"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel>
                                 <Border Style="{StaticResource FirstSectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_FreeLocalFallback}" Style="{StaticResource SectionHeaderText}"/>
@@ -100,10 +110,12 @@
                         <ComboBox ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Length}" Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_LengthHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <Border Style="{StaticResource SectionHeaderBorder}">
+                        <Border Style="{StaticResource SectionHeaderBorder}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="0,0,0,12"
+                              Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="120"/>
@@ -619,7 +631,8 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="{DynamicResource MTDA_TabRules}">
+            <TabItem Header="{DynamicResource MTDA_TabRules}"
+                     Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" MaxWidth="820">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">

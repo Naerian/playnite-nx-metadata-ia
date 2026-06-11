@@ -344,4 +344,5 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulation</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Load more ({0} remaining)</sys:String>
+    <sys:String x:Key="MTDA_AdvancedMode">Advanced mode</sys:String>
 </ResourceDictionary>

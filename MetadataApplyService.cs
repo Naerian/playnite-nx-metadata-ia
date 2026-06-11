@@ -38,22 +38,22 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), false), settings.DevelopersApplyMode, settings.MaxDevelopers);
+                game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), settings.StrictCompanyAgeRegion), settings.DevelopersApplyMode, settings.MaxDevelopers);
             }
 
             if (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), false), settings.PublishersApplyMode, settings.MaxPublishers);
+                game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), settings.StrictCompanyAgeRegion), settings.PublishersApplyMode, settings.MaxPublishers);
             }
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), false), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
+                game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.StrictCompanyAgeRegion), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), false), settings.RegionsApplyMode, settings.MaxRegions);
+                game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), settings.StrictCompanyAgeRegion), settings.RegionsApplyMode, settings.MaxRegions);
             }
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)

@@ -317,4 +317,5 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">Indie</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulación</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Cargar más (quedan {0})</sys:String>
+    <sys:String x:Key="MTDA_AdvancedMode">Modo avanzado</sys:String>
 </ResourceDictionary>
