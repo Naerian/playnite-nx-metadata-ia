@@ -430,6 +430,7 @@ namespace MetaDataIAPlugin
 
             var optionsByKind = new Dictionary<MediaKind, List<MediaPreviewOption>>();
             Exception loadError = null;
+            var cancelled = false;
             PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
             {
                 var service = new MediaGenerationService(activeSettings);
@@ -437,6 +438,7 @@ namespace MetaDataIAPlugin
                 {
                     if (progress.CancelToken.IsCancellationRequested)
                     {
+                        cancelled = true;
                         break;
                     }
 
@@ -444,6 +446,11 @@ namespace MetaDataIAPlugin
                     try
                     {
                         optionsByKind[kind] = service.GetPreviewOptionsAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        cancelled = true;
+                        break;
                     }
                     catch (Exception ex)
                     {
@@ -453,6 +460,11 @@ namespace MetaDataIAPlugin
                     }
                 }
             }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true) { IsIndeterminate = true });
+
+            if (cancelled)
+            {
+                return;
+            }
 
             if (optionsByKind.Values.All(x => x.Count == 0))
             {
