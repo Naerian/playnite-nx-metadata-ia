@@ -8,7 +8,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <Style x:Key="SectionHeaderBorder" TargetType="Border">
-            <Setter Property="BorderBrush" Value="#666666"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="Padding" Value="0,0,0,6"/>
             <Setter Property="Margin" Value="0,18,0,10"/>
@@ -59,7 +59,7 @@
             <Setter Property="X1" Value="0"/>
             <Setter Property="X2" Value="1"/>
             <Setter Property="Stretch" Value="Fill"/>
-            <Setter Property="Stroke" Value="#555555"/>
+            <Setter Property="Stroke" Value="{DynamicResource NormalBorderBrush}"/>
             <Setter Property="StrokeThickness" Value="1"/>
             <Setter Property="StrokeDashArray" Value="1,4"/>
             <Setter Property="Opacity" Value="0.45"/>
@@ -93,7 +93,7 @@
                                       Margin="0,0,8,0"/>
                             <Button Content="{DynamicResource MTDA_ApplyProvider}" MinWidth="140" Click="ApplyProvider_OnClick"/>
                         </StackPanel>
-                        <Border BorderBrush="#444444" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                        <Border BorderBrush="{DynamicResource NormalBorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="{Binding Settings.ProviderKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding Settings.ProviderBillingHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
@@ -124,7 +124,7 @@
                             <Button Content="{DynamicResource MTDA_UseOllamaFree}" MinWidth="140" Click="UseOllama_OnClick"/>
                         </StackPanel>
 
-                        <Border BorderBrush="#444444" BorderThickness="1" Padding="10" Margin="0,0,0,12"
+                        <Border BorderBrush="{DynamicResource NormalBorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12"
                                 Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel>
                                 <Border Style="{StaticResource FirstSectionHeaderBorder}">
@@ -289,7 +289,7 @@
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_DescriptionTokensTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <Border BorderBrush="#666666" BorderThickness="1">
+                        <Border BorderBrush="{DynamicResource NormalBorderBrush}" BorderThickness="1">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="190">
                         <Grid ShowGridLines="True" Margin="0">
                             <Grid.Resources>
@@ -421,7 +421,10 @@
                         <Line Style="{StaticResource MediaDottedSeparator}"/>
 
                         <TextBlock Text="IGDB Client ID"/>
-                        <TextBox Text="{Binding Settings.IgdbClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,4"/>
+                        <PasswordBox x:Name="IgdbClientIdBox"
+                                     Style="{StaticResource ThemedPasswordBox}"
+                                     PasswordChanged="IgdbClientIdBox_OnPasswordChanged"
+                                     Margin="0,2,0,4"/>
                         <TextBlock Text="IGDB Client Secret"/>
                         <PasswordBox x:Name="IgdbClientSecretBox"
                                      Style="{StaticResource ThemedPasswordBox}"
@@ -562,7 +565,7 @@
                                   Margin="0,0,0,6"/>
                         <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMediaHelp}" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
-                        <Border BorderBrush="#666666" BorderThickness="1" Padding="10">
+                        <Border BorderBrush="{DynamicResource NormalBorderBrush}" BorderThickness="1" Padding="10">
                             <TextBlock Text="{DynamicResource MTDA_AutoImportPlayniteNote}" TextWrapping="Wrap"/>
                         </Border>
                     </StackPanel>

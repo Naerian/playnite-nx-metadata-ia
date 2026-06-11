@@ -32,6 +32,7 @@ namespace MetaDataIAPlugin
             SetPassword(SteamGridDbApiKeyBox, settings.SteamGridDbApiKey);
             SetPassword(RawgApiKeyBox, settings.RawgApiKey);
             SetPassword(MobyGamesApiKeyBox, settings.MobyGamesApiKey);
+            SetPassword(IgdbClientIdBox, settings.IgdbClientId);
             SetPassword(IgdbClientSecretBox, settings.IgdbClientSecret);
         }
 
@@ -85,6 +86,15 @@ namespace MetaDataIAPlugin
             if (viewModel != null)
             {
                 viewModel.Settings.IgdbClientSecret = IgdbClientSecretBox.Password;
+            }
+        }
+
+        private void IgdbClientIdBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.IgdbClientId = IgdbClientIdBox.Password;
             }
         }
 
