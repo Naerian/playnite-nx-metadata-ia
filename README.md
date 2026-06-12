@@ -4,6 +4,16 @@ Metadata AI is a Playnite metadata provider extension that uses AI and external 
 
 It is designed for users who want a Playnite library with a unified editorial style instead of mixed descriptions and tags from multiple stores.
 
+## Who this extension is for
+
+Metadata AI is mainly intended for users who want a consistent Playnite library across many different sources: Steam, GOG, Epic, emulators, random launchers and manual entries.
+
+It is useful when your library has mixed description styles, missing metadata, duplicated tags, inconsistent categories, untranslated content, or no clear sorting names for sequels and collections.
+
+It is not meant to replace validated metadata sources when those already provide exactly what you need. Instead, it complements them by normalizing, translating, restructuring and filling gaps according to your own templates and rules.
+
+The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam public assets, SteamGridDB, RAWG, MobyGames and IGDB.
+
 ## Features
 
 - Generate game descriptions with customizable HTML templates.
@@ -85,6 +95,18 @@ For manual installation during development:
 1. Build the project in Release mode.
 2. Copy the build output into a folder under Playnite's Extensions directory.
 3. Restart Playnite.
+
+## Playnite add-on browser
+
+After approval in the Playnite add-on database, Metadata AI can be installed from Playnite's integrated add-on browser.
+
+Direct install URI:
+
+`playnite://playnite/installaddon/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83`
+
+Web add-on page:
+
+`https://playnite.link/addons.html#MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83`
 
 ## Configuration overview
 
