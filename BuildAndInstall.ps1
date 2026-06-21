@@ -37,7 +37,7 @@ New-Item -ItemType Directory -Path $target | Out-Null
 Copy-Item -LiteralPath (Join-Path $buildOutput "MetaDataIAPlugin.dll") -Destination $target
 Copy-Item -LiteralPath (Join-Path $buildOutput "MetaDataIAPlugin.pdb") -Destination $target
 Copy-Item -LiteralPath (Join-Path $buildOutput "extension.yaml") -Destination $target
-Copy-Item -LiteralPath (Join-Path $buildOutput "icon.png") -Destination $target
+Copy-Item -LiteralPath (Join-Path $buildOutput "media") -Destination $target -Recurse
 Copy-Item -LiteralPath (Join-Path $buildOutput "Localization") -Destination $target -Recurse
 
 Write-Host "Metadata AI instalado en $target"
