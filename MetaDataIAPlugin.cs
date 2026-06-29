@@ -259,11 +259,11 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private void GenerateAndApply(List<Game> games, MetaDataIASettings activeSettings)
+        private void GenerateAndApply(List<Game> games, MetaDataIASettings activeSettings, bool silent = false)
         {
             if (games == null || games.Count == 0 || !EnsureConfigured())
             {
-                if (games == null || games.Count == 0)
+                if (!silent && (games == null || games.Count == 0))
                 {
                     PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMetadata", "There are no games to apply Metadata AI to."), PluginTitle);
                 }
@@ -314,9 +314,16 @@ namespace MetaDataIAPlugin
 
                 if (errors.Count > 0)
                 {
-                    ShowBatchErrors(processed, errors);
+                    if (silent)
+                    {
+                        logger.Warn("Metadata AI auto-import metadata completed with errors: " + string.Join(" | ", errors));
+                    }
+                    else
+                    {
+                        ShowBatchErrors(processed, errors);
+                    }
                 }
-                else
+                else if (!silent)
                 {
                     PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMetadataUpdated", "Metadata AI updated {0} game(s)."), processed), PluginTitle);
                 }
@@ -324,22 +331,31 @@ namespace MetaDataIAPlugin
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to generate and apply AI metadata.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
+                if (!silent)
+                {
+                    PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
+                }
             }
         }
 
-        private void ApplyMedia(List<Game> games, MetaDataIASettings activeSettings)
+        private void ApplyMedia(List<Game> games, MetaDataIASettings activeSettings, bool silent = false)
         {
             if (games == null || games.Count == 0)
             {
-                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMedia", "There are no games to apply media to."), PluginTitle);
+                if (!silent)
+                {
+                    PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMedia", "There are no games to apply media to."), PluginTitle);
+                }
                 return;
             }
 
             if (!activeSettings.IsMediaConfigured)
             {
-                PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
-                OpenSettingsView();
+                if (!silent)
+                {
+                    PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
+                    OpenSettingsView();
+                }
                 return;
             }
 
@@ -378,9 +394,16 @@ namespace MetaDataIAPlugin
 
                 if (errors.Count > 0)
                 {
-                    ShowBatchErrors(processed, errors);
+                    if (silent)
+                    {
+                        logger.Warn("Metadata AI auto-import media completed with errors: " + string.Join(" | ", errors));
+                    }
+                    else
+                    {
+                        ShowBatchErrors(processed, errors);
+                    }
                 }
-                else
+                else if (!silent)
                 {
                     PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMediaUpdated", "Metadata AI updated media for {0} game(s). Applied files: {1}."), processed, appliedMedia), PluginTitle);
                 }
@@ -388,7 +411,10 @@ namespace MetaDataIAPlugin
             catch (Exception ex)
             {
                 logger.Error(ex, "Failed to apply media.");
-                PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
+                if (!silent)
+                {
+                    PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
+                }
             }
         }
 
@@ -534,16 +560,6 @@ namespace MetaDataIAPlugin
                     {
                         applyChangesButton.IsEnabled = true;
                     }
-                }, option =>
-                {
-                    if (selectedOptions.ContainsKey(option.Kind) && string.Equals(selectedOptions[option.Kind].Url, option.Url, StringComparison.OrdinalIgnoreCase))
-                    {
-                        selectedOptions.Remove(option.Kind);
-                        if (applyChangesButton != null)
-                        {
-                            applyChangesButton.IsEnabled = selectedOptions.Count > 0;
-                        }
-                    }
                 })));
             }
 
@@ -600,7 +616,7 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction, Action<MediaPreviewOption> discardAction)
+        private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction)
         {
             if (options == null || options.Count == 0)
             {
@@ -666,13 +682,6 @@ namespace MetaDataIAPlugin
                     {
                         selectAction(selectedOption);
                     }
-                }, discardedOption =>
-                {
-                    options.Remove(discardedOption);
-                    if (discardAction != null)
-                    {
-                        discardAction(discardedOption);
-                    }
                 }, out optionButton, out optionBorder));
                 optionButtons.Add(optionButton);
                 optionBorders.Add(optionBorder);
@@ -717,7 +726,7 @@ namespace MetaDataIAPlugin
             return root;
         }
 
-        private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Button, Border> selectAction, Action<MediaPreviewOption> discardAction, out Button selectButton, out Border optionBorder)
+        private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Button, Border> selectAction, out Button selectButton, out Border optionBorder)
         {
             var tileRoot = new Grid
             {
@@ -801,34 +810,14 @@ namespace MetaDataIAPlugin
             selectButton = localSelectButton;
             stack.Children.Add(localSelectButton);
 
-            var secondaryButtons = new Grid { Margin = new Thickness(0, 4, 0, 0) };
-            secondaryButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            secondaryButtons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
             var openButton = new Button
             {
                 Content = Loc("MTDA_OpenInBrowser", "Open"),
-                Margin = new Thickness(0, 0, 4, 0)
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 4, 0, 0)
             };
             openButton.Click += (sender, args) => OpenUrl(option.Url);
-            secondaryButtons.Children.Add(openButton);
-
-            var discardButton = new Button
-            {
-                Content = Loc("MTDA_Discard", "Discard"),
-                Margin = new Thickness(4, 0, 0, 0)
-            };
-            discardButton.Click += (sender, args) =>
-            {
-                tileRoot.Visibility = Visibility.Collapsed;
-                if (discardAction != null)
-                {
-                    discardAction(option);
-                }
-            };
-            Grid.SetColumn(discardButton, 1);
-            secondaryButtons.Children.Add(discardButton);
-            stack.Children.Add(secondaryButtons);
+            stack.Children.Add(openButton);
 
             return tileRoot;
         }
@@ -1058,12 +1047,12 @@ namespace MetaDataIAPlugin
 
             if (activeSettings.AutoImportGenerateMetadata && activeSettings.IsConfigured)
             {
-                GenerateAndApply(newGames, activeSettings);
+                GenerateAndApply(newGames, activeSettings, true);
             }
 
             if (activeSettings.AutoImportGenerateMedia && activeSettings.IsMediaConfigured)
             {
-                ApplyMedia(newGames, activeSettings);
+                ApplyMedia(newGames, activeSettings, true);
             }
         }
 

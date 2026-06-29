@@ -323,12 +323,15 @@ namespace MetaDataIAPlugin
                     var gameId = await ResolveSteamGridDbGameId(game, cancelToken).ConfigureAwait(false);
                     if (gameId > 0)
                     {
-                        if (kind == MediaKind.Icon && settings.IconPreset == MetaDataIASettings.IconPresetSquare && settings.IconSquarePreferGrid)
+                        candidates.AddRange(await GetCandidates(gameId, kind, cancelToken).ConfigureAwait(false));
+                        if (kind == MediaKind.Icon &&
+                            candidates.Count == 0 &&
+                            settings.IconPreset == MetaDataIASettings.IconPresetSquare &&
+                            settings.IconSquarePreferGrid)
                         {
                             candidates.AddRange(await GetGridIconCandidates(gameId, cancelToken).ConfigureAwait(false));
                         }
 
-                        candidates.AddRange(await GetCandidates(gameId, kind, cancelToken).ConfigureAwait(false));
                         if (kind == MediaKind.Background && settings.MediaUseSteamGridDbBackgroundGrids)
                         {
                             candidates.AddRange(await GetSteamGridDbBackgroundGridCandidates(gameId, cancelToken).ConfigureAwait(false));
@@ -563,8 +566,6 @@ namespace MetaDataIAPlugin
             else if (kind == MediaKind.Icon)
             {
                 candidates.Add(CreateSteamCandidate(baseUrl + "logo.png", 640, 360, "oficial logo", 96, ".png"));
-                candidates.Add(CreateSteamCandidate(baseUrl + "library_600x900.jpg", 600, 900, "oficial vertical", 75, ".jpg"));
-                candidates.Add(CreateSteamCandidate(baseUrl + "library_header.jpg", 920, 430, "oficial horizontal", 72, ".jpg"));
             }
             else
             {
@@ -778,17 +779,18 @@ namespace MetaDataIAPlugin
         private static MediaCandidate ParseCandidate(JObject item)
         {
             var url = (string)item["url"];
+            var mime = (string)item["mime"] ?? string.Empty;
             return new MediaCandidate
             {
                 Url = url,
                 Width = (int?)item["width"] ?? 0,
                 Height = (int?)item["height"] ?? 0,
                 Style = ((string)item["style"] ?? string.Empty).ToLowerInvariant(),
-                Mime = (string)item["mime"] ?? string.Empty,
+                Mime = mime,
                 IsNsfw = (bool?)item["nsfw"] ?? false,
                 IsHumor = (bool?)item["humor"] ?? false,
                 Score = (int?)item["score"] ?? 0,
-                Extension = ExtensionFromUrl(url),
+                Extension = ExtensionFromUrl(url, mime),
                 SourceName = "SteamGridDB",
                 SourcePriority = 70,
                 IsOfficial = (((string)item["style"] ?? string.Empty).IndexOf("official", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -856,7 +858,7 @@ namespace MetaDataIAPlugin
             }
 
             var result = new List<MediaCandidate>();
-            if (kind == MediaKind.Cover || kind == MediaKind.Icon)
+            if (kind == MediaKind.Cover)
             {
                 var cover = selected["sample_cover"] as JObject;
                 var coverUrl = cover == null ? null : (string)cover["image"];
@@ -917,7 +919,7 @@ namespace MetaDataIAPlugin
             }
 
             var result = new List<MediaCandidate>();
-            if ((kind == MediaKind.Cover || kind == MediaKind.Icon) && selected["cover"] != null)
+            if (kind == MediaKind.Cover && selected["cover"] != null)
             {
                 var coverId = (int?)selected["cover"] ?? 0;
                 if (coverId > 0)
@@ -1069,6 +1071,7 @@ namespace MetaDataIAPlugin
             if (kind == MediaKind.Icon)
             {
                 var score = candidate.Mime.IndexOf("png", StringComparison.OrdinalIgnoreCase) >= 0 ? 40 : 0;
+                score += LooksLikeIconMime(candidate.Mime) ? 25 : 0;
                 score += settings.MediaPreferOfficial && candidate.Style.IndexOf("official", StringComparison.OrdinalIgnoreCase) >= 0 ? 35 : 0;
                 score += candidate.Width == candidate.Height ? 20 : -20;
                 score += candidate.Width >= 256 ? 10 : 0;
@@ -1379,8 +1382,7 @@ namespace MetaDataIAPlugin
                 return new ProcessedImage { Content = bytes, Extension = string.IsNullOrWhiteSpace(originalExtension) ? ".jpg" : originalExtension };
             }
 
-            using (var input = new MemoryStream(bytes))
-            using (var source = Image.FromStream(input))
+            using (var source = LoadImage(bytes))
             using (var output = new Bitmap(target.Width, target.Height, PixelFormat.Format32bppArgb))
             using (var graphics = Graphics.FromImage(output))
             using (var ms = new MemoryStream())
@@ -1458,6 +1460,13 @@ namespace MetaDataIAPlugin
                 .OfType<JObject>()
                 .Select(ParseCandidate)
                 .Where(x => !string.IsNullOrWhiteSpace(x.Url))
+                .Select(x =>
+                {
+                    x.SourceName = "SteamGridDB cover fallback";
+                    x.SourcePriority = 32;
+                    x.Style = string.IsNullOrWhiteSpace(x.Style) ? "square cover fallback" : x.Style + " square cover fallback";
+                    return x;
+                })
                 .OrderByDescending(x => FormatScore(x, MediaKind.Cover, new Size(600, 600)))
                 .ThenByDescending(x => x.Score)
                 .ThenByDescending(x => x.Width * x.Height)
@@ -1534,8 +1543,7 @@ namespace MetaDataIAPlugin
             }
             else if (kind == MediaKind.Icon)
             {
-                parts.Add("mimes=" + Uri.EscapeDataString("image/png"));
-                if (includeDimensionFilters)
+                if (includeDimensionFilters && settings.IconPreset != MetaDataIASettings.IconPresetOriginal)
                 {
                     parts.Add("dimensions=256,512,1024,128");
                 }
@@ -1695,12 +1703,27 @@ namespace MetaDataIAPlugin
             return AnalyzeAlpha(bytes).HasUsefulAlpha;
         }
 
+        private static Image LoadImage(byte[] bytes)
+        {
+            try
+            {
+                return Image.FromStream(new MemoryStream(bytes));
+            }
+            catch
+            {
+                using (var iconStream = new MemoryStream(bytes))
+                using (var icon = new System.Drawing.Icon(iconStream))
+                {
+                    return icon.ToBitmap();
+                }
+            }
+        }
+
         private static bool LooksLikeConsoleCover(byte[] bytes)
         {
             try
             {
-                using (var input = new MemoryStream(bytes))
-                using (var image = Image.FromStream(input))
+                using (var image = LoadImage(bytes))
                 using (var bitmap = new Bitmap(image))
                 {
                     if (bitmap.Width < 80 || bitmap.Height < 120)
@@ -1876,8 +1899,7 @@ namespace MetaDataIAPlugin
         {
             try
             {
-                using (var input = new MemoryStream(bytes))
-                using (var image = Image.FromStream(input))
+                using (var image = LoadImage(bytes))
                 using (var bitmap = new Bitmap(image))
                 {
                     if (!Image.IsAlphaPixelFormat(bitmap.PixelFormat))
@@ -1983,15 +2005,56 @@ namespace MetaDataIAPlugin
 
         private static string ExtensionFromUrl(string url)
         {
+            return ExtensionFromUrl(url, string.Empty);
+        }
+
+        private static string ExtensionFromUrl(string url, string mime)
+        {
             try
             {
                 var ext = Path.GetExtension(new Uri(url).AbsolutePath);
-                return string.IsNullOrWhiteSpace(ext) ? ".jpg" : ext;
+                if (!string.IsNullOrWhiteSpace(ext))
+                {
+                    return ext;
+                }
             }
             catch
             {
+            }
+
+            return ExtensionFromMime(mime);
+        }
+
+        private static string ExtensionFromMime(string mime)
+        {
+            if (string.IsNullOrWhiteSpace(mime))
+            {
                 return ".jpg";
             }
+
+            if (mime.IndexOf("png", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return ".png";
+            }
+
+            if (LooksLikeIconMime(mime))
+            {
+                return ".ico";
+            }
+
+            if (mime.IndexOf("webp", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return ".webp";
+            }
+
+            return ".jpg";
+        }
+
+        private static bool LooksLikeIconMime(string mime)
+        {
+            return !string.IsNullOrWhiteSpace(mime) &&
+                   (mime.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    mime.IndexOf("ico", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private class MediaCandidate
