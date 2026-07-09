@@ -190,6 +190,16 @@ Puedes esperar unos minutos, probar otro modelo o cambiar a otro proveedor.</sys
     <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB no pudo devolver imágenes ({0}). Comprueba la API key o inténtalo de nuevo más tarde.</sys:String>
     <sys:String x:Key="MTDA_ErrorUnspecified">Error no especificado.</sys:String>
     <sys:String x:Key="MTDA_MediaHelp">El plugin combina varias fuentes de medios: Steam oficial cuando el juego tiene Steam AppID, SteamGridDB como fuente comunitaria si configuras su API key, y también RAWG, MobyGames e IGDB cuando estén activadas. En modo automático prioriza recursos oficiales y después aplica tus preferencias de formato, logo, puntuación y filtros.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Prioridad automática de fuentes</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Fuentes</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Controla qué fuente gana cuando el modo automático encuentra varios candidatos válidos. Pon primero las fuentes que prefieres. Las fuentes desactivadas o sin API key se ignoran.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Nombres aceptados: Steam oficial, Steam capturas, SteamGridDB, RAWG, MobyGames, IGDB. Sepáralos con comas.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Prioridad de fuentes para {0}</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Activa las fuentes que quieras usar y muévelas arriba o abajo. La primera fuente activa tiene la prioridad más alta.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Selecciona al menos una fuente.</sys:String>
+    <sys:String x:Key="MTDA_Configure">Configurar</sys:String>
+    <sys:String x:Key="MTDA_Save">Guardar</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Cancelar</sys:String>
     <sys:String x:Key="MTDA_MediaInfoOfficial">Oficial</sys:String>
     <sys:String x:Key="MTDA_MediaInfoScore">Puntuación</sys:String>
     <sys:String x:Key="MTDA_MediaInfoSize">Tamaño</sys:String>

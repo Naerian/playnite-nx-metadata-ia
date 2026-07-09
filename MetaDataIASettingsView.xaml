@@ -23,8 +23,8 @@
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}"/>
-            <Setter Property="Padding" Value="3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,3"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
@@ -51,6 +51,51 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Style="{DynamicResource HighlightBorder}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55" TargetName="Border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
                 </Trigger>
             </Style.Triggers>
@@ -442,6 +487,7 @@
                                 <ColumnDefinition Width="90"/>
                                 <ColumnDefinition Width="170"/>
                                 <ColumnDefinition Width="260"/>
+                                <ColumnDefinition Width="220"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -458,21 +504,25 @@
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Get}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Format}" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_SourcePriorityShort}" FontWeight="SemiBold" Margin="8,0,0,0"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Cover}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.DownloadCoverImage}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImagePreset}" Margin="0,4,0,0"/>
+                            <Button Grid.Row="1" Grid.Column="4" Content="{Binding Settings.MediaCoverSourcePrioritySummary}" Click="ConfigureCoverSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
 
                             <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Icon}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.DownloadIcon}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconPreset}" Margin="0,4,0,0"/>
+                            <Button Grid.Row="2" Grid.Column="4" Content="{Binding Settings.MediaIconSourcePrioritySummary}" Click="ConfigureIconSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
 
                             <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Background}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.DownloadBackgroundImage}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
+                            <Button Grid.Row="3" Grid.Column="4" Content="{Binding Settings.MediaBackgroundSourcePrioritySummary}" Click="ConfigureBackgroundSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
                         </Grid>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">

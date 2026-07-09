@@ -240,6 +240,9 @@ namespace MetaDataIAPlugin
         private string igdbClientId = string.Empty;
         private string igdbClientSecret = string.Empty;
         private string igdbAccessToken = string.Empty;
+        private string mediaCoverSourcePriority = DefaultCoverSourcePriority;
+        private string mediaIconSourcePriority = DefaultIconSourcePriority;
+        private string mediaBackgroundSourcePriority = DefaultBackgroundSourcePriority;
 
         public const string DefaultShortTemplate = "<p>{short}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}";
         public const string DefaultMediumTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Modos de juego</h3>\n<p>{playModes}</p>\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>";
@@ -267,6 +270,9 @@ namespace MetaDataIAPlugin
         public const string BackgroundLogoAny = "Cualquiera";
         public const string BackgroundLogoPreferNoLogo = "Preferir sin logo";
         public const string BackgroundLogoPreferLogo = "Preferir con logo";
+        public const string DefaultCoverSourcePriority = "Steam oficial, SteamGridDB, IGDB, RAWG, MobyGames";
+        public const string DefaultIconSourcePriority = "SteamGridDB, Steam oficial";
+        public const string DefaultBackgroundSourcePriority = "Steam oficial, Steam capturas, SteamGridDB, RAWG, IGDB, MobyGames";
 
         public string ProviderPreset
         {
@@ -397,6 +403,44 @@ namespace MetaDataIAPlugin
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
         public string IgdbClientSecret { get { return igdbClientSecret; } set { SetValue(ref igdbClientSecret, value); } }
         public string IgdbAccessToken { get { return igdbAccessToken; } set { SetValue(ref igdbAccessToken, value); } }
+        public string MediaCoverSourcePriority
+        {
+            get { return mediaCoverSourcePriority; }
+            set
+            {
+                SetValue(ref mediaCoverSourcePriority, value);
+                OnPropertyChanged("MediaCoverSourcePrioritySummary");
+            }
+        }
+
+        public string MediaIconSourcePriority
+        {
+            get { return mediaIconSourcePriority; }
+            set
+            {
+                SetValue(ref mediaIconSourcePriority, value);
+                OnPropertyChanged("MediaIconSourcePrioritySummary");
+            }
+        }
+
+        public string MediaBackgroundSourcePriority
+        {
+            get { return mediaBackgroundSourcePriority; }
+            set
+            {
+                SetValue(ref mediaBackgroundSourcePriority, value);
+                OnPropertyChanged("MediaBackgroundSourcePrioritySummary");
+            }
+        }
+
+        [DontSerialize]
+        public string MediaCoverSourcePrioritySummary { get { return BuildSourcePrioritySummary(MediaCoverSourcePriority, DefaultCoverSourcePriority); } }
+
+        [DontSerialize]
+        public string MediaIconSourcePrioritySummary { get { return BuildSourcePrioritySummary(MediaIconSourcePriority, DefaultIconSourcePriority); } }
+
+        [DontSerialize]
+        public string MediaBackgroundSourcePrioritySummary { get { return BuildSourcePrioritySummary(MediaBackgroundSourcePriority, DefaultBackgroundSourcePriority); } }
 
         public MetaDataIASettings()
         {
@@ -461,6 +505,21 @@ namespace MetaDataIAPlugin
             if (MediaSearchMaxResults < 20)
             {
                 MediaSearchMaxResults = 50;
+            }
+
+            if (string.IsNullOrWhiteSpace(MediaCoverSourcePriority))
+            {
+                MediaCoverSourcePriority = DefaultCoverSourcePriority;
+            }
+
+            if (string.IsNullOrWhiteSpace(MediaIconSourcePriority))
+            {
+                MediaIconSourcePriority = DefaultIconSourcePriority;
+            }
+
+            if (string.IsNullOrWhiteSpace(MediaBackgroundSourcePriority))
+            {
+                MediaBackgroundSourcePriority = DefaultBackgroundSourcePriority;
             }
         }
 
@@ -1454,6 +1513,11 @@ namespace MetaDataIAPlugin
         private static LocalizedOption Option(string value, string key, string fallback)
         {
             return new LocalizedOption(value, Loc(key, fallback));
+        }
+
+        private static string BuildSourcePrioritySummary(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
         private static string Loc(string key, string fallback)

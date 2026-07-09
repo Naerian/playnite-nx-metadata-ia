@@ -217,6 +217,16 @@ What you can do without paying:
     <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
     <sys:String x:Key="MTDA_ErrorUnspecified">Unspecified error.</sys:String>
     <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam when the game has a Steam AppID, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, logo, score and filter preferences.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Automatic source priority</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Sources</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Controls which source wins when automatic media mode finds several valid candidates. Put sources first to make them preferred. Disabled sources or sources without an API key are ignored.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Accepted names: Steam oficial, Steam capturas, SteamGridDB, RAWG, MobyGames, IGDB. Separate them with commas.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">{0} source priority</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Enable the sources you want to use and move them up or down. The first enabled source has the highest priority.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Select at least one source.</sys:String>
+    <sys:String x:Key="MTDA_Configure">Configure</sys:String>
+    <sys:String x:Key="MTDA_Save">Save</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Cancel</sys:String>
     <sys:String x:Key="MTDA_MediaInfoOfficial">Official</sys:String>
     <sys:String x:Key="MTDA_MediaInfoScore">Score</sys:String>
     <sys:String x:Key="MTDA_MediaInfoSize">Size</sys:String>

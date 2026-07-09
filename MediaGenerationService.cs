@@ -400,7 +400,7 @@ namespace MetaDataIAPlugin
                 EnsureConfigured();
             }
 
-            var result = DeduplicateCandidates(candidates);
+            var result = FilterCandidatesByKindSource(DeduplicateCandidates(candidates), kind);
             lock (CandidateCacheLock)
             {
                 if (CandidateCache.Count > 120)
@@ -438,7 +438,10 @@ namespace MetaDataIAPlugin
                 settings.MediaUseSteamGridDbBackgroundGrids.ToString(),
                 settings.MediaUseRawg.ToString(),
                 settings.MediaUseMobyGames.ToString(),
-                settings.MediaUseIgdb.ToString()
+                settings.MediaUseIgdb.ToString(),
+                settings.MediaCoverSourcePriority,
+                settings.MediaIconSourcePriority,
+                settings.MediaBackgroundSourcePriority
             };
 
             return string.Join("|", parts.Select(x => x ?? string.Empty));
@@ -1025,6 +1028,7 @@ namespace MetaDataIAPlugin
             var target = GetTargetSize(kind);
             return (candidates ?? new List<MediaCandidate>())
                 .OrderByDescending(x => FormatScore(x, kind, target))
+                .ThenByDescending(x => UserSourcePriorityScore(x, kind))
                 .ThenByDescending(x => SourceScore(x))
                 .ThenByDescending(x => LogoScore(x, kind))
                 .ThenBy(x => target.Width <= 0 || target.Height <= 0 ? 0 : Math.Abs(x.Width - target.Width) + Math.Abs(x.Height - target.Height))
@@ -1046,6 +1050,105 @@ namespace MetaDataIAPlugin
             }
 
             return score;
+        }
+
+        private int UserSourcePriorityScore(MediaCandidate candidate, MediaKind kind)
+        {
+            var order = GetSourcePriorityOrder(kind);
+            if (candidate == null || order.Count == 0)
+            {
+                return 0;
+            }
+
+            var source = NormalizeSourceName(candidate.SourceName);
+            for (var index = 0; index < order.Count; index++)
+            {
+                if (string.Equals(order[index], source, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (order.Count - index) * 100;
+                }
+            }
+
+            return 0;
+        }
+
+        private List<MediaCandidate> FilterCandidatesByKindSource(List<MediaCandidate> candidates, MediaKind kind)
+        {
+            var order = GetSourcePriorityOrder(kind);
+            if (order.Count == 0)
+            {
+                return candidates ?? new List<MediaCandidate>();
+            }
+
+            return (candidates ?? new List<MediaCandidate>())
+                .Where(x => order.Contains(NormalizeSourceName(x == null ? null : x.SourceName), StringComparer.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private List<string> GetSourcePriorityOrder(MediaKind kind)
+        {
+            var value = kind == MediaKind.Cover
+                ? settings.MediaCoverSourcePriority
+                : kind == MediaKind.Icon
+                    ? settings.MediaIconSourcePriority
+                    : settings.MediaBackgroundSourcePriority;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                value = kind == MediaKind.Cover
+                    ? MetaDataIASettings.DefaultCoverSourcePriority
+                    : kind == MediaKind.Icon
+                        ? MetaDataIASettings.DefaultIconSourcePriority
+                        : MetaDataIASettings.DefaultBackgroundSourcePriority;
+            }
+
+            return value
+                .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(NormalizeSourceName)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static string NormalizeSourceName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = value.Trim().ToLowerInvariant();
+            if (normalized.Contains("steamgriddb"))
+            {
+                return "steamgriddb";
+            }
+
+            if (normalized.Contains("steam capturas") || normalized.Contains("steam screenshots"))
+            {
+                return "steam capturas";
+            }
+
+            if (normalized.Contains("steam oficial") || normalized.Contains("official steam"))
+            {
+                return "steam oficial";
+            }
+
+            if (normalized.Contains("rawg"))
+            {
+                return "rawg";
+            }
+
+            if (normalized.Contains("moby"))
+            {
+                return "mobygames";
+            }
+
+            if (normalized.Contains("igdb"))
+            {
+                return "igdb";
+            }
+
+            return normalized;
         }
 
         private int FormatScore(MediaCandidate candidate, MediaKind kind, Size target)
