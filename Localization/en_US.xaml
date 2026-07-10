@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">Icon</sys:String>
     <sys:String x:Key="MTDA_Background">Background</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Active sources</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">Official Steam: covers, logos and library heroes when the game can be matched to Steam</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">Official Steam: covers and library heroes when the game can be matched to Steam</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Official Steam screenshots as alternative backgrounds</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: community covers, icons, heroes and logos</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: community covers, icons and heroes</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">Use horizontal SteamGridDB grids as backgrounds if there are not enough heroes</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: main image and screenshots</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: historical covers and screenshots</sys:String>

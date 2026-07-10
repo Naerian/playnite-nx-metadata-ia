@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">상</sys:String>
     <sys:String x:Key="MTDA_Background">배경</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">활성 소스</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">공식 Steam: 게임이 Steam과 일치할 수 있는 경우 표지, 로고 및 라이브러리 영웅</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">공식 Steam: 게임이 Steam과 일치할 수 있는 경우 표지 및 라이브러리 영웅</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">대체 배경으로 사용되는 공식 Steam 스크린샷</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: 커뮤니티 커버, 아이콘, 영웅 및 로고</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: 커뮤니티 커버, 아이콘 및 영웅</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">영웅이 충분하지 않으면 수평 SteamGridDB 그리드를 배경으로 사용하세요.</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: 기본 이미지 및 스크린샷</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: 과거 표지 및 스크린샷</sys:String>

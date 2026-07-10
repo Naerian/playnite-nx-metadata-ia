@@ -1,11 +1,14 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 
@@ -13,6 +16,13 @@ namespace MetaDataIAPlugin
 {
     public partial class MetaDataIASettingsView : UserControl
     {
+        private Popup sourcePriorityPopup;
+        private FrameworkElement sourcePriorityPopupTarget;
+        private MediaKind? sourcePriorityPopupKind;
+        private FrameworkElement recentlyClosedSourcePriorityPopupTarget;
+        private MediaKind? recentlyClosedSourcePriorityPopupKind;
+        private DateTime recentlyClosedSourcePriorityPopupAt = DateTime.MinValue;
+
         public MetaDataIASettingsView()
         {
             InitializeComponent();
@@ -346,20 +356,20 @@ namespace MetaDataIAPlugin
 
         private void ConfigureCoverSourcePriority_OnClick(object sender, RoutedEventArgs e)
         {
-            ConfigureSourcePriority(sender as Button, MediaKind.Cover);
+            ConfigureSourcePriority(sender as FrameworkElement, MediaKind.Cover);
         }
 
         private void ConfigureIconSourcePriority_OnClick(object sender, RoutedEventArgs e)
         {
-            ConfigureSourcePriority(sender as Button, MediaKind.Icon);
+            ConfigureSourcePriority(sender as FrameworkElement, MediaKind.Icon);
         }
 
         private void ConfigureBackgroundSourcePriority_OnClick(object sender, RoutedEventArgs e)
         {
-            ConfigureSourcePriority(sender as Button, MediaKind.Background);
+            ConfigureSourcePriority(sender as FrameworkElement, MediaKind.Background);
         }
 
-        private void ConfigureSourcePriority(Button target, MediaKind kind)
+        private void ConfigureSourcePriority(FrameworkElement target, MediaKind kind)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
             if (viewModel == null || viewModel.Settings == null || target == null)
@@ -367,7 +377,32 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            var items = BuildSourcePriorityItems(kind, GetSourcePriorityValue(viewModel.Settings, kind));
+            if (WasSameSourcePriorityPopupJustClosed(target, kind))
+            {
+                recentlyClosedSourcePriorityPopupTarget = null;
+                recentlyClosedSourcePriorityPopupKind = null;
+                recentlyClosedSourcePriorityPopupAt = DateTime.MinValue;
+                return;
+            }
+
+            if (sourcePriorityPopup != null)
+            {
+                if (sourcePriorityPopup.IsOpen && ReferenceEquals(sourcePriorityPopupTarget, target) && sourcePriorityPopupKind == kind)
+                {
+                    sourcePriorityPopup.IsOpen = false;
+                    sourcePriorityPopup = null;
+                    sourcePriorityPopupTarget = null;
+                    sourcePriorityPopupKind = null;
+                    return;
+                }
+
+                sourcePriorityPopup.IsOpen = false;
+                sourcePriorityPopup = null;
+                sourcePriorityPopupTarget = null;
+                sourcePriorityPopupKind = null;
+            }
+
+            var items = BuildSourcePriorityItems(kind, GetSourcePriorityValue(viewModel.Settings, kind), viewModel.Settings);
             Popup popup = null;
             StackPanel listPanel = null;
 
@@ -383,6 +418,19 @@ namespace MetaDataIAPlugin
             rebuild = () =>
             {
                 listPanel.Children.Clear();
+                if (!items.Any())
+                {
+                    var emptyText = new TextBlock
+                    {
+                        Text = Loc("MTDA_NoMediaCandidates", "No hay fuentes activas para este tipo de media."),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 4, 0, 0)
+                    };
+                    emptyText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                    listPanel.Children.Add(emptyText);
+                    return;
+                }
+
                 foreach (var item in items)
                 {
                     listPanel.Children.Add(CreateSourcePriorityPopupRow(item, items, kind, save, rebuild));
@@ -395,18 +443,23 @@ namespace MetaDataIAPlugin
                 MaxWidth = 380,
                 Margin = new Thickness(10)
             };
-            root.Children.Add(new TextBlock
+            var title = new TextBlock
             {
                 Text = string.Format(Loc("MTDA_SourcePriorityDialogTitle", "{0} source priority"), MediaKindLabel(kind)),
                 FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 0, 0, 8)
-            });
-            root.Children.Add(new TextBlock
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            root.Children.Add(title);
+
+            var help = new TextBlock
             {
                 Text = Loc("MTDA_SourcePriorityDialogHelp", "Enable the sources you want to use and move them up or down. The first enabled source has the highest priority."),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 8)
-            });
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            help.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            root.Children.Add(help);
 
             listPanel = new StackPanel();
             root.Children.Add(listPanel);
@@ -415,9 +468,11 @@ namespace MetaDataIAPlugin
             {
                 Child = root,
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(0)
+                Padding = new Thickness(0),
+                SnapsToDevicePixels = true
             };
-            border.SetResourceReference(Border.BackgroundProperty, "ControlBackgroundBrush");
+            border.Background = SystemColors.WindowBrush;
+            border.SetResourceReference(Border.BackgroundProperty, "StandardWindowBackgroundBrush");
             border.SetResourceReference(Border.BorderBrushProperty, "GlyphBrush");
 
             popup = new Popup
@@ -425,12 +480,34 @@ namespace MetaDataIAPlugin
                 PlacementTarget = target,
                 Placement = PlacementMode.Bottom,
                 StaysOpen = false,
-                AllowsTransparency = true,
+                AllowsTransparency = false,
                 Child = border
+            };
+            popup.Closed += (s, e) =>
+            {
+                if (ReferenceEquals(sourcePriorityPopup, popup))
+                {
+                    recentlyClosedSourcePriorityPopupTarget = sourcePriorityPopupTarget;
+                    recentlyClosedSourcePriorityPopupKind = sourcePriorityPopupKind;
+                    recentlyClosedSourcePriorityPopupAt = DateTime.Now;
+                    sourcePriorityPopup = null;
+                    sourcePriorityPopupTarget = null;
+                    sourcePriorityPopupKind = null;
+                }
             };
 
             rebuild();
+            sourcePriorityPopup = popup;
+            sourcePriorityPopupTarget = target;
+            sourcePriorityPopupKind = kind;
             popup.IsOpen = true;
+        }
+
+        private bool WasSameSourcePriorityPopupJustClosed(FrameworkElement target, MediaKind kind)
+        {
+            return ReferenceEquals(recentlyClosedSourcePriorityPopupTarget, target)
+                && recentlyClosedSourcePriorityPopupKind == kind
+                && (DateTime.Now - recentlyClosedSourcePriorityPopupAt).TotalMilliseconds < 300;
         }
 
         private UIElement CreateSourcePriorityPopupRow(SourcePriorityItem item, ObservableCollection<SourcePriorityItem> items, MediaKind kind, System.Action save, System.Action rebuild)
@@ -465,7 +542,18 @@ namespace MetaDataIAPlugin
             };
             row.Children.Add(check);
 
-            var up = new Button { Content = "^", Width = 28, Height = 28, MinWidth = 28, Margin = new Thickness(0, 0, 4, 0) };
+            var up = new Button
+            {
+                Content = "▲",
+                Width = 28,
+                Height = 28,
+                MinWidth = 28,
+                Padding = new Thickness(0),
+                FontSize = 9,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 4, 0)
+            };
             up.Click += (s, e) =>
             {
                 MoveSourcePriorityItem(items, item, -1);
@@ -475,7 +563,17 @@ namespace MetaDataIAPlugin
             Grid.SetColumn(up, 1);
             row.Children.Add(up);
 
-            var down = new Button { Content = "v", Width = 28, Height = 28, MinWidth = 28 };
+            var down = new Button
+            {
+                Content = "▼",
+                Width = 28,
+                Height = 28,
+                MinWidth = 28,
+                Padding = new Thickness(0),
+                FontSize = 9,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
             down.Click += (s, e) =>
             {
                 MoveSourcePriorityItem(items, item, 1);
@@ -499,9 +597,11 @@ namespace MetaDataIAPlugin
             return template;
         }
 
-        private static ObservableCollection<SourcePriorityItem> BuildSourcePriorityItems(MediaKind kind, string currentValue)
+        private static ObservableCollection<SourcePriorityItem> BuildSourcePriorityItems(MediaKind kind, string currentValue, MetaDataIASettings settings)
         {
-            var available = GetAvailableSourcePriorityItems(kind);
+            var available = GetAvailableSourcePriorityItems(kind)
+                .Where(x => IsSourceGloballyActive(settings, x.Key))
+                .ToList();
             var current = ParseSourcePriority(currentValue);
             var ordered = new List<SourcePriorityItem>();
 
@@ -525,6 +625,46 @@ namespace MetaDataIAPlugin
             }
 
             return new ObservableCollection<SourcePriorityItem>(ordered);
+        }
+
+        private static bool IsSourceGloballyActive(MetaDataIASettings settings, string source)
+        {
+            if (settings == null)
+            {
+                return true;
+            }
+
+            if (string.Equals(source, "Steam oficial", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseSteamOfficial;
+            }
+
+            if (string.Equals(source, "Steam capturas", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseSteamScreenshots;
+            }
+
+            if (string.Equals(source, "SteamGridDB", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseSteamGridDb;
+            }
+
+            if (string.Equals(source, "RAWG", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseRawg;
+            }
+
+            if (string.Equals(source, "MobyGames", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseMobyGames;
+            }
+
+            if (string.Equals(source, "IGDB", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseIgdb;
+            }
+
+            return true;
         }
 
         private static List<SourcePriorityItem> GetAvailableSourcePriorityItems(MediaKind kind)

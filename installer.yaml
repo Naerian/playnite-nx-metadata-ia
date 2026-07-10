@@ -1,18 +1,11 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.1.4
+  - Version: 1.1.5
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-07-10
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.1.4/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_1_4.pext
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.1.5/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_1_5.pext
     Changelog:
-      - Added per-media source priority controls for covers, icons and backgrounds.
-      - Added a compact media source priority popup in the media settings table.
-      - Improved settings text input and password field styling across Playnite themes.
-      - Improved SteamGridDB icon discovery, including transparent, square, round and ICO icon candidates.
-      - Prevented cover images from being mixed into icon results except as explicit square-icon fallback.
-      - Simplified the media picker by removing discard actions and using full-width browser buttons.
-      - Made automatic import processing silent so new games can be enriched without extra confirmation dialogs.
-      - Added safer settings defaults and advanced mode.
-      - Added local vocabulary memory for consistent tags, categories, genres and features.
-      - Improved media picker workflow and media source configuration.
-      - Improved settings UI styling and password handling for API credentials.
+      - Improved the template token table styling and readability.
+      - Removed confusing standalone logo wording from media source descriptions.
+      - Fixed media source priority popup toggle behavior when clicking the same field again.
+      - Kept media source priority controls aligned with native Playnite dropdown behavior.

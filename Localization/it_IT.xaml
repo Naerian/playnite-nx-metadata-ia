@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">Icona</sys:String>
     <sys:String x:Key="MTDA_Background">Sfondo</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Fonti attive</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">Steam ufficiale: copertine, loghi ed eroi della libreria quando il gioco può essere abbinato a Steam</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">Steam ufficiale: copertine ed eroi della libreria quando il gioco può essere abbinato a Steam</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Screenshot ufficiali di Steam come sfondi alternativi</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: copertine, icone, eroi e loghi della community</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: copertine, icone ed eroi della community</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">Usa le griglie orizzontali di SteamGridDB come sfondi se non ci sono abbastanza eroi</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: immagine principale e screenshot</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: copertine storiche e screenshot</sys:String>

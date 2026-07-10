@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">Ícone</sys:String>
     <sys:String x:Key="MTDA_Background">Fundo</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Fontes ativas</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">Steam oficial: capas, logotipos e heróis da biblioteca quando o jogo pode ser combinado com o Steam</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">Steam oficial: capas e heróis da biblioteca quando o jogo pode ser combinado com o Steam</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Capturas de tela oficiais do Steam como planos de fundo alternativos</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: capas de comunidades, ícones, heróis e logotipos</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: capas de comunidades, ícones e heróis</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">Use grades horizontais do SteamGridDB como plano de fundo se não houver heróis suficientes</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: imagem principal e capturas de tela</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: capas históricas e capturas de tela</sys:String>

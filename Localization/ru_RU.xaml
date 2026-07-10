@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">Икона</sys:String>
     <sys:String x:Key="MTDA_Background">Фон</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Активные источники</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">Официальный Steam: обложки, логотипы и герои библиотеки, если игру можно сопоставить со Steam.</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">Официальный Steam: обложки и герои библиотеки, если игру можно сопоставить со Steam.</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Официальные скриншоты Steam в качестве альтернативного фона</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: обложки, иконки, герои и логотипы сообщества</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: обложки, иконки и герои сообщества</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">Используйте горизонтальные сетки SteamGridDB в качестве фона, если героев недостаточно.</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: основное изображение и скриншоты</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: исторические обложки и скриншоты</sys:String>

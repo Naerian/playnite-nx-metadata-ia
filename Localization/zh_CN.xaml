@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">图标</sys:String>
     <sys:String x:Key="MTDA_Background">背景</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">活跃来源</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">官方Steam：游戏可与Steam匹配时的封面、徽标和英雄库</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">官方Steam：游戏可与Steam匹配时的封面和英雄库</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Steam 官方屏幕截图作为替代背景</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB：社区封面、图标、英雄和徽标</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB：社区封面、图标和英雄</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">如果没有足够的英雄，则使用水平 SteamGridDB 网格作为背景</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG：主图和屏幕截图</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames：历史封面和屏幕截图</sys:String>

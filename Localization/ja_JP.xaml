@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">アイコン</sys:String>
     <sys:String x:Key="MTDA_Background">背景</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">アクティブなソース</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">公式 Steam: ゲームが Steam と一致する場合のカバー、ロゴ、ライブラリ ヒーロー</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">公式 Steam: ゲームが Steam と一致する場合のカバーとライブラリ ヒーロー</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">代替背景としての公式 Steam スクリーンショット</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: コミュニティのカバー、アイコン、ヒーロー、ロゴ</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: コミュニティのカバー、アイコン、ヒーロー</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">十分なヒーローがいない場合は、水平方向の SteamGridDB グリッドを背景として使用します</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RWG: メイン画像とスクリーンショット</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: 歴代のカバーとスクリーンショット</sys:String>

@@ -21,11 +21,11 @@
         </Style>
         <Style x:Key="ThemedPasswordBox" TargetType="PasswordBox">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5,3"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Background" Value="{DynamicResource ControlIdleBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlIdleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="MinHeight" Value="26"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -42,46 +42,7 @@
                                           HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5,3"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Style="{DynamicResource HighlightBorder}">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
-                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -91,14 +52,69 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
-                </Trigger>
-                <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
-                </Trigger>
-            </Style.Triggers>
+        </Style>
+        <Style x:Key="SourcePriorityClickOverlay" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SourceKeysTabControl" TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
+            <Setter Property="SelectedIndex" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TabPanel x:Name="HeaderPanel"
+                                      IsItemsHost="True"
+                                      KeyboardNavigation.TabIndex="1"
+                                      Panel.ZIndex="1"
+                                      Margin="0"/>
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              Grid.Row="1"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                              ContentSource="SelectedContent"
+                                              Margin="0,8,0,0"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="TokenHeaderCell" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style x:Key="TokenNameCell" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="10,7"/>
+        </Style>
+        <Style x:Key="TokenReferenceCell" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="10,7"/>
+        </Style>
+        <Style x:Key="TokenCellText" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
         <Style x:Key="MediaDottedSeparator" TargetType="Line">
             <Setter Property="X1" Value="0"/>
@@ -288,7 +304,7 @@
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="230"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -306,7 +322,7 @@
                     <Grid Grid.Row="1">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="150"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
@@ -334,85 +350,88 @@
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_DescriptionTokensTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <Border BorderBrush="{DynamicResource GlyphBrush}" BorderThickness="1" Opacity="0.9">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="190">
-                        <Grid ShowGridLines="True" Margin="0">
-                            <Grid.Resources>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Margin" Value="6,4,6,4"/>
-                                </Style>
-                            </Grid.Resources>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="160"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                        <Border BorderBrush="{DynamicResource GlyphBrush}"
+                                Background="{DynamicResource ControlIdleBackgroundBrush}"
+                                BorderThickness="1"
+                                Opacity="1">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" MinHeight="420" MaxHeight="560">
+                                <Grid Margin="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="170"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                            <TextBlock Text="{DynamicResource MTDA_Token}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Reference}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Row="1" Text="{}{short}"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource MTDA_TokenShortHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="2" Text="{}{synopsis}"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{DynamicResource MTDA_TokenSynopsisHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="3" Text="{}{premise}"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{DynamicResource MTDA_TokenPremiseHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="4" Text="{}{gameplay}"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{DynamicResource MTDA_TokenGameplayHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="5" Text="{}{tone}"/>
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{DynamicResource MTDA_TokenToneHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="6" Text="{}{setting}"/>
-                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{DynamicResource MTDA_TokenSettingHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="7" Text="{}{perspective}"/>
-                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{DynamicResource MTDA_TokenPerspectiveHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="8" Text="{}{playModes}"/>
-                            <TextBlock Grid.Row="8" Grid.Column="1" Text="{DynamicResource MTDA_TokenPlayModesHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="9" Text="{}{estimatedLength}"/>
-                            <TextBlock Grid.Row="9" Grid.Column="1" Text="{DynamicResource MTDA_TokenEstimatedLengthHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="10" Text="{}{similarGames}"/>
-                            <TextBlock Grid.Row="10" Grid.Column="1" Text="{DynamicResource MTDA_TokenSimilarGamesHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="11" Text="{}{notes}"/>
-                            <TextBlock Grid.Row="11" Grid.Column="1" Text="{DynamicResource MTDA_TokenNotesHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="12" Text="{}{features}"/>
-                            <TextBlock Grid.Row="12" Grid.Column="1" Text="{DynamicResource MTDA_TokenFeaturesHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="13" Text="{}{recommendedFor}"/>
-                            <TextBlock Grid.Row="13" Grid.Column="1" Text="{DynamicResource MTDA_TokenRecommendedForHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="14" Text="{}{genres}"/>
-                            <TextBlock Grid.Row="14" Grid.Column="1" Text="{DynamicResource MTDA_TokenGenresHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="15" Text="{}{tags}"/>
-                            <TextBlock Grid.Row="15" Grid.Column="1" Text="{DynamicResource MTDA_TokenTagsHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="16" Text="{}{developers}"/>
-                            <TextBlock Grid.Row="16" Grid.Column="1" Text="{DynamicResource MTDA_TokenDevelopersHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="17" Text="{}{publishers}"/>
-                            <TextBlock Grid.Row="17" Grid.Column="1" Text="{DynamicResource MTDA_TokenPublishersHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="18" Text="{}{ageRatings}"/>
-                            <TextBlock Grid.Row="18" Grid.Column="1" Text="{DynamicResource MTDA_TokenAgeRatingsHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="19" Text="{}{regions}"/>
-                            <TextBlock Grid.Row="19" Grid.Column="1" Text="{DynamicResource MTDA_TokenRegionsHelp}" TextWrapping="Wrap"/>
-                            <TextBlock Grid.Row="20" Text="{}{categories}"/>
-                            <TextBlock Grid.Row="20" Grid.Column="1" Text="{DynamicResource MTDA_TokenCategoriesHelp}" TextWrapping="Wrap"/>
-                        </Grid>
+                                    <Border Style="{StaticResource TokenHeaderCell}">
+                                        <TextBlock Text="TOKEN" FontWeight="SemiBold" Style="{StaticResource TokenCellText}"/>
+                                    </Border>
+                                    <Border Grid.Column="1" Style="{StaticResource TokenHeaderCell}" BorderThickness="0,0,0,1">
+                                        <TextBlock Text="REFERENCIA" FontWeight="SemiBold" Style="{StaticResource TokenCellText}"/>
+                                    </Border>
+
+                                    <Border Grid.Row="1" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{short}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenShortHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="2" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{synopsis}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenSynopsisHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="3" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{premise}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenPremiseHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="4" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{gameplay}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="4" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenGameplayHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="5" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{tone}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="5" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenToneHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="6" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{setting}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="6" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenSettingHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="7" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{perspective}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="7" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenPerspectiveHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="8" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{playModes}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="8" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenPlayModesHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="9" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{estimatedLength}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="9" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenEstimatedLengthHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="10" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{similarGames}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="10" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenSimilarGamesHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="11" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{notes}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="11" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenNotesHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="12" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{features}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="12" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenFeaturesHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="13" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{recommendedFor}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="13" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenRecommendedForHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="14" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{genres}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="14" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenGenresHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="15" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{tags}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="15" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenTagsHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="16" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{developers}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="16" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenDevelopersHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="17" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{publishers}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="17" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenPublishersHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="18" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{ageRatings}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="18" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenAgeRatingsHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="19" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{regions}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="19" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenRegionsHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="20" Style="{StaticResource TokenNameCell}"><TextBlock Text="{}{categories}" Style="{StaticResource TokenCellText}"/></Border>
+                                    <Border Grid.Row="20" Grid.Column="1" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenCategoriesHelp}" Style="{StaticResource TokenCellText}"/></Border>
+                                </Grid>
                             </ScrollViewer>
                         </Border>
                     </StackPanel>
@@ -430,53 +449,96 @@
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <TextBlock Text="{DynamicResource MTDA_OfficialSteam}"/>
-                        <TextBlock Text="{DynamicResource MTDA_OfficialSteamHelp}" TextWrapping="Wrap" Margin="0,2,0,6"/>
-                        <Button Content="{DynamicResource MTDA_TestOfficialSteam}" HorizontalAlignment="Left" MinWidth="150" Margin="0,0,0,12" Click="TestSteamMedia_OnClick"/>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
-
-                        <TextBlock Text="SteamGridDB"/>
-                        <PasswordBox x:Name="SteamGridDbApiKeyBox"
-                                     Style="{StaticResource ThemedPasswordBox}"
-                                     PasswordChanged="SteamGridDbApiKeyBox_OnPasswordChanged"
-                                     Margin="0,2,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Button Content="{DynamicResource MTDA_OpenSteamGridDb}" MinWidth="140" Margin="0,0,8,0" Click="OpenSteamGridDbPage_OnClick"/>
-                            <Button Content="{DynamicResource MTDA_TestSteamGridDb}" MinWidth="140" Click="TestSteamGridDbMedia_OnClick"/>
-                        </StackPanel>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
-
-                        <TextBlock Text="RAWG"/>
-                        <PasswordBox x:Name="RawgApiKeyBox"
-                                     Style="{StaticResource ThemedPasswordBox}"
-                                     PasswordChanged="RawgApiKeyBox_OnPasswordChanged"
-                                     Margin="0,2,0,4"/>
-                        <TextBlock Text="{DynamicResource MTDA_RawgHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,12" Click="TestRawgMedia_OnClick"/>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
-
-                        <TextBlock Text="MobyGames"/>
-                        <PasswordBox x:Name="MobyGamesApiKeyBox"
-                                     Style="{StaticResource ThemedPasswordBox}"
-                                     PasswordChanged="MobyGamesApiKeyBox_OnPasswordChanged"
-                                     Margin="0,2,0,4"/>
-                        <TextBlock Text="{DynamicResource MTDA_MobyGamesHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Margin="0,0,0,12" Click="TestMobyGamesMedia_OnClick"/>
-                        <Line Style="{StaticResource MediaDottedSeparator}"/>
-
-                        <TextBlock Text="IGDB Client ID"/>
-                        <PasswordBox x:Name="IgdbClientIdBox"
-                                     Style="{StaticResource ThemedPasswordBox}"
-                                     PasswordChanged="IgdbClientIdBox_OnPasswordChanged"
-                                     Margin="0,2,0,4"/>
-                        <TextBlock Text="IGDB Client Secret"/>
-                        <PasswordBox x:Name="IgdbClientSecretBox"
-                                     Style="{StaticResource ThemedPasswordBox}"
-                                     PasswordChanged="IgdbClientSecretBox_OnPasswordChanged"
-                                     Margin="0,2,0,4"/>
-                        <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Margin="0,0,0,16" Click="TestIgdbMedia_OnClick"/>
+                        <TabControl Style="{StaticResource SourceKeysTabControl}" Margin="0,0,0,14">
+                            <TabItem Header="Steam">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="Steam usa recursos públicos oficiales cuando el juego se puede asociar a su ficha: portadas, heroes de biblioteca y capturas." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="Activar Steam oficial para portadas y heroes"
+                                              IsChecked="{Binding Settings.MediaUseSteamOfficial}"
+                                              Margin="0,0,0,6"/>
+                                    <CheckBox Content="Activar capturas oficiales de Steam como fondos alternativos"
+                                              IsChecked="{Binding Settings.MediaUseSteamScreenshots}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="{DynamicResource MTDA_OfficialSteamHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                    <Button Content="{DynamicResource MTDA_TestOfficialSteam}" HorizontalAlignment="Left" MinWidth="150" Click="TestSteamMedia_OnClick"/>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="SteamGridDB">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="SteamGridDB suele ser la mejor fuente para portadas, iconos y fondos creados o curados por la comunidad." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="Activar SteamGridDB para portadas, iconos y heroes"
+                                              IsChecked="{Binding Settings.MediaUseSteamGridDb}"
+                                              Margin="0,0,0,6"/>
+                                    <CheckBox Content="Activar grids horizontales de SteamGridDB como fondos si no hay heroes suficientes"
+                                              IsChecked="{Binding Settings.MediaUseSteamGridDbBackgroundGrids}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="SteamGridDB API Key"/>
+                                    <PasswordBox x:Name="SteamGridDbApiKeyBox"
+                                                 PasswordChanged="SteamGridDbApiKeyBox_OnPasswordChanged"
+                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="{DynamicResource MTDA_OpenSteamGridDb}" MinWidth="140" Margin="0,0,8,0" Click="OpenSteamGridDbPage_OnClick"/>
+                                        <Button Content="{DynamicResource MTDA_TestSteamGridDb}" MinWidth="140" Click="TestSteamGridDbMedia_OnClick"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="RAWG">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="RAWG ayuda a encontrar capturas, fondos y metadatos generales cuando no hay buenos resultados en fuentes más directas." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="Activar RAWG como fuente de imagen principal y capturas"
+                                              IsChecked="{Binding Settings.MediaUseRawg}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="RAWG API Key"/>
+                                    <PasswordBox x:Name="RawgApiKeyBox"
+                                                 PasswordChanged="RawgApiKeyBox_OnPasswordChanged"
+                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_RawgHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Click="TestRawgMedia_OnClick"/>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="MobyGames">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="MobyGames es útil como fuente histórica y de respaldo, especialmente en juegos antiguos o con fichas poco completas." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="Activar MobyGames como fuente de covers y capturas históricas"
+                                              IsChecked="{Binding Settings.MediaUseMobyGames}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="MobyGames API Key"/>
+                                    <PasswordBox x:Name="MobyGamesApiKeyBox"
+                                                 PasswordChanged="MobyGamesApiKeyBox_OnPasswordChanged"
+                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_MobyGamesHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Click="TestMobyGamesMedia_OnClick"/>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="IGDB">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="IGDB usa credenciales de Twitch y aporta imágenes y datos estructurados con buena cobertura para juegos modernos." TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="Activar IGDB como fuente de covers, artworks y screenshots"
+                                              IsChecked="{Binding Settings.MediaUseIgdb}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="IGDB Client ID"/>
+                                    <PasswordBox x:Name="IgdbClientIdBox"
+                                                 PasswordChanged="IgdbClientIdBox_OnPasswordChanged"
+                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Margin="0,2,0,8"/>
+                                    <TextBlock Text="IGDB Client Secret"/>
+                                    <PasswordBox x:Name="IgdbClientSecretBox"
+                                                 PasswordChanged="IgdbClientSecretBox_OnPasswordChanged"
+                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Click="TestIgdbMedia_OnClick"/>
+                                </StackPanel>
+                            </TabItem>
+                        </TabControl>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                            <Run Text="NOTA: " FontWeight="SemiBold"/>
+                            <Run Text="{DynamicResource MTDA_MissingApiKeyHelp}"/>
+                        </TextBlock>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_Media}" Style="{StaticResource SectionHeaderText}"/>
@@ -510,46 +572,47 @@
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.DownloadCoverImage}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImagePreset}" Margin="0,4,0,0"/>
-                            <Button Grid.Row="1" Grid.Column="4" Content="{Binding Settings.MediaCoverSourcePrioritySummary}" Click="ConfigureCoverSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
+                            <Grid Grid.Row="1" Grid.Column="4" Margin="8,4,0,0">
+                                <ComboBox SelectedIndex="0"
+                                          IsHitTestVisible="False"
+                                          Focusable="False"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="{Binding Settings.MediaCoverSourcePrioritySummary}"/>
+                                </ComboBox>
+                                <Button Style="{StaticResource SourcePriorityClickOverlay}"
+                                        Click="ConfigureCoverSourcePriority_OnClick"/>
+                            </Grid>
 
                             <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Icon}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.DownloadIcon}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconPreset}" Margin="0,4,0,0"/>
-                            <Button Grid.Row="2" Grid.Column="4" Content="{Binding Settings.MediaIconSourcePrioritySummary}" Click="ConfigureIconSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
+                            <Grid Grid.Row="2" Grid.Column="4" Margin="8,4,0,0">
+                                <ComboBox SelectedIndex="0"
+                                          IsHitTestVisible="False"
+                                          Focusable="False"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="{Binding Settings.MediaIconSourcePrioritySummary}"/>
+                                </ComboBox>
+                                <Button Style="{StaticResource SourcePriorityClickOverlay}"
+                                        Click="ConfigureIconSourcePriority_OnClick"/>
+                            </Grid>
 
                             <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Background}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.DownloadBackgroundImage}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
-                            <Button Grid.Row="3" Grid.Column="4" Content="{Binding Settings.MediaBackgroundSourcePrioritySummary}" Click="ConfigureBackgroundSourcePriority_OnClick" Margin="8,4,0,0" HorizontalAlignment="Stretch"/>
+                            <Grid Grid.Row="3" Grid.Column="4" Margin="8,4,0,0">
+                                <ComboBox SelectedIndex="0"
+                                          IsHitTestVisible="False"
+                                          Focusable="False"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="{Binding Settings.MediaBackgroundSourcePrioritySummary}"/>
+                                </ComboBox>
+                                <Button Style="{StaticResource SourcePriorityClickOverlay}"
+                                        Click="ConfigureBackgroundSourcePriority_OnClick"/>
+                            </Grid>
                         </Grid>
-
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_ActiveSources}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <CheckBox Content="{DynamicResource MTDA_SourceSteamOfficial}"
-                                  IsChecked="{Binding Settings.MediaUseSteamOfficial}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceSteamScreenshots}"
-                                  IsChecked="{Binding Settings.MediaUseSteamScreenshots}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceSteamGridDb}"
-                                  IsChecked="{Binding Settings.MediaUseSteamGridDb}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceSteamGridDbBackgroundGrids}"
-                                  IsChecked="{Binding Settings.MediaUseSteamGridDbBackgroundGrids}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceRawg}"
-                                  IsChecked="{Binding Settings.MediaUseRawg}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceMobyGames}"
-                                  IsChecked="{Binding Settings.MediaUseMobyGames}"
-                                  Margin="0,0,0,4"/>
-                        <CheckBox Content="{DynamicResource MTDA_SourceIgdb}"
-                                  IsChecked="{Binding Settings.MediaUseIgdb}"
-                                  Margin="0,0,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_MissingApiKeyHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>

@@ -65,9 +65,9 @@
     <sys:String x:Key="MTDA_Icon">Ikona</sys:String>
     <sys:String x:Key="MTDA_Background">Tlo</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Aktywne zrodla</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamOfficial">Oficjalny Steam: okladki, loga i hero biblioteki, gdy gre da sie powiazac ze Steam</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamOfficial">Oficjalny Steam: okladki i hero biblioteki, gdy gre da sie powiazac ze Steam</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Oficjalne zrzuty Steam jako alternatywne tla</sys:String>
-    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: spolecznosciowe okladki, ikony, hero i loga</sys:String>
+    <sys:String x:Key="MTDA_SourceSteamGridDb">SteamGridDB: spolecznosciowe okladki, ikony i hero</sys:String>
     <sys:String x:Key="MTDA_SourceSteamGridDbBackgroundGrids">Uzywaj poziomych gridow SteamGridDB jako tla, jesli brakuje hero</sys:String>
     <sys:String x:Key="MTDA_SourceRawg">RAWG: obraz glowny i zrzuty ekranu</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: historyczne okladki i zrzuty ekranu</sys:String>
