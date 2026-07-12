@@ -42,6 +42,7 @@ namespace MetaDataIAPlugin
             var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
             AddAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
             AddAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
+            AddSeriesNumberAliases(result, title);
 
             return result;
         }
@@ -85,6 +86,7 @@ namespace MetaDataIAPlugin
                 "classic",
                 "original",
                 "legacy",
+                "hd",
                 "ps4",
                 "ps5",
                 "xbox",
@@ -99,6 +101,56 @@ namespace MetaDataIAPlugin
             return suffix
                 .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                 .All(x => allowed.Contains(x));
+        }
+
+        private static void AddSeriesNumberAliases(List<string> result, string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return;
+            }
+
+            var words = title.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length < 3 || words.Any(IsNumberToken))
+            {
+                return;
+            }
+
+            var suffix = words[words.Length - 1];
+            if (suffix.Length < 4 || IsGenericTrailingToken(suffix))
+            {
+                return;
+            }
+
+            var prefix = string.Join(" ", words.Take(words.Length - 1));
+            foreach (var roman in new[] { "II", "III", "IV", "V" })
+            {
+                AddAlias(result, prefix + " " + roman + " " + suffix);
+            }
+
+            AddAlias(result, title + " HD");
+        }
+
+        private static bool IsNumberToken(string value)
+        {
+            var normalized = NormalizeTitle(value);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return false;
+            }
+
+            return Regex.IsMatch(normalized, "^\\d+$") ||
+                   Regex.IsMatch(normalized, "^(?:i|ii|iii|iv|v|vi|vii|viii|ix|x)$", RegexOptions.IgnoreCase);
+        }
+
+        private static bool IsGenericTrailingToken(string value)
+        {
+            var normalized = NormalizeTitle(value);
+            return string.Equals(normalized, "edition", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalized, "collection", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalized, "bundle", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalized, "pack", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalized, "game", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void AddAlias(List<string> result, string value)
