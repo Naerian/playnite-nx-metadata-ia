@@ -1,11 +1,12 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.1.5
+  - Version: 1.1.6
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-07-10
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.1.5/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_1_5.pext
+    ReleaseDate: 2026-07-12
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.1.6/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_1_6.pext
     Changelog:
-      - Improved the template token table styling and readability.
-      - Removed confusing standalone logo wording from media source descriptions.
-      - Fixed media source priority popup toggle behavior when clicking the same field again.
-      - Kept media source priority controls aligned with native Playnite dropdown behavior.
+      - Added official store media/context support for PlayStation Store, Xbox Store and Epic Store.
+      - Improved safe title matching for editions, years and Classic/Original naming variants.
+      - Added per-source media diagnostics when no usable candidates are found.
+      - Added settings export/import maintenance tools and improved media picker workflow.
+      - Completed localization parity for new media, priority and cancellation messages.
