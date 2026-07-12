@@ -44,7 +44,7 @@
                     <GroupBox Header="Detalle IA" Margin="0,0,0,8">
                         <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Margin="8"/>
                     </GroupBox>
-                    <GroupBox Header="Companias" Margin="0,0,0,8">
+                    <GroupBox Header="Compañías" Margin="0,0,0,8">
                         <StackPanel Margin="8">
                             <TextBlock Text="Desarrollador" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding Developers}" TextWrapping="Wrap" Margin="0,0,0,8"/>

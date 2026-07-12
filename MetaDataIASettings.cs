@@ -198,6 +198,7 @@ namespace MetaDataIAPlugin
         private string recommendedForLength = "Media";
         private string extraInstructions = string.Empty;
         private string existingMetadataMode = "Usar como contexto";
+        private bool useOfficialStoreContext = false;
         private bool strictCompanyAgeRegion = true;
         private bool enableLocalFallback = true;
         private bool tryLmStudioFallback = true;
@@ -218,7 +219,7 @@ namespace MetaDataIAPlugin
         private string coverImageApplyMode = ApplyEmptyOnly;
         private string iconApplyMode = ApplyEmptyOnly;
         private string backgroundImageApplyMode = ApplyEmptyOnly;
-        private string coverImagePreset = CoverPresetPlayniteVertical;
+        private string coverImagePreset = CoverPresetPlayniteDefined;
         private string iconPreset = IconPresetOriginal;
         private string backgroundImagePreset = BackgroundPresetSteamHero;
         private string backgroundLogoPreference = BackgroundLogoAny;
@@ -230,6 +231,9 @@ namespace MetaDataIAPlugin
         private bool iconSquarePreferGrid = true;
         private bool mediaUseSteamOfficial = true;
         private bool mediaUseSteamScreenshots = true;
+        private bool mediaUsePsnStore = false;
+        private bool mediaUseXboxStore = false;
+        private bool mediaUseEpicStore = false;
         private bool mediaUseSteamGridDb = true;
         private bool mediaUseSteamGridDbBackgroundGrids = true;
         private bool mediaUseRawg = false;
@@ -253,6 +257,7 @@ namespace MetaDataIAPlugin
         public const string DefaultIndieTemplate = "<h3>Resumen</h3>\n<p>{short}</p>\n\n<h3>Propuesta</h3>\n<p>{premise}</p>\n\n<h3>Estilo</h3>\n<p>{tone}</p>\n\n<h3>Elementos clave</h3>\n{features}\n\n<h3>Para quien es</h3>\n<p>{recommendedFor}</p>";
         public const string DefaultEmulationTemplate = "<h3>Resumen</h3>\n<p>{short}</p>\n\n<h3>Contexto</h3>\n<p>{synopsis}</p>\n\n<h3>Jugabilidad</h3>\n<p>{gameplay}</p>\n\n<h3>Datos utiles</h3>\n<p>Plataforma/perspectiva: {perspective}</p>\n<p>Modos: {playModes}</p>\n\n<h3>Caracteristicas</h3>\n{features}";
         public const string MediaProviderSteamGridDb = "SteamGridDB";
+        public const string CoverPresetPlayniteDefined = "Definido por Playnite";
         public const string CoverPresetOriginal = "Original";
         public const string CoverPresetPlayniteVertical = "Playnite vertical (600x900)";
         public const string CoverPresetSquare = "Cuadrada Playnite (600x600)";
@@ -270,9 +275,9 @@ namespace MetaDataIAPlugin
         public const string BackgroundLogoAny = "Cualquiera";
         public const string BackgroundLogoPreferNoLogo = "Preferir sin logo";
         public const string BackgroundLogoPreferLogo = "Preferir con logo";
-        public const string DefaultCoverSourcePriority = "Steam oficial, SteamGridDB, IGDB, RAWG, MobyGames";
-        public const string DefaultIconSourcePriority = "SteamGridDB, Steam oficial";
-        public const string DefaultBackgroundSourcePriority = "Steam oficial, Steam capturas, SteamGridDB, RAWG, IGDB, MobyGames";
+        public const string DefaultCoverSourcePriority = "Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, RAWG, MobyGames";
+        public const string DefaultIconSourcePriority = "SteamGridDB, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
+        public const string DefaultBackgroundSourcePriority = "Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, IGDB, MobyGames";
 
         public string ProviderPreset
         {
@@ -361,6 +366,7 @@ namespace MetaDataIAPlugin
         public string RecommendedForLength { get { return recommendedForLength; } set { SetValue(ref recommendedForLength, value); } }
         public string ExtraInstructions { get { return extraInstructions; } set { SetValue(ref extraInstructions, value); } }
         public string ExistingMetadataMode { get { return existingMetadataMode; } set { SetValue(ref existingMetadataMode, value); } }
+        public bool UseOfficialStoreContext { get { return useOfficialStoreContext; } set { SetValue(ref useOfficialStoreContext, value); } }
         public bool StrictCompanyAgeRegion { get { return strictCompanyAgeRegion; } set { SetValue(ref strictCompanyAgeRegion, value); } }
         public bool EnableLocalFallback { get { return enableLocalFallback; } set { SetValue(ref enableLocalFallback, value); } }
         public bool TryLmStudioFallback { get { return tryLmStudioFallback; } set { SetValue(ref tryLmStudioFallback, value); } }
@@ -393,6 +399,9 @@ namespace MetaDataIAPlugin
         public bool IconSquarePreferGrid { get { return iconSquarePreferGrid; } set { SetValue(ref iconSquarePreferGrid, value); } }
         public bool MediaUseSteamOfficial { get { return mediaUseSteamOfficial; } set { SetValue(ref mediaUseSteamOfficial, value); } }
         public bool MediaUseSteamScreenshots { get { return mediaUseSteamScreenshots; } set { SetValue(ref mediaUseSteamScreenshots, value); } }
+        public bool MediaUsePsnStore { get { return mediaUsePsnStore; } set { SetValue(ref mediaUsePsnStore, value); } }
+        public bool MediaUseXboxStore { get { return mediaUseXboxStore; } set { SetValue(ref mediaUseXboxStore, value); } }
+        public bool MediaUseEpicStore { get { return mediaUseEpicStore; } set { SetValue(ref mediaUseEpicStore, value); } }
         public bool MediaUseSteamGridDb { get { return mediaUseSteamGridDb; } set { SetValue(ref mediaUseSteamGridDb, value); } }
         public bool MediaUseSteamGridDbBackgroundGrids { get { return mediaUseSteamGridDbBackgroundGrids; } set { SetValue(ref mediaUseSteamGridDbBackgroundGrids, value); } }
         public bool MediaUseRawg { get { return mediaUseRawg; } set { SetValue(ref mediaUseRawg, value); } }
@@ -498,7 +507,7 @@ namespace MetaDataIAPlugin
             CoverImageApplyMode = EnsureApplyMode(CoverImageApplyMode, ApplyEmptyOnly);
             IconApplyMode = EnsureApplyMode(IconApplyMode, ApplyEmptyOnly);
             BackgroundImageApplyMode = EnsureApplyMode(BackgroundImageApplyMode, ApplyEmptyOnly);
-            CoverImagePreset = EnsureOption(CoverImagePreset, CoverPresetPlayniteVertical);
+            CoverImagePreset = EnsureOption(CoverImagePreset, CoverPresetPlayniteDefined);
             IconPreset = EnsureOption(IconPreset, IconPresetOriginal);
             BackgroundImagePreset = EnsureOption(BackgroundImagePreset, BackgroundPresetSteamHero);
             BackgroundLogoPreference = EnsureOption(BackgroundLogoPreference, BackgroundLogoAny);
@@ -1450,6 +1459,7 @@ namespace MetaDataIAPlugin
             {
                 return new List<LocalizedOption>
                 {
+                    Option(CoverPresetPlayniteDefined, "MTDA_OptionCoverPlayniteDefined", "Defined by Playnite"),
                     Option(CoverPresetPlayniteVertical, "MTDA_OptionCoverPlayniteVertical", "Playnite vertical (600x900)"),
                     Option(CoverPresetOriginal, "MTDA_OptionOriginal", "Original"),
                     Option(CoverPresetSquare, "MTDA_OptionCoverSquare", "Playnite square (600x600)"),
@@ -1507,7 +1517,7 @@ namespace MetaDataIAPlugin
         [DontSerialize]
         public string SteamGridDbHelp
         {
-            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam when the game has a Steam AppID, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, logo, score and filter preferences."); }
+            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
         }
 
         private static LocalizedOption Option(string value, string key, string fallback)
@@ -1701,6 +1711,20 @@ namespace MetaDataIAPlugin
         {
             Settings.ResetTemplates();
             SelectedTemplate = Settings.GetActiveTemplate();
+        }
+
+        public void ReplaceSettingsFromBackup(MetaDataIASettings importedSettings)
+        {
+            if (importedSettings == null)
+            {
+                return;
+            }
+
+            importedSettings.EnsureDefaults();
+            Settings = importedSettings;
+            SelectedTemplate = Settings.GetActiveTemplate();
+            editingClone = Serialization.GetClone(Settings);
+            plugin.SavePluginSettings(Settings);
         }
 
         public bool VerifySettings(out List<string> errors)

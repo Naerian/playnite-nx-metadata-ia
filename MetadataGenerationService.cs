@@ -16,6 +16,7 @@ namespace MetaDataIAPlugin
     public class MetadataGenerationService
     {
         private readonly MetaDataIASettings settings;
+        private List<OfficialStoreMetadata> officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
         public MetadataGenerationService(MetaDataIASettings settings)
         {
@@ -119,6 +120,7 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> GenerateOpenAICompatibleAsync(Game game, CancellationToken cancellationToken)
         {
+            var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
             var request = new
             {
                 model = settings.Model,
@@ -134,7 +136,7 @@ namespace MetaDataIAPlugin
                     new
                     {
                         role = "user",
-                        content = BuildUserPrompt(game)
+                        content = userPrompt
                     }
                 }
             };
@@ -168,13 +170,16 @@ namespace MetaDataIAPlugin
 
                 var content = ExtractAssistantContent(responseText);
                 var result = ParseResult(content);
+                ApplyStrictFactualGuard(result, game);
                 result.Normalize(settings, game);
+                ApplyStrictFactualGuard(result, game);
                 return result;
             }
         }
 
         private async Task<AiMetadataResult> GenerateAnthropicAsync(Game game, CancellationToken cancellationToken)
         {
+            var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
             var request = new
             {
                 model = settings.Model,
@@ -186,7 +191,7 @@ namespace MetaDataIAPlugin
                     new
                     {
                         role = "user",
-                        content = BuildUserPrompt(game)
+                        content = userPrompt
                     }
                 }
             };
@@ -221,7 +226,9 @@ namespace MetaDataIAPlugin
 
                 var content = ExtractAnthropicContent(responseText);
                 var result = ParseResult(content);
+                ApplyStrictFactualGuard(result, game);
                 result.Normalize(settings, game);
+                ApplyStrictFactualGuard(result, game);
                 return result;
             }
         }
@@ -231,10 +238,11 @@ namespace MetaDataIAPlugin
             return "You are a careful video game metadata editor for Playnite. " +
                    "Return only valid JSON, without markdown. " +
                    "Use the requested output language for every user-facing value, including lists, tags, genres, categories, features, age ratings, regions and link names. " +
+                   "Your job is to normalize and structure provided facts, not to invent missing metadata. " +
                    "Prioritize factual accuracy over filling every field. If a fact is uncertain, leave that field empty.";
         }
 
-        private string BuildUserPrompt(Game game)
+        private async Task<string> BuildUserPromptAsync(Game game, CancellationToken cancellationToken)
         {
             var context = new Dictionary<string, object>();
             context["targetLanguage"] = settings.Language;
@@ -260,6 +268,8 @@ namespace MetaDataIAPlugin
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
             context["requestedDescriptionTokens"] = ExtractTemplateTokens(settings.ResolveTemplate(game));
+            context["officialStoreContextEnabled"] = settings.UseOfficialStoreContext;
+            officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
             if (!string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
             {
@@ -279,9 +289,32 @@ namespace MetaDataIAPlugin
                 context["existingMetadataMode"] = settings.ExistingMetadataMode;
             }
 
+            if (settings.UseOfficialStoreContext)
+            {
+                var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
+                officialContextForCurrentRequest = officialContext;
+                if (officialContext.Count > 0)
+                {
+                    context["officialStoreContext"] = officialContext.Select(x => new
+                    {
+                        source = x.SourceName,
+                        url = x.StoreUrl,
+                        title = x.Title,
+                        description = x.Description,
+                        genres = x.Genres,
+                        features = x.Features,
+                        developers = x.Developers,
+                        publishers = x.Publishers,
+                        ageRating = x.AgeRating
+                    }).ToList();
+                }
+            }
+
             return "Generate normalized metadata for this game. " +
                    "The requested output language is " + TargetLanguageName(settings.Language) + " (" + settings.Language + "). Every generated value must be in that language unless it is a proper noun, company name, official rating name, URL or platform/store brand. " +
                    "Respect fieldsToGenerate: if a field is false, return an empty string or empty array for that field. " +
+                   "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms or the provided game identity. " +
+                   "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative: do not guess developers, publishers, age ratings, regions, links, release-specific features, platform capabilities or store-specific claims. Leave uncertain fields empty. " +
                    "Respect tone, length, tokenLengths, blacklist and prefixes. " +
                    "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
@@ -302,6 +335,7 @@ namespace MetaDataIAPlugin
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
                    "If existingMetadataMode is Normalizar/Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
+                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. Translate and normalize generated user-facing values into the requested output language, but do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
@@ -1101,6 +1135,72 @@ namespace MetaDataIAPlugin
                 ex.ToString());
         }
 
+        private void ApplyStrictFactualGuard(AiMetadataResult result, Game game)
+        {
+            if (result == null || !settings.UseOfficialStoreContext || !settings.StrictCompanyAgeRegion)
+            {
+                return;
+            }
+
+            result.Developers = ResolveStrictField(
+                FirstOfficialList(x => x.Developers),
+                ExistingNames(game == null ? null : game.Developers),
+                settings.ExistingMetadataMode,
+                settings.MaxDevelopers);
+
+            result.Publishers = ResolveStrictField(
+                FirstOfficialList(x => x.Publishers),
+                ExistingNames(game == null ? null : game.Publishers),
+                settings.ExistingMetadataMode,
+                settings.MaxPublishers);
+
+            result.AgeRatings = ResolveStrictField(
+                FirstOfficialList(x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating }),
+                ExistingNames(game == null ? null : game.AgeRatings),
+                settings.ExistingMetadataMode,
+                settings.MaxAgeRatings);
+
+            result.Regions = ResolveStrictField(
+                new List<string>(),
+                ExistingNames(game == null ? null : game.Regions),
+                settings.ExistingMetadataMode,
+                settings.MaxRegions);
+        }
+
+        private List<string> FirstOfficialList(Func<OfficialStoreMetadata, List<string>> selector)
+        {
+            return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Select(selector)
+                .Where(x => x != null && x.Any(y => !string.IsNullOrWhiteSpace(y)))
+                .FirstOrDefault() ?? new List<string>();
+        }
+
+        private static List<string> ResolveStrictField(List<string> officialValues, List<string> existingValues, string existingMetadataMode, int maxItems)
+        {
+            var official = CleanStrictValues(officialValues, maxItems);
+            if (official.Count > 0)
+            {
+                return official;
+            }
+
+            if (!string.Equals(existingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
+            {
+                return CleanStrictValues(existingValues, maxItems);
+            }
+
+            return new List<string>();
+        }
+
+        private static List<string> CleanStrictValues(IEnumerable<string> values, int maxItems)
+        {
+            return (values ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(Math.Max(1, maxItems))
+                .ToList();
+        }
+
         public static string SanitizeForUser(string message)
         {
             if (string.IsNullOrWhiteSpace(message))
@@ -1134,6 +1234,11 @@ namespace MetaDataIAPlugin
             return items == null
                 ? new List<string>()
                 : items.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name)).Select(x => x.Name).ToList();
+        }
+
+        private static List<string> ExistingNames<T>(IEnumerable<T> items) where T : DatabaseObject
+        {
+            return Names(items);
         }
 
         private static string Loc(string key, string fallback)

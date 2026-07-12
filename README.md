@@ -1,6 +1,6 @@
 ﻿# Metadata AI
 
-Metadata AI is a Playnite metadata provider extension that uses AI and external media sources to generate consistent game descriptions, metadata lists, links, sorting names, and artwork in the language and structure you choose.
+Metadata AI is a Playnite metadata provider extension that uses AI, official store context, and external media sources to generate or normalize consistent game descriptions, metadata lists, links, sorting names, covers, icons, and backgrounds in the language and structure you choose.
 
 It is designed for users who want a Playnite library with a unified editorial style instead of mixed descriptions and tags from multiple stores.
 
@@ -12,7 +12,7 @@ It is useful when your library has mixed description styles, missing metadata, d
 
 It is not meant to replace validated metadata sources when those already provide exactly what you need. Instead, it complements them by normalizing, translating, restructuring and filling gaps according to your own templates and rules.
 
-The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam public assets, SteamGridDB, RAWG, MobyGames and IGDB.
+The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam public assets, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, MobyGames and IGDB.
 
 ## Features
 
@@ -24,9 +24,13 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Prefer existing Playnite terms to keep tags, genres, features, and categories consistent.
 - Use blacklist rules and prefixes for generated tags and categories.
 - Generate metadata in a selected output language from a dropdown.
+- Use official store data as factual AI context before rewriting, translating, or normalizing text.
+- Use stricter factual guards for companies, age ratings, and regions to reduce invented metadata.
 - Automatically process newly imported games after library updates.
 - Generate media assets from multiple configurable sources.
-- Review media candidates manually for single-game workflows before applying them.
+- Configure media source priority separately for covers, icons, and backgrounds.
+- Review media candidates manually for single-game workflows before applying them, or let the extension pick automatically in batch workflows.
+- Export and import extension settings for backup or Playnite reinstalls.
 - Localized settings UI using Playnite's native `Localization/*.xaml` resource system.
 
 ## Supported AI providers
@@ -52,14 +56,27 @@ Metadata AI can fetch covers, icons, and backgrounds from:
 
 - Official Steam public assets
 - Official Steam screenshots
+- PlayStation Store
+- Xbox Store
+- Epic Store
 - SteamGridDB
 - RAWG
 - MobyGames
 - IGDB
 
-Steam public assets do not require an API key. SteamGridDB, RAWG, MobyGames, and IGDB require their own API credentials.
+Steam public assets, PlayStation Store, Xbox Store, and Epic Store do not require an API key. SteamGridDB, RAWG, MobyGames, and IGDB require their own API credentials.
 
 For IGDB, the extension uses Twitch `Client ID` and `Client Secret` and automatically obtains the access token internally, so users do not need to copy temporary access tokens manually.
+
+Store websites can be region-dependent and may change or block automated reads. If an official store does not return a reliable match, Metadata AI skips it and continues with the next enabled source based on your configured priority.
+
+## AI factual context
+
+Metadata AI is designed to normalize and structure metadata, not blindly invent it.
+
+When official context is enabled, the extension first tries to read reliable store data such as Steam, PlayStation Store, Xbox Store, or Epic Store. The AI receives that information as factual context and is instructed to translate, rewrite, summarize, and structure it according to your templates and field rules.
+
+If the plugin cannot find reliable official context, the AI can still generate descriptive text from the game name and existing Playnite metadata, but stricter options can prevent sensitive fields such as developers, publishers, age ratings, and regions from being created when confidence is low.
 
 ## Media options
 
@@ -79,6 +96,10 @@ Selection criteria include:
 - Avoid console-branded covers when possible.
 - Prefer square grids for square icons.
 - Prefer backgrounds with or without logos.
+
+Automatic media selection follows the per-kind source priority configured in settings. For example, covers, icons, and backgrounds can each prefer different sources. If a source returns no reliable candidates for a game, the extension continues with the next enabled source.
+
+In manual single-game workflows, the media picker shows candidates grouped by media type. Click a candidate tile to select it, or open the image in your browser before applying the final selection.
 
 ## Logos and trailers
 
@@ -116,10 +137,11 @@ The main sections are:
 
 - **AI**: provider, endpoint, model, API key, output language, tone, length, token lengths, fallback providers, and extra instructions.
 - **Templates**: saved HTML templates and available description tokens.
-- **Media**: media API keys, enabled media sources, media formats, and selection preferences.
+- **Media**: media API keys, enabled media sources, source priority, media formats, and selection preferences.
 - **Import**: automatic processing for newly imported games.
 - **Fields**: per-field generation and apply rules.
 - **Rules**: automatic template selection by game type, platform, or source.
+- **Maintenance**: export or import the plugin configuration as a backup.
 
 ## Description templates
 

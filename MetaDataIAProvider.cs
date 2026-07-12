@@ -168,7 +168,7 @@ namespace MetaDataIAPlugin
                 throw new InvalidOperationException(PluginLocalization.GetString("MTDA_ErrorMediaProviderNotConfigured", "Metadata AI media is not configured. Open the plugin settings and configure at least one usable media source."));
             }
 
-            var media = new MediaGenerationService(settings).GenerateAsync(options.GameData, kind).GetAwaiter().GetResult();
+            var media = new MediaGenerationService(settings, plugin.Api).GenerateAsync(options.GameData, kind).GetAwaiter().GetResult();
             return MediaGenerationService.ToMetadataFile(media);
         }
     }

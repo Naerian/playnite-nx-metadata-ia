@@ -6,9 +6,14 @@
     <sys:String x:Key="MTDA_TabTemplates">Templates</sys:String>
     <sys:String x:Key="MTDA_TabMedia">Media</sys:String>
     <sys:String x:Key="MTDA_TabImport">Import</sys:String>
+    <sys:String x:Key="MTDA_TabMaintenance">Maintenance</sys:String>
     <sys:String x:Key="MTDA_TabFields">Fields</sys:String>
     <sys:String x:Key="MTDA_TabRules">Rules</sys:String>
     <sys:String x:Key="MTDA_OpenAICompatibleProvider">OpenAI-compatible AI provider</sys:String>
+    <sys:String x:Key="MTDA_AiSectionProvider">Provider and connection</sys:String>
+    <sys:String x:Key="MTDA_AiSectionOutput">Output style</sys:String>
+    <sys:String x:Key="MTDA_AiSectionReliability">Context and reliability</sys:String>
+    <sys:String x:Key="MTDA_AiSectionAdvanced">Advanced AI options</sys:String>
     <sys:String x:Key="MTDA_Provider">Provider</sys:String>
     <sys:String x:Key="MTDA_ApplyProvider">Apply provider</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">Key/help page: </sys:String>
@@ -30,12 +35,16 @@
     <sys:String x:Key="MTDA_LengthPerToken">Length per token</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Current metadata</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Use as context lets the AI consider existing data without necessarily copying it. Normalize tries to fix and unify current metadata. Ignore does not send those details to the AI.</sys:String>
+    <sys:String x:Key="MTDA_OfficialStoreContext">Use official sources as AI context</sys:String>
+    <sys:String x:Key="MTDA_OfficialStoreContextHelp">When enabled, Metadata AI tries to read an official source such as Steam, Xbox Store, PlayStation Store or Epic Store before calling the AI. The AI uses that information as factual context and then translates or normalizes it according to your template.</sys:String>
     <sys:String x:Key="MTDA_StrictCompanyAgeRegion">Do not invent companies, age ratings or region unless reasonably sure</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructions">Extra custom instructions</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructionsHelp">Use this for additional editorial rules: brand tone, words to avoid, desired structure, preferred names or criteria for deciding whether a detail is reliable.</sys:String>
     <sys:String x:Key="MTDA_New">New</sys:String>
     <sys:String x:Key="MTDA_Delete">Delete</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Restore defaults</sys:String>
+    <sys:String x:Key="MTDA_TemplateProfiles">Saved templates</sys:String>
+    <sys:String x:Key="MTDA_TemplateContent">Template content</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Template name</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">You can use HTML in the template. Playnite renders tags such as &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; and &amp;lt;br/&amp;gt;, so the description does not appear crammed together.</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Tokens available for the description</sys:String>
@@ -43,6 +52,17 @@
     <sys:String x:Key="MTDA_Reference">Reference</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Image sources</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Source keys and tests</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupTitle">Backup and restore</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupHelp">Export or import the current Metadata AI settings, including providers, templates, field rules, vocabulary memory and media source configuration.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Note: the backup includes configured API keys and secrets. Keep the exported JSON private.</sys:String>
+    <sys:String x:Key="MTDA_ExportSettingsBackup">Export settings backup</sys:String>
+    <sys:String x:Key="MTDA_ImportSettingsBackup">Import settings backup</sys:String>
+    <sys:String x:Key="MTDA_BackupExported">Settings backup exported.</sys:String>
+    <sys:String x:Key="MTDA_BackupImported">Settings backup imported.</sys:String>
+    <sys:String x:Key="MTDA_BackupImportInvalid">The selected backup file is not valid.</sys:String>
+    <sys:String x:Key="MTDA_BackupImportConfirm">Importing this backup will replace the current Metadata AI settings and save them immediately. Continue?</sys:String>
+    <sys:String x:Key="MTDA_BackupExportFailed">Could not export settings backup.</sys:String>
+    <sys:String x:Key="MTDA_BackupImportFailed">Could not import settings backup.</sys:String>
     <sys:String x:Key="MTDA_OfficialSteam">Official Steam</sys:String>
     <sys:String x:Key="MTDA_OfficialSteamHelp">No API key required. Uses public Steam assets when the game can be matched to an AppID.</sys:String>
     <sys:String x:Key="MTDA_TestOfficialSteam">Test official Steam</sys:String>
@@ -216,7 +236,7 @@ What you can do without paying:
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure the SteamGridDB API key in the Media tab before downloading images.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
     <sys:String x:Key="MTDA_ErrorUnspecified">Unspecified error.</sys:String>
-    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam when the game has a Steam AppID, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, logo, score and filter preferences.</sys:String>
+    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences.</sys:String>
     <sys:String x:Key="MTDA_SourcePriority">Automatic source priority</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityShort">Sources</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityHelp">Controls which source wins when automatic media mode finds several valid candidates. Put sources first to make them preferred. Disabled sources or sources without an API key are ignored.</sys:String>
@@ -234,6 +254,8 @@ What you can do without paying:
     <sys:String x:Key="MTDA_MediaPickerTitle">Choose media</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI applied {0} media file(s).</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI updated {0} game(s). Errors: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI cancelled the operation. Processed games: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI cancelled the media operation. Processed games: {0}. Applied files: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI updated media for {0} game(s). Applied files: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI updated {0} game(s).</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">There are no candidates for this media type.</sys:String>
@@ -260,6 +282,7 @@ What you can do without paying:
     <sys:String x:Key="MTDA_OptionBackgroundSteamHero">Steam hero (3840x1240)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundSteamHeroSmall">Light Steam hero (1920x620)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverHorizontal">Horizontal/banner (920x430)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverPlayniteDefined">Defined by Playnite</sys:String>
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite vertical (600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">Playnite square (600x600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">Circle 256</sys:String>
@@ -316,6 +339,8 @@ What you can do without paying:
     <sys:String x:Key="MTDA_Select">Select</sys:String>
     <sys:String x:Key="MTDA_Selected">Selected</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} did not return media candidates for the test game ({1}). Epic Store is a best-effort source: it usually needs an existing Epic Store link on the game and the website can block automated reads. Keep it enabled as a secondary source, but prefer SteamGridDB, Steam, RAWG, IGDB or MobyGames for reliable automatic media.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} responded, but did not return useful media for the test game ({1}). The Microsoft Store search can be market-dependent and may return no usable images for some titles. This does not necessarily mean the configuration is wrong.</sys:String>
     <sys:String x:Key="MTDA_TestMediaSuccess">{0} is responding correctly.
 
 Test game: {1}

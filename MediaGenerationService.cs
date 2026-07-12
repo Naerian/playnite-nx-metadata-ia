@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,6 +64,7 @@ namespace MetaDataIAPlugin
         private static readonly object CandidateCacheLock = new object();
         private static readonly Dictionary<string, List<MediaCandidate>> CandidateCache = new Dictionary<string, List<MediaCandidate>>();
         private readonly MetaDataIASettings settings;
+        private readonly IPlayniteAPI playniteApi;
         private string generatedIgdbAccessToken;
 
         static MediaGenerationService()
@@ -76,9 +78,10 @@ namespace MetaDataIAPlugin
             }
         }
 
-        public MediaGenerationService(MetaDataIASettings settings)
+        public MediaGenerationService(MetaDataIASettings settings, IPlayniteAPI playniteApi = null)
         {
             this.settings = settings;
+            this.playniteApi = playniteApi;
         }
 
         public async Task<GeneratedMediaFile> GenerateAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))
@@ -316,6 +319,22 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            var officialStores = new OfficialStoreDataService(settings);
+            if (settings.MediaUsePsnStore)
+            {
+                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+            }
+
+            if (settings.MediaUseXboxStore)
+            {
+                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+            }
+
+            if (settings.MediaUseEpicStore)
+            {
+                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+            }
+
             if (settings.MediaUseSteamGridDb && !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
             {
                 try
@@ -434,11 +453,15 @@ namespace MetaDataIAPlugin
                 settings.IconSquarePreferGrid.ToString(),
                 settings.MediaUseSteamOfficial.ToString(),
                 settings.MediaUseSteamScreenshots.ToString(),
+                settings.MediaUsePsnStore.ToString(),
+                settings.MediaUseXboxStore.ToString(),
+                settings.MediaUseEpicStore.ToString(),
                 settings.MediaUseSteamGridDb.ToString(),
                 settings.MediaUseSteamGridDbBackgroundGrids.ToString(),
                 settings.MediaUseRawg.ToString(),
                 settings.MediaUseMobyGames.ToString(),
                 settings.MediaUseIgdb.ToString(),
+                GetPlayniteCoverRatioCacheKey(),
                 settings.MediaCoverSourcePriority,
                 settings.MediaIconSourcePriority,
                 settings.MediaBackgroundSourcePriority
@@ -483,20 +506,27 @@ namespace MetaDataIAPlugin
 
             try
             {
-                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(game.Name) + "&cc=us&l=en";
-                var json = await GetPublicJson(url, cancelToken).ConfigureAwait(false);
-                var items = json["items"] as JArray;
-                if (items == null || items.Count == 0)
+                foreach (var title in BuildTitleAliases(game.Name))
                 {
-                    return null;
+                    var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) + "&cc=us&l=en";
+                    var json = await GetPublicJson(url, cancelToken).ConfigureAwait(false);
+                    var items = json["items"] as JArray;
+                    if (items == null || items.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var exact = items
+                        .OfType<JObject>()
+                        .FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["name"]));
+                    var id = exact == null ? 0 : ((int?)exact["id"] ?? 0);
+                    if (id > 0)
+                    {
+                        return id.ToString();
+                    }
                 }
 
-                var exact = items
-                    .OfType<JObject>()
-                    .FirstOrDefault(x => IsGoodSteamTitleMatch(game.Name, (string)x["name"]));
-                var selected = exact ?? items.OfType<JObject>().FirstOrDefault();
-                var id = selected == null ? 0 : ((int?)selected["id"] ?? 0);
-                return id > 0 ? id.ToString() : null;
+                return null;
             }
             catch
             {
@@ -514,8 +544,93 @@ namespace MetaDataIAPlugin
             }
 
             return string.Equals(left, right, StringComparison.OrdinalIgnoreCase) ||
-                   right.StartsWith(left + " ", StringComparison.OrdinalIgnoreCase) ||
-                   left.StartsWith(right + " ", StringComparison.OrdinalIgnoreCase);
+                   HasOnlyAllowedStoreSuffix(left, right) ||
+                   HasOnlyAllowedStoreSuffix(right, left);
+        }
+
+        private static bool HasOnlyAllowedStoreSuffix(string baseTitle, string fullTitle)
+        {
+            if (string.IsNullOrWhiteSpace(baseTitle) || string.IsNullOrWhiteSpace(fullTitle) ||
+                !fullTitle.StartsWith(baseTitle + " ", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var suffix = fullTitle.Substring(baseTitle.Length).Trim();
+            if (string.IsNullOrWhiteSpace(suffix))
+            {
+                return false;
+            }
+
+            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "standard",
+                "edition",
+                "base",
+                "game",
+                "digital",
+                "version",
+                "ps4",
+                "ps5",
+                "xbox",
+                "one",
+                "series",
+                "x",
+                "s",
+                "windows",
+                "pc"
+            };
+
+            return suffix
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .All(x => allowed.Contains(x));
+        }
+
+        private static List<string> BuildTitleAliases(string value)
+        {
+            var result = new List<string>();
+            AddTitleAlias(result, value);
+
+            var title = value ?? string.Empty;
+            title = Regex.Replace(title, "\\s+", " ").Trim();
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return result;
+            }
+
+            AddTitleAlias(result, Regex.Replace(
+                title,
+                "\\s*\\((?:\\d{4}|[^)]*(?:edition|deluxe|standard|ultimate|goty|game of the year|complete|collector|collectors|premium|gold|digital)[^)]*)\\)\\s*$",
+                string.Empty,
+                RegexOptions.IgnoreCase));
+
+            var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
+            AddTitleAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
+            AddTitleAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
+
+            return result;
+        }
+
+        private static void AddTitleAlias(List<string> result, string value)
+        {
+            if (result == null || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            var cleaned = Regex.Replace(value, "\\s+", " ").Trim();
+            if (cleaned.Length == 0)
+            {
+                return;
+            }
+
+            var normalized = NormalizeTitle(cleaned);
+            if (string.IsNullOrWhiteSpace(normalized) || result.Any(x => string.Equals(NormalizeTitle(x), normalized, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            result.Add(cleaned);
         }
 
         private static string NormalizeTitle(string value)
@@ -657,19 +772,26 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            var search = await GetJson(ApiBase + "/search/autocomplete/" + Uri.EscapeDataString(game.Name ?? string.Empty), cancelToken).ConfigureAwait(false);
-            var data = search["data"] as JArray;
-            if (data == null || data.Count == 0)
+            foreach (var title in BuildTitleAliases(game.Name))
             {
-                return 0;
+                var search = await GetJson(ApiBase + "/search/autocomplete/" + Uri.EscapeDataString(title), cancelToken).ConfigureAwait(false);
+                var data = search["data"] as JArray;
+                if (data == null || data.Count == 0)
+                {
+                    continue;
+                }
+
+                var exact = data
+                    .OfType<JObject>()
+                    .FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["name"]));
+                var id = exact == null ? 0 : ((int?)exact["id"] ?? 0);
+                if (id > 0)
+                {
+                    return id;
+                }
             }
 
-            var exact = data
-                .OfType<JObject>()
-                .FirstOrDefault(x => string.Equals((string)x["name"], game.Name, StringComparison.OrdinalIgnoreCase));
-
-            var selected = exact ?? data.OfType<JObject>().FirstOrDefault();
-            return selected == null ? 0 : ((int?)selected["id"] ?? 0);
+            return 0;
         }
 
         private static int ExtractGameId(JToken token)
@@ -807,10 +929,21 @@ namespace MetaDataIAPlugin
                 return new List<MediaCandidate>();
             }
 
-            var searchUrl = "https://api.rawg.io/api/games?key=" + Uri.EscapeDataString(settings.RawgApiKey) +
-                            "&search=" + Uri.EscapeDataString(game.Name) + "&page_size=1";
-            var search = await GetPublicJson(searchUrl, cancelToken).ConfigureAwait(false);
-            var selected = (search["results"] as JArray ?? new JArray()).OfType<JObject>().FirstOrDefault();
+            JObject selected = null;
+            foreach (var title in BuildTitleAliases(game.Name))
+            {
+                var searchUrl = "https://api.rawg.io/api/games?key=" + Uri.EscapeDataString(settings.RawgApiKey) +
+                                "&search=" + Uri.EscapeDataString(title) + "&page_size=5";
+                var search = await GetPublicJson(searchUrl, cancelToken).ConfigureAwait(false);
+                selected = (search["results"] as JArray ?? new JArray())
+                    .OfType<JObject>()
+                    .FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["name"]));
+                if (selected != null)
+                {
+                    break;
+                }
+            }
+
             if (selected == null)
             {
                 return new List<MediaCandidate>();
@@ -851,10 +984,21 @@ namespace MetaDataIAPlugin
                 return new List<MediaCandidate>();
             }
 
-            var url = "https://api.mobygames.com/v1/games?api_key=" + Uri.EscapeDataString(settings.MobyGamesApiKey) +
-                      "&title=" + Uri.EscapeDataString(game.Name) + "&format=normal&limit=1";
-            var json = await GetPublicJson(url, cancelToken).ConfigureAwait(false);
-            var selected = (json["games"] as JArray ?? new JArray()).OfType<JObject>().FirstOrDefault();
+            JObject selected = null;
+            foreach (var title in BuildTitleAliases(game.Name))
+            {
+                var url = "https://api.mobygames.com/v1/games?api_key=" + Uri.EscapeDataString(settings.MobyGamesApiKey) +
+                          "&title=" + Uri.EscapeDataString(title) + "&format=normal&limit=5";
+                var json = await GetPublicJson(url, cancelToken).ConfigureAwait(false);
+                selected = (json["games"] as JArray ?? new JArray())
+                    .OfType<JObject>()
+                    .FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["title"]));
+                if (selected != null)
+                {
+                    break;
+                }
+            }
+
             if (selected == null)
             {
                 return new List<MediaCandidate>();
@@ -913,9 +1057,18 @@ namespace MetaDataIAPlugin
                 return new List<MediaCandidate>();
             }
 
-            var gameQuery = "search \"" + EscapeIgdbString(game.Name) + "\"; fields id,name,cover,screenshots,artworks; limit 1;";
-            var games = await PostIgdb("games", gameQuery, cancelToken).ConfigureAwait(false);
-            var selected = games.OfType<JObject>().FirstOrDefault();
+            JObject selected = null;
+            foreach (var title in BuildTitleAliases(game.Name))
+            {
+                var gameQuery = "search \"" + EscapeIgdbString(title) + "\"; fields id,name,cover,screenshots,artworks; limit 5;";
+                var games = await PostIgdb("games", gameQuery, cancelToken).ConfigureAwait(false);
+                selected = games.OfType<JObject>().FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["name"]));
+                if (selected != null)
+                {
+                    break;
+                }
+            }
+
             if (selected == null)
             {
                 return new List<MediaCandidate>();
@@ -1000,6 +1153,33 @@ namespace MetaDataIAPlugin
                 SourceName = sourceName,
                 SourcePriority = sourcePriority,
                 IsOfficial = isOfficial
+            };
+        }
+
+        private static MediaCandidate CreateOfficialStoreCandidate(OfficialMediaCandidate candidate)
+        {
+            if (candidate == null)
+            {
+                return null;
+            }
+
+            var extension = string.IsNullOrWhiteSpace(candidate.Extension) ? ExtensionFromUrl(candidate.Url) : candidate.Extension;
+            return new MediaCandidate
+            {
+                Url = candidate.Url,
+                Width = candidate.Width,
+                Height = candidate.Height,
+                Style = candidate.Style,
+                Mime = string.IsNullOrWhiteSpace(candidate.Mime)
+                    ? (extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg")
+                    : candidate.Mime,
+                IsNsfw = false,
+                IsHumor = false,
+                Score = candidate.Score,
+                Extension = extension,
+                SourceName = candidate.SourceName,
+                SourcePriority = 60,
+                IsOfficial = candidate.IsOfficial
             };
         }
 
@@ -1133,6 +1313,21 @@ namespace MetaDataIAPlugin
                 return "steam oficial";
             }
 
+            if (normalized.Contains("playstation") || normalized.Contains("psn"))
+            {
+                return "playstation store";
+            }
+
+            if (normalized.Contains("xbox") || normalized.Contains("microsoft store"))
+            {
+                return "xbox store";
+            }
+
+            if (normalized.Contains("epic"))
+            {
+                return "epic store";
+            }
+
             if (normalized.Contains("rawg"))
             {
                 return "rawg";
@@ -1158,6 +1353,19 @@ namespace MetaDataIAPlugin
                 if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetSquare)
                 {
                     return candidate.Width == candidate.Height && candidate.Width >= 512 ? 100 : -100;
+                }
+
+                if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetPlayniteDefined)
+                {
+                    var playniteTarget = GetPlayniteCoverTargetSize();
+                    if (playniteTarget.Width > 0 && playniteTarget.Height > 0 && candidate.Width > 0 && candidate.Height > 0)
+                    {
+                        var targetRatio = (double)playniteTarget.Width / playniteTarget.Height;
+                        var candidateRatio = (double)candidate.Width / candidate.Height;
+                        return Math.Abs(candidateRatio - targetRatio) < 0.05 ? 90 : -60;
+                    }
+
+                    return candidate.Height > candidate.Width ? 70 : -40;
                 }
 
                 if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetHorizontal)
@@ -1630,6 +1838,14 @@ namespace MetaDataIAPlugin
                 {
                     parts.Add("dimensions=512x512,1024x1024");
                 }
+                else if (includeDimensionFilters && settings.CoverImagePreset == MetaDataIASettings.CoverPresetPlayniteDefined)
+                {
+                    var dimensions = GetPlayniteCoverSteamGridDimensions();
+                    if (!string.IsNullOrWhiteSpace(dimensions))
+                    {
+                        parts.Add("dimensions=" + dimensions);
+                    }
+                }
                 else if (includeDimensionFilters && settings.CoverImagePreset == MetaDataIASettings.CoverPresetHorizontal)
                 {
                     parts.Add("dimensions=920x430,460x215");
@@ -1682,6 +1898,85 @@ namespace MetaDataIAPlugin
             return parts.Count == 0 ? string.Empty : "?" + string.Join("&", parts);
         }
 
+        private string GetPlayniteCoverRatioCacheKey()
+        {
+            var ratio = GetPlayniteCoverRatio();
+            return ratio.Width + "x" + ratio.Height;
+        }
+
+        private Size GetPlayniteCoverRatio()
+        {
+            try
+            {
+                var appSettings = playniteApi == null ? null : playniteApi.ApplicationSettings;
+                var width = appSettings == null ? 0 : appSettings.GridItemWidthRatio;
+                var height = appSettings == null ? 0 : appSettings.GridItemHeightRatio;
+                if (width > 0 && height > 0)
+                {
+                    return new Size(width, height);
+                }
+            }
+            catch
+            {
+            }
+
+            return new Size(2, 3);
+        }
+
+        private Size GetPlayniteCoverTargetSize()
+        {
+            var ratio = GetPlayniteCoverRatio();
+            if (ratio.Width <= 0 || ratio.Height <= 0)
+            {
+                return new Size(600, 900);
+            }
+
+            if (ratio.Width == ratio.Height)
+            {
+                return new Size(600, 600);
+            }
+
+            if (ratio.Width > ratio.Height)
+            {
+                var width = 920;
+                var height = Math.Max(1, (int)Math.Round(width * ((double)ratio.Height / ratio.Width)));
+                return new Size(width, height);
+            }
+
+            var targetHeight = 900;
+            var targetWidth = Math.Max(1, (int)Math.Round(targetHeight * ((double)ratio.Width / ratio.Height)));
+            return new Size(targetWidth, targetHeight);
+        }
+
+        private string GetPlayniteCoverSteamGridDimensions()
+        {
+            var ratio = GetPlayniteCoverRatio();
+            if (ratio.Width <= 0 || ratio.Height <= 0)
+            {
+                return "600x900,660x930,342x482";
+            }
+
+            var normalized = (double)ratio.Width / ratio.Height;
+            if (Math.Abs(normalized - 1.0) < 0.02)
+            {
+                return "512x512,1024x1024";
+            }
+
+            if (Math.Abs(normalized - (2.0 / 3.0)) < 0.05 ||
+                Math.Abs(normalized - (3.0 / 4.0)) < 0.05)
+            {
+                return "600x900,660x930,342x482";
+            }
+
+            if (Math.Abs(normalized - (92.0 / 43.0)) < 0.08 ||
+                normalized > 1.2)
+            {
+                return "920x430,460x215";
+            }
+
+            return string.Empty;
+        }
+
         private Size GetTargetSize(MediaKind kind)
         {
             if (kind == MediaKind.Cover)
@@ -1689,6 +1984,11 @@ namespace MetaDataIAPlugin
                 if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetSquare)
                 {
                     return new Size(600, 600);
+                }
+
+                if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetPlayniteDefined)
+                {
+                    return GetPlayniteCoverTargetSize();
                 }
 
                 if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetHorizontal)

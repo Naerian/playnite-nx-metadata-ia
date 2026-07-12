@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 
@@ -140,6 +142,94 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void ExportSettingsBackup_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || viewModel.Settings == null)
+            {
+                return;
+            }
+
+            try
+            {
+                viewModel.SyncSelectedTemplate();
+                var dialog = new SaveFileDialog
+                {
+                    Title = Loc("MTDA_ExportSettingsBackup", "Export settings backup"),
+                    Filter = "JSON (*.json)|*.json",
+                    FileName = "MetadataAISettingsBackup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".json"
+                };
+
+                if (dialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                var backup = new MetaDataIASettingsBackup
+                {
+                    Settings = Serialization.GetClone(viewModel.Settings)
+                };
+
+                File.WriteAllText(dialog.FileName, Serialization.ToJson(backup, true));
+                MessageBox.Show(Loc("MTDA_BackupExported", "Settings backup exported."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Loc("MTDA_BackupExportFailed", "Could not export settings backup.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void ImportSettingsBackup_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Title = Loc("MTDA_ImportSettingsBackup", "Import settings backup"),
+                    Filter = "JSON (*.json)|*.json"
+                };
+
+                if (dialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                MetaDataIASettingsBackup backup;
+                if (!Serialization.TryFromJsonFile(dialog.FileName, out backup) ||
+                    backup == null ||
+                    backup.Settings == null)
+                {
+                    MessageBox.Show(Loc("MTDA_BackupImportInvalid", "The selected backup file is not valid."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var confirm = MessageBox.Show(
+                    Loc("MTDA_BackupImportConfirm", "Importing this backup will replace the current Metadata AI settings and save them immediately. Continue?"),
+                    PluginTitle,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                viewModel.ReplaceSettingsFromBackup(backup.Settings);
+                LoadPasswordBoxes(viewModel.Settings);
+                MessageBox.Show(Loc("MTDA_BackupImported", "Settings backup imported."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Loc("MTDA_BackupImportFailed", "Could not import settings backup.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void ApplyProvider_OnClick(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
@@ -188,6 +278,33 @@ namespace MetaDataIAPlugin
                 DisableAllMediaSources(s);
                 s.MediaUseSteamGridDb = true;
                 s.MediaUseSteamGridDbBackgroundGrids = true;
+            });
+        }
+
+        private void TestPsnMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "PlayStation Store", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUsePsnStore = true;
+            });
+        }
+
+        private void TestXboxMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "Xbox Store", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseXboxStore = true;
+            });
+        }
+
+        private void TestEpicMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "Epic Store", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseEpicStore = true;
             });
         }
 
@@ -241,8 +358,17 @@ namespace MetaDataIAPlugin
                     configure(testSettings);
                 }
 
+                if (!string.Equals(sourceName, "fuentes activas", StringComparison.OrdinalIgnoreCase))
+                {
+                    testSettings.MediaCoverSourcePriority = sourceName;
+                    testSettings.MediaIconSourcePriority = sourceName;
+                    testSettings.MediaBackgroundSourcePriority = string.Equals(sourceName, "Steam oficial", StringComparison.OrdinalIgnoreCase)
+                        ? "Steam oficial, Steam capturas"
+                        : sourceName;
+                }
+
                 var service = new MediaGenerationService(testSettings);
-                var testGame = new Game { Name = "Hades" };
+                var testGame = CreateMediaTestGame(sourceName);
                 var coverCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Cover);
                 var iconCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Icon);
                 var backgroundCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Background);
@@ -258,7 +384,7 @@ namespace MetaDataIAPlugin
                 }
                 else
                 {
-                    MessageBox.Show(string.Format(Loc("MTDA_TestMediaNoCandidates", "{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria."), sourceName, testGame.Name), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(BuildNoMediaCandidatesMessage(sourceName, testGame.Name), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (System.Exception ex)
@@ -274,10 +400,64 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private static Game CreateMediaTestGame(string sourceName)
+        {
+            if (string.Equals(sourceName, "Xbox Store", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game { Name = "Halo Infinite" };
+            }
+
+            if (string.Equals(sourceName, "PlayStation Store", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game { Name = "Astro Bot" };
+            }
+
+            if (string.Equals(sourceName, "Epic Store", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game
+                {
+                    Name = "Fortnite",
+                    Links = new ObservableCollection<Link>
+                    {
+                        new Link("Epic Store", "https://store.epicgames.com/p/fortnite")
+                    }
+                };
+            }
+
+            return new Game { Name = "Hades" };
+        }
+
+        private static string BuildNoMediaCandidatesMessage(string sourceName, string gameName)
+        {
+            if (string.Equals(sourceName, "Epic Store", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Format(
+                    Loc("MTDA_TestMediaNoCandidatesEpic", "{0} did not return media candidates for the test game ({1}). Epic Store is a best-effort source: it usually needs an existing Epic Store link on the game and the website can block automated reads. Keep it enabled as a secondary source, but prefer SteamGridDB, Steam, RAWG, IGDB or MobyGames for reliable automatic media."),
+                    sourceName,
+                    gameName);
+            }
+
+            if (string.Equals(sourceName, "Xbox Store", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Format(
+                    Loc("MTDA_TestMediaNoCandidatesXbox", "{0} responded, but did not return useful media for the test game ({1}). The Microsoft Store search can be market-dependent and may return no usable images for some titles. This does not necessarily mean the configuration is wrong."),
+                    sourceName,
+                    gameName);
+            }
+
+            return string.Format(
+                Loc("MTDA_TestMediaNoCandidates", "{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria."),
+                sourceName,
+                gameName);
+        }
+
         private static void DisableAllMediaSources(MetaDataIASettings settings)
         {
             settings.MediaUseSteamOfficial = false;
             settings.MediaUseSteamScreenshots = false;
+            settings.MediaUsePsnStore = false;
+            settings.MediaUseXboxStore = false;
+            settings.MediaUseEpicStore = false;
             settings.MediaUseSteamGridDb = false;
             settings.MediaUseSteamGridDbBackgroundGrids = false;
             settings.MediaUseRawg = false;
@@ -649,6 +829,21 @@ namespace MetaDataIAPlugin
                 return settings.MediaUseSteamGridDb;
             }
 
+            if (string.Equals(source, "PlayStation Store", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUsePsnStore;
+            }
+
+            if (string.Equals(source, "Xbox Store", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseXboxStore;
+            }
+
+            if (string.Equals(source, "Epic Store", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseEpicStore;
+            }
+
             if (string.Equals(source, "RAWG", System.StringComparison.OrdinalIgnoreCase))
             {
                 return settings.MediaUseRawg;
@@ -674,7 +869,10 @@ namespace MetaDataIAPlugin
                 return new List<SourcePriorityItem>
                 {
                     Source("SteamGridDB"),
-                    Source("Steam oficial")
+                    Source("Steam oficial"),
+                    Source("PlayStation Store"),
+                    Source("Xbox Store"),
+                    Source("Epic Store")
                 };
             }
 
@@ -684,6 +882,9 @@ namespace MetaDataIAPlugin
                 {
                     Source("Steam oficial"),
                     Source("Steam capturas"),
+                    Source("PlayStation Store"),
+                    Source("Xbox Store"),
+                    Source("Epic Store"),
                     Source("SteamGridDB"),
                     Source("RAWG"),
                     Source("IGDB"),
@@ -694,6 +895,9 @@ namespace MetaDataIAPlugin
             return new List<SourcePriorityItem>
             {
                 Source("Steam oficial"),
+                Source("PlayStation Store"),
+                Source("Xbox Store"),
+                Source("Epic Store"),
                 Source("SteamGridDB"),
                 Source("IGDB"),
                 Source("RAWG"),
