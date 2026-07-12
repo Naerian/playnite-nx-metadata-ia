@@ -370,4 +370,26 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Annulla</sys:String>
+    <sys:String x:Key="MTDA_Configure">Configura</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Priorità fonti</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Fonti</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Controlla quale fonte vince quando la modalità automatica trova più candidati validi. Le fonti disattivate o senza API key vengono ignorate.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Configura priorità fonti</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Attiva le fonti da usare per questo tipo di media e cambia il loro ordine con le frecce.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Seleziona almeno una fonte.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Priorità fonti aggiornata.</sys:String>
+    <sys:String x:Key="MTDA_Save">Salva</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI è stato annullato. {0} gioco/i aggiornati prima dell interruzione.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">La ricerca media è stata annullata. {0} gioco/i aggiornati prima dell interruzione.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} non ha restituito candidati media per il gioco di prova ({1}). Epic Store è una fonte di supporto e può bloccare le letture automatiche.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} ha risposto, ma non ha restituito media utili per il gioco di prova ({1}). La ricerca Microsoft Store può dipendere dal mercato.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnostica fonti:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">API key mancante</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">nessuna corrispondenza affidabile del gioco</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">nessuna corrispondenza affidabile o nessun candidato utilizzabile</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} candidato/i trovati</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">errore della fonte o filtri rifiutati</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filtri</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">tutti i candidati sono stati rimossi dai filtri o dalle preferenze formato attuali</sys:String>
 </ResourceDictionary>

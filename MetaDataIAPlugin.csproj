@@ -60,6 +60,7 @@
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MediaGenerationService.cs" />
     <Compile Include="OfficialStoreDataService.cs" />
+    <Compile Include="TitleMatchingService.cs" />
     <Compile Include="MetaDataIAPlugin.cs" />
     <Compile Include="MetaDataIAProvider.cs" />
     <Compile Include="MetaDataIAPreviewViewModel.cs" />

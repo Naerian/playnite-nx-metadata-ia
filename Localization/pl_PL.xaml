@@ -370,4 +370,26 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Anuluj</sys:String>
+    <sys:String x:Key="MTDA_Configure">Konfiguruj</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Priorytet źródeł</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Źródła</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Określa, które źródło wygrywa, gdy tryb automatyczny znajdzie kilka poprawnych kandydatów. Wyłączone źródła lub źródła bez klucza API są pomijane.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Konfiguruj priorytet źródeł</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Włącz źródła używane dla tego typu mediów i zmień ich kolejność strzałkami.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Wybierz co najmniej jedno źródło.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Priorytet źródeł zaktualizowany.</sys:String>
+    <sys:String x:Key="MTDA_Save">Zapisz</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI zostało anulowane. Przed zatrzymaniem zaktualizowano {0} gier.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Wyszukiwanie mediów zostało anulowane. Przed zatrzymaniem zaktualizowano {0} gier.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} nie zwróciło kandydatów mediów dla gry testowej ({1}). Epic Store jest źródłem pomocniczym i może blokować automatyczne odczyty.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} odpowiedziało, ale nie zwróciło użytecznych mediów dla gry testowej ({1}). Wyszukiwanie Microsoft Store może zależeć od rynku.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnostyka źródeł:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">brak klucza API</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">brak wiarygodnego dopasowania gry</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">brak wiarygodnego dopasowania lub użytecznych kandydatów</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">znaleziono {0} kandydatów</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">błąd źródła lub odrzucone filtry</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filtry</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">wszyscy kandydaci zostali usunięci przez aktualne filtry lub preferencje formatu</sys:String>
 </ResourceDictionary>

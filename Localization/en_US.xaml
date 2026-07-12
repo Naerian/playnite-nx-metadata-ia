@@ -384,4 +384,12 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Source diagnostics:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">missing API key</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">no reliable game match</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">no reliable match or no usable candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} candidate(s) found</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">source error or rejected filters</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filters</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">all candidates were removed by current media filters or format preferences</sys:String>
 </ResourceDictionary>

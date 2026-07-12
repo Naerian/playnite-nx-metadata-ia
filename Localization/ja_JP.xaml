@@ -370,4 +370,26 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">キャンセル</sys:String>
+    <sys:String x:Key="MTDA_Configure">設定</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">ソース優先度</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">ソース</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">自動メディアモードで複数の有効な候補が見つかった場合に、どのソースを優先するかを設定します。無効なソースや API キーのないソースは無視されます。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">ソース優先度を設定</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">このメディア種類で使うソースを有効にし、矢印で順序を変更します。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">少なくとも 1 つのソースを選択してください。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">ソース優先度を更新しました。</sys:String>
+    <sys:String x:Key="MTDA_Save">保存</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI はキャンセルされました。停止前に {0} 件のゲームを更新しました。</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">メディア検索はキャンセルされました。停止前に {0} 件のゲームを更新しました。</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} はテストゲーム ({1}) のメディア候補を返しませんでした。Epic Store は補助ソースで、自動読み取りがブロックされる場合があります。</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} は応答しましたが、テストゲーム ({1}) の有用なメディアを返しませんでした。Microsoft Store 検索は地域に依存する場合があります。</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">ソース診断:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">API キーがありません</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">信頼できるゲーム一致なし</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">信頼できる一致または使用可能な候補なし</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} 件の候補が見つかりました</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">ソースエラーまたは拒否されたフィルター</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">フィルター</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">現在のフィルターまたは形式設定により、すべての候補が除外されました</sys:String>
 </ResourceDictionary>

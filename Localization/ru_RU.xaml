@@ -370,4 +370,26 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Отмена</sys:String>
+    <sys:String x:Key="MTDA_Configure">Настроить</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Приоритет источников</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Источники</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Определяет, какой источник будет выбран, если автоматический режим найдет несколько подходящих кандидатов. Отключенные источники или источники без API-ключа игнорируются.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Настроить приоритет источников</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Включите источники для этого типа медиа и измените порядок стрелками.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Выберите хотя бы один источник.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Приоритет источников обновлен.</sys:String>
+    <sys:String x:Key="MTDA_Save">Сохранить</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI отменен. До остановки обновлено игр: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Поиск медиа отменен. До остановки обновлено игр: {0}.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} не вернул кандидатов медиа для тестовой игры ({1}). Epic Store является вспомогательным источником и может блокировать автоматическое чтение.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} ответил, но не вернул полезные медиа для тестовой игры ({1}). Поиск Microsoft Store может зависеть от региона.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Диагностика источников:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">нет API-ключа</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">нет надежного совпадения игры</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">нет надежного совпадения или пригодных кандидатов</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">найдено кандидатов: {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">ошибка источника или отклоненные фильтры</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Фильтры</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">все кандидаты удалены текущими фильтрами или настройками формата</sys:String>
 </ResourceDictionary>

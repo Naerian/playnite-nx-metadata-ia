@@ -357,4 +357,12 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Terminos reutilizables aprendidos de los metadatos aplicados. Formato: idioma.campo=valor; valor. Ejemplo: es.tags=Disparos; Cooperativo. Edita este texto para unir variantes o forzar tus terminos preferidos.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Abrir en navegador</sys:String>
     <sys:String x:Key="MTDA_Discard">Descartar</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnostico por fuente:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">falta API key</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">sin coincidencia fiable del juego</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">sin coincidencia fiable o sin candidatos utiles</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} candidato(s) encontrados</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">error de fuente o filtros rechazados</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filtros</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">todos los candidatos fueron eliminados por los filtros o preferencias de formato actuales</sys:String>
 </ResourceDictionary>

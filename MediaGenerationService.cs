@@ -12,7 +12,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,6 +62,7 @@ namespace MetaDataIAPlugin
         private static readonly HttpClient Client = new HttpClient();
         private static readonly object CandidateCacheLock = new object();
         private static readonly Dictionary<string, List<MediaCandidate>> CandidateCache = new Dictionary<string, List<MediaCandidate>>();
+        private static readonly Dictionary<string, List<string>> CandidateDiagnosticsCache = new Dictionary<string, List<string>>();
         private readonly MetaDataIASettings settings;
         private readonly IPlayniteAPI playniteApi;
         private string generatedIgdbAccessToken;
@@ -94,7 +94,7 @@ namespace MetaDataIAPlugin
             var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
             if (candidates.Count == 0)
             {
-                throw new InvalidOperationException(Loc("MTDA_ErrorNoImagesFound", "No images were found for this game in the configured media sources."));
+                throw new InvalidOperationException(BuildNoMediaFoundMessage(game, kind));
             }
 
             var selected = ChooseCandidate(candidates, kind);
@@ -149,6 +149,21 @@ namespace MetaDataIAPlugin
 
             var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
             return candidates.Count;
+        }
+
+        public string GetLastDiagnostics(Game game, MediaKind kind)
+        {
+            var cacheKey = BuildCandidateCacheKey(game, kind);
+            lock (CandidateCacheLock)
+            {
+                List<string> diagnostics;
+                if (CandidateDiagnosticsCache.TryGetValue(cacheKey, out diagnostics) && diagnostics.Count > 0)
+                {
+                    return string.Join(Environment.NewLine, diagnostics);
+                }
+            }
+
+            return string.Empty;
         }
 
         public async Task<GeneratedMediaFile> GenerateFromOptionAsync(Game game, MediaPreviewOption option, CancellationToken cancelToken = default(CancellationToken))
@@ -291,6 +306,45 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private string BuildNoMediaFoundMessage(Game game, MediaKind kind)
+        {
+            var message = Loc("MTDA_ErrorNoImagesFound", "No images were found for this game in the configured media sources.");
+            var diagnostics = GetLastDiagnostics(game, kind);
+            if (string.IsNullOrWhiteSpace(diagnostics))
+            {
+                return message;
+            }
+
+            return message + Environment.NewLine + Environment.NewLine +
+                   Loc("MTDA_MediaDiagnosticsTitle", "Source diagnostics:") + Environment.NewLine +
+                   diagnostics;
+        }
+
+        private static void AddSourceCandidates(List<MediaCandidate> candidates, List<string> diagnostics, string sourceName, IEnumerable<MediaCandidate> sourceCandidates)
+        {
+            var validCandidates = (sourceCandidates ?? new List<MediaCandidate>())
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
+                .ToList();
+
+            candidates.AddRange(validCandidates);
+            AddDiagnostic(
+                diagnostics,
+                sourceName,
+                validCandidates.Count == 0
+                    ? Loc("MTDA_MediaDiagNoCandidates", "no reliable match or no usable candidates")
+                    : string.Format(Loc("MTDA_MediaDiagCandidatesFound", "{0} candidate(s) found"), validCandidates.Count));
+        }
+
+        private static void AddDiagnostic(List<string> diagnostics, string sourceName, string detail)
+        {
+            if (diagnostics == null || string.IsNullOrWhiteSpace(sourceName) || string.IsNullOrWhiteSpace(detail))
+            {
+                return;
+            }
+
+            diagnostics.Add("- " + sourceName + ": " + detail);
+        }
+
         private async Task<List<MediaCandidate>> GetCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
         {
             var cacheKey = BuildCandidateCacheKey(game, kind);
@@ -304,113 +358,167 @@ namespace MetaDataIAPlugin
             }
 
             var candidates = new List<MediaCandidate>();
+            var diagnostics = new List<string>();
             var steamId = await ResolveSteamAppId(game, cancelToken).ConfigureAwait(false);
 
-            if (!string.IsNullOrWhiteSpace(steamId))
+            if (settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots)
             {
-                if (settings.MediaUseSteamOfficial)
+                if (string.IsNullOrWhiteSpace(steamId))
                 {
-                    candidates.AddRange(GetSteamOfficialCandidates(steamId, kind));
+                    AddDiagnostic(diagnostics, "Steam", Loc("MTDA_MediaDiagNoReliableMatch", "no reliable game match"));
                 }
-
-                if (settings.MediaUseSteamScreenshots)
+                else
                 {
-                    candidates.AddRange(await GetSteamStoreCandidates(steamId, kind, cancelToken).ConfigureAwait(false));
+                    if (settings.MediaUseSteamOfficial)
+                    {
+                        var sourceCandidates = GetSteamOfficialCandidates(steamId, kind);
+                        AddSourceCandidates(candidates, diagnostics, "Steam", sourceCandidates);
+                    }
+
+                    if (settings.MediaUseSteamScreenshots && kind == MediaKind.Background)
+                    {
+                        var sourceCandidates = await GetSteamStoreCandidates(steamId, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "Steam screenshots", sourceCandidates);
+                    }
                 }
             }
 
             var officialStores = new OfficialStoreDataService(settings);
             if (settings.MediaUsePsnStore)
             {
-                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourcePsnStore, sourceCandidates);
             }
 
             if (settings.MediaUseXboxStore)
             {
-                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceXboxStore, sourceCandidates);
             }
 
             if (settings.MediaUseEpicStore)
             {
-                candidates.AddRange((await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate));
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceEpicStore, sourceCandidates);
             }
 
-            if (settings.MediaUseSteamGridDb && !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
+            if (settings.MediaUseSteamGridDb)
             {
-                try
+                if (string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
                 {
-                    var gameId = await ResolveSteamGridDbGameId(game, cancelToken).ConfigureAwait(false);
-                    if (gameId > 0)
+                    AddDiagnostic(diagnostics, "SteamGridDB", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
+                }
+                else
+                {
+                    try
                     {
-                        candidates.AddRange(await GetCandidates(gameId, kind, cancelToken).ConfigureAwait(false));
-                        if (kind == MediaKind.Icon &&
-                            candidates.Count == 0 &&
-                            settings.IconPreset == MetaDataIASettings.IconPresetSquare &&
-                            settings.IconSquarePreferGrid)
+                        var gameId = await ResolveSteamGridDbGameId(game, cancelToken).ConfigureAwait(false);
+                        if (gameId > 0)
                         {
-                            candidates.AddRange(await GetGridIconCandidates(gameId, cancelToken).ConfigureAwait(false));
-                        }
+                            var sourceCandidates = await GetCandidates(gameId, kind, cancelToken).ConfigureAwait(false);
+                            AddSourceCandidates(candidates, diagnostics, "SteamGridDB", sourceCandidates);
 
-                        if (kind == MediaKind.Background && settings.MediaUseSteamGridDbBackgroundGrids)
+                            if (kind == MediaKind.Icon &&
+                                sourceCandidates.Count == 0 &&
+                                settings.IconPreset == MetaDataIASettings.IconPresetSquare &&
+                                settings.IconSquarePreferGrid)
+                            {
+                                var gridIconCandidates = await GetGridIconCandidates(gameId, cancelToken).ConfigureAwait(false);
+                                AddSourceCandidates(candidates, diagnostics, "SteamGridDB grids", gridIconCandidates);
+                            }
+
+                            if (kind == MediaKind.Background && settings.MediaUseSteamGridDbBackgroundGrids)
+                            {
+                                var gridBackgroundCandidates = await GetSteamGridDbBackgroundGridCandidates(gameId, cancelToken).ConfigureAwait(false);
+                                AddSourceCandidates(candidates, diagnostics, "SteamGridDB grids", gridBackgroundCandidates);
+                            }
+                        }
+                        else
                         {
-                            candidates.AddRange(await GetSteamGridDbBackgroundGridCandidates(gameId, cancelToken).ConfigureAwait(false));
+                            AddDiagnostic(diagnostics, "SteamGridDB", Loc("MTDA_MediaDiagNoReliableMatch", "no reliable game match"));
                         }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch
-                {
-                    // SteamGridDB can reject specific filters with 400. Keep candidates from Steam or other sources.
-                }
-            }
-
-            if (settings.MediaUseRawg && !string.IsNullOrWhiteSpace(settings.RawgApiKey))
-            {
-                try
-                {
-                    candidates.AddRange(await GetRawgCandidates(game, kind, cancelToken).ConfigureAwait(false));
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch
-                {
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "SteamGridDB", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
                 }
             }
 
-            if (settings.MediaUseMobyGames && !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey))
+            if (settings.MediaUseRawg)
             {
-                try
+                if (string.IsNullOrWhiteSpace(settings.RawgApiKey))
                 {
-                    candidates.AddRange(await GetMobyGamesCandidates(game, kind, cancelToken).ConfigureAwait(false));
+                    AddDiagnostic(diagnostics, "RAWG", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
                 }
-                catch (OperationCanceledException)
+                else
                 {
-                    throw;
-                }
-                catch
-                {
+                    try
+                    {
+                        var sourceCandidates = await GetRawgCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "RAWG", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "RAWG", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
                 }
             }
 
-            if (settings.MediaUseIgdb &&
-                !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
-                (!string.IsNullOrWhiteSpace(settings.IgdbAccessToken) || !string.IsNullOrWhiteSpace(settings.IgdbClientSecret)))
+            if (settings.MediaUseMobyGames)
             {
-                try
+                if (string.IsNullOrWhiteSpace(settings.MobyGamesApiKey))
                 {
-                    candidates.AddRange(await GetIgdbCandidates(game, kind, cancelToken).ConfigureAwait(false));
+                    AddDiagnostic(diagnostics, "MobyGames", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
                 }
-                catch (OperationCanceledException)
+                else
                 {
-                    throw;
+                    try
+                    {
+                        var sourceCandidates = await GetMobyGamesCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "MobyGames", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "MobyGames", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
                 }
-                catch
+            }
+
+            if (settings.MediaUseIgdb)
+            {
+                if (string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
+                    (string.IsNullOrWhiteSpace(settings.IgdbAccessToken) && string.IsNullOrWhiteSpace(settings.IgdbClientSecret)))
                 {
+                    AddDiagnostic(diagnostics, "IGDB", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
+                }
+                else
+                {
+                    try
+                    {
+                        var sourceCandidates = await GetIgdbCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "IGDB", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "IGDB", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
                 }
             }
 
@@ -419,15 +527,23 @@ namespace MetaDataIAPlugin
                 EnsureConfigured();
             }
 
-            var result = FilterCandidatesByKindSource(DeduplicateCandidates(candidates), kind);
+            var deduplicated = DeduplicateCandidates(candidates);
+            var result = FilterCandidatesByKindSource(deduplicated, kind);
+            if (deduplicated.Count > 0 && result.Count == 0)
+            {
+                AddDiagnostic(diagnostics, Loc("MTDA_MediaDiagFilters", "Filters"), Loc("MTDA_MediaDiagFiltersRemovedAll", "all candidates were removed by current media filters or format preferences"));
+            }
+
             lock (CandidateCacheLock)
             {
                 if (CandidateCache.Count > 120)
                 {
                     CandidateCache.Clear();
+                    CandidateDiagnosticsCache.Clear();
                 }
 
                 CandidateCache[cacheKey] = result.Select(CloneCandidate).ToList();
+                CandidateDiagnosticsCache[cacheKey] = diagnostics.ToList();
             }
 
             return result;
@@ -536,115 +652,12 @@ namespace MetaDataIAPlugin
 
         private static bool IsGoodSteamTitleMatch(string expected, string candidate)
         {
-            var left = NormalizeTitle(expected);
-            var right = NormalizeTitle(candidate);
-            if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
-            {
-                return false;
-            }
-
-            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase) ||
-                   HasOnlyAllowedStoreSuffix(left, right) ||
-                   HasOnlyAllowedStoreSuffix(right, left);
-        }
-
-        private static bool HasOnlyAllowedStoreSuffix(string baseTitle, string fullTitle)
-        {
-            if (string.IsNullOrWhiteSpace(baseTitle) || string.IsNullOrWhiteSpace(fullTitle) ||
-                !fullTitle.StartsWith(baseTitle + " ", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            var suffix = fullTitle.Substring(baseTitle.Length).Trim();
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                return false;
-            }
-
-            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "standard",
-                "edition",
-                "base",
-                "game",
-                "digital",
-                "version",
-                "ps4",
-                "ps5",
-                "xbox",
-                "one",
-                "series",
-                "x",
-                "s",
-                "windows",
-                "pc"
-            };
-
-            return suffix
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .All(x => allowed.Contains(x));
+            return TitleMatchingService.IsReliableMatch(expected, candidate);
         }
 
         private static List<string> BuildTitleAliases(string value)
         {
-            var result = new List<string>();
-            AddTitleAlias(result, value);
-
-            var title = value ?? string.Empty;
-            title = Regex.Replace(title, "\\s+", " ").Trim();
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return result;
-            }
-
-            AddTitleAlias(result, Regex.Replace(
-                title,
-                "\\s*\\((?:\\d{4}|[^)]*(?:edition|deluxe|standard|ultimate|goty|game of the year|complete|collector|collectors|premium|gold|digital)[^)]*)\\)\\s*$",
-                string.Empty,
-                RegexOptions.IgnoreCase));
-
-            var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
-            AddTitleAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-            AddTitleAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-
-            return result;
-        }
-
-        private static void AddTitleAlias(List<string> result, string value)
-        {
-            if (result == null || string.IsNullOrWhiteSpace(value))
-            {
-                return;
-            }
-
-            var cleaned = Regex.Replace(value, "\\s+", " ").Trim();
-            if (cleaned.Length == 0)
-            {
-                return;
-            }
-
-            var normalized = NormalizeTitle(cleaned);
-            if (string.IsNullOrWhiteSpace(normalized) || result.Any(x => string.Equals(NormalizeTitle(x), normalized, StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
-
-            result.Add(cleaned);
-        }
-
-        private static string NormalizeTitle(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var chars = value
-                .ToLowerInvariant()
-                .Select(ch => char.IsLetterOrDigit(ch) ? ch : ' ')
-                .ToArray();
-            return string.Join(" ", new string(chars).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            return TitleMatchingService.BuildAliases(value);
         }
 
         private static List<MediaCandidate> DeduplicateCandidates(List<MediaCandidate> candidates)

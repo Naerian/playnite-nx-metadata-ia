@@ -370,4 +370,26 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">取消</sys:String>
+    <sys:String x:Key="MTDA_Configure">配置</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">来源优先级</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">来源</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">当自动媒体模式找到多个有效候选项时，控制优先使用哪个来源。已禁用或没有 API Key 的来源会被忽略。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">配置来源优先级</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">启用此媒体类型要使用的来源，并使用箭头调整顺序。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">请至少选择一个来源。</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">来源优先级已更新。</sys:String>
+    <sys:String x:Key="MTDA_Save">保存</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI 已取消。停止前已更新 {0} 个游戏。</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">媒体搜索已取消。停止前已更新 {0} 个游戏。</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} 没有为测试游戏 ({1}) 返回媒体候选项。Epic Store 是辅助来源，可能会阻止自动读取。</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} 已响应，但没有为测试游戏 ({1}) 返回可用媒体。Microsoft Store 搜索可能受市场区域影响。</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">来源诊断：</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">缺少 API Key</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">没有可靠的游戏匹配</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">没有可靠匹配或可用候选项</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">找到 {0} 个候选项</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">来源错误或筛选条件被拒绝</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">筛选</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">所有候选项都被当前筛选条件或格式偏好移除</sys:String>
 </ResourceDictionary>

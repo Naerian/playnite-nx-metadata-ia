@@ -370,4 +370,26 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Abbrechen</sys:String>
+    <sys:String x:Key="MTDA_Configure">Konfigurieren</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Quellenpriorität</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Quellen</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Legt fest, welche Quelle gewinnt, wenn im automatischen Medienmodus mehrere gültige Kandidaten gefunden werden. Deaktivierte Quellen oder Quellen ohne API-Schlüssel werden ignoriert.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Quellenpriorität konfigurieren</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Aktiviere die Quellen, die für diesen Medientyp verwendet werden sollen, und ändere ihre Reihenfolge mit den Pfeilen.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Wähle mindestens eine Quelle aus.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Quellenpriorität aktualisiert.</sys:String>
+    <sys:String x:Key="MTDA_Save">Speichern</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI wurde abgebrochen. {0} Spiel(e) wurden aktualisiert, bevor der Vorgang gestoppt wurde.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Die Mediensuche wurde abgebrochen. {0} Spiel(e) wurden aktualisiert, bevor der Vorgang gestoppt wurde.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} hat keine Medienkandidaten für das Testspiel ({1}) zurückgegeben. Epic Store ist eine Hilfsquelle und kann automatische Zugriffe blockieren.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} hat geantwortet, aber keine brauchbaren Medien für das Testspiel ({1}) zurückgegeben. Die Microsoft-Store-Suche kann vom Markt abhängen.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Quellendiagnose:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">API-Schlüssel fehlt</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">keine zuverlässige Spielübereinstimmung</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">keine zuverlässige Übereinstimmung oder keine brauchbaren Kandidaten</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} Kandidat(en) gefunden</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">Quellenfehler oder abgelehnte Filter</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filter</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">alle Kandidaten wurden durch aktuelle Filter oder Formatvorgaben entfernt</sys:String>
 </ResourceDictionary>

@@ -492,13 +492,14 @@ namespace MetaDataIAPlugin
             }
 
             var optionsByKind = new Dictionary<MediaKind, List<MediaPreviewOption>>();
+            var diagnosticsByKind = new Dictionary<MediaKind, string>();
+            var service = new MediaGenerationService(activeSettings, PlayniteApi);
             Exception loadError = null;
             var cancelled = false;
             PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
             {
                 using (progress.CancelToken.Register(() => cancelled = true))
                 {
-                    var service = new MediaGenerationService(activeSettings, PlayniteApi);
                     foreach (var kind in kinds)
                     {
                         if (progress.CancelToken.IsCancellationRequested)
@@ -511,6 +512,7 @@ namespace MetaDataIAPlugin
                         try
                         {
                             optionsByKind[kind] = service.GetPreviewOptionsAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
+                            diagnosticsByKind[kind] = service.GetLastDiagnostics(game, kind);
                             if (progress.CancelToken.IsCancellationRequested)
                             {
                                 cancelled = true;
@@ -526,6 +528,7 @@ namespace MetaDataIAPlugin
                         {
                             logger.Error(ex, "Failed to load media options.");
                             optionsByKind[kind] = new List<MediaPreviewOption>();
+                            diagnosticsByKind[kind] = service.GetLastDiagnostics(game, kind);
                             loadError = ex;
                         }
                     }
@@ -539,7 +542,16 @@ namespace MetaDataIAPlugin
 
             if (optionsByKind.Values.All(x => x.Count == 0))
             {
-                PlayniteApi.Dialogs.ShowErrorMessage(loadError == null ? Loc("MTDA_ErrorNoMediaCandidatesForGame", "No media candidates were found for this game in the configured sources.") : UserError(loadError), PluginTitle);
+                var diagnosticText = BuildMediaDiagnosticsMessage(kinds, diagnosticsByKind);
+                var message = loadError == null
+                    ? Loc("MTDA_ErrorNoMediaCandidatesForGame", "No media candidates were found for this game in the configured sources.")
+                    : UserError(loadError);
+                if (!string.IsNullOrWhiteSpace(diagnosticText))
+                {
+                    message += Environment.NewLine + Environment.NewLine + diagnosticText;
+                }
+
+                PlayniteApi.Dialogs.ShowErrorMessage(message, PluginTitle);
                 return;
             }
 
@@ -970,6 +982,34 @@ namespace MetaDataIAPlugin
             }
 
             return Loc("MTDA_Background", "Background");
+        }
+
+        private string BuildMediaDiagnosticsMessage(IEnumerable<MediaKind> kinds, Dictionary<MediaKind, string> diagnosticsByKind)
+        {
+            if (kinds == null || diagnosticsByKind == null || diagnosticsByKind.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var parts = new List<string>();
+            foreach (var kind in kinds)
+            {
+                string diagnostics;
+                if (!diagnosticsByKind.TryGetValue(kind, out diagnostics) || string.IsNullOrWhiteSpace(diagnostics))
+                {
+                    continue;
+                }
+
+                parts.Add(MediaKindName(kind) + ":" + Environment.NewLine + diagnostics);
+            }
+
+            if (parts.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return Loc("MTDA_MediaDiagnosticsTitle", "Source diagnostics:") + Environment.NewLine +
+                   string.Join(Environment.NewLine + Environment.NewLine, parts);
         }
 
         private static void ApplyPlayniteWindowStyle(Window window)

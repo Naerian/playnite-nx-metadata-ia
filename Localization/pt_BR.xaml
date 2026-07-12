@@ -370,4 +370,26 @@ Planos de fundo: {4}</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">Cancelar</sys:String>
+    <sys:String x:Key="MTDA_Configure">Configurar</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">Prioridade das fontes</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">Fontes</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">Controla qual fonte vence quando o modo automático encontra vários candidatos válidos. Fontes desativadas ou sem chave de API são ignoradas.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Configurar prioridade das fontes</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Ative as fontes usadas para este tipo de mídia e altere a ordem com as setas.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Selecione pelo menos uma fonte.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">Prioridade das fontes atualizada.</sys:String>
+    <sys:String x:Key="MTDA_Save">Salvar</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">O Metadata AI foi cancelado. {0} jogo(s) foram atualizados antes da interrupção.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">A busca de mídia foi cancelada. {0} jogo(s) foram atualizados antes da interrupção.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} não retornou candidatos de mídia para o jogo de teste ({1}). A Epic Store é uma fonte auxiliar e pode bloquear leituras automáticas.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} respondeu, mas não retornou mídia útil para o jogo de teste ({1}). A busca da Microsoft Store pode depender da região.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnóstico por fonte:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">chave de API ausente</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">nenhuma correspondência confiável do jogo</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">nenhuma correspondência confiável ou nenhum candidato utilizável</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0} candidato(s) encontrado(s)</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">erro da fonte ou filtros rejeitados</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">Filtros</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">todos os candidatos foram removidos pelos filtros ou preferências de formato atuais</sys:String>
 </ResourceDictionary>

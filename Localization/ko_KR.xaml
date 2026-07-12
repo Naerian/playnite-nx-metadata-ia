@@ -370,4 +370,26 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_Cancel">취소</sys:String>
+    <sys:String x:Key="MTDA_Configure">설정</sys:String>
+    <sys:String x:Key="MTDA_SourcePriority">소스 우선순위</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityShort">소스</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityHelp">자동 미디어 모드에서 여러 유효한 후보가 있을 때 우선할 소스를 정합니다. 비활성 소스나 API 키가 없는 소스는 무시됩니다.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">소스 우선순위 설정</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogHelp">이 미디어 유형에 사용할 소스를 활성화하고 화살표로 순서를 변경하세요.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">소스를 하나 이상 선택하세요.</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityAccepted">소스 우선순위가 업데이트되었습니다.</sys:String>
+    <sys:String x:Key="MTDA_Save">저장</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI가 취소되었습니다. 중지되기 전에 {0}개 게임이 업데이트되었습니다.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">미디어 검색이 취소되었습니다. 중지되기 전에 {0}개 게임이 업데이트되었습니다.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0}이 테스트 게임({1})의 미디어 후보를 반환하지 않았습니다. Epic Store는 보조 소스이며 자동 읽기를 차단할 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0}이 응답했지만 테스트 게임({1})에 유용한 미디어를 반환하지 않았습니다. Microsoft Store 검색은 지역에 따라 달라질 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagnosticsTitle">소스 진단:</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagMissingApiKey">API 키 없음</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoReliableMatch">신뢰할 수 있는 게임 일치 없음</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagNoCandidates">신뢰할 수 있는 일치 또는 사용 가능한 후보 없음</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagCandidatesFound">{0}개 후보 발견</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagSourceError">소스 오류 또는 거부된 필터</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFilters">필터</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">현재 필터 또는 형식 설정으로 모든 후보가 제거되었습니다</sys:String>
 </ResourceDictionary>

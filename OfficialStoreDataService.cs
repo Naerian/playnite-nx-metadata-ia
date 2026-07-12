@@ -648,104 +648,12 @@ namespace MetaDataIAPlugin
 
         private static bool IsReliableStoreTitleMatch(string expected, string candidate)
         {
-            var left = NormalizeTitle(expected);
-            var right = NormalizeTitle(candidate);
-            if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
-            {
-                return false;
-            }
-
-            if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return HasOnlyAllowedStoreSuffix(left, right) || HasOnlyAllowedStoreSuffix(right, left);
-        }
-
-        private static bool HasOnlyAllowedStoreSuffix(string baseTitle, string fullTitle)
-        {
-            if (string.IsNullOrWhiteSpace(baseTitle) || string.IsNullOrWhiteSpace(fullTitle) ||
-                !fullTitle.StartsWith(baseTitle + " ", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            var suffix = fullTitle.Substring(baseTitle.Length).Trim();
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                return false;
-            }
-
-            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "standard",
-                "edition",
-                "base",
-                "game",
-                "digital",
-                "version",
-                "ps4",
-                "ps5",
-                "xbox",
-                "one",
-                "series",
-                "x",
-                "s",
-                "windows",
-                "pc"
-            };
-
-            return suffix
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .All(x => allowed.Contains(x));
+            return TitleMatchingService.IsReliableMatch(expected, candidate);
         }
 
         private static List<string> BuildTitleAliases(string value)
         {
-            var result = new List<string>();
-            AddTitleAlias(result, value);
-
-            var title = value ?? string.Empty;
-            title = Regex.Replace(title, "\\s+", " ").Trim();
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return result;
-            }
-
-            AddTitleAlias(result, Regex.Replace(
-                title,
-                "\\s*\\((?:\\d{4}|[^)]*(?:edition|deluxe|standard|ultimate|goty|game of the year|complete|collector|collectors|premium|gold|digital)[^)]*)\\)\\s*$",
-                string.Empty,
-                RegexOptions.IgnoreCase));
-
-            var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
-            AddTitleAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-            AddTitleAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-
-            return result;
-        }
-
-        private static void AddTitleAlias(List<string> result, string value)
-        {
-            if (result == null || string.IsNullOrWhiteSpace(value))
-            {
-                return;
-            }
-
-            var cleaned = Regex.Replace(value, "\\s+", " ").Trim();
-            if (cleaned.Length == 0)
-            {
-                return;
-            }
-
-            var normalized = NormalizeTitle(cleaned);
-            if (string.IsNullOrWhiteSpace(normalized) || result.Any(x => string.Equals(NormalizeTitle(x), normalized, StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
-
-            result.Add(cleaned);
+            return TitleMatchingService.BuildAliases(value);
         }
 
         private static List<string> GetGameLinks(Game game)
@@ -888,20 +796,6 @@ namespace MetaDataIAPlugin
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-        }
-
-        private static string NormalizeTitle(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var chars = value
-                .ToLowerInvariant()
-                .Select(ch => char.IsLetterOrDigit(ch) ? ch : ' ')
-                .ToArray();
-            return string.Join(" ", new string(chars).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
         }
 
         private static string MakeAbsoluteUrl(string url, string baseUrl)
