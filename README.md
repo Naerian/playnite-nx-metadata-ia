@@ -4,6 +4,16 @@ Metadata AI is a Playnite metadata provider extension that uses AI, official sto
 
 It is designed for users who want a Playnite library with a unified editorial style instead of mixed descriptions and tags from multiple stores.
 
+## Documentation
+
+The complete user guide is available in the project Wiki:
+
+- [English documentation](https://github.com/Naerian/playnite-nx-metadata-ia/wiki/EN-Overview-and-Installation)
+- [Documentación en español](https://github.com/Naerian/playnite-nx-metadata-ia/wiki/ES-Descripcion-General-e-Instalacion)
+- [Wiki language selector](https://github.com/Naerian/playnite-nx-metadata-ia/wiki)
+
+The Wiki covers initial setup, AI providers, templates and tokens, field rules, vocabulary consistency, media sources and priorities, automatic imports, batch actions, backups, credential security, cleanup, and troubleshooting.
+
 ## Who this extension is for
 
 Metadata AI is mainly intended for users who want a consistent Playnite library across many different sources: Steam, GOG, Epic, emulators, random launchers and manual entries.
