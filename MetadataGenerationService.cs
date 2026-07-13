@@ -121,6 +121,38 @@ namespace MetaDataIAPlugin
         private async Task<AiMetadataResult> GenerateOpenAICompatibleAsync(Game game, CancellationToken cancellationToken)
         {
             var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
+            var result = await SendOpenAICompatibleRequestAsync(userPrompt, cancellationToken).ConfigureAwait(false);
+            PrepareResult(result, game);
+
+            if (RequiresGeneratedDescription() && !HasRequestedDescriptionContent(result, game))
+            {
+                if (IsOpenRouterFreeModel())
+                {
+                    var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+                    var retryPrompt = userPrompt +
+                        "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
+                        "Return useful text for at least one of these requested description tokens when the supplied context supports it: " +
+                        string.Join(", ", requestedTokens) + ". " +
+                        "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
+
+                    result = await SendOpenAICompatibleRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false);
+                    PrepareResult(result, game);
+                }
+
+                if (!HasRequestedDescriptionContent(result, game))
+                {
+                    throw new InvalidOperationException(
+                        Loc(
+                            "MTDA_ErrorAiDescriptionEmpty",
+                            "The provider returned metadata but did not generate content for the active description template. No empty description was applied. Try again, choose a model that follows structured output more reliably, or enable official context for this game."));
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
+        {
             var request = new
             {
                 model = settings.Model,
@@ -161,6 +193,8 @@ namespace MetaDataIAPlugin
                     throw CreateConnectionException(ex);
                 }
 
+                ProviderUsageService.CaptureResponseHeaders(settings, response);
+
                 var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -169,11 +203,72 @@ namespace MetaDataIAPlugin
                 }
 
                 var content = ExtractAssistantContent(responseText);
-                var result = ParseResult(content);
-                ApplyStrictFactualGuard(result, game);
-                result.Normalize(settings, game);
-                ApplyStrictFactualGuard(result, game);
-                return result;
+                return ParseResult(content);
+            }
+        }
+
+        private void PrepareResult(AiMetadataResult result, Game game)
+        {
+            ApplyStrictFactualGuard(result, game);
+            result.Normalize(settings, game);
+            ApplyStrictFactualGuard(result, game);
+        }
+
+        private bool RequiresGeneratedDescription()
+        {
+            return settings.GenerateDescription && settings.DescriptionApplyMode != MetaDataIASettings.ApplySkip;
+        }
+
+        private bool IsOpenRouterFreeModel()
+        {
+            var model = (settings.Model ?? string.Empty).Trim();
+            return settings.ProviderPreset == MetaDataIASettings.ProviderOpenRouterFree ||
+                   (settings.ProviderPreset == MetaDataIASettings.ProviderOpenRouter &&
+                    (string.Equals(model, "openrouter/free", StringComparison.OrdinalIgnoreCase) ||
+                     model.EndsWith(":free", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private bool HasRequestedDescriptionContent(AiMetadataResult result, Game game)
+        {
+            if (result == null)
+            {
+                return false;
+            }
+
+            var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+            if (requestedTokens.Count == 0)
+            {
+                return !string.IsNullOrWhiteSpace(result.Description);
+            }
+
+            return requestedTokens.Any(token => HasDescriptionTokenContent(result, token));
+        }
+
+        private static bool HasDescriptionTokenContent(AiMetadataResult result, string token)
+        {
+            switch ((token ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "short": return !string.IsNullOrWhiteSpace(result.Short);
+                case "synopsis": return !string.IsNullOrWhiteSpace(result.Synopsis);
+                case "premise": return !string.IsNullOrWhiteSpace(result.Premise);
+                case "gameplay": return !string.IsNullOrWhiteSpace(result.Gameplay);
+                case "tone": return !string.IsNullOrWhiteSpace(result.Tone);
+                case "setting": return !string.IsNullOrWhiteSpace(result.Setting);
+                case "perspective": return !string.IsNullOrWhiteSpace(result.Perspective);
+                case "playmodes": return !string.IsNullOrWhiteSpace(result.PlayModes);
+                case "estimatedlength": return !string.IsNullOrWhiteSpace(result.EstimatedLength);
+                case "similargames": return !string.IsNullOrWhiteSpace(result.SimilarGames);
+                case "notes": return !string.IsNullOrWhiteSpace(result.Notes);
+                case "recommendedfor": return !string.IsNullOrWhiteSpace(result.RecommendedFor);
+                case "features": return result.Features != null && result.Features.Count > 0;
+                case "genres": return result.Genres != null && result.Genres.Count > 0;
+                case "tags": return result.Tags != null && result.Tags.Count > 0;
+                case "developers": return result.Developers != null && result.Developers.Count > 0;
+                case "publishers": return result.Publishers != null && result.Publishers.Count > 0;
+                case "ageratings": return result.AgeRatings != null && result.AgeRatings.Count > 0;
+                case "regions": return result.Regions != null && result.Regions.Count > 0;
+                case "categories": return result.Categories != null && result.Categories.Count > 0;
+                default: return false;
             }
         }
 
@@ -216,6 +311,8 @@ namespace MetaDataIAPlugin
                 {
                     throw CreateConnectionException(ex);
                 }
+
+                ProviderUsageService.CaptureResponseHeaders(settings, response);
 
                 var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 

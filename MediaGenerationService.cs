@@ -63,9 +63,12 @@ namespace MetaDataIAPlugin
         private static readonly object CandidateCacheLock = new object();
         private static readonly Dictionary<string, List<MediaCandidate>> CandidateCache = new Dictionary<string, List<MediaCandidate>>();
         private static readonly Dictionary<string, List<string>> CandidateDiagnosticsCache = new Dictionary<string, List<string>>();
+        private static readonly Dictionary<string, CandidateProbeResult> CandidateProbeCache = new Dictionary<string, CandidateProbeResult>(StringComparer.OrdinalIgnoreCase);
         private readonly MetaDataIASettings settings;
         private readonly IPlayniteAPI playniteApi;
         private string generatedIgdbAccessToken;
+
+        public int StrictQualitySkipCount { get; private set; }
 
         static MediaGenerationService()
         {
@@ -97,8 +100,15 @@ namespace MetaDataIAPlugin
                 throw new InvalidOperationException(BuildNoMediaFoundMessage(game, kind));
             }
 
-            var selected = ChooseCandidate(candidates, kind);
-            var selectedBytes = await DownloadBestBytes(candidates, selected, kind, cancelToken).ConfigureAwait(false);
+            var automaticCandidates = GetAutomaticCandidates(candidates, kind);
+            if (automaticCandidates.Count == 0)
+            {
+                StrictQualitySkipCount++;
+                return null;
+            }
+
+            var selected = ChooseCandidate(automaticCandidates, kind);
+            var selectedBytes = await DownloadBestBytes(automaticCandidates, selected, kind, cancelToken).ConfigureAwait(false);
             if (selectedBytes.Candidate == null || string.IsNullOrWhiteSpace(selectedBytes.Candidate.Url))
             {
                 throw new InvalidOperationException(Loc("MTDA_ErrorMediaWithoutUrl", "The media source returned an image without a usable URL."));
@@ -122,9 +132,11 @@ namespace MetaDataIAPlugin
             }
 
             var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
+            var maximum = Math.Max(1, settings.MediaSearchMaxResults);
+            var validated = await ValidatePreviewCandidatesAsync(OrderCandidates(candidates, kind).ToList(), maximum, cancelToken).ConfigureAwait(false);
 
-            return OrderCandidates(candidates, kind)
-                .Take(Math.Max(1, settings.MediaSearchMaxResults))
+            return OrderCandidates(validated, kind)
+                .Take(maximum)
                 .Select(x => new MediaPreviewOption
                 {
                     Kind = kind,
@@ -178,7 +190,22 @@ namespace MetaDataIAPlugin
                 throw new ArgumentNullException("option");
             }
 
-            var bytes = await DownloadBytes(option.Url, cancelToken).ConfigureAwait(false);
+            byte[] bytes;
+            try
+            {
+                bytes = await DownloadBytes(option.Url, cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    Loc("MTDA_ErrorMediaUnavailable", "This image is no longer available from its source. Reopen the media selector to choose another candidate."),
+                    ex);
+            }
+
             var processed = ProcessImage(bytes, option.Kind, option.Extension);
             return new GeneratedMediaFile
             {
@@ -236,6 +263,11 @@ namespace MetaDataIAPlugin
                 }
 
                 var generated = await GenerateAsync(game, kind, cancelToken).ConfigureAwait(false);
+                if (generated == null)
+                {
+                    continue;
+                }
+
                 ApplyMediaFile(api, game, generated);
                 applied++;
             }
@@ -265,6 +297,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            var previousPath = GetCurrentImage(game, file.Kind);
             var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + Path.GetExtension(file.FileName));
             File.WriteAllBytes(tempPath, file.Content);
             try
@@ -281,6 +314,12 @@ namespace MetaDataIAPlugin
                 else
                 {
                     game.BackgroundImage = storagePath;
+                }
+
+                api.Database.Games.Update(game);
+                if (!string.Equals(previousPath, storagePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    MediaStorageCleanupService.TryRemoveUnreferencedMedia(api, previousPath);
                 }
             }
             finally
@@ -1216,17 +1255,88 @@ namespace MetaDataIAPlugin
             return selected ?? candidates.First();
         }
 
+        private List<MediaCandidate> GetAutomaticCandidates(List<MediaCandidate> candidates, MediaKind kind)
+        {
+            var available = candidates ?? new List<MediaCandidate>();
+            if (settings.MediaAutomaticPriority != MetaDataIASettings.MediaPriorityStrictQuality)
+            {
+                return available;
+            }
+
+            var target = GetTargetSize(kind);
+            return available.Where(x => IsCandidateLargeEnoughForTarget(x, target)).ToList();
+        }
+
         private IEnumerable<MediaCandidate> OrderCandidates(List<MediaCandidate> candidates, MediaKind kind)
         {
             var target = GetTargetSize(kind);
-            return (candidates ?? new List<MediaCandidate>())
+            var available = candidates ?? new List<MediaCandidate>();
+
+            if (settings.MediaAutomaticPriority == MetaDataIASettings.MediaPrioritySourceFirst)
+            {
+                return available
+                    .OrderByDescending(x => UserSourcePriorityScore(x, kind))
+                    .ThenByDescending(x => SourceScore(x))
+                    .ThenByDescending(x => FormatScore(x, kind, target))
+                    .ThenByDescending(x => LogoScore(x, kind))
+                    .ThenByDescending(x => IsCandidateLargeEnoughForTarget(x, target))
+                    .ThenByDescending(x => x.Score)
+                    .ThenByDescending(x => UsablePixelArea(x, target));
+            }
+
+            if (settings.MediaAutomaticPriority == MetaDataIASettings.MediaPriorityResolutionFirst ||
+                settings.MediaAutomaticPriority == MetaDataIASettings.MediaPriorityStrictQuality)
+            {
+                return available
+                    .OrderByDescending(x => IsCandidateLargeEnoughForTarget(x, target))
+                    .ThenByDescending(x => UsablePixelArea(x, target))
+                    .ThenByDescending(x => FormatScore(x, kind, target))
+                    .ThenByDescending(x => UserSourcePriorityScore(x, kind))
+                    .ThenByDescending(x => SourceScore(x))
+                    .ThenByDescending(x => LogoScore(x, kind))
+                    .ThenByDescending(x => x.Score);
+            }
+
+            return available
                 .OrderByDescending(x => FormatScore(x, kind, target))
                 .ThenByDescending(x => UserSourcePriorityScore(x, kind))
                 .ThenByDescending(x => SourceScore(x))
                 .ThenByDescending(x => LogoScore(x, kind))
-                .ThenBy(x => target.Width <= 0 || target.Height <= 0 ? 0 : Math.Abs(x.Width - target.Width) + Math.Abs(x.Height - target.Height))
                 .ThenByDescending(x => x.Score)
-                .ThenByDescending(x => x.Width * x.Height);
+                .ThenByDescending(x => (long)x.Width * x.Height)
+                .ThenBy(x => target.Width <= 0 || target.Height <= 0 ? 0 : Math.Abs(x.Width - target.Width) + Math.Abs(x.Height - target.Height));
+        }
+
+        private static bool IsCandidateLargeEnoughForTarget(MediaCandidate candidate, Size target)
+        {
+            if (target.Width <= 0 || target.Height <= 0)
+            {
+                return true;
+            }
+
+            if (candidate == null || candidate.Width <= 0 || candidate.Height <= 0)
+            {
+                return false;
+            }
+
+            var crop = GetCropRectangle(candidate.Width, candidate.Height, target.Width, target.Height, MetaDataIASettings.CropAnchorCenter);
+            return crop.Width >= target.Width && crop.Height >= target.Height;
+        }
+
+        private static long UsablePixelArea(MediaCandidate candidate, Size target)
+        {
+            if (candidate == null || candidate.Width <= 0 || candidate.Height <= 0)
+            {
+                return 0;
+            }
+
+            if (target.Width <= 0 || target.Height <= 0)
+            {
+                return (long)candidate.Width * candidate.Height;
+            }
+
+            var crop = GetCropRectangle(candidate.Width, candidate.Height, target.Width, target.Height, MetaDataIASettings.CropAnchorCenter);
+            return (long)crop.Width * crop.Height;
         }
 
         private int SourceScore(MediaCandidate candidate)
@@ -1559,6 +1669,244 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private async Task<List<MediaCandidate>> ValidatePreviewCandidatesAsync(List<MediaCandidate> candidates, int maximum, CancellationToken cancelToken)
+        {
+            var validated = new List<MediaCandidate>();
+            const int batchSize = 6;
+            for (var offset = 0; offset < candidates.Count && validated.Count < maximum; offset += batchSize)
+            {
+                cancelToken.ThrowIfCancellationRequested();
+                var batch = candidates.Skip(offset).Take(batchSize).ToList();
+                var checks = batch.Select(x => ProbeMediaCandidateAsync(x, cancelToken)).ToArray();
+                var results = await Task.WhenAll(checks).ConfigureAwait(false);
+                for (var index = 0; index < batch.Count; index++)
+                {
+                    if (results[index])
+                    {
+                        validated.Add(batch[index]);
+                    }
+                }
+            }
+
+            return validated;
+        }
+
+        private async Task<bool> ProbeMediaCandidateAsync(MediaCandidate candidate, CancellationToken cancelToken)
+        {
+            if (candidate == null || string.IsNullOrWhiteSpace(candidate.Url))
+            {
+                return false;
+            }
+
+            CandidateProbeResult cached;
+            lock (CandidateCacheLock)
+            {
+                if (CandidateProbeCache.TryGetValue(candidate.Url, out cached))
+                {
+                    ApplyProbeResult(candidate, cached);
+                    return cached.IsValid;
+                }
+            }
+
+            CandidateProbeResult result;
+            try
+            {
+                result = await ProbeImageAsync(candidate.Url, cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                result = new CandidateProbeResult();
+            }
+
+            lock (CandidateCacheLock)
+            {
+                if (CandidateProbeCache.Count > 600)
+                {
+                    CandidateProbeCache.Clear();
+                }
+
+                CandidateProbeCache[candidate.Url] = result;
+            }
+
+            ApplyProbeResult(candidate, result);
+            return result.IsValid;
+        }
+
+        private static async Task<CandidateProbeResult> ProbeImageAsync(string url, CancellationToken cancelToken)
+        {
+            using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+            {
+                request.Headers.UserAgent.ParseAdd("MetaDataIAPlugin/1.0");
+                request.Headers.Range = new RangeHeaderValue(0, 131071);
+                using (var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return new CandidateProbeResult();
+                    }
+
+                    var buffer = new byte[131072];
+                    var read = 0;
+                    using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    {
+                        while (read < buffer.Length)
+                        {
+                            var count = await stream.ReadAsync(buffer, read, buffer.Length - read, cancelToken).ConfigureAwait(false);
+                            if (count <= 0)
+                            {
+                                break;
+                            }
+
+                            read += count;
+                        }
+                    }
+
+                    int width;
+                    int height;
+                    var recognized = TryReadImageDimensions(buffer, read, out width, out height);
+                    var contentType = response.Content.Headers.ContentType == null
+                        ? string.Empty
+                        : response.Content.Headers.ContentType.MediaType ?? string.Empty;
+                    var isImage = recognized || contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+                    return new CandidateProbeResult
+                    {
+                        IsValid = read > 0 && isImage,
+                        Width = width,
+                        Height = height
+                    };
+                }
+            }
+        }
+
+        private static void ApplyProbeResult(MediaCandidate candidate, CandidateProbeResult result)
+        {
+            if (candidate == null || result == null || !result.IsValid)
+            {
+                return;
+            }
+
+            if (result.Width > 0 && result.Height > 0)
+            {
+                candidate.Width = result.Width;
+                candidate.Height = result.Height;
+            }
+        }
+
+        private static bool TryReadImageDimensions(byte[] bytes, int count, out int width, out int height)
+        {
+            width = 0;
+            height = 0;
+            if (bytes == null || count < 10)
+            {
+                return false;
+            }
+
+            if (count >= 24 &&
+                bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
+            {
+                width = ReadBigEndianInt32(bytes, 16);
+                height = ReadBigEndianInt32(bytes, 20);
+                return width > 0 && height > 0;
+            }
+
+            if (count >= 10 &&
+                bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46)
+            {
+                width = bytes[6] | (bytes[7] << 8);
+                height = bytes[8] | (bytes[9] << 8);
+                return width > 0 && height > 0;
+            }
+
+            if (count >= 26 && bytes[0] == 0x42 && bytes[1] == 0x4D)
+            {
+                width = BitConverter.ToInt32(bytes, 18);
+                height = Math.Abs(BitConverter.ToInt32(bytes, 22));
+                return width > 0 && height > 0;
+            }
+
+            if (bytes[0] == 0xFF && bytes[1] == 0xD8)
+            {
+                var offset = 2;
+                while (offset + 8 < count)
+                {
+                    if (bytes[offset] != 0xFF)
+                    {
+                        offset++;
+                        continue;
+                    }
+
+                    while (offset < count && bytes[offset] == 0xFF)
+                    {
+                        offset++;
+                    }
+
+                    if (offset >= count)
+                    {
+                        break;
+                    }
+
+                    var marker = bytes[offset++];
+                    if (marker == 0xD8 || marker == 0xD9)
+                    {
+                        continue;
+                    }
+
+                    if (offset + 1 >= count)
+                    {
+                        break;
+                    }
+
+                    var length = (bytes[offset] << 8) + bytes[offset + 1];
+                    if (length < 2 || offset + length > count)
+                    {
+                        break;
+                    }
+
+                    if ((marker >= 0xC0 && marker <= 0xC3) ||
+                        (marker >= 0xC5 && marker <= 0xC7) ||
+                        (marker >= 0xC9 && marker <= 0xCB) ||
+                        (marker >= 0xCD && marker <= 0xCF))
+                    {
+                        height = (bytes[offset + 3] << 8) + bytes[offset + 4];
+                        width = (bytes[offset + 5] << 8) + bytes[offset + 6];
+                        return width > 0 && height > 0;
+                    }
+
+                    offset += length;
+                }
+
+                return true;
+            }
+
+            if (count >= 12 &&
+                bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+                bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
+            {
+                return true;
+            }
+
+            if (count >= 8 && bytes[0] == 0 && bytes[1] == 0 && bytes[2] == 1 && bytes[3] == 0)
+            {
+                width = bytes[6] == 0 ? 256 : bytes[6];
+                height = bytes[7] == 0 ? 256 : bytes[7];
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int ReadBigEndianInt32(byte[] bytes, int offset)
+        {
+            return (bytes[offset] << 24) |
+                   (bytes[offset + 1] << 16) |
+                   (bytes[offset + 2] << 8) |
+                   bytes[offset + 3];
+        }
+
         private static async Task<byte[]> DownloadBytes(string url, CancellationToken cancelToken)
         {
             using (var response = await Client.GetAsync(url, cancelToken).ConfigureAwait(false))
@@ -1703,7 +2051,7 @@ namespace MetaDataIAPlugin
             var forcePng = kind == MediaKind.Icon && settings.IconPreset != MetaDataIASettings.IconPresetOriginal;
             if (target.Width <= 0 || target.Height <= 0)
             {
-                return new ProcessedImage { Content = bytes, Extension = string.IsNullOrWhiteSpace(originalExtension) ? ".jpg" : originalExtension };
+                return new ProcessedImage { Content = bytes, Extension = DetectImageExtension(bytes, originalExtension) };
             }
 
             using (var source = LoadImage(bytes))
@@ -1719,7 +2067,7 @@ namespace MetaDataIAPlugin
                 var dest = new Rectangle(0, 0, target.Width, target.Height);
                 var sourceRect = kind == MediaKind.Icon
                     ? new Rectangle(0, 0, source.Width, source.Height)
-                    : GetCropRectangle(source.Width, source.Height, target.Width, target.Height);
+                    : GetCropRectangle(source.Width, source.Height, target.Width, target.Height, GetCropAnchor(kind));
                 var drawRect = kind == MediaKind.Icon
                     ? GetFitRectangle(source.Width, source.Height, target.Width, target.Height)
                     : dest;
@@ -1746,13 +2094,105 @@ namespace MetaDataIAPlugin
                     graphics.DrawImage(source, drawRect, sourceRect, GraphicsUnit.Pixel);
                 }
 
-                output.Save(ms, forcePng || kind == MediaKind.Icon ? ImageFormat.Png : ImageFormat.Jpeg);
+                var saveAsPng = forcePng || kind == MediaKind.Icon;
+                SaveProcessedImage(output, ms, saveAsPng);
                 return new ProcessedImage
                 {
                     Content = ms.ToArray(),
-                    Extension = forcePng || kind == MediaKind.Icon ? ".png" : ".jpg"
+                    Extension = saveAsPng ? ".png" : ".jpg"
                 };
             }
+        }
+
+        private void SaveProcessedImage(Image image, Stream stream, bool saveAsPng)
+        {
+            if (saveAsPng)
+            {
+                image.Save(stream, ImageFormat.Png);
+                return;
+            }
+
+            var codec = ImageCodecInfo.GetImageEncoders().FirstOrDefault(x => x.FormatID == ImageFormat.Jpeg.Guid);
+            if (codec == null)
+            {
+                image.Save(stream, ImageFormat.Jpeg);
+                return;
+            }
+
+            using (var parameters = new EncoderParameters(1))
+            {
+                parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, GetJpegQuality());
+                image.Save(stream, codec, parameters);
+            }
+        }
+
+        private static string DetectImageExtension(byte[] bytes, string fallback)
+        {
+            if (bytes != null)
+            {
+                if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+                {
+                    return ".jpg";
+                }
+
+                if (bytes.Length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
+                {
+                    return ".png";
+                }
+
+                if (bytes.Length >= 6 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38)
+                {
+                    return ".gif";
+                }
+
+                if (bytes.Length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D)
+                {
+                    return ".bmp";
+                }
+
+                if (bytes.Length >= 4 && bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0x01 && bytes[3] == 0x00)
+                {
+                    return ".ico";
+                }
+
+                if (bytes.Length >= 12 && bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+                    bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
+                {
+                    return ".webp";
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(fallback))
+            {
+                return ".jpg";
+            }
+
+            return fallback.StartsWith(".", StringComparison.Ordinal) ? fallback : "." + fallback;
+        }
+
+        private long GetJpegQuality()
+        {
+            if (settings.ProcessedImageQuality == MetaDataIASettings.ImageQualitySpaceSaving)
+            {
+                return 72L;
+            }
+
+            if (settings.ProcessedImageQuality == MetaDataIASettings.ImageQualityHigh)
+            {
+                return 92L;
+            }
+
+            if (settings.ProcessedImageQuality == MetaDataIASettings.ImageQualityMaximum)
+            {
+                return 98L;
+            }
+
+            return 85L;
+        }
+
+        private string GetCropAnchor(MediaKind kind)
+        {
+            return kind == MediaKind.Cover ? settings.CoverCropAnchor : settings.BackgroundCropAnchor;
         }
 
         private async Task<DownloadedCandidate> TryDownloadSquareGridAsIcon(int gameId, CancellationToken cancelToken)
@@ -2080,20 +2520,50 @@ namespace MetaDataIAPlugin
             return game.BackgroundImage;
         }
 
-        private static Rectangle GetCropRectangle(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
+        private static Rectangle GetCropRectangle(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight, string anchor)
         {
             var sourceRatio = (double)sourceWidth / sourceHeight;
             var targetRatio = (double)targetWidth / targetHeight;
             if (sourceRatio > targetRatio)
             {
                 var width = (int)Math.Round(sourceHeight * targetRatio);
-                var x = (sourceWidth - width) / 2;
+                var remaining = sourceWidth - width;
+                var x = IsLeftAnchor(anchor) ? 0 : IsRightAnchor(anchor) ? remaining : remaining / 2;
                 return new Rectangle(x, 0, width, sourceHeight);
             }
 
             var height = (int)Math.Round(sourceWidth / targetRatio);
-            var y = (sourceHeight - height) / 2;
+            var verticalRemaining = sourceHeight - height;
+            var y = IsTopAnchor(anchor) ? 0 : IsBottomAnchor(anchor) ? verticalRemaining : verticalRemaining / 2;
             return new Rectangle(0, y, sourceWidth, height);
+        }
+
+        private static bool IsLeftAnchor(string anchor)
+        {
+            return anchor == MetaDataIASettings.CropAnchorLeft ||
+                   anchor == MetaDataIASettings.CropAnchorTopLeft ||
+                   anchor == MetaDataIASettings.CropAnchorBottomLeft;
+        }
+
+        private static bool IsRightAnchor(string anchor)
+        {
+            return anchor == MetaDataIASettings.CropAnchorRight ||
+                   anchor == MetaDataIASettings.CropAnchorTopRight ||
+                   anchor == MetaDataIASettings.CropAnchorBottomRight;
+        }
+
+        private static bool IsTopAnchor(string anchor)
+        {
+            return anchor == MetaDataIASettings.CropAnchorTop ||
+                   anchor == MetaDataIASettings.CropAnchorTopLeft ||
+                   anchor == MetaDataIASettings.CropAnchorTopRight;
+        }
+
+        private static bool IsBottomAnchor(string anchor)
+        {
+            return anchor == MetaDataIASettings.CropAnchorBottom ||
+                   anchor == MetaDataIASettings.CropAnchorBottomLeft ||
+                   anchor == MetaDataIASettings.CropAnchorBottomRight;
         }
 
         private static Rectangle GetFitRectangle(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
@@ -2498,6 +2968,13 @@ namespace MetaDataIAPlugin
         {
             public MediaCandidate Candidate { get; set; }
             public byte[] Content { get; set; }
+        }
+
+        private class CandidateProbeResult
+        {
+            public bool IsValid { get; set; }
+            public int Width { get; set; }
+            public int Height { get; set; }
         }
 
         private class ProcessedImage

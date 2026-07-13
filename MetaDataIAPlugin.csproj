@@ -50,6 +50,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -59,7 +60,9 @@
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MediaGenerationService.cs" />
+    <Compile Include="MediaStorageCleanupService.cs" />
     <Compile Include="OfficialStoreDataService.cs" />
+    <Compile Include="ProviderUsageService.cs" />
     <Compile Include="TitleMatchingService.cs" />
     <Compile Include="MetaDataIAPlugin.cs" />
     <Compile Include="MetaDataIAProvider.cs" />
@@ -74,6 +77,7 @@
     </Compile>
     <Compile Include="PluginLocalization.cs" />
     <Compile Include="SortingNameService.cs" />
+    <Compile Include="SecretProtectionService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

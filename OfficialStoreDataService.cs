@@ -276,6 +276,12 @@ namespace MetaDataIAPlugin
         private async Task<List<OfficialMediaCandidate>> GetPsnMediaCandidatesFromUrlAsync(string url, MediaKind kind, CancellationToken cancelToken)
         {
             var html = await GetStringAsync(url, cancelToken).ConfigureAwait(false);
+            var roleCandidates = GetPsnRoleCandidates(html, kind);
+            if (roleCandidates.Count > 0)
+            {
+                return roleCandidates;
+            }
+
             var urls = Regex.Matches(html ?? string.Empty, "https://image\\.api\\.playstation\\.com/[^\\\"'<>\\\\]+")
                 .Cast<Match>()
                 .Select(x => WebUtility.HtmlDecode(x.Value).Split('?')[0])
@@ -298,6 +304,92 @@ namespace MetaDataIAPlugin
                 .Take(12)
                 .Select(x => CreateOfficialCandidate(x, 1920, 1080, "store artwork", 66, SourcePsnStore, 60, true))
                 .ToList();
+        }
+
+        private static List<OfficialMediaCandidate> GetPsnRoleCandidates(string html, MediaKind kind)
+        {
+            var candidates = new List<OfficialMediaCandidate>();
+            var mediaObjects = Regex.Matches(html ?? string.Empty, "\\{\\\"__typename\\\":\\\"Media\\\"[^{}]*\\}")
+                .Cast<Match>()
+                .Select(x => ParsePsnMediaObject(x.Value))
+                .Where(x => x != null)
+                .GroupBy(x => x.Url, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.OrderByDescending(y => PsnRolePriority(y.Role, kind)).First())
+                .Where(x => PsnRolePriority(x.Role, kind) > 0)
+                .OrderByDescending(x => PsnRolePriority(x.Role, kind))
+                .ToList();
+
+            foreach (var media in mediaObjects)
+            {
+                var role = (media.Role ?? string.Empty).ToUpperInvariant();
+                var score = PsnRolePriority(role, kind);
+                var style = GetPsnRoleStyle(role, kind);
+                candidates.Add(CreateOfficialCandidate(media.Url, 0, 0, style, score, SourcePsnStore, 64, true));
+            }
+
+            return candidates;
+        }
+
+        private static PsnMediaObject ParsePsnMediaObject(string json)
+        {
+            try
+            {
+                var media = JObject.Parse(json);
+                var type = (string)media["type"];
+                var role = (string)media["role"];
+                var url = WebUtility.HtmlDecode((string)media["url"] ?? string.Empty).Split('?')[0];
+                if (!string.Equals(type, "IMAGE", StringComparison.OrdinalIgnoreCase) ||
+                    string.IsNullOrWhiteSpace(role) ||
+                    string.IsNullOrWhiteSpace(url) ||
+                    url.IndexOf("image.api.playstation.com", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return null;
+                }
+
+                return new PsnMediaObject { Role = role, Url = url };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static int PsnRolePriority(string role, MediaKind kind)
+        {
+            role = (role ?? string.Empty).ToUpperInvariant();
+            if (kind == MediaKind.Cover || kind == MediaKind.Icon)
+            {
+                if (role == "MASTER") return 100;
+                if (role == "GAMEHUB_COVER_ART") return 96;
+                if (role == "PORTRAIT_BANNER") return 84;
+                if (role == "FOUR_BY_THREE_BANNER") return 60;
+                return 0;
+            }
+
+            if (role == "GAMEHUB_COVER_ART") return 104;
+            if (role == "BACKGROUND") return 100;
+            if (role == "BACKGROUND_LAYER_ART") return 92;
+            if (role == "SCREENSHOT") return 76;
+            if (role == "FOUR_BY_THREE_BANNER") return 58;
+            return 0;
+        }
+
+        private static string GetPsnRoleStyle(string role, MediaKind kind)
+        {
+            role = (role ?? string.Empty).ToUpperInvariant();
+            if (kind == MediaKind.Background)
+            {
+                if (role == "GAMEHUB_COVER_ART") return "official game hub background no_logo";
+                if (role == "BACKGROUND") return "official background no_logo";
+                if (role == "BACKGROUND_LAYER_ART") return "official layered background";
+                if (role == "SCREENSHOT") return "official screenshot no_logo";
+                return "official banner";
+            }
+
+            if (role == "MASTER") return "official cover";
+            if (role == "GAMEHUB_COVER_ART") return "official game hub cover";
+            if (role == "PORTRAIT_BANNER") return "official portrait banner";
+            return "official banner";
         }
 
         private async Task<StoreSearchMatch> ResolvePsnStoreUrlAsync(Game game, CancellationToken cancelToken)
@@ -877,6 +969,12 @@ namespace MetaDataIAPlugin
         {
             public string Id { get; set; }
             public string Title { get; set; }
+            public string Url { get; set; }
+        }
+
+        private class PsnMediaObject
+        {
+            public string Role { get; set; }
             public string Url { get; set; }
         }
     }

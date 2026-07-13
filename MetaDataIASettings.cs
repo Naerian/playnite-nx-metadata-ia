@@ -123,13 +123,16 @@ namespace MetaDataIAPlugin
         public const string ProviderGemini = "Google Gemini";
         public const string ProviderClaude = "Claude Anthropic";
         public const string ProviderOpenRouter = "OpenRouter";
+        public const string ProviderOpenRouterFree = "OpenRouter Free";
         public const string ProviderGroq = "Groq";
+        public const string ProviderCerebras = "Cerebras";
+        public const string ProviderMistral = "Mistral AI";
         public const string ProviderCustom = "Personalizado compatible con OpenAI";
 
-        private string providerPreset = ProviderOpenAI;
-        private string endpoint = "https://api.openai.com/v1/chat/completions";
+        private string providerPreset = ProviderGroq;
+        private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
-        private string model = "gpt-4.1-mini";
+        private string model = "llama-3.1-8b-instant";
         private string language = "es";
         private bool showAdvancedOptions = false;
         private string descriptionTemplate = DefaultMediumTemplate;
@@ -247,6 +250,10 @@ namespace MetaDataIAPlugin
         private string mediaCoverSourcePriority = DefaultCoverSourcePriority;
         private string mediaIconSourcePriority = DefaultIconSourcePriority;
         private string mediaBackgroundSourcePriority = DefaultBackgroundSourcePriority;
+        private string mediaAutomaticPriority = MediaPriorityBalanced;
+        private string coverCropAnchor = CropAnchorCenter;
+        private string backgroundCropAnchor = CropAnchorCenter;
+        private string processedImageQuality = ImageQualityBalanced;
 
         public const string DefaultShortTemplate = "<p>{short}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}";
         public const string DefaultMediumTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Modos de juego</h3>\n<p>{playModes}</p>\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>";
@@ -275,6 +282,23 @@ namespace MetaDataIAPlugin
         public const string BackgroundLogoAny = "Cualquiera";
         public const string BackgroundLogoPreferNoLogo = "Preferir sin logo";
         public const string BackgroundLogoPreferLogo = "Preferir con logo";
+        public const string MediaPriorityBalanced = "Equilibrada";
+        public const string MediaPrioritySourceFirst = "Fuente primero";
+        public const string MediaPriorityResolutionFirst = "Resolucion primero";
+        public const string MediaPriorityStrictQuality = "Calidad estricta";
+        public const string CropAnchorCenter = "Centro";
+        public const string CropAnchorTop = "Arriba";
+        public const string CropAnchorBottom = "Abajo";
+        public const string CropAnchorLeft = "Izquierda";
+        public const string CropAnchorRight = "Derecha";
+        public const string CropAnchorTopLeft = "Arriba izquierda";
+        public const string CropAnchorTopRight = "Arriba derecha";
+        public const string CropAnchorBottomLeft = "Abajo izquierda";
+        public const string CropAnchorBottomRight = "Abajo derecha";
+        public const string ImageQualitySpaceSaving = "Ahorro de espacio";
+        public const string ImageQualityBalanced = "Equilibrada";
+        public const string ImageQualityHigh = "Alta";
+        public const string ImageQualityMaximum = "Maxima";
         public const string DefaultCoverSourcePriority = "Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, RAWG, MobyGames";
         public const string DefaultIconSourcePriority = "SteamGridDB, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
         public const string DefaultBackgroundSourcePriority = "Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, IGDB, MobyGames";
@@ -292,14 +316,42 @@ namespace MetaDataIAPlugin
                 SetValue(ref providerPreset, value);
                 OnPropertyChanged("ProviderKeyHelp");
                 OnPropertyChanged("ProviderKeyUrl");
+                OnPropertyChanged("ProviderUsageUrl");
                 OnPropertyChanged("ProviderBillingHelp");
+                OnPropertyChanged("ShowEndpointEditor");
+                OnPropertyChanged("CanRestoreProviderEndpoint");
             }
         }
         public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
         public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
         public string Model { get { return model; } set { SetValue(ref model, value); } }
         public string Language { get { return language; } set { SetValue(ref language, value); } }
-        public bool ShowAdvancedOptions { get { return showAdvancedOptions; } set { SetValue(ref showAdvancedOptions, value); } }
+        public bool ShowAdvancedOptions
+        {
+            get { return showAdvancedOptions; }
+            set
+            {
+                if (showAdvancedOptions == value)
+                {
+                    return;
+                }
+
+                SetValue(ref showAdvancedOptions, value);
+                OnPropertyChanged("ShowEndpointEditor");
+            }
+        }
+
+        [DontSerialize]
+        public bool ShowEndpointEditor
+        {
+            get { return ShowAdvancedOptions || ProviderPreset == ProviderCustom; }
+        }
+
+        [DontSerialize]
+        public bool CanRestoreProviderEndpoint
+        {
+            get { return ProviderPreset != ProviderCustom; }
+        }
         public string DescriptionTemplate { get { return descriptionTemplate; } set { SetValue(ref descriptionTemplate, value); } }
         public ObservableCollection<TemplateProfile> Templates { get { return templates; } set { SetValue(ref templates, value); } }
         public string ActiveTemplateName { get { return activeTemplateName; } set { SetValue(ref activeTemplateName, value); } }
@@ -412,6 +464,40 @@ namespace MetaDataIAPlugin
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
         public string IgdbClientSecret { get { return igdbClientSecret; } set { SetValue(ref igdbClientSecret, value); } }
         public string IgdbAccessToken { get { return igdbAccessToken; } set { SetValue(ref igdbAccessToken, value); } }
+
+        public void ProtectSecretsForStorage()
+        {
+            ApiKey = SecretProtectionService.Protect(ApiKey);
+            SteamGridDbApiKey = SecretProtectionService.Protect(SteamGridDbApiKey);
+            RawgApiKey = SecretProtectionService.Protect(RawgApiKey);
+            MobyGamesApiKey = SecretProtectionService.Protect(MobyGamesApiKey);
+            IgdbClientId = SecretProtectionService.Protect(IgdbClientId);
+            IgdbClientSecret = SecretProtectionService.Protect(IgdbClientSecret);
+            IgdbAccessToken = SecretProtectionService.Protect(IgdbAccessToken);
+        }
+
+        public bool UnprotectSecretsAfterLoad()
+        {
+            var succeeded = true;
+            string plainText;
+
+            succeeded = SecretProtectionService.TryUnprotect(ApiKey, out plainText) && succeeded;
+            ApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(SteamGridDbApiKey, out plainText) && succeeded;
+            SteamGridDbApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(RawgApiKey, out plainText) && succeeded;
+            RawgApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(MobyGamesApiKey, out plainText) && succeeded;
+            MobyGamesApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(IgdbClientId, out plainText) && succeeded;
+            IgdbClientId = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(IgdbClientSecret, out plainText) && succeeded;
+            IgdbClientSecret = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(IgdbAccessToken, out plainText) && succeeded;
+            IgdbAccessToken = plainText;
+
+            return succeeded;
+        }
         public string MediaCoverSourcePriority
         {
             get { return mediaCoverSourcePriority; }
@@ -442,6 +528,11 @@ namespace MetaDataIAPlugin
             }
         }
 
+        public string MediaAutomaticPriority { get { return mediaAutomaticPriority; } set { SetValue(ref mediaAutomaticPriority, value); } }
+        public string CoverCropAnchor { get { return coverCropAnchor; } set { SetValue(ref coverCropAnchor, value); } }
+        public string BackgroundCropAnchor { get { return backgroundCropAnchor; } set { SetValue(ref backgroundCropAnchor, value); } }
+        public string ProcessedImageQuality { get { return processedImageQuality; } set { SetValue(ref processedImageQuality, value); } }
+
         [DontSerialize]
         public string MediaCoverSourcePrioritySummary { get { return BuildSourcePrioritySummary(MediaCoverSourcePriority, DefaultCoverSourcePriority); } }
 
@@ -460,7 +551,7 @@ namespace MetaDataIAPlugin
         {
             if (string.IsNullOrWhiteSpace(ProviderPreset))
             {
-                ProviderPreset = ProviderOpenAI;
+                ProviderPreset = ProviderGroq;
             }
 
             EnsureTextLengthDefaults();
@@ -511,6 +602,10 @@ namespace MetaDataIAPlugin
             IconPreset = EnsureOption(IconPreset, IconPresetOriginal);
             BackgroundImagePreset = EnsureOption(BackgroundImagePreset, BackgroundPresetSteamHero);
             BackgroundLogoPreference = EnsureOption(BackgroundLogoPreference, BackgroundLogoAny);
+            MediaAutomaticPriority = EnsureOption(MediaAutomaticPriority, MediaPriorityBalanced);
+            CoverCropAnchor = EnsureOption(CoverCropAnchor, CropAnchorCenter);
+            BackgroundCropAnchor = EnsureOption(BackgroundCropAnchor, CropAnchorCenter);
+            ProcessedImageQuality = EnsureOption(ProcessedImageQuality, ImageQualityBalanced);
             if (MediaSearchMaxResults < 20)
             {
                 MediaSearchMaxResults = 50;
@@ -1111,10 +1206,69 @@ namespace MetaDataIAPlugin
                 Endpoint = "https://openrouter.ai/api/v1/chat/completions";
                 Model = "openrouter/auto";
             }
+            else if (ProviderPreset == ProviderOpenRouterFree)
+            {
+                Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+                Model = "openrouter/free";
+            }
             else if (ProviderPreset == ProviderGroq)
             {
                 Endpoint = "https://api.groq.com/openai/v1/chat/completions";
                 Model = "llama-3.1-8b-instant";
+            }
+            else if (ProviderPreset == ProviderCerebras)
+            {
+                Endpoint = "https://api.cerebras.ai/v1/chat/completions";
+                Model = "gpt-oss-120b";
+            }
+            else if (ProviderPreset == ProviderMistral)
+            {
+                Endpoint = "https://api.mistral.ai/v1/chat/completions";
+                Model = "mistral-small-latest";
+            }
+        }
+
+        public void RestoreProviderEndpoint()
+        {
+            if (ProviderPreset == ProviderOpenAI)
+            {
+                Endpoint = "https://api.openai.com/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderLmStudio)
+            {
+                Endpoint = "http://localhost:1234/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderOllama)
+            {
+                Endpoint = "http://localhost:11434/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderGemini)
+            {
+                Endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+            }
+            else if (ProviderPreset == ProviderClaude)
+            {
+                Endpoint = "https://api.anthropic.com/v1/messages";
+            }
+            else if (ProviderPreset == ProviderOpenRouter)
+            {
+                Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderOpenRouterFree)
+            {
+                Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderGroq)
+            {
+                Endpoint = "https://api.groq.com/openai/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderCerebras)
+            {
+                Endpoint = "https://api.cerebras.ai/v1/chat/completions";
+            }
+            else if (ProviderPreset == ProviderMistral)
+            {
+                Endpoint = "https://api.mistral.ai/v1/chat/completions";
             }
         }
 
@@ -1213,13 +1367,16 @@ namespace MetaDataIAPlugin
             {
                 return new List<LocalizedOption>
                 {
-                    Option(ProviderOpenAI, "MTDA_ProviderOpenAI", "OpenAI"),
-                    Option(ProviderGemini, "MTDA_ProviderGemini", "Google Gemini"),
-                    Option(ProviderClaude, "MTDA_ProviderClaude", "Claude Anthropic"),
+                    Option(ProviderOpenRouterFree, "MTDA_ProviderOpenRouterFree", "OpenRouter Free (limited)"),
+                    Option(ProviderGroq, "MTDA_ProviderGroqFree", "Groq (free tier)"),
+                    Option(ProviderGemini, "MTDA_ProviderGeminiFree", "Google Gemini (free tier)"),
+                    Option(ProviderCerebras, "MTDA_ProviderCerebras", "Cerebras (free tier)"),
+                    Option(ProviderMistral, "MTDA_ProviderMistral", "Mistral AI (free mode)"),
                     Option(ProviderLmStudio, "MTDA_ProviderLmStudio", "LM Studio local"),
                     Option(ProviderOllama, "MTDA_ProviderOllama", "Ollama local"),
+                    Option(ProviderOpenAI, "MTDA_ProviderOpenAI", "OpenAI"),
+                    Option(ProviderClaude, "MTDA_ProviderClaude", "Claude Anthropic"),
                     Option(ProviderOpenRouter, "MTDA_ProviderOpenRouter", "OpenRouter"),
-                    Option(ProviderGroq, "MTDA_ProviderGroq", "Groq"),
                     Option(ProviderCustom, "MTDA_ProviderCustom", "Custom OpenAI-compatible")
                 };
             }
@@ -1304,9 +1461,24 @@ namespace MetaDataIAPlugin
                     return Loc("MTDA_ProviderHelpOpenRouter", "OpenRouter: create the key in OpenRouter. You can choose free models if the model ends in :free or appears as Free, but they have limits and variable availability.");
                 }
 
+                if (ProviderPreset == ProviderOpenRouterFree)
+                {
+                    return Loc("MTDA_ProviderHelpOpenRouterFree", "OpenRouter Free: create a free API key and use the automatic openrouter/free router. It chooses an available free model for each request, so speed and output consistency can vary.");
+                }
+
                 if (ProviderPreset == ProviderGroq)
                 {
                     return Loc("MTDA_ProviderHelpGroq", "Groq: create the key in GroqCloud Console. It usually offers a free start with usage limits.");
+                }
+
+                if (ProviderPreset == ProviderCerebras)
+                {
+                    return Loc("MTDA_ProviderHelpCerebras", "Cerebras: create a free API key in Cerebras Cloud. The free tier has lower rate limits but provides very fast inference and does not require a subscription.");
+                }
+
+                if (ProviderPreset == ProviderMistral)
+                {
+                    return Loc("MTDA_ProviderHelpMistral", "Mistral AI: create an API key in Mistral Studio. Free mode is enabled by default without a credit card, with usage and rate limits.");
                 }
 
                 if (ProviderPreset == ProviderLmStudio)
@@ -1343,7 +1515,7 @@ namespace MetaDataIAPlugin
                     return "https://console.anthropic.com/settings/keys";
                 }
 
-                if (ProviderPreset == ProviderOpenRouter)
+                if (ProviderPreset == ProviderOpenRouter || ProviderPreset == ProviderOpenRouterFree)
                 {
                     return "https://openrouter.ai/settings/keys";
                 }
@@ -1351,6 +1523,16 @@ namespace MetaDataIAPlugin
                 if (ProviderPreset == ProviderGroq)
                 {
                     return "https://console.groq.com/keys";
+                }
+
+                if (ProviderPreset == ProviderCerebras)
+                {
+                    return "https://cloud.cerebras.ai/";
+                }
+
+                if (ProviderPreset == ProviderMistral)
+                {
+                    return "https://console.mistral.ai/";
                 }
 
                 if (ProviderPreset == ProviderLmStudio)
@@ -1361,6 +1543,50 @@ namespace MetaDataIAPlugin
                 if (ProviderPreset == ProviderOllama)
                 {
                     return "https://docs.ollama.com/api";
+                }
+
+                return string.Empty;
+            }
+        }
+
+        [DontSerialize]
+        public string ProviderUsageUrl
+        {
+            get
+            {
+                if (ProviderPreset == ProviderOpenAI)
+                {
+                    return "https://platform.openai.com/usage";
+                }
+
+                if (ProviderPreset == ProviderGemini)
+                {
+                    return "https://aistudio.google.com/usage";
+                }
+
+                if (ProviderPreset == ProviderClaude)
+                {
+                    return "https://console.anthropic.com/settings/limits";
+                }
+
+                if (ProviderPreset == ProviderOpenRouter || ProviderPreset == ProviderOpenRouterFree)
+                {
+                    return "https://openrouter.ai/activity";
+                }
+
+                if (ProviderPreset == ProviderGroq)
+                {
+                    return "https://console.groq.com/settings/limits";
+                }
+
+                if (ProviderPreset == ProviderCerebras)
+                {
+                    return "https://cloud.cerebras.ai/";
+                }
+
+                if (ProviderPreset == ProviderMistral)
+                {
+                    return "https://console.mistral.ai/";
                 }
 
                 return string.Empty;
@@ -1382,7 +1608,12 @@ namespace MetaDataIAPlugin
                     return Loc("MTDA_ProviderBillingLocal", "Recommended option if you do not want to pay: the cost is your own hardware. Speed and quality depend on the model and your PC.");
                 }
 
-                if (ProviderPreset == ProviderGemini || ProviderPreset == ProviderGroq || ProviderPreset == ProviderOpenRouter)
+                if (ProviderPreset == ProviderGemini ||
+                    ProviderPreset == ProviderGroq ||
+                    ProviderPreset == ProviderOpenRouter ||
+                    ProviderPreset == ProviderOpenRouterFree ||
+                    ProviderPreset == ProviderCerebras ||
+                    ProviderPreset == ProviderMistral)
                 {
                     return Loc("MTDA_ProviderBillingFreeQuota", "It may work without paying if you choose a free model/quota, but if you hit limits or high demand you will need to wait, switch to a more available model, or enable billing depending on the provider.");
                 }
@@ -1515,6 +1746,56 @@ namespace MetaDataIAPlugin
         }
 
         [DontSerialize]
+        public List<LocalizedOption> MediaAutomaticPriorityOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(MediaPriorityBalanced, "MTDA_OptionMediaPriorityBalanced", "Balanced"),
+                    Option(MediaPrioritySourceFirst, "MTDA_OptionMediaPrioritySourceFirst", "Source first"),
+                    Option(MediaPriorityResolutionFirst, "MTDA_OptionMediaPriorityResolutionFirst", "Resolution first"),
+                    Option(MediaPriorityStrictQuality, "MTDA_OptionMediaPriorityStrictQuality", "Strict quality")
+                };
+            }
+        }
+
+        [DontSerialize]
+        public List<LocalizedOption> CropAnchorOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(CropAnchorCenter, "MTDA_OptionCropCenter", "Center"),
+                    Option(CropAnchorTop, "MTDA_OptionCropTop", "Top"),
+                    Option(CropAnchorBottom, "MTDA_OptionCropBottom", "Bottom"),
+                    Option(CropAnchorLeft, "MTDA_OptionCropLeft", "Left"),
+                    Option(CropAnchorRight, "MTDA_OptionCropRight", "Right"),
+                    Option(CropAnchorTopLeft, "MTDA_OptionCropTopLeft", "Top left"),
+                    Option(CropAnchorTopRight, "MTDA_OptionCropTopRight", "Top right"),
+                    Option(CropAnchorBottomLeft, "MTDA_OptionCropBottomLeft", "Bottom left"),
+                    Option(CropAnchorBottomRight, "MTDA_OptionCropBottomRight", "Bottom right")
+                };
+            }
+        }
+
+        [DontSerialize]
+        public List<LocalizedOption> ProcessedImageQualityOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(ImageQualitySpaceSaving, "MTDA_OptionImageQualitySpaceSaving", "Space saving"),
+                    Option(ImageQualityBalanced, "MTDA_OptionImageQualityBalanced", "Balanced"),
+                    Option(ImageQualityHigh, "MTDA_OptionImageQualityHigh", "High"),
+                    Option(ImageQualityMaximum, "MTDA_OptionImageQualityMaximum", "Maximum")
+                };
+            }
+        }
+
+        [DontSerialize]
         public string SteamGridDbHelp
         {
             get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
@@ -1567,6 +1848,8 @@ namespace MetaDataIAPlugin
         private string selectedTemplateNameText;
         private string selectedTemplateBodyText;
         private bool loadingSelectedTemplate;
+
+        public MetaDataIAPlugin Plugin { get { return plugin; } }
 
         public MetaDataIASettings Settings
         {
@@ -1625,6 +1908,7 @@ namespace MetaDataIAPlugin
             this.plugin = plugin;
             var savedSettings = plugin.LoadPluginSettings<MetaDataIASettings>();
             Settings = savedSettings ?? new MetaDataIASettings();
+            Settings.UnprotectSecretsAfterLoad();
             Settings.EnsureDefaults();
             SelectedTemplate = Settings.GetActiveTemplate();
         }
@@ -1644,7 +1928,7 @@ namespace MetaDataIAPlugin
         {
             SyncSelectedTemplate();
 
-            plugin.SavePluginSettings(Settings);
+            plugin.SaveSettingsSecurely(Settings);
         }
 
         public void SyncSelectedTemplate()
@@ -1724,7 +2008,7 @@ namespace MetaDataIAPlugin
             Settings = importedSettings;
             SelectedTemplate = Settings.GetActiveTemplate();
             editingClone = Serialization.GetClone(Settings);
-            plugin.SavePluginSettings(Settings);
+            plugin.SaveSettingsSecurely(Settings);
         }
 
         public bool VerifySettings(out List<string> errors)

@@ -19,13 +19,14 @@
         <Style x:Key="SectionHeaderText" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
-        <Style x:Key="ThemedPasswordBox" TargetType="PasswordBox">
+        <Style x:Key="SecurePasswordBox" TargetType="PasswordBox">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource ControlIdleBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlIdleBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="MinHeight" Value="30"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -34,19 +35,19 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Style="{DynamicResource HighlightBorder}">
+                                CornerRadius="{DynamicResource ControlCornerRadius}">
                             <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
-                                          HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"/>
+                                          Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
+                            </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}" TargetName="Border"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.55" TargetName="Border"/>
+                                <Setter TargetName="Border" Property="Opacity" Value="0.55"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -134,6 +135,14 @@
             <Setter Property="Opacity" Value="0.85"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
+        <Style x:Key="TestOperationBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -158,6 +167,7 @@
                                       DisplayMemberPath="DisplayName"
                                       SelectedValuePath="Value"
                                       SelectedValue="{Binding Settings.ProviderPreset}"
+                                      SelectionChanged="ProviderPreset_OnSelectionChanged"
                                       MinWidth="260"
                                       Margin="0,0,8,0"/>
                             <Button Content="{DynamicResource MTDA_ApplyProvider}" MinWidth="140" Click="ApplyProvider_OnClick"/>
@@ -166,21 +176,38 @@
                             <StackPanel>
                                 <TextBlock Text="{Binding Settings.ProviderKeyHelp}" Style="{StaticResource HintText}" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding Settings.ProviderBillingHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource MTDA_KeyHelpPage}" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Settings.ProviderKeyUrl}" TextWrapping="Wrap"/>
-                                </StackPanel>
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run Text="{DynamicResource MTDA_KeyHelpPage}" FontWeight="SemiBold"/>
+                                    <Hyperlink Click="OpenProviderPage_OnClick">
+                                        <Run Text="{Binding Settings.ProviderKeyUrl}"/>
+                                    </Hyperlink>
+                                </TextBlock>
                                 <Button Content="{DynamicResource MTDA_OpenProviderPage}" HorizontalAlignment="Left" MinWidth="170" Margin="0,8,0,0" Click="OpenProviderPage_OnClick"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>
-                        <TextBox Text="{Binding Settings.Endpoint, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,10"/>
+                        <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Converter={StaticResource BoolToVisibility}}"
+                                    Margin="0,0,0,10">
+                            <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>
+                            <Grid Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding Settings.Endpoint, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,8,0"/>
+                                <Button Grid.Column="1"
+                                        Content="{DynamicResource MTDA_RestoreEndpoint}"
+                                        IsEnabled="{Binding Settings.CanRestoreProviderEndpoint}"
+                                        MinWidth="150"
+                                        Click="RestoreEndpoint_OnClick"/>
+                            </Grid>
+                        </StackPanel>
 
                         <TextBlock Text="{DynamicResource MTDA_ApiKey}" Style="{StaticResource FieldLabelText}"/>
                         <PasswordBox x:Name="ApiKeyBox"
                                      PasswordChanged="ApiKeyBox_OnPasswordChanged"
-                                     Style="{StaticResource ThemedPasswordBox}"
+                                     Style="{StaticResource SecurePasswordBox}"
                                      Margin="0,2,0,10"/>
                         <TextBlock Text="{DynamicResource MTDA_ApiKeyHelp}" Style="{StaticResource HintText}"/>
 
@@ -192,6 +219,43 @@
                             <Button Content="{DynamicResource MTDA_UseLmStudioFree}" MinWidth="150" Margin="0,0,8,0" Click="UseLmStudio_OnClick"/>
                             <Button Content="{DynamicResource MTDA_UseOllamaFree}" MinWidth="140" Click="UseOllama_OnClick"/>
                         </StackPanel>
+                        <Border x:Name="ProviderTestStatusPanel" Style="{StaticResource TestOperationBorder}">
+                            <StackPanel>
+                                <ProgressBar x:Name="ProviderTestProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="ProviderTestStatusText" TextWrapping="Wrap"/>
+                                <DockPanel Margin="0,8,0,0">
+                                    <TextBlock x:Name="ProviderTestElapsedText" VerticalAlignment="Center" Opacity="0.75"/>
+                                    <Button x:Name="ProviderTestCancelButton"
+                                            Content="{DynamicResource MTDA_CancelTest}"
+                                            HorizontalAlignment="Right"
+                                            MinWidth="110"
+                                            DockPanel.Dock="Right"
+                                            Click="CancelProviderTest_OnClick"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource TestOperationBorder}" Visibility="Visible">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource MTDA_ProviderUsageTitle}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ProgressBar x:Name="ProviderUsageProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ProviderUsageStatusText" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ProviderUsageDetailsText" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                <TextBlock x:Name="ProviderUsageUpdatedText" TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.75"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button x:Name="RefreshProviderUsageButton"
+                                            Content="{DynamicResource MTDA_RefreshProviderUsage}"
+                                            MinWidth="150"
+                                            Margin="0,0,8,0"
+                                            Click="RefreshProviderUsage_OnClick"/>
+                                    <Button x:Name="OpenProviderUsageButton"
+                                            Content="{DynamicResource MTDA_OpenProviderUsage}"
+                                            MinWidth="170"
+                                            Click="OpenProviderUsage_OnClick"/>
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource MTDA_ProviderUsageProbeHelp}" Style="{StaticResource HintText}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_AiSectionOutput}" Style="{StaticResource SectionHeaderText}"/>
@@ -508,7 +572,7 @@
                                     <TextBlock Text="SteamGridDB API Key"/>
                                     <PasswordBox x:Name="SteamGridDbApiKeyBox"
                                                  PasswordChanged="SteamGridDbApiKeyBox_OnPasswordChanged"
-                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal">
@@ -553,7 +617,7 @@
                                     <TextBlock Text="RAWG API Key"/>
                                     <PasswordBox x:Name="RawgApiKeyBox"
                                                  PasswordChanged="RawgApiKeyBox_OnPasswordChanged"
-                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_RawgHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                     <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Click="TestRawgMedia_OnClick"/>
@@ -568,7 +632,7 @@
                                     <TextBlock Text="MobyGames API Key"/>
                                     <PasswordBox x:Name="MobyGamesApiKeyBox"
                                                  PasswordChanged="MobyGamesApiKeyBox_OnPasswordChanged"
-                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_MobyGamesHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                     <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Click="TestMobyGamesMedia_OnClick"/>
@@ -583,18 +647,33 @@
                                     <TextBlock Text="IGDB Client ID"/>
                                     <PasswordBox x:Name="IgdbClientIdBox"
                                                  PasswordChanged="IgdbClientIdBox_OnPasswordChanged"
-                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="IGDB Client Secret"/>
                                     <PasswordBox x:Name="IgdbClientSecretBox"
                                                  PasswordChanged="IgdbClientSecretBox_OnPasswordChanged"
-                                                 Style="{StaticResource ThemedPasswordBox}"
+                                                 Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                     <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Click="TestIgdbMedia_OnClick"/>
                                 </StackPanel>
                             </TabItem>
                         </TabControl>
+                        <Border x:Name="MediaTestStatusPanel" Style="{StaticResource TestOperationBorder}">
+                            <StackPanel>
+                                <ProgressBar x:Name="MediaTestProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="MediaTestStatusText" TextWrapping="Wrap"/>
+                                <DockPanel Margin="0,8,0,0">
+                                    <TextBlock x:Name="MediaTestElapsedText" VerticalAlignment="Center" Opacity="0.75"/>
+                                    <Button x:Name="MediaTestCancelButton"
+                                            Content="{DynamicResource MTDA_CancelTest}"
+                                            HorizontalAlignment="Right"
+                                            MinWidth="110"
+                                            DockPanel.Dock="Right"
+                                            Click="CancelMediaTest_OnClick"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
                             <Run Text="NOTA: " FontWeight="SemiBold"/>
                             <Run Text="{DynamicResource MTDA_MissingApiKeyHelp}"/>
@@ -673,6 +752,67 @@
                                         Click="ConfigureBackgroundSourcePriority_OnClick"/>
                             </Grid>
                         </Grid>
+                        <TextBlock Text="{DynamicResource MTDA_OutputFormatHelp}"
+                                   Style="{StaticResource HintText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,10,0,0"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_ImageProcessing}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="18"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="{DynamicResource MTDA_AutomaticMediaPriority}"/>
+                            <ComboBox Grid.Row="1"
+                                      ItemsSource="{Binding Settings.MediaAutomaticPriorityOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Settings.MediaAutomaticPriority}"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="0,3,0,0"/>
+
+                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_ProcessedImageQuality}"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2"
+                                      ItemsSource="{Binding Settings.ProcessedImageQualityOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Settings.ProcessedImageQuality}"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="0,3,0,0"/>
+
+                            <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_CoverCropAnchor}" Margin="0,12,0,0"/>
+                            <ComboBox Grid.Row="3"
+                                      ItemsSource="{Binding Settings.CropAnchorOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Settings.CoverCropAnchor}"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="0,3,0,0"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{DynamicResource MTDA_BackgroundCropAnchor}" Margin="0,12,0,0"/>
+                            <ComboBox Grid.Row="3" Grid.Column="2"
+                                      ItemsSource="{Binding Settings.CropAnchorOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Settings.BackgroundCropAnchor}"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="0,3,0,0"/>
+                        </Grid>
+                        <TextBlock Text="{DynamicResource MTDA_ImageProcessingHelp}"
+                                   Style="{StaticResource HintText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,9,0,0"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
@@ -896,6 +1036,17 @@
                                     MinWidth="180"
                                     Click="ImportSettingsBackup_OnClick"/>
                         </StackPanel>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupHelp}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_CleanupObsoleteMedia}"
+                                HorizontalAlignment="Left"
+                                MinWidth="220"
+                                Click="CleanupObsoleteMedia_OnClick"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

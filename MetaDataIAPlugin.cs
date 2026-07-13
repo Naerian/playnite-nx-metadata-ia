@@ -150,12 +150,15 @@ namespace MetaDataIAPlugin
                 yield break;
             }
 
-            yield return new GameMenuItem
+            if (!IsFullscreenMode)
             {
-                Description = Loc("MTDA_MenuGenerateReview", "Generar y revisar metadatos IA"),
-                MenuSection = MenuRoot,
-                Action = actionArgs => GenerateAndReview(actionArgs.Games.FirstOrDefault())
-            };
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_MenuGenerateReview", "Generar y revisar metadatos IA"),
+                    MenuSection = MenuRoot,
+                    Action = actionArgs => GenerateAndReview(actionArgs.Games.FirstOrDefault())
+                };
+            }
 
             yield return new GameMenuItem
             {
@@ -375,6 +378,7 @@ namespace MetaDataIAPlugin
             {
                 var processed = 0;
                 var appliedMedia = 0;
+                var qualitySkipped = 0;
                 var cancelled = false;
                 var errors = new List<string>();
                 PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
@@ -409,6 +413,8 @@ namespace MetaDataIAPlugin
 
                         progress.CurrentProgressValue = processed + errors.Count;
                     }
+
+                    qualitySkipped = service.StrictQualitySkipCount;
                 }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true));
 
                 if (errors.Count > 0)
@@ -419,16 +425,16 @@ namespace MetaDataIAPlugin
                     }
                     else
                     {
-                        ShowBatchErrors(processed, errors);
+                        ShowBatchErrors(processed, errors, qualitySkipped);
                     }
                 }
                 else if (cancelled && !silent)
                 {
-                    PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMediaCancelled", "Metadata AI cancelled the media operation. Processed games: {0}. Applied files: {1}."), processed, appliedMedia), PluginTitle);
+                    PlayniteApi.Dialogs.ShowMessage(AppendQualitySkipSummary(string.Format(Loc("MTDA_MessageMediaCancelled", "Metadata AI cancelled the media operation. Processed games: {0}. Applied files: {1}."), processed, appliedMedia), qualitySkipped), PluginTitle);
                 }
                 else if (!silent)
                 {
-                    PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageMediaUpdated", "Metadata AI updated media for {0} game(s). Applied files: {1}."), processed, appliedMedia), PluginTitle);
+                    PlayniteApi.Dialogs.ShowMessage(AppendQualitySkipSummary(string.Format(Loc("MTDA_MessageMediaUpdated", "Metadata AI updated media for {0} game(s). Applied files: {1}."), processed, appliedMedia), qualitySkipped), PluginTitle);
                 }
             }
             catch (Exception ex)
@@ -450,7 +456,7 @@ namespace MetaDataIAPlugin
 
             var language = activeSettings == null ? settings.Settings.Language : activeSettings.Language;
             settings.Settings.LearnVocabulary(language, result);
-            SavePluginSettings(settings.Settings);
+            SaveSettingsSecurely(settings.Settings);
         }
 
         private void ApplyMediaInteractive(List<Game> games, MetaDataIASettings activeSettings)
@@ -556,6 +562,8 @@ namespace MetaDataIAPlugin
             }
 
             var selectedOptions = new Dictionary<MediaKind, MediaPreviewOption>();
+            var pickerSettings = Serialization.GetClone(activeSettings);
+            pickerSettings.EnsureDefaults();
             var window = new Window
             {
                 Title = PluginTitle + " - " + Loc("MTDA_MediaPickerTitle", "Choose media") + " - " + game.Name,
@@ -583,6 +591,7 @@ namespace MetaDataIAPlugin
             ApplyDynamicResource(root, Panel.BackgroundProperty, "StandardWindowBackgroundBrush");
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             Button applyChangesButton = null;
             var tabs = new TabControl();
@@ -601,6 +610,61 @@ namespace MetaDataIAPlugin
             Grid.SetRow(tabs, 0);
             root.Children.Add(tabs);
 
+            var cropContainer = new Border
+            {
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(10),
+                Margin = new Thickness(0, 10, 0, 0),
+                Visibility = kinds.Contains(MediaKind.Cover) || kinds.Contains(MediaKind.Background)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed
+            };
+            ApplyDynamicResource(cropContainer, Border.BackgroundProperty, "ControlBackgroundBrush");
+            ApplyDynamicResource(cropContainer, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+
+            var cropPanel = new StackPanel();
+            cropContainer.Child = cropPanel;
+            var cropTitle = new TextBlock
+            {
+                Text = Loc("MTDA_CropPickerTitle", "Crop positioning"),
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(2, 0, 0, 8)
+            };
+            ApplyDynamicResource(cropTitle, TextBlock.ForegroundProperty, "TextBrush");
+            cropPanel.Children.Add(cropTitle);
+
+            var cropControls = new WrapPanel { Orientation = Orientation.Horizontal };
+            if (kinds.Contains(MediaKind.Cover))
+            {
+                cropControls.Children.Add(CreateCropPickerControl(
+                    Loc("MTDA_CoverCropAnchor", "Cover crop origin"),
+                    Loc("MTDA_CropAnchorPickerHelp", "Choose which area of the image should be preserved when it is cropped to the final aspect ratio."),
+                    pickerSettings.CropAnchorOptions,
+                    pickerSettings.CoverCropAnchor,
+                    value => pickerSettings.CoverCropAnchor = value));
+            }
+
+            if (kinds.Contains(MediaKind.Background))
+            {
+                cropControls.Children.Add(CreateCropPickerControl(
+                    Loc("MTDA_BackgroundCropAnchor", "Background crop origin"),
+                    Loc("MTDA_CropAnchorPickerHelp", "Choose which area of the image should be preserved when it is cropped to the final aspect ratio."),
+                    pickerSettings.CropAnchorOptions,
+                    pickerSettings.BackgroundCropAnchor,
+                    value => pickerSettings.BackgroundCropAnchor = value));
+            }
+
+            cropPanel.Children.Add(cropControls);
+            cropPanel.Children.Add(new TextBlock
+            {
+                Text = Loc("MTDA_CropPickerHelp", "This choice applies only to media selected in this window and does not change the default setting."),
+                TextWrapping = TextWrapping.Wrap,
+                Opacity = 0.75,
+                Margin = new Thickness(2, 8, 0, 0)
+            });
+            Grid.SetRow(cropContainer, 1);
+            root.Children.Add(cropContainer);
+
             var buttonsPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -610,7 +674,7 @@ namespace MetaDataIAPlugin
 
             applyChangesButton = new Button
             {
-                Content = "Aplicar cambios",
+                Content = Loc("MTDA_ApplyChanges", "Apply changes"),
                 MinWidth = 130,
                 IsEnabled = false,
                 Margin = new Thickness(0, 0, 8, 0)
@@ -629,7 +693,7 @@ namespace MetaDataIAPlugin
 
             var closeButton = new Button
             {
-                Content = "Cerrar",
+                Content = Loc("MTDA_Close", "Close"),
                 MinWidth = 100
             };
             closeButton.Click += (sender, args) =>
@@ -638,7 +702,7 @@ namespace MetaDataIAPlugin
             };
             buttonsPanel.Children.Add(closeButton);
 
-            Grid.SetRow(buttonsPanel, 1);
+            Grid.SetRow(buttonsPanel, 2);
             root.Children.Add(buttonsPanel);
 
             window.Content = root;
@@ -647,8 +711,49 @@ namespace MetaDataIAPlugin
             if (accepted == true && selectedOptions.Count > 0)
             {
                 var orderedOptions = kinds.Where(selectedOptions.ContainsKey).Select(kind => selectedOptions[kind]).ToList();
-                ApplySelectedMediaOptions(game, activeSettings, orderedOptions);
+                ApplySelectedMediaOptions(game, pickerSettings, orderedOptions);
             }
+        }
+
+        private static UIElement CreateCropPickerControl(string label, string hint, IEnumerable<LocalizedOption> options, string selectedValue, Action<string> changed)
+        {
+            var panel = new StackPanel { Margin = new Thickness(0, 0, 18, 0), MinWidth = 300, MaxWidth = 460 };
+            var labelText = new TextBlock
+            {
+                Text = label,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(2, 0, 0, 4)
+            };
+            ApplyDynamicResource(labelText, TextBlock.ForegroundProperty, "TextBrush");
+            panel.Children.Add(labelText);
+
+            var combo = new ComboBox
+            {
+                ItemsSource = options,
+                DisplayMemberPath = "DisplayName",
+                SelectedValuePath = "Value",
+                SelectedValue = selectedValue,
+                MinWidth = 230
+            };
+            combo.SelectionChanged += (sender, args) =>
+            {
+                var value = combo.SelectedValue as string;
+                if (!string.IsNullOrWhiteSpace(value) && changed != null)
+                {
+                    changed(value);
+                }
+            };
+            panel.Children.Add(combo);
+            var hintText = new TextBlock
+            {
+                Text = hint,
+                TextWrapping = TextWrapping.Wrap,
+                Opacity = 0.75,
+                Margin = new Thickness(2, 5, 0, 0)
+            };
+            ApplyDynamicResource(hintText, TextBlock.ForegroundProperty, "TextBrush");
+            panel.Children.Add(hintText);
+            return panel;
         }
 
         private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction)
@@ -1016,6 +1121,7 @@ namespace MetaDataIAPlugin
         {
             ApplyDynamicResource(window, FrameworkElement.StyleProperty, "StandardWindowStyle");
             ApplyDynamicResource(window, Control.BackgroundProperty, "StandardWindowBackgroundBrush");
+            ApplyDynamicResource(window, Control.ForegroundProperty, "TextBrush");
         }
 
         private static void ApplyDynamicResource(DependencyObject target, DependencyProperty property, string resourceKey)
@@ -1071,6 +1177,11 @@ namespace MetaDataIAPlugin
                 }
 
                 var media = service.GenerateAsync(game, kind, progress.CancelToken).GetAwaiter().GetResult();
+                if (media == null)
+                {
+                    continue;
+                }
+
                 progress.MainDispatcher.Invoke(new Action(() =>
                 {
                     MediaGenerationService.ApplyMediaFile(PlayniteApi, game, media);
@@ -1144,7 +1255,19 @@ namespace MetaDataIAPlugin
         private void SaveCurrentSettings()
         {
             settings.SyncSelectedTemplate();
-            SavePluginSettings(settings.Settings);
+            SaveSettingsSecurely(settings.Settings);
+        }
+
+        public void SaveSettingsSecurely(MetaDataIASettings currentSettings)
+        {
+            if (currentSettings == null)
+            {
+                return;
+            }
+
+            var storedSettings = Serialization.GetClone(currentSettings);
+            storedSettings.ProtectSecretsForStorage();
+            SavePluginSettings(storedSettings);
         }
 
         private string UserError(Exception ex)
@@ -1157,11 +1280,18 @@ namespace MetaDataIAPlugin
             return MetadataGenerationService.SanitizeForUser(ex.Message);
         }
 
-        private void ShowBatchErrors(int processed, List<string> errors)
+        private void ShowBatchErrors(int processed, List<string> errors, int qualitySkipped = 0)
         {
             var separator = "\n\n" + new string('-', 90) + "\n\n";
             var message = string.Format(Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"), processed, errors.Count) + "\n\n" +
                           string.Join(separator, errors);
+            message = AppendQualitySkipSummary(message, qualitySkipped);
+
+            if (IsFullscreenMode)
+            {
+                PlayniteApi.Dialogs.ShowMessage(message, PluginTitle);
+                return;
+            }
 
             var window = new Window
             {
@@ -1231,6 +1361,17 @@ namespace MetaDataIAPlugin
 
             window.Content = root;
             window.ShowDialog();
+        }
+
+        private string AppendQualitySkipSummary(string message, int qualitySkipped)
+        {
+            if (qualitySkipped <= 0)
+            {
+                return message;
+            }
+
+            return message + Environment.NewLine + Environment.NewLine +
+                   string.Format(Loc("MTDA_MessageMediaStrictQualitySkipped", "Skipped because the source image was below the configured output resolution: {0}."), qualitySkipped);
         }
 
         private void ShowReviewWindow(Game game, AiMetadataResult result, MetaDataIASettings activeSettings)
@@ -1534,7 +1675,7 @@ namespace MetaDataIAPlugin
             {
                 Description = Loc(MenuKey(description), description),
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
-                Action = actionArgs => ApplyMediaInteractive(GetSelectedOrFilteredGames(), settingsFactory(settings.Settings))
+                Action = actionArgs => ApplyMediaForCurrentMode(GetSelectedOrFilteredGames(), settingsFactory(settings.Settings))
             };
         }
 
@@ -1564,8 +1705,29 @@ namespace MetaDataIAPlugin
             {
                 Description = Loc(MenuKey(description), description),
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
-                Action = actionArgs => ApplyMediaInteractive(actionArgs.Games, settingsFactory(settings.Settings))
+                Action = actionArgs => ApplyMediaForCurrentMode(actionArgs.Games, settingsFactory(settings.Settings))
             };
+        }
+
+        private bool IsFullscreenMode
+        {
+            get
+            {
+                return PlayniteApi != null &&
+                       PlayniteApi.ApplicationInfo != null &&
+                       PlayniteApi.ApplicationInfo.Mode == ApplicationMode.Fullscreen;
+            }
+        }
+
+        private void ApplyMediaForCurrentMode(List<Game> games, MetaDataIASettings activeSettings)
+        {
+            if (IsFullscreenMode)
+            {
+                ApplyMedia(games, activeSettings);
+                return;
+            }
+
+            ApplyMediaInteractive(games, activeSettings);
         }
 
         private static string MenuKey(string description)

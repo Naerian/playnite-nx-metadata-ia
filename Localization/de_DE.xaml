@@ -18,7 +18,33 @@
     <sys:String x:Key="MTDA_ApplyProvider">Anbieter bewerben</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">Schlüssel/Hilfeseite:</sys:String>
     <sys:String x:Key="MTDA_OpenProviderPage">Anbieterseite öffnen</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTitle">Nutzung und Limits</sys:String>
+    <sys:String x:Key="MTDA_RefreshProviderUsage">Nutzung aktualisieren</sys:String>
+    <sys:String x:Key="MTDA_OpenProviderUsage">Nutzungsseite öffnen</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageProbeHelp">Metadata AI aktualisiert diese Werte aus normalen Anbieterantworten. OpenRouter wird direkt abgefragt; bei OpenAI, Claude, Groq, Cerebras oder eigenen Endpunkten sendet die Aktualisierung eine minimale Anfrage. Es sind die zuletzt bekannten, möglicherweise modellspezifischen Werte.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshing">Wird aktualisiert...</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageAvailable">Die aktuellen Anbieterlimits wurden aktualisiert.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnknown">Noch keine Nutzungsinformationen empfangen.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnavailable">Der Anbieter hat keine Nutzungs- oder Limitinformationen zurückgegeben.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">Dieser Anbieter stellt dem Plugin keinen portablen Wert für die verbleibende Quote bereit. Öffne die Nutzungsseite für die aktuellen Kontolimits.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageLocal">Lokaler Anbieter: Es gibt keine externe API-Quote. Die Verfügbarkeit hängt vom PC und lokalen Server ab.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRequests">Anfragen</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTokens">Tokens</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageInputTokens">Eingabe-Tokens</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOutputTokens">Ausgabe-Tokens</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageCredits">Guthaben</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDaily">Heute genutzt: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageMonthly">Diesen Monat genutzt: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageReset">Zurücksetzung: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRetryAfter">Erneut versuchen nach: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUpdated">Zuletzt aktualisiert: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageNoHeaders">Die letzte Anbieterantwort enthielt keine numerischen Limits.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOpenRouterFreeNote">OpenRouter erkennt diesen Schlüssel als kostenlos, meldet aber nicht die genaue Anzahl der heute verbleibenden kostenlosen Anfragen.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTimedOut">Die Nutzungsabfrage wurde nicht innerhalb von 90 Sekunden abgeschlossen.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">Gib zuerst den API-Schlüssel des Anbieters ein.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">Nutzungsinformationen konnten nicht abgerufen werden (HTTP {0}).</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_RestoreEndpoint">Standard-Endpunkt wiederherstellen</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API-Schlüssel</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">Fügen Sie es hier nur ein, wenn der Anbieter es verlangt. Für lokales LM Studio und Ollama ist dies normalerweise leer. Fügen Sie hier nicht Ihren ChatGPT-Schlüssel ein: Es muss ein API-Schlüssel des ausgewählten Anbieters sein.</sys:String>
     <sys:String x:Key="MTDA_Model">Modell</sys:String>
@@ -54,11 +80,12 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">Quellschlüssel und Tests</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Sichern und Wiederherstellen</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Exportiere oder importiere die aktuellen Metadata AI-Einstellungen, einschließlich Anbieter, Vorlagen, Feldregeln, Vokabularspeicher und Medienquellen-Konfiguration.</sys:String>
-    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Hinweis: Die Sicherung enthält konfigurierte API-Schlüssel und Geheimnisse. Bewahre die exportierte JSON-Datei privat auf.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Hinweis: API-Schlüssel und Geheimnisse werden für den aktuellen Windows-Benutzer verschlüsselt. Unter einem anderen Konto oder auf einem anderen Computer müssen sie erneut eingegeben werden.</sys:String>
     <sys:String x:Key="MTDA_ExportSettingsBackup">Einstellungen sichern</sys:String>
     <sys:String x:Key="MTDA_ImportSettingsBackup">Einstellungen wiederherstellen</sys:String>
     <sys:String x:Key="MTDA_BackupExported">Einstellungssicherung exportiert.</sys:String>
     <sys:String x:Key="MTDA_BackupImported">Einstellungssicherung importiert.</sys:String>
+    <sys:String x:Key="MTDA_BackupSecretsUnavailable">Einige API-Zugangsdaten konnten nicht wiederhergestellt werden, da diese Sicherung für einen anderen Windows-Benutzer oder Computer verschlüsselt wurde. Gib sie erneut ein.</sys:String>
     <sys:String x:Key="MTDA_BackupImportInvalid">Die ausgewählte Sicherungsdatei ist ungültig.</sys:String>
     <sys:String x:Key="MTDA_BackupImportConfirm">Das Importieren dieser Sicherung ersetzt die aktuellen Metadata AI-Einstellungen und speichert sie sofort. Fortfahren?</sys:String>
     <sys:String x:Key="MTDA_BackupExportFailed">Einstellungssicherung konnte nicht exportiert werden.</sys:String>
@@ -80,7 +107,8 @@
     <sys:String x:Key="MTDA_Get">Erhalten</sys:String>
     <sys:String x:Key="MTDA_Generate">Erzeugen</sys:String>
     <sys:String x:Key="MTDA_Apply">Anwenden</sys:String>
-    <sys:String x:Key="MTDA_Format">Format</sys:String>
+    <sys:String x:Key="MTDA_Format">Ausgabeformat und -auflösung</sys:String>
+    <sys:String x:Key="MTDA_OutputFormatHelp">Das ausgewählte Format und die Auflösung bestimmen die von Metadata AI gespeicherte Datei. Kandidaten können andere Originalauflösungen haben: Bilder werden skaliert und bei abweichendem Seitenverhältnis mittig zugeschnitten.</sys:String>
     <sys:String x:Key="MTDA_Cover">Abdeckung</sys:String>
     <sys:String x:Key="MTDA_Icon">Symbol</sys:String>
     <sys:String x:Key="MTDA_Background">Hintergrund</sys:String>
@@ -185,6 +213,7 @@ Kurzes Detail:</sys:String>
     <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Metadaten-KI ist nicht konfiguriert. Öffnen Sie die Plugin-Einstellungen und legen Sie Endpunkt, Modell und API-Schlüssel fest.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">Für dieses Spiel wurden in den konfigurierten Medienquellen keine Bilder gefunden.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">Es konnte kein Medienkandidat heruntergeladen werden.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">Dieses Bild ist an seiner Quelle nicht mehr verfügbar. Öffne die Medienauswahl erneut und wähle ein anderes Bild.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">In den konfigurierten Quellen wurden für dieses Spiel keine Medienkandidaten gefunden.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">Es sind keine Medienquellen konfiguriert oder verfügbar.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
@@ -392,4 +421,42 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagSourceError">Quellenfehler oder abgelehnte Filter</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFilters">Filter</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">alle Kandidaten wurden durch aktuelle Filter oder Formatvorgaben entfernt</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessing">Bildverarbeitung</sys:String>
+    <sys:String x:Key="MTDA_AutomaticMediaPriority">Priorität der automatischen Auswahl</sys:String>
+    <sys:String x:Key="MTDA_ProcessedImageQuality">Qualität des verarbeiteten Bildes</sys:String>
+    <sys:String x:Key="MTDA_CoverCropAnchor">Ausschnittposition für Cover</sys:String>
+    <sys:String x:Key="MTDA_BackgroundCropAnchor">Ausschnittposition für Hintergründe</sys:String>
+    <sys:String x:Key="MTDA_CropPickerTitle">Position des Bildausschnitts</sys:String>
+    <sys:String x:Key="MTDA_CropAnchorPickerHelp">Wähle den Bildbereich, der beim Zuschneiden auf das endgültige Seitenverhältnis erhalten bleiben soll.</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessingHelp">Die Priorität steuert die automatische Stapelauswahl. Strenge Qualität überspringt Bilder, die nach dem Zuschneiden vergrößert werden müssten. Qualität ändert die JPEG-Komprimierung, nicht die Auflösung.</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityBalanced">Ausgewogen</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPrioritySourceFirst">Quelle zuerst</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityResolutionFirst">Auflösung zuerst</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityStrictQuality">Strenge Qualität</sys:String>
+    <sys:String x:Key="MTDA_OptionCropCenter">Mitte</sys:String><sys:String x:Key="MTDA_OptionCropTop">Oben</sys:String><sys:String x:Key="MTDA_OptionCropBottom">Unten</sys:String><sys:String x:Key="MTDA_OptionCropLeft">Links</sys:String><sys:String x:Key="MTDA_OptionCropRight">Rechts</sys:String>
+    <sys:String x:Key="MTDA_OptionCropTopLeft">Oben links</sys:String><sys:String x:Key="MTDA_OptionCropTopRight">Oben rechts</sys:String><sys:String x:Key="MTDA_OptionCropBottomLeft">Unten links</sys:String><sys:String x:Key="MTDA_OptionCropBottomRight">Unten rechts</sys:String>
+    <sys:String x:Key="MTDA_OptionImageQualitySpaceSaving">Platzsparend</sys:String><sys:String x:Key="MTDA_OptionImageQualityBalanced">Ausgewogen</sys:String><sys:String x:Key="MTDA_OptionImageQualityHigh">Hoch</sys:String><sys:String x:Key="MTDA_OptionImageQualityMaximum">Maximal</sys:String>
+    <sys:String x:Key="MTDA_CropForCover">Cover zuschneiden</sys:String><sys:String x:Key="MTDA_CropForBackground">Hintergrund zuschneiden</sys:String>
+    <sys:String x:Key="MTDA_CropPickerHelp">Diese Auswahl gilt nur für die in diesem Fenster ausgewählten Medien und ändert nicht die Standardeinstellung.</sys:String><sys:String x:Key="MTDA_ApplyChanges">Änderungen anwenden</sys:String><sys:String x:Key="MTDA_Close">Schließen</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaStrictQualitySkipped">Übersprungen, weil das Quellbild kleiner als die konfigurierte Ausgabeauflösung war: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceMediaCleanupTitle">Veraltete Medien bereinigen</sys:String><sys:String x:Key="MTDA_MaintenanceMediaCleanupHelp">Sucht im Playnite-Spielespeicher nach echten Bilddateien, die nicht mehr als Cover, Symbol oder Hintergrund verwendet werden. Vor dem Löschen werden Zusammenfassung und Bestätigung angezeigt.</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMedia">Veraltete Medien suchen und bereinigen</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaNone">Keine veralteten Mediendateien gefunden.</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMediaConfirm">Metadata AI hat {0} nicht referenzierte Bilddatei(en) mit {1} gefunden. Sie werden von keinem Spiel als Cover, Symbol oder Hintergrund verwendet. Löschen?</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaCompleted">Bereinigung abgeschlossen. Entfernte Dateien: {0}. Freigegebener Speicher: {1}. Nicht entfernte Dateien: {2}.</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaFailed">Veraltete Mediendateien konnten nicht bereinigt werden.</sys:String>
+    <sys:String x:Key="MTDA_Testing">Wird getestet...</sys:String>
+    <sys:String x:Key="MTDA_CancelTest">Test abbrechen</sys:String>
+    <sys:String x:Key="MTDA_TestSending">Testanfrage an {0} wird gesendet...</sys:String>
+    <sys:String x:Key="MTDA_TestWaiting">Warten auf die Antwort von {0}. Kostenlose oder stark ausgelastete Dienste können länger benötigen.</sys:String>
+    <sys:String x:Key="MTDA_TestElapsed">Vergangen: {0} s</sys:String>
+    <sys:String x:Key="MTDA_TestTimedOut">Der Anbieter oder die Quelle hat nicht innerhalb von 90 Sekunden geantwortet. Der Dienst ist möglicherweise ausgelastet oder nicht verfügbar.</sys:String>
+    <sys:String x:Key="MTDA_TestCancelling">Test wird abgebrochen...</sys:String>
+    <sys:String x:Key="MTDA_TestCancelled">Test abgebrochen.</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouterFree">OpenRouter kostenlos (begrenzt)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroqFree">Groq (kostenloses Kontingent)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGeminiFree">Google Gemini (kostenloses Kontingent)</sys:String>
+    <sys:String x:Key="MTDA_ProviderCerebras">Cerebras (kostenloses Kontingent)</sys:String>
+    <sys:String x:Key="MTDA_ProviderMistral">Mistral AI (kostenloser Modus)</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouterFree">OpenRouter kostenlos: Erstelle einen kostenlosen API-Schlüssel und verwende den automatischen Router openrouter/free. Er wählt für jede Anfrage ein verfügbares kostenloses Modell, daher können Geschwindigkeit und Konsistenz variieren.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: Erstelle einen kostenlosen API-Schlüssel in Cerebras Cloud. Das kostenlose Kontingent hat niedrigere Limits, bietet aber sehr schnelle Inferenz und erfordert kein Abonnement.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: Erstelle einen API-Schlüssel in Mistral Studio. Der kostenlose Modus ist standardmäßig ohne Kreditkarte aktiv; Nutzungs- und Ratenlimits gelten.</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">Der Anbieter hat Metadaten zurückgegeben, aber keinen Inhalt für die aktive Beschreibungsvorlage erzeugt. Es wurde keine leere Beschreibung angewendet. Versuche es erneut, wähle ein Modell mit zuverlässigerer strukturierter Ausgabe oder aktiviere den offiziellen Kontext für dieses Spiel.</sys:String>
 </ResourceDictionary>

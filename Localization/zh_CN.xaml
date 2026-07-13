@@ -18,7 +18,33 @@
     <sys:String x:Key="MTDA_ApplyProvider">申请提供者</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">关键/帮助页面：</sys:String>
     <sys:String x:Key="MTDA_OpenProviderPage">打开提供商页面</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTitle">用量和限制</sys:String>
+    <sys:String x:Key="MTDA_RefreshProviderUsage">刷新用量</sys:String>
+    <sys:String x:Key="MTDA_OpenProviderUsage">打开用量页面</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageProbeHelp">Metadata AI 会从提供商的正常响应中更新这些值。OpenRouter 会被直接查询；对于 OpenAI、Claude、Groq、Cerebras 或自定义 endpoint，刷新会发送一次最小请求。显示的是最后已知值，并且可能因模型而异。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshing">正在刷新...</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageAvailable">已更新当前提供商限制。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnknown">尚未收到用量信息。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnavailable">提供商未返回用量或限制信息。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">此提供商未向插件公开可移植的剩余额度值。请打开用量页面查看当前账户限制。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageLocal">本地提供商：没有外部 API 配额。可用性取决于电脑和本地服务器。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRequests">请求</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTokens">令牌</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageInputTokens">输入令牌</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOutputTokens">输出令牌</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageCredits">余额</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDaily">今日已用：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageMonthly">本月已用：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageReset">重置：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRetryAfter">重试等待：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUpdated">最后更新：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageNoHeaders">最近的提供商响应未包含数值限制。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOpenRouterFreeNote">OpenRouter 将此密钥识别为免费层，但不会报告今天剩余的确切免费请求数。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTimedOut">用量查询未在90秒内完成。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">请先输入提供商 API 密钥。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">无法获取用量信息 (HTTP {0})。</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_RestoreEndpoint">恢复端点</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API密钥</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">仅当提供商需要时才将其粘贴到此处。对于本地 LM Studio 和 Ollama，这通常是空的。不要将您的 ChatGPT 密钥粘贴到此处：它必须是来自所选提供商的 API 密钥。</sys:String>
     <sys:String x:Key="MTDA_Model">模型</sys:String>
@@ -54,11 +80,12 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">源密钥和测试</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">备份和还原</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">导出或导入当前 Metadata AI 设置，包括提供商、模板、字段规则、词汇记忆和媒体来源配置。</sys:String>
-    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注意：备份包含已配置的 API 密钥和机密。请将导出的 JSON 私下保存。</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注意：API 密钥和机密会针对当前 Windows 用户加密。在其他账户或电脑上需要重新输入。</sys:String>
     <sys:String x:Key="MTDA_ExportSettingsBackup">导出设置备份</sys:String>
     <sys:String x:Key="MTDA_ImportSettingsBackup">导入设置备份</sys:String>
     <sys:String x:Key="MTDA_BackupExported">设置备份已导出。</sys:String>
     <sys:String x:Key="MTDA_BackupImported">设置备份已导入。</sys:String>
+    <sys:String x:Key="MTDA_BackupSecretsUnavailable">由于此备份是为其他 Windows 用户或电脑加密的，部分 API 凭据无法恢复。请重新输入这些凭据。</sys:String>
     <sys:String x:Key="MTDA_BackupImportInvalid">所选备份文件无效。</sys:String>
     <sys:String x:Key="MTDA_BackupImportConfirm">导入此备份将替换当前 Metadata AI 设置并立即保存。是否继续？</sys:String>
     <sys:String x:Key="MTDA_BackupExportFailed">无法导出设置备份。</sys:String>
@@ -80,7 +107,8 @@
     <sys:String x:Key="MTDA_Get">得到</sys:String>
     <sys:String x:Key="MTDA_Generate">产生</sys:String>
     <sys:String x:Key="MTDA_Apply">申请</sys:String>
-    <sys:String x:Key="MTDA_Format">格式</sys:String>
+    <sys:String x:Key="MTDA_Format">输出格式和分辨率</sys:String>
+    <sys:String x:Key="MTDA_OutputFormatHelp">所选格式和分辨率决定 Metadata AI 保存的最终文件。候选图片的原始分辨率可能不同：图片会被缩放，宽高比变化时会从中心裁剪。</sys:String>
     <sys:String x:Key="MTDA_Cover">覆盖</sys:String>
     <sys:String x:Key="MTDA_Icon">图标</sys:String>
     <sys:String x:Key="MTDA_Background">背景</sys:String>
@@ -185,6 +213,7 @@ Brief detail: </sys:String>
     <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Metadata AI is not configured. Open the plugin settings and set endpoint, model and API key.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">No images were found for this game in the configured media sources.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">No media candidate could be downloaded.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">此图片已无法从来源获取。请重新打开媒体选择器并选择其他图片。</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">No media candidates were found for this game in the configured sources.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">There are no configured or available media sources.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
@@ -392,4 +421,32 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagSourceError">来源错误或筛选条件被拒绝</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFilters">筛选</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">所有候选项都被当前筛选条件或格式偏好移除</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessing">图像处理</sys:String><sys:String x:Key="MTDA_AutomaticMediaPriority">自动选择优先级</sys:String><sys:String x:Key="MTDA_ProcessedImageQuality">处理后图像质量</sys:String>
+    <sys:String x:Key="MTDA_CoverCropAnchor">封面裁剪位置</sys:String><sys:String x:Key="MTDA_BackgroundCropAnchor">背景裁剪位置</sys:String>
+    <sys:String x:Key="MTDA_CropPickerTitle">裁剪位置</sys:String><sys:String x:Key="MTDA_CropAnchorPickerHelp">选择图像裁剪为最终宽高比时要保留的区域。</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessingHelp">优先级控制自动和批量选择。严格质量会跳过裁剪后需要放大的图像。质量仅改变 JPEG 压缩，不改变输出分辨率。</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityBalanced">均衡</sys:String><sys:String x:Key="MTDA_OptionMediaPrioritySourceFirst">来源优先</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityResolutionFirst">分辨率优先</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityStrictQuality">严格质量</sys:String>
+    <sys:String x:Key="MTDA_OptionCropCenter">居中</sys:String><sys:String x:Key="MTDA_OptionCropTop">顶部</sys:String><sys:String x:Key="MTDA_OptionCropBottom">底部</sys:String><sys:String x:Key="MTDA_OptionCropLeft">左侧</sys:String><sys:String x:Key="MTDA_OptionCropRight">右侧</sys:String><sys:String x:Key="MTDA_OptionCropTopLeft">左上</sys:String><sys:String x:Key="MTDA_OptionCropTopRight">右上</sys:String><sys:String x:Key="MTDA_OptionCropBottomLeft">左下</sys:String><sys:String x:Key="MTDA_OptionCropBottomRight">右下</sys:String>
+    <sys:String x:Key="MTDA_OptionImageQualitySpaceSaving">节省空间</sys:String><sys:String x:Key="MTDA_OptionImageQualityBalanced">均衡</sys:String><sys:String x:Key="MTDA_OptionImageQualityHigh">高</sys:String><sys:String x:Key="MTDA_OptionImageQualityMaximum">最高</sys:String>
+    <sys:String x:Key="MTDA_CropForCover">封面裁剪</sys:String><sys:String x:Key="MTDA_CropForBackground">背景裁剪</sys:String><sys:String x:Key="MTDA_CropPickerHelp">此选择仅适用于此窗口中的媒体，不会更改默认设置。</sys:String><sys:String x:Key="MTDA_ApplyChanges">应用更改</sys:String><sys:String x:Key="MTDA_Close">关闭</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaStrictQualitySkipped">因源图像低于配置的输出分辨率而跳过：{0}。</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceMediaCleanupTitle">清理过时媒体</sys:String><sys:String x:Key="MTDA_MaintenanceMediaCleanupHelp">扫描 Playnite 游戏存储，查找不再作为封面、图标或背景使用的图像。删除前会显示摘要并请求确认。</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMedia">查找并清理过时媒体</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaNone">未发现过时媒体文件。</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaConfirm">Metadata AI 找到 {0} 个未引用图像，占用 {1}。没有游戏将其用作封面、图标或背景。是否删除？</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaCompleted">清理完成。已删除文件：{0}。已释放空间：{1}。失败：{2}。</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaFailed">无法清理过时媒体。</sys:String>
+    <sys:String x:Key="MTDA_Testing">正在测试...</sys:String>
+    <sys:String x:Key="MTDA_CancelTest">取消测试</sys:String>
+    <sys:String x:Key="MTDA_TestSending">正在向 {0} 发送测试请求...</sys:String>
+    <sys:String x:Key="MTDA_TestWaiting">正在等待 {0} 响应。免费或繁忙的服务可能需要更长时间。</sys:String>
+    <sys:String x:Key="MTDA_TestElapsed">已用时间: {0} 秒</sys:String>
+    <sys:String x:Key="MTDA_TestTimedOut">提供商或来源在 90 秒内没有响应。服务可能正忙或不可用。</sys:String>
+    <sys:String x:Key="MTDA_TestCancelling">正在取消测试...</sys:String>
+    <sys:String x:Key="MTDA_TestCancelled">测试已取消。</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouterFree">OpenRouter 免费版（有限制）</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroqFree">Groq（免费层）</sys:String>
+    <sys:String x:Key="MTDA_ProviderGeminiFree">Google Gemini（免费层）</sys:String>
+    <sys:String x:Key="MTDA_ProviderCerebras">Cerebras（免费层）</sys:String>
+    <sys:String x:Key="MTDA_ProviderMistral">Mistral AI（免费模式）</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouterFree">OpenRouter 免费版：创建免费 API 密钥并使用自动路由器 openrouter/free。它会为每个请求选择可用的免费模型，因此速度和输出一致性可能不同。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras：在 Cerebras Cloud 创建免费 API 密钥。免费层的限额较低，但无需订阅即可提供非常快速的推理。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI：在 Mistral Studio 创建 API 密钥。免费模式默认启用且无需银行卡，但有用量和速率限制。</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">提供商返回了元数据，但没有为当前描述模板生成内容。未应用空描述。请重试、选择更可靠地遵循结构化输出的模型，或为该游戏启用官方上下文。</sys:String>
 </ResourceDictionary>

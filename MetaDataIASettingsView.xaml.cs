@@ -10,6 +10,8 @@ using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Threading;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
@@ -24,18 +26,53 @@ namespace MetaDataIAPlugin
         private FrameworkElement recentlyClosedSourcePriorityPopupTarget;
         private MediaKind? recentlyClosedSourcePriorityPopupKind;
         private DateTime recentlyClosedSourcePriorityPopupAt = DateTime.MinValue;
+        private TestOperationState providerTestOperation;
+        private TestOperationState mediaTestOperation;
+        private CancellationTokenSource providerUsageRefreshCancellation;
+        private bool providerUsageRefreshActive;
+
+        private sealed class TestOperationState
+        {
+            public CancellationTokenSource Cancellation { get; set; }
+            public DispatcherTimer Timer { get; set; }
+            public Stopwatch Stopwatch { get; set; }
+            public Border Panel { get; set; }
+            public ProgressBar Progress { get; set; }
+            public TextBlock StatusText { get; set; }
+            public TextBlock ElapsedText { get; set; }
+            public Button CancelButton { get; set; }
+            public Button TriggerButton { get; set; }
+            public object OriginalButtonContent { get; set; }
+            public string TargetName { get; set; }
+            public bool TimedOut { get; set; }
+            public bool CancelledByUser { get; set; }
+        }
 
         public MetaDataIASettingsView()
         {
             InitializeComponent();
+            Unloaded += MetaDataIASettingsView_OnUnloaded;
             DataContextChanged += (s, e) =>
             {
                 var viewModel = DataContext as MetaDataIASettingsViewModel;
                 if (viewModel != null)
                 {
                     LoadPasswordBoxes(viewModel.Settings);
+                    Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
                 }
             };
+        }
+
+        private void MetaDataIASettingsView_OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            CancelTestOperation(providerTestOperation, false);
+            CancelTestOperation(mediaTestOperation, false);
+            if (providerUsageRefreshCancellation != null)
+            {
+                providerUsageRefreshCancellation.Cancel();
+                providerUsageRefreshCancellation.Dispose();
+                providerUsageRefreshCancellation = null;
+            }
         }
 
         private void LoadPasswordBoxes(MetaDataIASettings settings)
@@ -169,6 +206,7 @@ namespace MetaDataIAPlugin
                 {
                     Settings = Serialization.GetClone(viewModel.Settings)
                 };
+                backup.Settings.ProtectSecretsForStorage();
 
                 File.WriteAllText(dialog.FileName, Serialization.ToJson(backup, true));
                 MessageBox.Show(Loc("MTDA_BackupExported", "Settings backup exported."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
@@ -209,6 +247,8 @@ namespace MetaDataIAPlugin
                     return;
                 }
 
+                var secretsRestored = backup.Settings.UnprotectSecretsAfterLoad();
+
                 var confirm = MessageBox.Show(
                     Loc("MTDA_BackupImportConfirm", "Importing this backup will replace the current Metadata AI settings and save them immediately. Continue?"),
                     PluginTitle,
@@ -223,11 +263,84 @@ namespace MetaDataIAPlugin
                 viewModel.ReplaceSettingsFromBackup(backup.Settings);
                 LoadPasswordBoxes(viewModel.Settings);
                 MessageBox.Show(Loc("MTDA_BackupImported", "Settings backup imported."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!secretsRestored)
+                {
+                    MessageBox.Show(
+                        Loc("MTDA_BackupSecretsUnavailable", "Some API credentials could not be restored because this backup was encrypted for another Windows user or computer. Enter those credentials again."),
+                        PluginTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(Loc("MTDA_BackupImportFailed", "Could not import settings backup.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        private void CleanupObsoleteMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || viewModel.Plugin == null || viewModel.Plugin.Api == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var api = viewModel.Plugin.Api;
+                var scan = MediaStorageCleanupService.Scan(api);
+                if (scan.FileCount == 0)
+                {
+                    api.Dialogs.ShowMessage(Loc("MTDA_CleanupObsoleteMediaNone", "No obsolete media files were found."), PluginTitle);
+                    return;
+                }
+
+                var confirmMessage = string.Format(
+                    Loc("MTDA_CleanupObsoleteMediaConfirm", "Metadata AI found {0} unreferenced image file(s), using {1}. These files are not used as a cover, icon, or background by any Playnite game. Delete them?"),
+                    scan.FileCount,
+                    FormatFileSize(scan.TotalBytes));
+                var confirm = api.Dialogs.ShowMessage(confirmMessage, PluginTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (confirm != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                var removed = MediaStorageCleanupService.Delete(api, scan);
+                api.Dialogs.ShowMessage(
+                    string.Format(
+                        Loc("MTDA_CleanupObsoleteMediaCompleted", "Cleanup completed. Removed files: {0}. Recovered space: {1}. Files that could not be removed: {2}."),
+                        removed.FileCount,
+                        FormatFileSize(removed.TotalBytes),
+                        removed.FailedCount),
+                    PluginTitle);
+            }
+            catch (Exception ex)
+            {
+                viewModel.Plugin.Api.Dialogs.ShowErrorMessage(
+                    Loc("MTDA_CleanupObsoleteMediaFailed", "Could not clean obsolete media files.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message),
+                    PluginTitle);
+            }
+        }
+
+        private static string FormatFileSize(long bytes)
+        {
+            if (bytes >= 1024L * 1024L * 1024L)
+            {
+                return (bytes / (1024d * 1024d * 1024d)).ToString("0.##") + " GB";
+            }
+
+            if (bytes >= 1024L * 1024L)
+            {
+                return (bytes / (1024d * 1024d)).ToString("0.##") + " MB";
+            }
+
+            if (bytes >= 1024L)
+            {
+                return (bytes / 1024d).ToString("0.##") + " KB";
+            }
+
+            return bytes + " B";
         }
 
         private void ApplyProvider_OnClick(object sender, RoutedEventArgs e)
@@ -237,6 +350,16 @@ namespace MetaDataIAPlugin
             {
                 viewModel.Settings.ApplyProviderPreset();
                 LoadPasswordBoxes(viewModel.Settings);
+                RefreshProviderUsageDisplay(null);
+            }
+        }
+
+        private void RestoreEndpoint_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.RestoreProviderEndpoint();
             }
         }
 
@@ -249,6 +372,222 @@ namespace MetaDataIAPlugin
             }
 
             Process.Start(new ProcessStartInfo(viewModel.Settings.ProviderKeyUrl));
+        }
+
+        private void ProviderPreset_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
+        }
+
+        private void OpenProviderUsage_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || string.IsNullOrWhiteSpace(viewModel.Settings.ProviderUsageUrl))
+            {
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(viewModel.Settings.ProviderUsageUrl));
+        }
+
+        private async void RefreshProviderUsage_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || providerUsageRefreshActive)
+            {
+                return;
+            }
+
+            providerUsageRefreshActive = true;
+            var originalContent = RefreshProviderUsageButton.Content;
+            RefreshProviderUsageButton.IsEnabled = false;
+            RefreshProviderUsageButton.Content = Loc("MTDA_ProviderUsageRefreshing", "Refreshing...");
+            ProviderUsageProgress.Visibility = Visibility.Visible;
+            ProviderUsageStatusText.Text = Loc("MTDA_ProviderUsageRefreshing", "Refreshing...");
+            providerUsageRefreshCancellation = new CancellationTokenSource();
+            providerUsageRefreshCancellation.CancelAfter(TimeSpan.FromSeconds(90));
+
+            try
+            {
+                if (ProviderUsageService.IsLocalProvider(viewModel.Settings))
+                {
+                    ProviderUsageService.CreateLocalSnapshot(viewModel.Settings);
+                    RefreshProviderUsageDisplay(null);
+                    return;
+                }
+
+                if (ProviderUsageService.UsesDashboardOnly(viewModel.Settings))
+                {
+                    RefreshProviderUsageDisplay(Loc(
+                        "MTDA_ProviderUsageDashboardOnly",
+                        "This provider does not expose a portable remaining-quota value to the plugin. Open its usage page for the current account limits."));
+                    return;
+                }
+
+                if (ProviderUsageService.SupportsDirectRefresh(viewModel.Settings))
+                {
+                    await ProviderUsageService.RefreshOpenRouterAsync(
+                        viewModel.Settings,
+                        providerUsageRefreshCancellation.Token);
+                }
+                else
+                {
+                    var testSettings = CreateProviderProbeSettings(viewModel.Settings);
+                    await new MetadataGenerationService(testSettings).GenerateAsync(
+                        new Game { Name = "Pong" },
+                        providerUsageRefreshCancellation.Token);
+                }
+
+                var snapshot = ProviderUsageService.GetCached(viewModel.Settings);
+                RefreshProviderUsageDisplay(snapshot != null && snapshot.HasLimitData
+                    ? Loc("MTDA_ProviderUsageAvailable", "Current provider limits were updated.")
+                    : Loc("MTDA_ProviderUsageUnavailable", "The provider did not return usage or limit information."));
+            }
+            catch (OperationCanceledException)
+            {
+                RefreshProviderUsageDisplay(Loc(
+                    "MTDA_ProviderUsageTimedOut",
+                    "The usage query did not finish within 90 seconds."));
+            }
+            catch (Exception ex)
+            {
+                RefreshProviderUsageDisplay(MetadataGenerationService.SanitizeForUser(ex.Message));
+            }
+            finally
+            {
+                if (providerUsageRefreshCancellation != null)
+                {
+                    providerUsageRefreshCancellation.Dispose();
+                    providerUsageRefreshCancellation = null;
+                }
+
+                providerUsageRefreshActive = false;
+                ProviderUsageProgress.Visibility = Visibility.Collapsed;
+                RefreshProviderUsageButton.IsEnabled = true;
+                RefreshProviderUsageButton.Content = originalContent;
+            }
+        }
+
+        private void RefreshProviderUsageDisplay(string statusOverride)
+        {
+            if (ProviderUsageStatusText == null || ProviderUsageDetailsText == null ||
+                ProviderUsageUpdatedText == null || OpenProviderUsageButton == null)
+            {
+                return;
+            }
+
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null)
+            {
+                return;
+            }
+
+            var settings = viewModel.Settings;
+            var snapshot = ProviderUsageService.GetCached(settings);
+            OpenProviderUsageButton.Visibility = string.IsNullOrWhiteSpace(settings.ProviderUsageUrl)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+            if (!string.IsNullOrWhiteSpace(statusOverride))
+            {
+                ProviderUsageStatusText.Text = statusOverride;
+            }
+            else if (ProviderUsageService.IsLocalProvider(settings))
+            {
+                ProviderUsageStatusText.Text = Loc(
+                    "MTDA_ProviderUsageLocal",
+                    "Local provider: there is no external API quota. Availability depends on your PC and the local server.");
+            }
+            else if (ProviderUsageService.UsesDashboardOnly(settings))
+            {
+                ProviderUsageStatusText.Text = Loc(
+                    "MTDA_ProviderUsageDashboardOnly",
+                    "This provider does not expose a portable remaining-quota value to the plugin. Open its usage page for the current account limits.");
+            }
+            else if (snapshot == null)
+            {
+                ProviderUsageStatusText.Text = Loc(
+                    "MTDA_ProviderUsageUnknown",
+                    "No usage information has been received yet.");
+            }
+            else
+            {
+                ProviderUsageStatusText.Text = Loc(
+                    "MTDA_ProviderUsageAvailable",
+                    "Current provider limits were updated.");
+            }
+
+            ProviderUsageDetailsText.Text = BuildProviderUsageDetails(settings, snapshot);
+            ProviderUsageUpdatedText.Text = snapshot == null
+                ? string.Empty
+                : string.Format(
+                    Loc("MTDA_ProviderUsageUpdated", "Last updated: {0}"),
+                    snapshot.UpdatedAtUtc.ToLocalTime().ToString("g"));
+        }
+
+        private static string BuildProviderUsageDetails(MetaDataIASettings settings, ProviderUsageSnapshot snapshot)
+        {
+            if (snapshot == null || snapshot.IsLocal)
+            {
+                return string.Empty;
+            }
+
+            var lines = new List<string>();
+            AddUsageLine(lines, Loc("MTDA_ProviderUsageRequests", "Requests"), snapshot.RequestsRemaining, snapshot.RequestsLimit, snapshot.RequestsReset);
+            AddUsageLine(lines, Loc("MTDA_ProviderUsageTokens", "Tokens"), snapshot.TokensRemaining, snapshot.TokensLimit, snapshot.TokensReset);
+            AddUsageLine(lines, Loc("MTDA_ProviderUsageInputTokens", "Input tokens"), snapshot.InputTokensRemaining, snapshot.InputTokensLimit, snapshot.InputTokensReset);
+            AddUsageLine(lines, Loc("MTDA_ProviderUsageOutputTokens", "Output tokens"), snapshot.OutputTokensRemaining, snapshot.OutputTokensLimit, snapshot.OutputTokensReset);
+            AddUsageLine(lines, Loc("MTDA_ProviderUsageCredits", "Credits"), snapshot.CreditsRemaining, snapshot.CreditsLimit, null);
+
+            if (!string.IsNullOrWhiteSpace(snapshot.UsageDaily))
+            {
+                lines.Add(string.Format(Loc("MTDA_ProviderUsageDaily", "Used today: {0}"), snapshot.UsageDaily));
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.UsageMonthly))
+            {
+                lines.Add(string.Format(Loc("MTDA_ProviderUsageMonthly", "Used this month: {0}"), snapshot.UsageMonthly));
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.RetryAfter))
+            {
+                lines.Add(string.Format(Loc("MTDA_ProviderUsageRetryAfter", "Retry after: {0}"), snapshot.RetryAfter));
+            }
+
+            if ((settings.ProviderPreset == MetaDataIASettings.ProviderOpenRouter ||
+                 settings.ProviderPreset == MetaDataIASettings.ProviderOpenRouterFree) && snapshot.IsFreeTier)
+            {
+                lines.Add(Loc(
+                    "MTDA_ProviderUsageOpenRouterFreeNote",
+                    "OpenRouter identifies this as a free-tier key, but its key endpoint does not report the exact number of free requests remaining today."));
+            }
+
+            return lines.Count == 0
+                ? Loc("MTDA_ProviderUsageNoHeaders", "No numerical limits were included in the latest provider response.")
+                : string.Join(Environment.NewLine, lines);
+        }
+
+        private static void AddUsageLine(
+            ICollection<string> lines,
+            string label,
+            string remaining,
+            string limit,
+            string reset)
+        {
+            if (string.IsNullOrWhiteSpace(remaining) && string.IsNullOrWhiteSpace(limit))
+            {
+                return;
+            }
+
+            var value = !string.IsNullOrWhiteSpace(remaining) && !string.IsNullOrWhiteSpace(limit)
+                ? remaining + " / " + limit
+                : (!string.IsNullOrWhiteSpace(remaining) ? remaining : limit);
+            if (!string.IsNullOrWhiteSpace(reset))
+            {
+                value += " (" + string.Format(Loc("MTDA_ProviderUsageReset", "reset: {0}"), reset) + ")";
+            }
+
+            lines.Add(label + ": " + value);
         }
 
         private void OpenSteamGridDbPage_OnClick(object sender, RoutedEventArgs e)
@@ -335,21 +674,149 @@ namespace MetaDataIAPlugin
             });
         }
 
-        private async void TestMediaSource(Button button, string sourceName, System.Action<MetaDataIASettings> configure)
+        private TestOperationState BeginTestOperation(
+            Button triggerButton,
+            string targetName,
+            Border panel,
+            ProgressBar progress,
+            TextBlock statusText,
+            TextBlock elapsedText,
+            Button cancelButton)
         {
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel == null)
+            var operation = new TestOperationState
+            {
+                Cancellation = new CancellationTokenSource(),
+                Stopwatch = Stopwatch.StartNew(),
+                Panel = panel,
+                Progress = progress,
+                StatusText = statusText,
+                ElapsedText = elapsedText,
+                CancelButton = cancelButton,
+                TriggerButton = triggerButton,
+                OriginalButtonContent = triggerButton == null ? null : triggerButton.Content,
+                TargetName = targetName
+            };
+
+            if (triggerButton != null)
+            {
+                triggerButton.IsEnabled = false;
+                triggerButton.Content = Loc("MTDA_Testing", "Testing...");
+            }
+
+            panel.Visibility = Visibility.Visible;
+            progress.Visibility = Visibility.Visible;
+            progress.IsIndeterminate = true;
+            cancelButton.Visibility = Visibility.Visible;
+            cancelButton.IsEnabled = true;
+            statusText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            statusText.Text = string.Format(Loc("MTDA_TestSending", "Sending a test request to {0}..."), targetName);
+            elapsedText.Text = FormatTestElapsed(operation.Stopwatch.Elapsed);
+
+            operation.Timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            operation.Timer.Tick += (sender, args) =>
+            {
+                if (operation.Cancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var elapsed = operation.Stopwatch.Elapsed;
+                operation.ElapsedText.Text = FormatTestElapsed(elapsed);
+                if (elapsed.TotalSeconds >= 90)
+                {
+                    operation.TimedOut = true;
+                    operation.CancelButton.IsEnabled = false;
+                    operation.StatusText.Text = Loc("MTDA_TestTimedOut", "The provider or source did not respond within 90 seconds. It may be busy or unavailable.");
+                    operation.Cancellation.Cancel();
+                }
+                else if (elapsed.TotalSeconds >= 5)
+                {
+                    operation.StatusText.Text = string.Format(
+                        Loc("MTDA_TestWaiting", "Waiting for {0} to respond. Free or busy services may take longer."),
+                        operation.TargetName);
+                }
+            };
+            operation.Timer.Start();
+            return operation;
+        }
+
+        private static string FormatTestElapsed(TimeSpan elapsed)
+        {
+            return string.Format(Loc("MTDA_TestElapsed", "Elapsed: {0} s"), Math.Max(0, (int)elapsed.TotalSeconds));
+        }
+
+        private static void FinishTestOperation(TestOperationState operation, string message, bool success)
+        {
+            if (operation == null)
             {
                 return;
             }
 
+            operation.Timer.Stop();
+            operation.Stopwatch.Stop();
+            operation.Progress.IsIndeterminate = false;
+            operation.Progress.Visibility = Visibility.Collapsed;
+            operation.CancelButton.Visibility = Visibility.Collapsed;
+            operation.StatusText.SetResourceReference(TextBlock.ForegroundProperty, success ? "PositiveRatingBrush" : "WarningBrush");
+            operation.StatusText.Text = message;
+            operation.ElapsedText.Text = FormatTestElapsed(operation.Stopwatch.Elapsed);
+
+            if (operation.TriggerButton != null)
+            {
+                operation.TriggerButton.Content = operation.OriginalButtonContent;
+                operation.TriggerButton.IsEnabled = true;
+            }
+
+            operation.Cancellation.Dispose();
+        }
+
+        private static void CancelTestOperation(TestOperationState operation, bool showStatus)
+        {
+            if (operation == null || operation.Cancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            operation.CancelledByUser = true;
+            operation.CancelButton.IsEnabled = false;
+            if (showStatus)
+            {
+                operation.StatusText.Text = Loc("MTDA_TestCancelling", "Cancelling test...");
+            }
+
+            operation.Cancellation.Cancel();
+        }
+
+        private void CancelProviderTest_OnClick(object sender, RoutedEventArgs e)
+        {
+            CancelTestOperation(providerTestOperation, true);
+        }
+
+        private void CancelMediaTest_OnClick(object sender, RoutedEventArgs e)
+        {
+            CancelTestOperation(mediaTestOperation, true);
+        }
+
+        private async void TestMediaSource(Button button, string sourceName, System.Action<MetaDataIASettings> configure)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || mediaTestOperation != null)
+            {
+                return;
+            }
+
+            var operation = BeginTestOperation(
+                button,
+                sourceName,
+                MediaTestStatusPanel,
+                MediaTestProgress,
+                MediaTestStatusText,
+                MediaTestElapsedText,
+                MediaTestCancelButton);
+            mediaTestOperation = operation;
+
             try
             {
-                if (button != null)
-                {
-                    button.IsEnabled = false;
-                }
-
                 var testSettings = Serialization.GetClone(viewModel.Settings);
                 testSettings.DownloadBackgroundImage = true;
                 testSettings.BackgroundImageApplyMode = MetaDataIASettings.ApplyOverwrite;
@@ -369,33 +836,44 @@ namespace MetaDataIAPlugin
 
                 var service = new MediaGenerationService(testSettings);
                 var testGame = CreateMediaTestGame(sourceName);
-                var coverCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Cover);
-                var iconCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Icon);
-                var backgroundCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Background);
+                var coverCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Cover, operation.Cancellation.Token);
+                var iconCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Icon, operation.Cancellation.Token);
+                var backgroundCount = await service.CountPreviewOptionsAsync(testGame, MediaKind.Background, operation.Cancellation.Token);
+                operation.Cancellation.Token.ThrowIfCancellationRequested();
                 var count = coverCount + iconCount + backgroundCount;
 
                 if (count > 0)
                 {
-                    MessageBox.Show(
+                    FinishTestOperation(
+                        operation,
                         string.Format(Loc("MTDA_TestMediaSuccess", "{0} is responding correctly.\n\nTest game: {1}\nCovers: {2}\nIcons: {3}\nBackgrounds: {4}"), sourceName, testGame.Name, coverCount, iconCount, backgroundCount),
-                        PluginTitle,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        true);
                 }
                 else
                 {
-                    MessageBox.Show(BuildNoMediaCandidatesMessage(sourceName, testGame.Name), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    FinishTestOperation(operation, BuildNoMediaCandidatesMessage(sourceName, testGame.Name), false);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                FinishTestOperation(
+                    operation,
+                    operation.TimedOut
+                        ? Loc("MTDA_TestTimedOut", "The provider or source did not respond within 90 seconds. It may be busy or unavailable.")
+                        : Loc("MTDA_TestCancelled", "Test cancelled."),
+                    false);
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                var message = MetadataGenerationService.SanitizeForUser(ex.Message);
+                FinishTestOperation(operation, message, false);
+                MessageBox.Show(message, PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
-                if (button != null)
+                if (ReferenceEquals(mediaTestOperation, operation))
                 {
-                    button.IsEnabled = true;
+                    mediaTestOperation = null;
                 }
             }
         }
@@ -465,49 +943,81 @@ namespace MetaDataIAPlugin
             settings.MediaUseIgdb = false;
         }
 
+        private static MetaDataIASettings CreateProviderProbeSettings(MetaDataIASettings source)
+        {
+            var testSettings = Serialization.GetClone(source);
+            testSettings.GenerateDescription = true;
+            testSettings.DescriptionApplyMode = MetaDataIASettings.ApplyOverwrite;
+            testSettings.GenerateGenres = false;
+            testSettings.GenerateTags = false;
+            testSettings.GenerateFeatures = false;
+            testSettings.GenerateDevelopers = false;
+            testSettings.GeneratePublishers = false;
+            testSettings.GenerateAgeRatings = false;
+            testSettings.GenerateRegions = false;
+            testSettings.GenerateCategories = false;
+            testSettings.Length = "Corta";
+            testSettings.UseOfficialStoreContext = false;
+            testSettings.EnableLocalFallback = false;
+            testSettings.ExtraInstructions = Loc(
+                "MTDA_TestProviderInstruction",
+                "Connection test: answer with the minimum possible text.");
+            return testSettings;
+        }
+
         private async void TestProvider_OnClick(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel == null)
+            if (viewModel == null || providerTestOperation != null)
             {
                 return;
             }
 
+            var providerName = string.IsNullOrWhiteSpace(viewModel.Settings.ProviderPreset)
+                ? Loc("MTDA_Provider", "Provider")
+                : viewModel.Settings.ProviderPreset;
+            var operation = BeginTestOperation(
+                button,
+                providerName,
+                ProviderTestStatusPanel,
+                ProviderTestProgress,
+                ProviderTestStatusText,
+                ProviderTestElapsedText,
+                ProviderTestCancelButton);
+            providerTestOperation = operation;
+
             try
             {
-                if (button != null)
-                {
-                    button.IsEnabled = false;
-                }
-
-                var testSettings = Serialization.GetClone(viewModel.Settings);
-                testSettings.GenerateDescription = true;
-                testSettings.GenerateGenres = false;
-                testSettings.GenerateTags = false;
-                testSettings.GenerateFeatures = false;
-                testSettings.GenerateDevelopers = false;
-                testSettings.GeneratePublishers = false;
-                testSettings.GenerateAgeRatings = false;
-                testSettings.GenerateRegions = false;
-                testSettings.GenerateCategories = false;
-                testSettings.Length = "Corta";
-                testSettings.EnableLocalFallback = false;
-                testSettings.ExtraInstructions = Loc("MTDA_TestProviderInstruction", "Connection test: answer with the minimum possible text.");
+                var testSettings = CreateProviderProbeSettings(viewModel.Settings);
 
                 var game = new Game { Name = "Pong" };
-                await new MetadataGenerationService(testSettings).GenerateAsync(game);
-                MessageBox.Show(Loc("MTDA_TestProviderSuccess", "The provider is responding correctly."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+                await new MetadataGenerationService(testSettings).GenerateAsync(game, operation.Cancellation.Token);
+                operation.Cancellation.Token.ThrowIfCancellationRequested();
+                FinishTestOperation(operation, Loc("MTDA_TestProviderSuccess", "The provider is responding correctly."), true);
+                RefreshProviderUsageDisplay(null);
+            }
+            catch (OperationCanceledException)
+            {
+                FinishTestOperation(
+                    operation,
+                    operation.TimedOut
+                        ? Loc("MTDA_TestTimedOut", "The provider or source did not respond within 90 seconds. It may be busy or unavailable.")
+                        : Loc("MTDA_TestCancelled", "Test cancelled."),
+                    false);
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                var message = MetadataGenerationService.SanitizeForUser(ex.Message);
+                FinishTestOperation(operation, message, false);
+                RefreshProviderUsageDisplay(null);
+                MessageBox.Show(message, PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
-                if (button != null)
+                if (ReferenceEquals(providerTestOperation, operation))
                 {
-                    button.IsEnabled = true;
+                    providerTestOperation = null;
                 }
             }
         }

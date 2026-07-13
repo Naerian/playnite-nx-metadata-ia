@@ -18,7 +18,33 @@
     <sys:String x:Key="MTDA_ApplyProvider">プロバイダーを適用する</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">キー/ヘルプページ:</sys:String>
     <sys:String x:Key="MTDA_OpenProviderPage">プロバイダーのページを開く</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTitle">使用量と制限</sys:String>
+    <sys:String x:Key="MTDA_RefreshProviderUsage">使用量を更新</sys:String>
+    <sys:String x:Key="MTDA_OpenProviderUsage">使用量ページを開く</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageProbeHelp">Metadata AI は通常のプロバイダー応答から値を更新します。OpenRouter は直接確認し、OpenAI、Claude、Groq、Cerebras、カスタム endpoint では更新時に最小限のリクエストを1回送信します。表示値は最新の既知値で、モデル固有の場合があります。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshing">更新中...</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageAvailable">現在のプロバイダー制限を更新しました。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnknown">使用量情報はまだ受信されていません。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnavailable">プロバイダーから使用量または制限情報が返されませんでした。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">このプロバイダーは残りクォータをプラグインに公開していません。現在のアカウント制限は使用量ページで確認してください。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageLocal">ローカルプロバイダー: 外部 API クォータはありません。利用可否は PC とローカルサーバーに依存します。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRequests">リクエスト</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTokens">トークン</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageInputTokens">入力トークン</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOutputTokens">出力トークン</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageCredits">クレジット</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDaily">本日の使用量: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageMonthly">今月の使用量: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageReset">リセット: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRetryAfter">再試行まで: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUpdated">最終更新: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageNoHeaders">最新の応答に数値制限が含まれていませんでした。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOpenRouterFreeNote">OpenRouter はこのキーを無料枠として認識しますが、本日残っている無料リクエスト数は返しません。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTimedOut">使用量の照会が90秒以内に完了しませんでした。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">先にプロバイダーの API キーを入力してください。</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">使用量情報を取得できませんでした (HTTP {0})。</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_RestoreEndpoint">エンドポイントを復元</sys:String>
     <sys:String x:Key="MTDA_ApiKey">APIキー</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">プロバイダーが必要とする場合にのみ、ここに貼り付けてください。ローカルの LM Studio と Ollama の場合、これは通常空です。 ChatGPT キーをここに貼り付けないでください。選択したプロバイダーからの API キーである必要があります。</sys:String>
     <sys:String x:Key="MTDA_Model">モデル</sys:String>
@@ -54,11 +80,12 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">ソースキーとテスト</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">バックアップと復元</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">プロバイダー、テンプレート、フィールドルール、語彙メモリ、メディアソース設定を含む現在の Metadata AI 設定をエクスポートまたはインポートします。</sys:String>
-    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注: バックアップには設定済みの API キーとシークレットが含まれます。エクスポートした JSON は非公開で保管してください。</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注: API キーとシークレットは現在の Windows ユーザー向けに暗号化されます。別のアカウントやコンピューターでは再入力が必要です。</sys:String>
     <sys:String x:Key="MTDA_ExportSettingsBackup">設定バックアップをエクスポート</sys:String>
     <sys:String x:Key="MTDA_ImportSettingsBackup">設定バックアップをインポート</sys:String>
     <sys:String x:Key="MTDA_BackupExported">設定バックアップをエクスポートしました。</sys:String>
     <sys:String x:Key="MTDA_BackupImported">設定バックアップをインポートしました。</sys:String>
+    <sys:String x:Key="MTDA_BackupSecretsUnavailable">このバックアップは別の Windows ユーザーまたはコンピューター向けに暗号化されているため、一部の API 認証情報を復元できませんでした。再入力してください。</sys:String>
     <sys:String x:Key="MTDA_BackupImportInvalid">選択したバックアップファイルは無効です。</sys:String>
     <sys:String x:Key="MTDA_BackupImportConfirm">このバックアップをインポートすると現在の Metadata AI 設定が置き換えられ、すぐに保存されます。続行しますか?</sys:String>
     <sys:String x:Key="MTDA_BackupExportFailed">設定バックアップをエクスポートできませんでした。</sys:String>
@@ -80,7 +107,8 @@
     <sys:String x:Key="MTDA_Get">得る</sys:String>
     <sys:String x:Key="MTDA_Generate">生成する</sys:String>
     <sys:String x:Key="MTDA_Apply">適用する</sys:String>
-    <sys:String x:Key="MTDA_Format">形式</sys:String>
+    <sys:String x:Key="MTDA_Format">出力形式と解像度</sys:String>
+    <sys:String x:Key="MTDA_OutputFormatHelp">選択した形式と解像度が Metadata AI の保存する最終ファイルを決定します。候補画像の元の解像度は異なる場合があり、画像はリサイズされ、縦横比が変わる場合は中央から切り抜かれます。</sys:String>
     <sys:String x:Key="MTDA_Cover">カバー</sys:String>
     <sys:String x:Key="MTDA_Icon">アイコン</sys:String>
     <sys:String x:Key="MTDA_Background">背景</sys:String>
@@ -185,6 +213,7 @@ LM Studio のローカル サーバーが http://localhost:1234 でアクティ�
     <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">メタデータ AI が構成されていません。プラグイン設定を開き、エンドポイント、モデル、API キーを設定します。</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">設定されたメディア ソースにこのゲームの画像が見つかりませんでした。</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">メディア候補をダウンロードできませんでした。</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">この画像は配信元で利用できなくなりました。メディア選択画面を開き直して別の画像を選択してください。</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">構成されたソース内にこのゲームのメディア候補が見つかりませんでした。</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">設定済みまたは使用可能なメディア ソースがありません。</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderAuth">AI プロバイダーが認証を受け入れませんでした。
@@ -392,4 +421,32 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MediaDiagSourceError">ソースエラーまたは拒否されたフィルター</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFilters">フィルター</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">現在のフィルターまたは形式設定により、すべての候補が除外されました</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessing">画像処理</sys:String><sys:String x:Key="MTDA_AutomaticMediaPriority">自動選択の優先順位</sys:String><sys:String x:Key="MTDA_ProcessedImageQuality">処理後の画像品質</sys:String>
+    <sys:String x:Key="MTDA_CoverCropAnchor">カバーの切り抜き位置</sys:String><sys:String x:Key="MTDA_BackgroundCropAnchor">背景の切り抜き位置</sys:String>
+    <sys:String x:Key="MTDA_CropPickerTitle">切り抜き位置</sys:String><sys:String x:Key="MTDA_CropAnchorPickerHelp">最終的な縦横比に切り抜くとき、画像のどの領域を残すか選択します。</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessingHelp">優先順位は自動・一括選択を制御します。厳格な品質では、切り抜き後に拡大が必要な画像をスキップします。品質は JPEG 圧縮を変更し、解像度は変更しません。</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityBalanced">バランス</sys:String><sys:String x:Key="MTDA_OptionMediaPrioritySourceFirst">ソース優先</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityResolutionFirst">解像度優先</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityStrictQuality">厳格な品質</sys:String>
+    <sys:String x:Key="MTDA_OptionCropCenter">中央</sys:String><sys:String x:Key="MTDA_OptionCropTop">上</sys:String><sys:String x:Key="MTDA_OptionCropBottom">下</sys:String><sys:String x:Key="MTDA_OptionCropLeft">左</sys:String><sys:String x:Key="MTDA_OptionCropRight">右</sys:String><sys:String x:Key="MTDA_OptionCropTopLeft">左上</sys:String><sys:String x:Key="MTDA_OptionCropTopRight">右上</sys:String><sys:String x:Key="MTDA_OptionCropBottomLeft">左下</sys:String><sys:String x:Key="MTDA_OptionCropBottomRight">右下</sys:String>
+    <sys:String x:Key="MTDA_OptionImageQualitySpaceSaving">容量節約</sys:String><sys:String x:Key="MTDA_OptionImageQualityBalanced">バランス</sys:String><sys:String x:Key="MTDA_OptionImageQualityHigh">高</sys:String><sys:String x:Key="MTDA_OptionImageQualityMaximum">最高</sys:String>
+    <sys:String x:Key="MTDA_CropForCover">カバーの切り抜き</sys:String><sys:String x:Key="MTDA_CropForBackground">背景の切り抜き</sys:String><sys:String x:Key="MTDA_CropPickerHelp">この選択はこのウィンドウのメディアにのみ適用され、既定の設定は変更しません。</sys:String><sys:String x:Key="MTDA_ApplyChanges">変更を適用</sys:String><sys:String x:Key="MTDA_Close">閉じる</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaStrictQualitySkipped">元画像が設定された出力解像度を下回るためスキップ: {0}。</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceMediaCleanupTitle">不要なメディアのクリーンアップ</sys:String><sys:String x:Key="MTDA_MaintenanceMediaCleanupHelp">Playnite のゲーム保存領域から、カバー、アイコン、背景として使用されていない画像を検索します。削除前に概要と確認を表示します。</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMedia">不要なメディアを検索して削除</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaNone">不要なメディアは見つかりませんでした。</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaConfirm">参照されていない画像が {0} 件（{1}）見つかりました。どのゲームもカバー、アイコン、背景として使用していません。削除しますか？</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaCompleted">クリーンアップ完了。削除: {0}、解放容量: {1}、失敗: {2}。</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaFailed">不要なメディアを削除できませんでした。</sys:String>
+    <sys:String x:Key="MTDA_Testing">テスト中...</sys:String>
+    <sys:String x:Key="MTDA_CancelTest">テストをキャンセル</sys:String>
+    <sys:String x:Key="MTDA_TestSending">{0} にテストリクエストを送信しています...</sys:String>
+    <sys:String x:Key="MTDA_TestWaiting">{0} の応答を待っています。無料または混雑しているサービスでは時間がかかる場合があります。</sys:String>
+    <sys:String x:Key="MTDA_TestElapsed">経過時間: {0} 秒</sys:String>
+    <sys:String x:Key="MTDA_TestTimedOut">プロバイダーまたはソースが 90 秒以内に応答しませんでした。混雑中または利用できない可能性があります。</sys:String>
+    <sys:String x:Key="MTDA_TestCancelling">テストをキャンセルしています...</sys:String>
+    <sys:String x:Key="MTDA_TestCancelled">テストをキャンセルしました。</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouterFree">OpenRouter 無料版（制限あり）</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroqFree">Groq（無料枠）</sys:String>
+    <sys:String x:Key="MTDA_ProviderGeminiFree">Google Gemini（無料枠）</sys:String>
+    <sys:String x:Key="MTDA_ProviderCerebras">Cerebras（無料枠）</sys:String>
+    <sys:String x:Key="MTDA_ProviderMistral">Mistral AI（無料モード）</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouterFree">OpenRouter 無料版: 無料の API キーを作成し、自動ルーター openrouter/free を使用します。リクエストごとに利用可能な無料モデルが選ばれるため、速度と出力の一貫性は変動します。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: Cerebras Cloud で無料の API キーを作成します。無料枠は制限が低めですが、サブスクリプションなしで非常に高速な推論を利用できます。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: Mistral Studio で API キーを作成します。無料モードはカード不要で既定で有効ですが、使用量とレートに制限があります。</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">プロバイダーはメタデータを返しましたが、現在の説明テンプレート用の内容を生成しませんでした。空の説明は適用されていません。再試行するか、構造化出力により確実に従うモデルを選ぶか、このゲームの公式コンテキストを有効にしてください。</sys:String>
 </ResourceDictionary>

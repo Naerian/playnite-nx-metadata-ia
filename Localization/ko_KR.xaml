@@ -18,7 +18,33 @@
     <sys:String x:Key="MTDA_ApplyProvider">공급자 적용</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">키/도움말 페이지:</sys:String>
     <sys:String x:Key="MTDA_OpenProviderPage">제공업체 페이지 열기</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTitle">사용량 및 한도</sys:String>
+    <sys:String x:Key="MTDA_RefreshProviderUsage">사용량 새로 고침</sys:String>
+    <sys:String x:Key="MTDA_OpenProviderUsage">사용량 페이지 열기</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageProbeHelp">Metadata AI는 일반 공급자 응답에서 값을 업데이트합니다. OpenRouter는 직접 확인하며 OpenAI, Claude, Groq, Cerebras 또는 사용자 지정 endpoint는 새로 고칠 때 최소 요청 1회를 보냅니다. 표시값은 마지막으로 알려진 값이며 모델별로 다를 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshing">새로 고치는 중...</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageAvailable">현재 공급자 한도를 업데이트했습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnknown">아직 사용량 정보를 받지 못했습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnavailable">공급자가 사용량 또는 한도 정보를 반환하지 않았습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">이 공급자는 남은 할당량 값을 플러그인에 제공하지 않습니다. 현재 계정 한도는 사용량 페이지에서 확인하세요.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageLocal">로컬 공급자: 외부 API 할당량이 없습니다. 사용 가능 여부는 PC와 로컬 서버에 따라 달라집니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRequests">요청</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTokens">토큰</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageInputTokens">입력 토큰</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOutputTokens">출력 토큰</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageCredits">크레딧</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDaily">오늘 사용: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageMonthly">이번 달 사용: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageReset">재설정: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRetryAfter">재시도까지: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUpdated">마지막 업데이트: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageNoHeaders">최근 공급자 응답에 숫자 한도가 포함되지 않았습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOpenRouterFreeNote">OpenRouter는 이 키를 무료 등급으로 식별하지만 오늘 남은 무료 요청 수는 정확히 제공하지 않습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTimedOut">사용량 조회가 90초 안에 완료되지 않았습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">먼저 공급자 API 키를 입력하세요.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">사용량 정보를 가져올 수 없습니다 (HTTP {0}).</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_RestoreEndpoint">엔드포인트 복원</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API 키</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">공급자가 요구하는 경우에만 여기에 붙여넣으세요. 로컬 LM Studio 및 Ollama의 경우 일반적으로 비어 있습니다. 여기에 ChatGPT 키를 붙여넣지 마세요. 선택한 공급자의 API 키여야 합니다.</sys:String>
     <sys:String x:Key="MTDA_Model">모델</sys:String>
@@ -54,11 +80,12 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">소스 키 및 테스트</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">백업 및 복원</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">제공업체, 템플릿, 필드 규칙, 어휘 메모리, 미디어 소스 구성을 포함한 현재 Metadata AI 설정을 내보내거나 가져옵니다.</sys:String>
-    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">참고: 백업에는 구성된 API 키와 비밀 값이 포함됩니다. 내보낸 JSON은 비공개로 보관하세요.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">참고: API 키와 비밀 값은 현재 Windows 사용자용으로 암호화됩니다. 다른 계정이나 컴퓨터에서는 다시 입력해야 합니다.</sys:String>
     <sys:String x:Key="MTDA_ExportSettingsBackup">설정 백업 내보내기</sys:String>
     <sys:String x:Key="MTDA_ImportSettingsBackup">설정 백업 가져오기</sys:String>
     <sys:String x:Key="MTDA_BackupExported">설정 백업을 내보냈습니다.</sys:String>
     <sys:String x:Key="MTDA_BackupImported">설정 백업을 가져왔습니다.</sys:String>
+    <sys:String x:Key="MTDA_BackupSecretsUnavailable">이 백업이 다른 Windows 사용자 또는 컴퓨터용으로 암호화되어 일부 API 자격 증명을 복원하지 못했습니다. 다시 입력하세요.</sys:String>
     <sys:String x:Key="MTDA_BackupImportInvalid">선택한 백업 파일이 올바르지 않습니다.</sys:String>
     <sys:String x:Key="MTDA_BackupImportConfirm">이 백업을 가져오면 현재 Metadata AI 설정이 대체되고 즉시 저장됩니다. 계속하시겠습니까?</sys:String>
     <sys:String x:Key="MTDA_BackupExportFailed">설정 백업을 내보낼 수 없습니다.</sys:String>
@@ -80,7 +107,8 @@
     <sys:String x:Key="MTDA_Get">얻다</sys:String>
     <sys:String x:Key="MTDA_Generate">생성하다</sys:String>
     <sys:String x:Key="MTDA_Apply">적용하다</sys:String>
-    <sys:String x:Key="MTDA_Format">체재</sys:String>
+    <sys:String x:Key="MTDA_Format">출력 형식 및 해상도</sys:String>
+    <sys:String x:Key="MTDA_OutputFormatHelp">선택한 형식과 해상도는 Metadata AI가 저장할 최종 파일을 정의합니다. 후보 이미지의 원본 해상도는 다를 수 있으며, 이미지 크기가 조정되고 비율이 바뀌면 중앙을 기준으로 잘립니다.</sys:String>
     <sys:String x:Key="MTDA_Cover">씌우다</sys:String>
     <sys:String x:Key="MTDA_Icon">상</sys:String>
     <sys:String x:Key="MTDA_Background">배경</sys:String>
@@ -185,6 +213,7 @@ LM Studio의 로컬 서버가 http://localhost:1234에서 활성화되어 있는
     <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">메타데이터 AI가 구성되지 않았습니다. 플러그인 설정을 열고 엔드포인트, 모델 및 API 키를 설정하세요.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">구성된 미디어 소스에서 이 게임에 대한 이미지를 찾을 수 없습니다.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">미디어 후보를 다운로드할 수 없습니다.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">이 이미지는 원본 소스에서 더 이상 사용할 수 없습니다. 미디어 선택기를 다시 열어 다른 이미지를 선택하세요.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">구성된 소스에서 이 게임에 대한 미디어 후보를 찾을 수 없습니다.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">구성되었거나 사용 가능한 미디어 소스가 없습니다.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
@@ -392,4 +421,32 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_MediaDiagSourceError">소스 오류 또는 거부된 필터</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFilters">필터</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">현재 필터 또는 형식 설정으로 모든 후보가 제거되었습니다</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessing">이미지 처리</sys:String><sys:String x:Key="MTDA_AutomaticMediaPriority">자동 선택 우선순위</sys:String><sys:String x:Key="MTDA_ProcessedImageQuality">처리된 이미지 품질</sys:String>
+    <sys:String x:Key="MTDA_CoverCropAnchor">커버 자르기 기준</sys:String><sys:String x:Key="MTDA_BackgroundCropAnchor">배경 자르기 기준</sys:String>
+    <sys:String x:Key="MTDA_CropPickerTitle">자르기 위치</sys:String><sys:String x:Key="MTDA_CropAnchorPickerHelp">최종 화면 비율로 자를 때 이미지에서 유지할 영역을 선택합니다.</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessingHelp">우선순위는 자동 및 일괄 선택을 제어합니다. 엄격한 품질은 자른 뒤 확대가 필요한 이미지를 건너뜁니다. 품질은 JPEG 압축만 변경하며 해상도는 변경하지 않습니다.</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityBalanced">균형</sys:String><sys:String x:Key="MTDA_OptionMediaPrioritySourceFirst">소스 우선</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityResolutionFirst">해상도 우선</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityStrictQuality">엄격한 품질</sys:String>
+    <sys:String x:Key="MTDA_OptionCropCenter">가운데</sys:String><sys:String x:Key="MTDA_OptionCropTop">위</sys:String><sys:String x:Key="MTDA_OptionCropBottom">아래</sys:String><sys:String x:Key="MTDA_OptionCropLeft">왼쪽</sys:String><sys:String x:Key="MTDA_OptionCropRight">오른쪽</sys:String><sys:String x:Key="MTDA_OptionCropTopLeft">왼쪽 위</sys:String><sys:String x:Key="MTDA_OptionCropTopRight">오른쪽 위</sys:String><sys:String x:Key="MTDA_OptionCropBottomLeft">왼쪽 아래</sys:String><sys:String x:Key="MTDA_OptionCropBottomRight">오른쪽 아래</sys:String>
+    <sys:String x:Key="MTDA_OptionImageQualitySpaceSaving">공간 절약</sys:String><sys:String x:Key="MTDA_OptionImageQualityBalanced">균형</sys:String><sys:String x:Key="MTDA_OptionImageQualityHigh">높음</sys:String><sys:String x:Key="MTDA_OptionImageQualityMaximum">최대</sys:String>
+    <sys:String x:Key="MTDA_CropForCover">커버 자르기</sys:String><sys:String x:Key="MTDA_CropForBackground">배경 자르기</sys:String><sys:String x:Key="MTDA_CropPickerHelp">이 선택은 이 창에서 선택한 미디어에만 적용되며 기본 설정은 변경하지 않습니다.</sys:String><sys:String x:Key="MTDA_ApplyChanges">변경 적용</sys:String><sys:String x:Key="MTDA_Close">닫기</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaStrictQualitySkipped">원본 이미지가 설정된 출력 해상도보다 작아 건너뜀: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceMediaCleanupTitle">사용하지 않는 미디어 정리</sys:String><sys:String x:Key="MTDA_MaintenanceMediaCleanupHelp">Playnite 게임 저장소에서 커버, 아이콘 또는 배경으로 더 이상 사용되지 않는 이미지를 찾습니다. 삭제 전에 요약과 확인을 표시합니다.</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMedia">사용하지 않는 미디어 찾기 및 정리</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaNone">사용하지 않는 미디어 파일을 찾지 못했습니다.</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaConfirm">참조되지 않는 이미지 {0}개({1})를 찾았습니다. 어떤 게임도 커버, 아이콘 또는 배경으로 사용하지 않습니다. 삭제할까요?</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaCompleted">정리 완료. 삭제된 파일: {0}. 확보한 공간: {1}. 실패: {2}.</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaFailed">사용하지 않는 미디어를 정리할 수 없습니다.</sys:String>
+    <sys:String x:Key="MTDA_Testing">테스트 중...</sys:String>
+    <sys:String x:Key="MTDA_CancelTest">테스트 취소</sys:String>
+    <sys:String x:Key="MTDA_TestSending">{0}에 테스트 요청을 보내는 중...</sys:String>
+    <sys:String x:Key="MTDA_TestWaiting">{0}의 응답을 기다리는 중입니다. 무료 또는 사용량이 많은 서비스는 시간이 더 걸릴 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_TestElapsed">경과 시간: {0}초</sys:String>
+    <sys:String x:Key="MTDA_TestTimedOut">공급자 또는 소스가 90초 이내에 응답하지 않았습니다. 사용량이 많거나 사용할 수 없는 상태일 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_TestCancelling">테스트 취소 중...</sys:String>
+    <sys:String x:Key="MTDA_TestCancelled">테스트가 취소되었습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouterFree">OpenRouter 무료(제한됨)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroqFree">Groq(무료 등급)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGeminiFree">Google Gemini(무료 등급)</sys:String>
+    <sys:String x:Key="MTDA_ProviderCerebras">Cerebras(무료 등급)</sys:String>
+    <sys:String x:Key="MTDA_ProviderMistral">Mistral AI(무료 모드)</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouterFree">OpenRouter 무료: 무료 API 키를 만들고 자동 라우터 openrouter/free를 사용합니다. 요청마다 사용 가능한 무료 모델을 선택하므로 속도와 출력 일관성이 달라질 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: Cerebras Cloud에서 무료 API 키를 만드세요. 무료 등급은 제한이 낮지만 구독 없이 매우 빠른 추론을 제공합니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: Mistral Studio에서 API 키를 만드세요. 무료 모드는 카드 없이 기본 활성화되며 사용량 및 속도 제한이 적용됩니다.</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">공급자가 메타데이터를 반환했지만 활성 설명 템플릿의 내용을 생성하지 않았습니다. 빈 설명은 적용되지 않았습니다. 다시 시도하거나 구조화된 출력을 더 잘 따르는 모델을 선택하거나 이 게임의 공식 컨텍스트를 활성화하세요.</sys:String>
 </ResourceDictionary>

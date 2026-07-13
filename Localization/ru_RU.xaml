@@ -18,7 +18,33 @@
     <sys:String x:Key="MTDA_ApplyProvider">Применить поставщика</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">Ключевая страница/страница помощи:</sys:String>
     <sys:String x:Key="MTDA_OpenProviderPage">Открыть страницу провайдера</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTitle">Использование и лимиты</sys:String>
+    <sys:String x:Key="MTDA_RefreshProviderUsage">Обновить данные</sys:String>
+    <sys:String x:Key="MTDA_OpenProviderUsage">Открыть страницу использования</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageProbeHelp">Metadata AI обновляет эти значения из обычных ответов провайдера. OpenRouter проверяется напрямую; для OpenAI, Claude, Groq, Cerebras или пользовательского endpoint обновление отправляет один минимальный запрос. Это последние известные значения, которые могут зависеть от модели.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshing">Обновление...</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageAvailable">Текущие лимиты провайдера обновлены.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnknown">Информация об использовании пока не получена.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUnavailable">Провайдер не вернул информацию об использовании или лимитах.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">Этот провайдер не предоставляет плагину переносимое значение остатка квоты. Откройте страницу использования для проверки лимитов аккаунта.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageLocal">Локальный провайдер: внешней API-квоты нет. Доступность зависит от компьютера и локального сервера.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRequests">Запросы</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTokens">Токены</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageInputTokens">Входные токены</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOutputTokens">Выходные токены</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageCredits">Средства</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageDaily">Использовано сегодня: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageMonthly">Использовано в этом месяце: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageReset">сброс: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRetryAfter">Повторить через: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageUpdated">Последнее обновление: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageNoHeaders">Последний ответ провайдера не содержал числовых лимитов.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageOpenRouterFreeNote">OpenRouter определяет этот ключ как бесплатный, но не сообщает точное число оставшихся бесплатных запросов на сегодня.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageTimedOut">Запрос информации не завершился за 90 секунд.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">Сначала введите API-ключ провайдера.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">Не удалось получить информацию об использовании (HTTP {0}).</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_RestoreEndpoint">Восстановить endpoint</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API-ключ</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">Вставляйте его сюда только в том случае, если этого требует провайдер. Для местных LM Studio и Ollama это обычно пусто. Не вставляйте сюда свой ключ ChatGPT: это должен быть ключ API от выбранного провайдера.</sys:String>
     <sys:String x:Key="MTDA_Model">Модель</sys:String>
@@ -54,11 +80,12 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">Исходные ключи и тесты</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Резервная копия и восстановление</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Экспортируйте или импортируйте текущие настройки Metadata AI, включая поставщиков, шаблоны, правила полей, память словаря и настройки источников медиа.</sys:String>
-    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Примечание: резервная копия содержит настроенные API-ключи и секреты. Храните экспортированный JSON приватно.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Примечание: API-ключи и секреты шифруются для текущего пользователя Windows. В другой учетной записи или на другом компьютере их потребуется ввести заново.</sys:String>
     <sys:String x:Key="MTDA_ExportSettingsBackup">Экспортировать резервную копию настроек</sys:String>
     <sys:String x:Key="MTDA_ImportSettingsBackup">Импортировать резервную копию настроек</sys:String>
     <sys:String x:Key="MTDA_BackupExported">Резервная копия настроек экспортирована.</sys:String>
     <sys:String x:Key="MTDA_BackupImported">Резервная копия настроек импортирована.</sys:String>
+    <sys:String x:Key="MTDA_BackupSecretsUnavailable">Некоторые учетные данные API не удалось восстановить, поскольку эта копия была зашифрована для другого пользователя или компьютера Windows. Введите их заново.</sys:String>
     <sys:String x:Key="MTDA_BackupImportInvalid">Выбранный файл резервной копии недействителен.</sys:String>
     <sys:String x:Key="MTDA_BackupImportConfirm">Импорт этой резервной копии заменит текущие настройки Metadata AI и сразу сохранит их. Продолжить?</sys:String>
     <sys:String x:Key="MTDA_BackupExportFailed">Не удалось экспортировать резервную копию настроек.</sys:String>
@@ -80,7 +107,8 @@
     <sys:String x:Key="MTDA_Get">Получать</sys:String>
     <sys:String x:Key="MTDA_Generate">Генерировать</sys:String>
     <sys:String x:Key="MTDA_Apply">Применять</sys:String>
-    <sys:String x:Key="MTDA_Format">Формат</sys:String>
+    <sys:String x:Key="MTDA_Format">Формат и разрешение вывода</sys:String>
+    <sys:String x:Key="MTDA_OutputFormatHelp">Выбранные формат и разрешение определяют итоговый файл, сохраняемый Metadata AI. Исходное разрешение кандидатов может отличаться: изображения масштабируются, а при изменении соотношения сторон обрезаются по центру.</sys:String>
     <sys:String x:Key="MTDA_Cover">Крышка</sys:String>
     <sys:String x:Key="MTDA_Icon">Икона</sys:String>
     <sys:String x:Key="MTDA_Background">Фон</sys:String>
@@ -185,6 +213,7 @@
     <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Метаданные AI не настроены. Откройте настройки плагина и установите конечную точку, модель и ключ API.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">В настроенных медиа-источниках не найдено изображений для этой игры.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">Ни один кандидат от СМИ не может быть загружен.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">Это изображение больше недоступно в источнике. Снова откройте выбор медиафайлов и выберите другое.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">В настроенных источниках не обнаружено медиа-кандидатов для этой игры.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">Нет настроенных или доступных источников мультимедиа.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderAuth">Поставщик ИИ не принял аутентификацию.
@@ -392,4 +421,32 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MediaDiagSourceError">ошибка источника или отклоненные фильтры</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFilters">Фильтры</sys:String>
     <sys:String x:Key="MTDA_MediaDiagFiltersRemovedAll">все кандидаты удалены текущими фильтрами или настройками формата</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessing">Обработка изображений</sys:String><sys:String x:Key="MTDA_AutomaticMediaPriority">Приоритет автоматического выбора</sys:String><sys:String x:Key="MTDA_ProcessedImageQuality">Качество обработанного изображения</sys:String>
+    <sys:String x:Key="MTDA_CoverCropAnchor">Начало обрезки обложки</sys:String><sys:String x:Key="MTDA_BackgroundCropAnchor">Начало обрезки фона</sys:String>
+    <sys:String x:Key="MTDA_CropPickerTitle">Позиция обрезки</sys:String><sys:String x:Key="MTDA_CropAnchorPickerHelp">Выберите область изображения, которая должна сохраниться при обрезке до итогового соотношения сторон.</sys:String>
+    <sys:String x:Key="MTDA_ImageProcessingHelp">Приоритет управляет автоматическим пакетным выбором. Строгое качество пропускает изображения, требующие увеличения после обрезки. Качество меняет сжатие JPEG, а не разрешение.</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaPriorityBalanced">Сбалансировано</sys:String><sys:String x:Key="MTDA_OptionMediaPrioritySourceFirst">Сначала источник</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityResolutionFirst">Сначала разрешение</sys:String><sys:String x:Key="MTDA_OptionMediaPriorityStrictQuality">Строгое качество</sys:String>
+    <sys:String x:Key="MTDA_OptionCropCenter">Центр</sys:String><sys:String x:Key="MTDA_OptionCropTop">Сверху</sys:String><sys:String x:Key="MTDA_OptionCropBottom">Снизу</sys:String><sys:String x:Key="MTDA_OptionCropLeft">Слева</sys:String><sys:String x:Key="MTDA_OptionCropRight">Справа</sys:String><sys:String x:Key="MTDA_OptionCropTopLeft">Сверху слева</sys:String><sys:String x:Key="MTDA_OptionCropTopRight">Сверху справа</sys:String><sys:String x:Key="MTDA_OptionCropBottomLeft">Снизу слева</sys:String><sys:String x:Key="MTDA_OptionCropBottomRight">Снизу справа</sys:String>
+    <sys:String x:Key="MTDA_OptionImageQualitySpaceSaving">Экономия места</sys:String><sys:String x:Key="MTDA_OptionImageQualityBalanced">Сбалансированное</sys:String><sys:String x:Key="MTDA_OptionImageQualityHigh">Высокое</sys:String><sys:String x:Key="MTDA_OptionImageQualityMaximum">Максимальное</sys:String>
+    <sys:String x:Key="MTDA_CropForCover">Обрезка обложки</sys:String><sys:String x:Key="MTDA_CropForBackground">Обрезка фона</sys:String><sys:String x:Key="MTDA_CropPickerHelp">Этот выбор применяется только к медиа в этом окне и не изменяет настройку по умолчанию.</sys:String><sys:String x:Key="MTDA_ApplyChanges">Применить изменения</sys:String><sys:String x:Key="MTDA_Close">Закрыть</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaStrictQualitySkipped">Пропущено, так как исходное изображение меньше настроенного выходного разрешения: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceMediaCleanupTitle">Очистка устаревших медиа</sys:String><sys:String x:Key="MTDA_MaintenanceMediaCleanupHelp">Ищет в хранилище игр Playnite изображения, которые больше не используются как обложка, значок или фон. Перед удалением показывает сводку и запрашивает подтверждение.</sys:String>
+    <sys:String x:Key="MTDA_CleanupObsoleteMedia">Найти и очистить устаревшие медиа</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaNone">Устаревшие медиафайлы не найдены.</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaConfirm">Metadata AI нашёл {0} изображений без ссылок объёмом {1}. Ни одна игра не использует их как обложку, значок или фон. Удалить?</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaCompleted">Очистка завершена. Удалено файлов: {0}. Освобождено: {1}. Ошибок: {2}.</sys:String><sys:String x:Key="MTDA_CleanupObsoleteMediaFailed">Не удалось очистить устаревшие медиа.</sys:String>
+    <sys:String x:Key="MTDA_Testing">Проверка...</sys:String>
+    <sys:String x:Key="MTDA_CancelTest">Отменить проверку</sys:String>
+    <sys:String x:Key="MTDA_TestSending">Отправка тестового запроса в {0}...</sys:String>
+    <sys:String x:Key="MTDA_TestWaiting">Ожидание ответа от {0}. Бесплатные или загруженные сервисы могут отвечать дольше.</sys:String>
+    <sys:String x:Key="MTDA_TestElapsed">Прошло: {0} с</sys:String>
+    <sys:String x:Key="MTDA_TestTimedOut">Провайдер или источник не ответил в течение 90 секунд. Возможно, сервис перегружен или недоступен.</sys:String>
+    <sys:String x:Key="MTDA_TestCancelling">Отмена проверки...</sys:String>
+    <sys:String x:Key="MTDA_TestCancelled">Проверка отменена.</sys:String>
+    <sys:String x:Key="MTDA_ProviderOpenRouterFree">OpenRouter бесплатно (ограничено)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGroqFree">Groq (бесплатный уровень)</sys:String>
+    <sys:String x:Key="MTDA_ProviderGeminiFree">Google Gemini (бесплатный уровень)</sys:String>
+    <sys:String x:Key="MTDA_ProviderCerebras">Cerebras (бесплатный уровень)</sys:String>
+    <sys:String x:Key="MTDA_ProviderMistral">Mistral AI (бесплатный режим)</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouterFree">OpenRouter бесплатно: создайте бесплатный API-ключ и используйте автоматический маршрутизатор openrouter/free. Для каждого запроса он выбирает доступную бесплатную модель, поэтому скорость и стабильность могут различаться.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: создайте бесплатный API-ключ в Cerebras Cloud. Бесплатный уровень имеет более низкие лимиты, но обеспечивает очень быстрый вывод без подписки.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: создайте API-ключ в Mistral Studio. Бесплатный режим включен по умолчанию без банковской карты; действуют лимиты использования и частоты.</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">Провайдер вернул метаданные, но не создал содержимое для активного шаблона описания. Пустое описание не было применено. Повторите попытку, выберите модель с более надежным структурированным выводом или включите официальный контекст для этой игры.</sys:String>
 </ResourceDictionary>

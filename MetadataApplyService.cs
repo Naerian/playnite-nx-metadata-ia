@@ -16,7 +16,9 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            if (ShouldApplyScalar(settings.DescriptionApplyMode, game.Description))
+            if (settings.GenerateDescription &&
+                !string.IsNullOrWhiteSpace(result.Description) &&
+                ShouldApplyScalar(settings.DescriptionApplyMode, game.Description))
             {
                 game.Description = result.Description;
             }

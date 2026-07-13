@@ -14,7 +14,7 @@ namespace MetaDataIAPlugin
         {
             AddonId = "MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83";
             PluginName = "Metadata AI";
-            BackupVersion = "1.0";
+            BackupVersion = "1.1";
             ExportedAt = DateTime.Now;
         }
     }

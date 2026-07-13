@@ -1,10 +1,15 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.1.7
+  - Version: 1.2.0
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-07-13
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.1.7/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_1_7.pext
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.0/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_0.pext
     Changelog:
-      - Improved media title aliasing for saga entries with missing roman numerals.
-      - Added safe HD suffix handling for media source matching.
-      - Fixed background lookup for titles such as Assassin's Creed Liberation without hardcoding game-specific rules.
+      - Added free cloud presets for OpenRouter Free, Groq, Gemini, Cerebras and Mistral, plus cancellable provider tests with progress feedback.
+      - Added provider key links and a usage and rate-limit panel with OpenRouter credit information and response-header diagnostics.
+      - Added official Steam, PlayStation, Xbox and Epic context to reduce invented metadata and improve factual generation.
+      - Protected API credentials with Windows DPAPI and added encrypted settings export and import.
+      - Added automatic removal of replaced media and a maintenance tool for safely cleaning unreferenced image files.
+      - Added automatic media priority, resolution-aware selection, strict no-upscaling, crop positioning and configurable image quality.
+      - Improved official-store media matching, unavailable-image filtering, empty-description handling and OpenRouter Free reliability.
+      - Improved the theme-aware settings and media picker UI, including clearer crop controls and complete localization updates.
