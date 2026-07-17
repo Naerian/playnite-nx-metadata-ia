@@ -174,19 +174,19 @@
                         </StackPanel>
                         <Border BorderBrush="{DynamicResource GlyphBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,10" Opacity="0.9">
                             <StackPanel>
-                                <TextBlock Text="{Binding Settings.ProviderKeyHelp}" Style="{StaticResource HintText}" Margin="0,0,0,6"/>
-                                <TextBlock Text="{Binding Settings.ProviderBillingHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding Settings.ProviderKeyHelp, Mode=OneWay}" Style="{StaticResource HintText}" Margin="0,0,0,6"/>
+                                <TextBlock Text="{Binding Settings.ProviderBillingHelp, Mode=OneWay}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
                                 <TextBlock TextWrapping="Wrap">
                                     <Run Text="{DynamicResource MTDA_KeyHelpPage}" FontWeight="SemiBold"/>
                                     <Hyperlink Click="OpenProviderPage_OnClick">
-                                        <Run Text="{Binding Settings.ProviderKeyUrl}"/>
+                                        <Run Text="{Binding Settings.ProviderKeyUrl, Mode=OneWay}"/>
                                     </Hyperlink>
                                 </TextBlock>
                                 <Button Content="{DynamicResource MTDA_OpenProviderPage}" HorizontalAlignment="Left" MinWidth="170" Margin="0,8,0,0" Click="OpenProviderPage_OnClick"/>
                             </StackPanel>
                         </Border>
 
-                        <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Converter={StaticResource BoolToVisibility}}"
+                        <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
                                     Margin="0,0,0,10">
                             <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>
                             <Grid Margin="0,2,0,0">
@@ -198,7 +198,7 @@
                                          Margin="0,0,8,0"/>
                                 <Button Grid.Column="1"
                                         Content="{DynamicResource MTDA_RestoreEndpoint}"
-                                        IsEnabled="{Binding Settings.CanRestoreProviderEndpoint}"
+                                        IsEnabled="{Binding Settings.CanRestoreProviderEndpoint, Mode=OneWay}"
                                         MinWidth="150"
                                         Click="RestoreEndpoint_OnClick"/>
                             </Grid>
@@ -541,7 +541,7 @@
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_ImageSources}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <TextBlock Text="{Binding Settings.SteamGridDbHelp}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding Settings.SteamGridDbHelp, Mode=OneWay}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
@@ -716,7 +716,7 @@
                                           IsHitTestVisible="False"
                                           Focusable="False"
                                           HorizontalAlignment="Stretch">
-                                    <ComboBoxItem Content="{Binding Settings.MediaCoverSourcePrioritySummary}"/>
+                                    <ComboBoxItem Content="{Binding Settings.MediaCoverSourcePrioritySummary, Mode=OneWay}"/>
                                 </ComboBox>
                                 <Button Style="{StaticResource SourcePriorityClickOverlay}"
                                         Click="ConfigureCoverSourcePriority_OnClick"/>
@@ -731,7 +731,7 @@
                                           IsHitTestVisible="False"
                                           Focusable="False"
                                           HorizontalAlignment="Stretch">
-                                    <ComboBoxItem Content="{Binding Settings.MediaIconSourcePrioritySummary}"/>
+                                    <ComboBoxItem Content="{Binding Settings.MediaIconSourcePrioritySummary, Mode=OneWay}"/>
                                 </ComboBox>
                                 <Button Style="{StaticResource SourcePriorityClickOverlay}"
                                         Click="ConfigureIconSourcePriority_OnClick"/>
@@ -746,7 +746,7 @@
                                           IsHitTestVisible="False"
                                           Focusable="False"
                                           HorizontalAlignment="Stretch">
-                                    <ComboBoxItem Content="{Binding Settings.MediaBackgroundSourcePrioritySummary}"/>
+                                    <ComboBoxItem Content="{Binding Settings.MediaBackgroundSourcePrioritySummary, Mode=OneWay}"/>
                                 </ComboBox>
                                 <Button Style="{StaticResource SourcePriorityClickOverlay}"
                                         Click="ConfigureBackgroundSourcePriority_OnClick"/>

@@ -1,15 +1,9 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.0
+  - Version: 1.2.1
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-07-13
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.0/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_0.pext
+    ReleaseDate: 2026-07-18
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.1/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_1.pext
     Changelog:
-      - Added free cloud presets for OpenRouter Free, Groq, Gemini, Cerebras and Mistral, plus cancellable provider tests with progress feedback.
-      - Added provider key links and a usage and rate-limit panel with OpenRouter credit information and response-header diagnostics.
-      - Added official Steam, PlayStation, Xbox and Epic context to reduce invented metadata and improve factual generation.
-      - Protected API credentials with Windows DPAPI and added encrypted settings export and import.
-      - Added automatic removal of replaced media and a maintenance tool for safely cleaning unreferenced image files.
-      - Added automatic media priority, resolution-aware selection, strict no-upscaling, crop positioning and configurable image quality.
-      - Improved official-store media matching, unavailable-image filtering, empty-description handling and OpenRouter Free reliability.
-      - Improved the theme-aware settings and media picker UI, including clearer crop controls and complete localization updates.
+      - Fixed a read-only provider URL binding that could crash Playnite when opening Metadata AI settings.
+      - Marked calculated settings bindings as one-way to prevent similar WPF binding failures.
