@@ -449,4 +449,13 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: crea una API key gratuita en Cerebras Cloud. El nivel gratuito tiene límites inferiores, pero ofrece una inferencia muy rápida y no requiere suscripción.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: crea una API key en Mistral Studio. El modo gratuito está activo por defecto sin tarjeta, con límites de uso y velocidad.</sys:String>
     <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">El proveedor devolvió metadatos, pero no generó contenido para la plantilla de descripción activa. No se aplicó una descripción vacía. Inténtalo de nuevo, elige un modelo que respete mejor la salida estructurada o activa el contexto oficial para este juego.</sys:String>
+    <sys:String x:Key="MTDA_TabAbout">Acerca de</sys:String>
+    <sys:String x:Key="MTDA_AboutTitle">Acerca de Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_AboutDescription">Metadata AI ayuda a normalizar y enriquecer bibliotecas de Playnite con metadatos multilingües coherentes y fuentes multimedia configurables.</sys:String>
+    <sys:String x:Key="MTDA_AboutLinksTitle">Enlaces directos</sys:String>
+    <sys:String x:Key="MTDA_AboutWikiButton">Documentación Wiki</sys:String>
+    <sys:String x:Key="MTDA_AboutReportIssueButton">Reportar un problema</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Apoyar el desarrollo</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportDescription">Si Metadata AI te resulta útil, puedes apoyar su desarrollo en Ko-fi.</sys:String>
+    <sys:String x:Key="MTDA_AboutKoFiButton">Apoyar en Ko-fi</sys:String>
 </ResourceDictionary>

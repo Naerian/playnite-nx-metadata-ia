@@ -449,4 +449,13 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: Cerebras Cloud에서 무료 API 키를 만드세요. 무료 등급은 제한이 낮지만 구독 없이 매우 빠른 추론을 제공합니다.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: Mistral Studio에서 API 키를 만드세요. 무료 모드는 카드 없이 기본 활성화되며 사용량 및 속도 제한이 적용됩니다.</sys:String>
     <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">공급자가 메타데이터를 반환했지만 활성 설명 템플릿의 내용을 생성하지 않았습니다. 빈 설명은 적용되지 않았습니다. 다시 시도하거나 구조화된 출력을 더 잘 따르는 모델을 선택하거나 이 게임의 공식 컨텍스트를 활성화하세요.</sys:String>
+    <sys:String x:Key="MTDA_TabAbout">정보</sys:String>
+    <sys:String x:Key="MTDA_AboutTitle">Metadata AI 정보</sys:String>
+    <sys:String x:Key="MTDA_AboutDescription">Metadata AI는 일관된 다국어 메타데이터와 설정 가능한 미디어 소스를 사용하여 Playnite 라이브러리를 정리하고 보강합니다.</sys:String>
+    <sys:String x:Key="MTDA_AboutLinksTitle">직접 링크</sys:String>
+    <sys:String x:Key="MTDA_AboutWikiButton">Wiki 문서</sys:String>
+    <sys:String x:Key="MTDA_AboutReportIssueButton">문제 신고</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">개발 지원</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportDescription">Metadata AI가 유용하다면 Ko-fi에서 지속적인 개발을 지원할 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_AboutKoFiButton">Ko-fi에서 지원</sys:String>
 </ResourceDictionary>

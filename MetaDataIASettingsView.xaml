@@ -1109,6 +1109,51 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+
+            <TabItem Header="{DynamicResource MTDA_TabAbout}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_AboutTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_AboutDescription}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding Settings.AboutVersionAuthor, Mode=OneWay}"
+                                   FontWeight="SemiBold"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_AboutLinksTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="GitHub"
+                                    MinWidth="130"
+                                    Margin="0,0,8,0"
+                                    Click="OpenRepository_OnClick"/>
+                            <Button Content="{DynamicResource MTDA_AboutWikiButton}"
+                                    MinWidth="150"
+                                    Margin="0,0,8,0"
+                                    Click="OpenWiki_OnClick"/>
+                            <Button Content="{DynamicResource MTDA_AboutReportIssueButton}"
+                                    MinWidth="170"
+                                    Click="OpenReportIssue_OnClick"/>
+                        </StackPanel>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_AboutSupportTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_AboutSupportDescription}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_AboutKoFiButton}"
+                                HorizontalAlignment="Left"
+                                MinWidth="180"
+                                Padding="18,8"
+                                Click="OpenKoFi_OnClick"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

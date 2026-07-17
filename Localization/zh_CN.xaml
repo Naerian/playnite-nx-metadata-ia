@@ -449,4 +449,13 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras：在 Cerebras Cloud 创建免费 API 密钥。免费层的限额较低，但无需订阅即可提供非常快速的推理。</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI：在 Mistral Studio 创建 API 密钥。免费模式默认启用且无需银行卡，但有用量和速率限制。</sys:String>
     <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">提供商返回了元数据，但没有为当前描述模板生成内容。未应用空描述。请重试、选择更可靠地遵循结构化输出的模型，或为该游戏启用官方上下文。</sys:String>
+    <sys:String x:Key="MTDA_TabAbout">关于</sys:String>
+    <sys:String x:Key="MTDA_AboutTitle">关于 Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_AboutDescription">Metadata AI 使用一致的多语言元数据和可配置的媒体来源，帮助整理和丰富 Playnite 游戏库。</sys:String>
+    <sys:String x:Key="MTDA_AboutLinksTitle">直接链接</sys:String>
+    <sys:String x:Key="MTDA_AboutWikiButton">Wiki 文档</sys:String>
+    <sys:String x:Key="MTDA_AboutReportIssueButton">报告问题</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">支持开发</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportDescription">如果 Metadata AI 对你有帮助，可以通过 Ko-fi 支持后续开发。</sys:String>
+    <sys:String x:Key="MTDA_AboutKoFiButton">在 Ko-fi 上支持</sys:String>
 </ResourceDictionary>

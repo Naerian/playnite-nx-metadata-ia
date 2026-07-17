@@ -595,6 +595,31 @@ namespace MetaDataIAPlugin
             Process.Start(new ProcessStartInfo("https://www.steamgriddb.com/profile/preferences"));
         }
 
+        private void OpenRepository_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenExternalUrl("https://github.com/Naerian/playnite-nx-metadata-ia");
+        }
+
+        private void OpenWiki_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenExternalUrl("https://github.com/Naerian/playnite-nx-metadata-ia/wiki");
+        }
+
+        private void OpenReportIssue_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenExternalUrl("https://github.com/Naerian/playnite-nx-metadata-ia/issues/new/choose");
+        }
+
+        private void OpenKoFi_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenExternalUrl("https://ko-fi.com/naerian");
+        }
+
+        private static void OpenExternalUrl(string url)
+        {
+            Process.Start(new ProcessStartInfo(url));
+        }
+
         private void TestMedia_OnClick(object sender, RoutedEventArgs e)
         {
             TestMediaSource(sender as Button, "fuentes activas", s => { });

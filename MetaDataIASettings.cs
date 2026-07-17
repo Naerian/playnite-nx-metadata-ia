@@ -116,6 +116,13 @@ namespace MetaDataIAPlugin
         public const string ApplySkip = "No tocar";
         public const string ApplyEmptyOnly = "Solo si esta vacio";
         public const string ApplyAppend = "Anadir sin borrar";
+
+        [DontSerialize]
+        public string AboutVersionAuthor
+        {
+            get { return "MetadataAI " + typeof(MetaDataIAPlugin).Assembly.GetName().Version.ToString(3) + " · Narian"; }
+        }
+
         public const string ApplyOverwrite = "Sobrescribir";
         public const string ProviderOpenAI = "OpenAI";
         public const string ProviderLmStudio = "LM Studio local";

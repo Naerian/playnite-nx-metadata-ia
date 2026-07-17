@@ -449,4 +449,13 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_ProviderHelpCerebras">Cerebras: создайте бесплатный API-ключ в Cerebras Cloud. Бесплатный уровень имеет более низкие лимиты, но обеспечивает очень быстрый вывод без подписки.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpMistral">Mistral AI: создайте API-ключ в Mistral Studio. Бесплатный режим включен по умолчанию без банковской карты; действуют лимиты использования и частоты.</sys:String>
     <sys:String x:Key="MTDA_ErrorAiDescriptionEmpty">Провайдер вернул метаданные, но не создал содержимое для активного шаблона описания. Пустое описание не было применено. Повторите попытку, выберите модель с более надежным структурированным выводом или включите официальный контекст для этой игры.</sys:String>
+    <sys:String x:Key="MTDA_TabAbout">О программе</sys:String>
+    <sys:String x:Key="MTDA_AboutTitle">О Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_AboutDescription">Metadata AI помогает упорядочивать и дополнять библиотеки Playnite с помощью согласованных многоязычных метаданных и настраиваемых источников изображений.</sys:String>
+    <sys:String x:Key="MTDA_AboutLinksTitle">Прямые ссылки</sys:String>
+    <sys:String x:Key="MTDA_AboutWikiButton">Документация Wiki</sys:String>
+    <sys:String x:Key="MTDA_AboutReportIssueButton">Сообщить о проблеме</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Поддержать разработку</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportDescription">Если Metadata AI полезен вам, вы можете поддержать дальнейшую разработку на Ko-fi.</sys:String>
+    <sys:String x:Key="MTDA_AboutKoFiButton">Поддержать на Ko-fi</sys:String>
 </ResourceDictionary>
