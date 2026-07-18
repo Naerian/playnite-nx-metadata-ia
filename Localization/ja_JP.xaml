@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">参照</sys:String>
     <sys:String x:Key="MTDA_ImageSources">画像ソース</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">ソースキーとテスト</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">元のライブラリ連携</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">ライブラリ連携</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">各ゲームをインポートした Playnite ライブラリ連携を使用します。ゲームの PluginId により正確に照合されます。</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">カバー、アイコン、背景に元の連携を使用する</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">メタデータを信頼できる AI コンテキストとして使用する</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">厳格モードで事実フィールドを使用する</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">検出されたライブラリ連携</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Metadata AI から使用させたくない連携はここで無効にできます。不足する項目には設定済みの代替ソースが自動的に使用されます。</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">連携を更新</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">ゲームのライブラリ連携から取得した正確な画像</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">バックアップと復元</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">プロバイダー、テンプレート、フィールドルール、語彙メモリ、メディアソース設定を含む現在の Metadata AI 設定をエクスポートまたはインポートします。</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注: API キーとシークレットは現在の Windows ユーザー向けに暗号化されます。別のアカウントやコンピューターでは再入力が必要です。</sys:String>

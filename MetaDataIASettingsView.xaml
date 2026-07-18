@@ -547,6 +547,33 @@
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <TabControl Style="{StaticResource SourceKeysTabControl}" Margin="0,0,0,14">
+                            <TabItem Header="{DynamicResource MTDA_OriginIntegrationsTab}">
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDescription}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationMedia}"
+                                              IsChecked="{Binding Settings.UseOriginIntegrationForMedia}"
+                                              Margin="0,0,0,6"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationAiContext}"
+                                              IsChecked="{Binding Settings.UseOriginIntegrationAsAiContext}"
+                                              Margin="0,0,0,6"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationFacts}"
+                                              IsChecked="{Binding Settings.UseOriginIntegrationForFactualMetadata}"
+                                              Margin="0,0,0,10"/>
+                                    <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDetected}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <ItemsControl ItemsSource="{Binding OriginLibraryIntegrations}" Margin="0,0,0,8">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled}" Margin="0,3,0,3"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_RefreshOriginIntegrations}"
+                                            HorizontalAlignment="Left"
+                                            MinWidth="170"
+                                            Click="RefreshOriginIntegrations_OnClick"/>
+                                </StackPanel>
+                            </TabItem>
                             <TabItem Header="Steam">
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Steam usa recursos públicos oficiales cuando el juego se puede asociar a su ficha: portadas, heroes de biblioteca y capturas." TextWrapping="Wrap" Margin="0,0,0,12"/>

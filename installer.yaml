@@ -1,8 +1,11 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.2
+  - Version: 1.2.3
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-07-18
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.2/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_2.pext
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.3/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_3.pext
     Changelog:
-      - Minor maintenance and localization improvements.
+      - Added exact metadata and media reuse from the Playnite library integration that owns each game.
+      - Added trusted AI context and strict factual fields from origin library integrations.
+      - Added per-integration controls and automatic fallback to configured public and external sources.
+      - Added non-destructive source-priority migration for existing installations.

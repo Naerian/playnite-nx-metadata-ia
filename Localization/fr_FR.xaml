@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Référence</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Sources d&apos;images</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Clés sources et tests</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Intégration de bibliothèque d&apos;origine</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Intégrations de bibliothèque</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Utilise l&apos;intégration de bibliothèque Playnite qui a importé chaque jeu. La correspondance est exacte grâce au PluginId du jeu.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Utiliser l&apos;intégration d&apos;origine pour les jaquettes, icônes et arrière-plans</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Utiliser ses métadonnées comme contexte IA fiable</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Utiliser ses champs factuels en mode strict</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Intégrations de bibliothèque détectées</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Désactivez ici une intégration pour empêcher Metadata AI de l&apos;interroger. Les sources de secours configurées sont utilisées automatiquement pour les champs manquants.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Actualiser les intégrations</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Média exact de l&apos;intégration de bibliothèque du jeu</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Sauvegarde et restauration</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Exportez ou importez les paramètres actuels de Metadata AI, y compris les fournisseurs, modèles, règles de champs, mémoire de vocabulaire et configuration des sources média.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Remarque : les clés API et secrets sont chiffrés pour l’utilisateur Windows actuel. Sur un autre compte ou ordinateur, vous devrez les saisir à nouveau.</sys:String>

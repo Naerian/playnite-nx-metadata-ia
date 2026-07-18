@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Referencia</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Fuentes de imagenes</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Claves y pruebas de fuentes</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Integración de origen</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Integraciones de biblioteca</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa la integración de biblioteca de Playnite que importó cada juego. La coincidencia es exacta mediante el PluginId del juego, por lo que un juego de Steam nunca se consulta mediante EA, Xbox u otra integración ajena.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usar la integración de origen para portadas, iconos y fondos</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usar sus metadatos como contexto fiable para la IA</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Usar sus campos factuales en el modo estricto</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Integraciones de biblioteca detectadas</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Desactiva aquí una integración para impedir que Metadata AI la consulte. Si una integración no ofrece el campo solicitado, se usan automáticamente las fuentes de respaldo configuradas.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Actualizar integraciones</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Medio exacto de la integración de biblioteca del juego</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Copia y restauración</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Exporta o importa la configuración actual de Metadata AI, incluyendo proveedores, plantillas, reglas de campos, memoria de vocabulario y configuración de fuentes de media.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">NOTA: las API keys y los secretos se cifran para el usuario actual de Windows. En otra cuenta o equipo tendrás que introducirlos de nuevo.</sys:String>

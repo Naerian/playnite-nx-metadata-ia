@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Riferimento</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Fonti di immagini</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Chiavi e test dei sorgenti</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Integrazione libreria di origine</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Integrazioni libreria</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa l&apos;integrazione della libreria Playnite che ha importato ogni gioco. La corrispondenza è esatta tramite il PluginId del gioco.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usa l&apos;integrazione di origine per copertine, icone e sfondi</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usa i suoi metadati come contesto IA affidabile</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Usa i suoi campi fattuali in modalità rigorosa</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Integrazioni libreria rilevate</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Disattiva qui un&apos;integrazione per impedire a Metadata AI di interrogarla. Per i campi mancanti vengono usate automaticamente le fonti di riserva configurate.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Aggiorna integrazioni</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Media esatto dall&apos;integrazione libreria del gioco</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Backup e ripristino</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Esporta o importa le impostazioni attuali di Metadata AI, inclusi provider, modelli, regole dei campi, memoria del vocabolario e configurazione delle fonti media.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Nota: le API key e i segreti sono crittografati per l’utente Windows corrente. Con un altro account o computer dovrai inserirli di nuovo.</sys:String>

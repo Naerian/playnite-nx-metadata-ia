@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Referenz</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Bildquellen</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Quellschlüssel und Tests</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Ursprüngliche Bibliotheksintegration</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Bibliotheksintegrationen</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Verwendet die Playnite-Bibliotheksintegration, die das jeweilige Spiel importiert hat. Die Zuordnung erfolgt exakt über die PluginId des Spiels.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Ursprungsintegration für Cover, Symbole und Hintergründe verwenden</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Metadaten als vertrauenswürdigen KI-Kontext verwenden</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Faktenfelder im strikten Modus verwenden</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Erkannte Bibliotheksintegrationen</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Deaktiviere hier eine Integration, damit Metadata AI sie nicht abfragt. Fehlende Felder werden automatisch über die konfigurierten Ersatzquellen gesucht.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Integrationen aktualisieren</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Exaktes Medium aus der Bibliotheksintegration des Spiels</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Sichern und Wiederherstellen</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Exportiere oder importiere die aktuellen Metadata AI-Einstellungen, einschließlich Anbieter, Vorlagen, Feldregeln, Vokabularspeicher und Medienquellen-Konfiguration.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Hinweis: API-Schlüssel und Geheimnisse werden für den aktuellen Windows-Benutzer verschlüsselt. Unter einem anderen Konto oder auf einem anderen Computer müssen sie erneut eingegeben werden.</sys:String>

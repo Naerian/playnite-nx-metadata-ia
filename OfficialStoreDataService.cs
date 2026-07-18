@@ -21,7 +21,11 @@ namespace MetaDataIAPlugin
         public List<string> Features { get; set; }
         public List<string> Developers { get; set; }
         public List<string> Publishers { get; set; }
+        public List<string> Regions { get; set; }
+        public List<Link> Links { get; set; }
         public string AgeRating { get; set; }
+        public string ReleaseDate { get; set; }
+        public bool IsExactMatch { get; set; }
 
         public OfficialStoreMetadata()
         {
@@ -29,6 +33,8 @@ namespace MetaDataIAPlugin
             Features = new List<string>();
             Developers = new List<string>();
             Publishers = new List<string>();
+            Regions = new List<string>();
+            Links = new List<Link>();
         }
 
         public bool HasUsefulData()
@@ -38,7 +44,10 @@ namespace MetaDataIAPlugin
                    Features.Count > 0 ||
                    Developers.Count > 0 ||
                    Publishers.Count > 0 ||
-                   !string.IsNullOrWhiteSpace(AgeRating);
+                   Regions.Count > 0 ||
+                   Links.Count > 0 ||
+                   !string.IsNullOrWhiteSpace(AgeRating) ||
+                   !string.IsNullOrWhiteSpace(ReleaseDate);
         }
     }
 

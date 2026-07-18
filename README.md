@@ -35,6 +35,7 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Use blacklist rules and prefixes for generated tags and categories.
 - Generate metadata in a selected output language from a dropdown.
 - Use official store data as factual AI context before rewriting, translating, or normalizing text.
+- Reuse the Playnite library integration that imported each game as an exact, trusted metadata and media source.
 - Use stricter factual guards for companies, age ratings, and regions to reduce invented metadata.
 - Automatically process newly imported games after library updates.
 - Generate media assets from multiple configurable sources.
@@ -118,6 +119,7 @@ When OpenRouter Free returns valid metadata but leaves every token required by t
 
 Metadata AI can fetch covers, icons, and backgrounds from:
 
+- The Playnite library integration that owns the game
 - Official Steam public assets
 - Official Steam screenshots
 - PlayStation Store
@@ -132,13 +134,15 @@ Steam public assets, PlayStation Store, Xbox Store, and Epic Store do not requir
 
 For IGDB, the extension uses Twitch `Client ID` and `Client Secret` and automatically obtains the access token internally, so users do not need to copy temporary access tokens manually.
 
-Store websites can be region-dependent and may change or block automated reads. If an official store does not return a reliable match, Metadata AI skips it and continues with the next enabled source based on your configured priority.
+When available, Metadata AI can ask the exact library integration that imported the game for its metadata and media. It identifies that integration through the game's `PluginId`, so it never tries an unrelated integration merely because a title looks similar. Individual integrations can be disabled from the Media settings.
+
+Store websites can be region-dependent and may change or block automated reads. If the origin integration or an official store does not return the requested field, Metadata AI skips it and continues with the next enabled source based on your configured priority.
 
 ## AI factual context
 
 Metadata AI is designed to normalize and structure metadata, not blindly invent it.
 
-When official context is enabled, the extension first tries to read reliable store data such as Steam, PlayStation Store, Xbox Store, or Epic Store. The AI receives that information as factual context and is instructed to translate, rewrite, summarize, and structure it according to your templates and field rules.
+When trusted context is enabled, the extension first asks the Playnite library integration that owns the game. It can then use reliable public store data such as Steam, PlayStation Store, Xbox Store, or Epic Store as additional context and fallback. The AI receives that information as factual context and is instructed to translate, rewrite, summarize, and structure it according to your templates and field rules.
 
 If the plugin cannot find reliable official context, the AI can still generate descriptive text from the game name and existing Playnite metadata, but stricter options can prevent sensitive fields such as developers, publishers, age ratings, and regions from being created when confidence is low.
 
@@ -162,6 +166,8 @@ Selection criteria include:
 - Prefer backgrounds with or without logos.
 
 Automatic media selection follows the per-kind source priority configured in settings. For example, covers, icons, and backgrounds can each prefer different sources. If a source returns no reliable candidates for a game, the extension continues with the next enabled source.
+
+New installations place the origin library integration in the recommended priority position. When an existing installation is upgraded, Metadata AI appends this source to each saved priority instead of resetting or reordering the user's customized sources.
 
 The selected format and resolution describe the final stored file. Automatic priority can favor configured sources, usable source resolution, or strict quality that skips candidates requiring upscaling after crop. Cover and background crop origins are configurable, and processed JPEG quality can be reduced to save disk space without changing output dimensions.
 

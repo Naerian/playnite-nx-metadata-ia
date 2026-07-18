@@ -241,6 +241,11 @@ namespace MetaDataIAPlugin
         private bool iconSquarePreferGrid = true;
         private bool mediaUseSteamOfficial = true;
         private bool mediaUseSteamScreenshots = true;
+        private bool useOriginIntegrationForMedia = true;
+        private bool useOriginIntegrationAsAiContext = true;
+        private bool useOriginIntegrationForFactualMetadata = true;
+        private List<Guid> disabledOriginIntegrationIds = new List<Guid>();
+        private bool originIntegrationPriorityMigrated = false;
         private bool mediaUsePsnStore = false;
         private bool mediaUseXboxStore = false;
         private bool mediaUseEpicStore = false;
@@ -306,9 +311,10 @@ namespace MetaDataIAPlugin
         public const string ImageQualityBalanced = "Equilibrada";
         public const string ImageQualityHigh = "Alta";
         public const string ImageQualityMaximum = "Maxima";
-        public const string DefaultCoverSourcePriority = "Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, RAWG, MobyGames";
-        public const string DefaultIconSourcePriority = "SteamGridDB, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
-        public const string DefaultBackgroundSourcePriority = "Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, IGDB, MobyGames";
+        public const string SourceOriginIntegration = "Integracion de origen";
+        public const string DefaultCoverSourcePriority = "Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, RAWG, MobyGames";
+        public const string DefaultIconSourcePriority = "SteamGridDB, Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
+        public const string DefaultBackgroundSourcePriority = "Integracion de origen, Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, IGDB, MobyGames";
 
         public string ProviderPreset
         {
@@ -458,6 +464,11 @@ namespace MetaDataIAPlugin
         public bool IconSquarePreferGrid { get { return iconSquarePreferGrid; } set { SetValue(ref iconSquarePreferGrid, value); } }
         public bool MediaUseSteamOfficial { get { return mediaUseSteamOfficial; } set { SetValue(ref mediaUseSteamOfficial, value); } }
         public bool MediaUseSteamScreenshots { get { return mediaUseSteamScreenshots; } set { SetValue(ref mediaUseSteamScreenshots, value); } }
+        public bool UseOriginIntegrationForMedia { get { return useOriginIntegrationForMedia; } set { SetValue(ref useOriginIntegrationForMedia, value); } }
+        public bool UseOriginIntegrationAsAiContext { get { return useOriginIntegrationAsAiContext; } set { SetValue(ref useOriginIntegrationAsAiContext, value); } }
+        public bool UseOriginIntegrationForFactualMetadata { get { return useOriginIntegrationForFactualMetadata; } set { SetValue(ref useOriginIntegrationForFactualMetadata, value); } }
+        public List<Guid> DisabledOriginIntegrationIds { get { return disabledOriginIntegrationIds; } set { SetValue(ref disabledOriginIntegrationIds, value); } }
+        public bool OriginIntegrationPriorityMigrated { get { return originIntegrationPriorityMigrated; } set { SetValue(ref originIntegrationPriorityMigrated, value); } }
         public bool MediaUsePsnStore { get { return mediaUsePsnStore; } set { SetValue(ref mediaUsePsnStore, value); } }
         public bool MediaUseXboxStore { get { return mediaUseXboxStore; } set { SetValue(ref mediaUseXboxStore, value); } }
         public bool MediaUseEpicStore { get { return mediaUseEpicStore; } set { SetValue(ref mediaUseEpicStore, value); } }
@@ -556,6 +567,11 @@ namespace MetaDataIAPlugin
 
         public void EnsureDefaults()
         {
+            EnsureDefaults(true);
+        }
+
+        public void EnsureDefaults(bool existingSettings)
+        {
             if (string.IsNullOrWhiteSpace(ProviderPreset))
             {
                 ProviderPreset = ProviderGroq;
@@ -564,7 +580,7 @@ namespace MetaDataIAPlugin
             EnsureTextLengthDefaults();
             EnsureCompanyLimitDefaults();
             EnsureSafeDefaults();
-            EnsureMediaDefaults();
+            EnsureMediaDefaults(existingSettings);
 
             if (Templates == null || Templates.Count == 0)
             {
@@ -590,11 +606,16 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private void EnsureMediaDefaults()
+        private void EnsureMediaDefaults(bool existingSettings)
         {
             if (AutoImportKnownGameIds == null)
             {
                 AutoImportKnownGameIds = new List<Guid>();
+            }
+
+            if (DisabledOriginIntegrationIds == null)
+            {
+                DisabledOriginIntegrationIds = new List<Guid>();
             }
 
             if (string.IsNullOrWhiteSpace(MediaProvider))
@@ -632,6 +653,34 @@ namespace MetaDataIAPlugin
             {
                 MediaBackgroundSourcePriority = DefaultBackgroundSourcePriority;
             }
+
+            if (!OriginIntegrationPriorityMigrated)
+            {
+                if (existingSettings)
+                {
+                    MediaCoverSourcePriority = AppendSourcePriority(MediaCoverSourcePriority, SourceOriginIntegration);
+                    MediaIconSourcePriority = AppendSourcePriority(MediaIconSourcePriority, SourceOriginIntegration);
+                    MediaBackgroundSourcePriority = AppendSourcePriority(MediaBackgroundSourcePriority, SourceOriginIntegration);
+                }
+
+                OriginIntegrationPriorityMigrated = true;
+            }
+        }
+
+        private static string AppendSourcePriority(string currentValue, string source)
+        {
+            var items = (currentValue ?? string.Empty)
+                .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            if (!items.Any(x => string.Equals(x, source, StringComparison.OrdinalIgnoreCase)))
+            {
+                items.Add(source);
+            }
+
+            return string.Join(", ", items);
         }
 
         private void EnsureTextLengthDefaults()
@@ -1815,7 +1864,8 @@ namespace MetaDataIAPlugin
 
         private static string BuildSourcePrioritySummary(string value, string fallback)
         {
-            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+            var summary = string.IsNullOrWhiteSpace(value) ? fallback : value;
+            return summary.Replace(SourceOriginIntegration, Loc("MTDA_SourceOriginIntegration", "Origin library integration"));
         }
 
         private static string Loc(string key, string fallback)
@@ -1845,6 +1895,40 @@ namespace MetaDataIAPlugin
         }
     }
 
+    public class OriginLibraryIntegrationOption : ObservableObject
+    {
+        private bool isEnabled;
+        private readonly Action<bool> changed;
+
+        public Guid Id { get; private set; }
+        public string Name { get; private set; }
+        public bool IsEnabled
+        {
+            get { return isEnabled; }
+            set
+            {
+                if (isEnabled == value)
+                {
+                    return;
+                }
+
+                SetValue(ref isEnabled, value);
+                if (changed != null)
+                {
+                    changed(value);
+                }
+            }
+        }
+
+        public OriginLibraryIntegrationOption(Guid id, string name, bool enabled, Action<bool> changed)
+        {
+            Id = id;
+            Name = name;
+            isEnabled = enabled;
+            this.changed = changed;
+        }
+    }
+
     public class MetaDataIASettingsViewModel : ObservableObject, ISettings
     {
         private readonly MetaDataIAPlugin plugin;
@@ -1855,8 +1939,14 @@ namespace MetaDataIAPlugin
         private string selectedTemplateNameText;
         private string selectedTemplateBodyText;
         private bool loadingSelectedTemplate;
+        private ObservableCollection<OriginLibraryIntegrationOption> originLibraryIntegrations = new ObservableCollection<OriginLibraryIntegrationOption>();
 
         public MetaDataIAPlugin Plugin { get { return plugin; } }
+        public ObservableCollection<OriginLibraryIntegrationOption> OriginLibraryIntegrations
+        {
+            get { return originLibraryIntegrations; }
+            private set { SetValue(ref originLibraryIntegrations, value); }
+        }
 
         public MetaDataIASettings Settings
         {
@@ -1916,8 +2006,30 @@ namespace MetaDataIAPlugin
             var savedSettings = plugin.LoadPluginSettings<MetaDataIASettings>();
             Settings = savedSettings ?? new MetaDataIASettings();
             Settings.UnprotectSecretsAfterLoad();
-            Settings.EnsureDefaults();
+            Settings.EnsureDefaults(savedSettings != null);
+            RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings.GetActiveTemplate();
+        }
+
+        public void RefreshOriginLibraryIntegrations()
+        {
+            var detected = new PlayniteIntegrationService(plugin.Api, Settings).GetDetectedIntegrations();
+            var disabled = Settings.DisabledOriginIntegrationIds ?? new List<Guid>();
+            OriginLibraryIntegrations = new ObservableCollection<OriginLibraryIntegrationOption>(detected.Select(info =>
+                new OriginLibraryIntegrationOption(info.Id, info.Name, !disabled.Contains(info.Id), enabled =>
+                {
+                    var current = Settings.DisabledOriginIntegrationIds ?? new List<Guid>();
+                    if (enabled)
+                    {
+                        current.RemoveAll(x => x == info.Id);
+                    }
+                    else if (!current.Contains(info.Id))
+                    {
+                        current.Add(info.Id);
+                    }
+
+                    Settings.DisabledOriginIntegrationIds = current;
+                })));
         }
 
         public void BeginEdit()
@@ -1928,6 +2040,7 @@ namespace MetaDataIAPlugin
         public void CancelEdit()
         {
             Settings = editingClone;
+            RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings == null ? null : Settings.GetActiveTemplate();
         }
 
@@ -2013,6 +2126,7 @@ namespace MetaDataIAPlugin
 
             importedSettings.EnsureDefaults();
             Settings = importedSettings;
+            RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings.GetActiveTemplate();
             editingClone = Serialization.GetClone(Settings);
             plugin.SaveSettingsSecurely(Settings);

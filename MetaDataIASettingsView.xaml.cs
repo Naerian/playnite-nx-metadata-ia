@@ -57,6 +57,7 @@ namespace MetaDataIAPlugin
                 var viewModel = DataContext as MetaDataIASettingsViewModel;
                 if (viewModel != null)
                 {
+                    viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
                     Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
                 }
@@ -433,7 +434,7 @@ namespace MetaDataIAPlugin
                 else
                 {
                     var testSettings = CreateProviderProbeSettings(viewModel.Settings);
-                    await new MetadataGenerationService(testSettings).GenerateAsync(
+                    await new MetadataGenerationService(testSettings, viewModel.Plugin.Api).GenerateAsync(
                         new Game { Name = "Pong" },
                         providerUsageRefreshCancellation.Token);
                 }
@@ -593,6 +594,15 @@ namespace MetaDataIAPlugin
         private void OpenSteamGridDbPage_OnClick(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("https://www.steamgriddb.com/profile/preferences"));
+        }
+
+        private void RefreshOriginIntegrations_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.RefreshOriginLibraryIntegrations();
+            }
         }
 
         private void OpenRepository_OnClick(object sender, RoutedEventArgs e)
@@ -1017,7 +1027,7 @@ namespace MetaDataIAPlugin
                 var testSettings = CreateProviderProbeSettings(viewModel.Settings);
 
                 var game = new Game { Name = "Pong" };
-                await new MetadataGenerationService(testSettings).GenerateAsync(game, operation.Cancellation.Token);
+                await new MetadataGenerationService(testSettings, viewModel.Plugin.Api).GenerateAsync(game, operation.Cancellation.Token);
                 operation.Cancellation.Token.ThrowIfCancellationRequested();
                 FinishTestOperation(operation, Loc("MTDA_TestProviderSuccess", "The provider is responding correctly."), true);
                 RefreshProviderUsageDisplay(null);
@@ -1354,6 +1364,11 @@ namespace MetaDataIAPlugin
                 return settings.MediaUseSteamOfficial;
             }
 
+            if (string.Equals(source, MetaDataIASettings.SourceOriginIntegration, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.UseOriginIntegrationForMedia;
+            }
+
             if (string.Equals(source, "Steam capturas", System.StringComparison.OrdinalIgnoreCase))
             {
                 return settings.MediaUseSteamScreenshots;
@@ -1404,6 +1419,7 @@ namespace MetaDataIAPlugin
                 return new List<SourcePriorityItem>
                 {
                     Source("SteamGridDB"),
+                    Source(MetaDataIASettings.SourceOriginIntegration),
                     Source("Steam oficial"),
                     Source("PlayStation Store"),
                     Source("Xbox Store"),
@@ -1415,6 +1431,7 @@ namespace MetaDataIAPlugin
             {
                 return new List<SourcePriorityItem>
                 {
+                    Source(MetaDataIASettings.SourceOriginIntegration),
                     Source("Steam oficial"),
                     Source("Steam capturas"),
                     Source("PlayStation Store"),
@@ -1429,6 +1446,7 @@ namespace MetaDataIAPlugin
 
             return new List<SourcePriorityItem>
             {
+                Source(MetaDataIASettings.SourceOriginIntegration),
                 Source("Steam oficial"),
                 Source("PlayStation Store"),
                 Source("Xbox Store"),
@@ -1442,7 +1460,10 @@ namespace MetaDataIAPlugin
 
         private static SourcePriorityItem Source(string name)
         {
-            return new SourcePriorityItem { Key = name, DisplayName = name };
+            var displayName = string.Equals(name, MetaDataIASettings.SourceOriginIntegration, System.StringComparison.OrdinalIgnoreCase)
+                ? Loc("MTDA_SourceOriginIntegration", "Origin library integration")
+                : name;
+            return new SourcePriorityItem { Key = name, DisplayName = displayName };
         }
 
         private static List<string> ParseSourcePriority(string value)

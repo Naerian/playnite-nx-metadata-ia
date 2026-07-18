@@ -62,6 +62,7 @@
     <Compile Include="MediaGenerationService.cs" />
     <Compile Include="MediaStorageCleanupService.cs" />
     <Compile Include="OfficialStoreDataService.cs" />
+    <Compile Include="PlayniteIntegrationService.cs" />
     <Compile Include="ProviderUsageService.cs" />
     <Compile Include="TitleMatchingService.cs" />
     <Compile Include="MetaDataIAPlugin.cs" />

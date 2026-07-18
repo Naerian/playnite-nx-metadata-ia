@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Referência</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Fontes de imagem</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Chaves de origem e testes</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Integração da biblioteca de origem</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Integrações de biblioteca</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa a integração da biblioteca Playnite que importou cada jogo. A correspondência é exata pelo PluginId do jogo.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usar a integração de origem para capas, ícones e fundos</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usar seus metadados como contexto confiável da IA</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Usar seus campos factuais no modo estrito</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Integrações de biblioteca detectadas</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Desative uma integração aqui para impedir que o Metadata AI a consulte. As fontes alternativas configuradas são usadas automaticamente para campos ausentes.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Atualizar integrações</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Mídia exata da integração da biblioteca do jogo</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Backup e restauração</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Exporte ou importe as configurações atuais do Metadata AI, incluindo provedores, modelos, regras de campos, memória de vocabulário e configuração de fontes de mídia.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Nota: as chaves de API e os segredos são criptografados para o usuário atual do Windows. Em outra conta ou computador, será necessário informá-los novamente.</sys:String>

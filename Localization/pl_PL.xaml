@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Odniesienie</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Zrodla obrazow</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Klucze i testy zrodel</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Integracja biblioteki źródłowej</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Integracje biblioteki</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Używa integracji biblioteki Playnite, która zaimportowała daną grę. Dopasowanie jest dokładne dzięki identyfikatorowi PluginId gry.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Używaj integracji źródłowej dla okładek, ikon i teł</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Używaj jej metadanych jako zaufanego kontekstu AI</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Używaj jej pól faktograficznych w trybie ścisłym</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Wykryte integracje biblioteki</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Wyłącz integrację tutaj, aby Metadata AI jej nie używało. Dla brakujących pól automatycznie zostaną użyte skonfigurowane źródła zapasowe.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Odśwież integracje</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Dokładny obraz z integracji biblioteki gry</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Kopia i przywracanie</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Eksportuj lub importuj aktualne ustawienia Metadata AI, w tym dostawców, szablony, reguły pól, pamięć słownictwa i konfigurację źródeł mediów.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Uwaga: klucze API i sekrety są szyfrowane dla bieżącego użytkownika Windows. Na innym koncie lub komputerze trzeba wprowadzić je ponownie.</sys:String>

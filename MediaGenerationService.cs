@@ -398,6 +398,41 @@ namespace MetaDataIAPlugin
 
             var candidates = new List<MediaCandidate>();
             var diagnostics = new List<string>();
+            if (settings.UseOriginIntegrationForMedia && playniteApi != null)
+            {
+                try
+                {
+                    var integrationService = new PlayniteIntegrationService(playniteApi, settings);
+                    var integrationResult = await integrationService.GetOriginMetadataAsync(game, cancelToken).ConfigureAwait(false);
+                    var integrationMedia = await integrationService.GetMediaAsync(integrationResult, kind, cancelToken).ConfigureAwait(false);
+                    var sourceCandidates = integrationMedia == null
+                        ? new List<MediaCandidate>()
+                        : new List<MediaCandidate>
+                        {
+                            new MediaCandidate
+                            {
+                                Url = integrationMedia.Path,
+                                Style = (string.IsNullOrWhiteSpace(integrationMedia.IntegrationName) ? string.Empty : integrationMedia.IntegrationName + " - ") +
+                                        Loc("MTDA_OriginIntegrationExactMedia", "Exact media from the game's library integration"),
+                                Score = 100,
+                                Extension = integrationMedia.Extension,
+                                SourceName = MetaDataIASettings.SourceOriginIntegration,
+                                SourcePriority = 110,
+                                IsOfficial = true
+                            }
+                        };
+                    AddSourceCandidates(candidates, diagnostics, MetaDataIASettings.SourceOriginIntegration, sourceCandidates);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    AddDiagnostic(diagnostics, MetaDataIASettings.SourceOriginIntegration, Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                }
+            }
+
             var steamId = await ResolveSteamAppId(game, cancelToken).ConfigureAwait(false);
 
             if (settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots)
@@ -595,6 +630,7 @@ namespace MetaDataIAPlugin
                 (game == null ? string.Empty : game.Id.ToString()),
                 (game == null ? string.Empty : game.Name),
                 (game == null ? string.Empty : game.GameId),
+                (game == null ? string.Empty : game.PluginId.ToString()),
                 (game == null || game.Source == null ? string.Empty : game.Source.Name),
                 kind.ToString(),
                 settings.CoverImagePreset,
@@ -608,6 +644,8 @@ namespace MetaDataIAPlugin
                 settings.IconSquarePreferGrid.ToString(),
                 settings.MediaUseSteamOfficial.ToString(),
                 settings.MediaUseSteamScreenshots.ToString(),
+                settings.UseOriginIntegrationForMedia.ToString(),
+                string.Join(",", (settings.DisabledOriginIntegrationIds ?? new List<Guid>()).OrderBy(x => x).Select(x => x.ToString("N"))),
                 settings.MediaUsePsnStore.ToString(),
                 settings.MediaUseXboxStore.ToString(),
                 settings.MediaUseEpicStore.ToString(),
@@ -1421,6 +1459,11 @@ namespace MetaDataIAPlugin
             }
 
             var normalized = value.Trim().ToLowerInvariant();
+            if (normalized.Contains("integracion de origen") || normalized.Contains("origin integration"))
+            {
+                return MetaDataIASettings.SourceOriginIntegration.ToLowerInvariant();
+            }
+
             if (normalized.Contains("steamgriddb"))
             {
                 return "steamgriddb";
@@ -1738,6 +1781,36 @@ namespace MetaDataIAPlugin
 
         private static async Task<CandidateProbeResult> ProbeImageAsync(string url, CancellationToken cancelToken)
         {
+            var localPath = LocalFilePath(url);
+            if (!string.IsNullOrWhiteSpace(localPath))
+            {
+                var buffer = new byte[131072];
+                var read = 0;
+                using (var stream = File.OpenRead(localPath))
+                {
+                    while (read < buffer.Length)
+                    {
+                        var count = await stream.ReadAsync(buffer, read, buffer.Length - read, cancelToken).ConfigureAwait(false);
+                        if (count <= 0)
+                        {
+                            break;
+                        }
+
+                        read += count;
+                    }
+                }
+
+                var width = 0;
+                var height = 0;
+                var recognized = read > 0 && TryReadImageDimensions(buffer, read, out width, out height);
+                return new CandidateProbeResult
+                {
+                    IsValid = recognized,
+                    Width = width,
+                    Height = height
+                };
+            }
+
             using (var request = new HttpRequestMessage(HttpMethod.Get, url))
             {
                 request.Headers.UserAgent.ParseAdd("MetaDataIAPlugin/1.0");
@@ -1909,11 +1982,35 @@ namespace MetaDataIAPlugin
 
         private static async Task<byte[]> DownloadBytes(string url, CancellationToken cancelToken)
         {
+            var localPath = LocalFilePath(url);
+            if (!string.IsNullOrWhiteSpace(localPath))
+            {
+                return await Task.Run(() => File.ReadAllBytes(localPath), cancelToken).ConfigureAwait(false);
+            }
+
             using (var response = await Client.GetAsync(url, cancelToken).ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
             }
+        }
+
+        private static string LocalFilePath(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            if (File.Exists(value))
+            {
+                return value;
+            }
+
+            Uri uri;
+            return Uri.TryCreate(value, UriKind.Absolute, out uri) && uri.IsFile && File.Exists(uri.LocalPath)
+                ? uri.LocalPath
+                : null;
         }
 
         private async Task<DownloadedCandidate> DownloadBestBytes(List<MediaCandidate> candidates, MediaCandidate preferred, MediaKind kind, CancellationToken cancelToken)

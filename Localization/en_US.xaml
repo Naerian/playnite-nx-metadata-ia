@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Reference</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Image sources</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Source keys and tests</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Origin library integration</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Library integrations</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Uses the Playnite library integration that imported each game. The match is exact through the game&apos;s PluginId, so a Steam game is never queried through EA, Xbox or another unrelated integration.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Use the origin integration for covers, icons and backgrounds</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Use its metadata as trusted AI context</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Use its factual fields in strict mode</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Detected library integrations</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Disable an integration here to stop Metadata AI from querying it. If an integration does not provide a requested field, the configured fallback sources are used automatically.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Refresh integrations</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Exact media from the game&apos;s library integration</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Backup and restore</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Export or import the current Metadata AI settings, including providers, templates, field rules, vocabulary memory and media source configuration.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Note: API keys and secrets are encrypted for the current Windows user. On another user account or computer, you will need to enter them again.</sys:String>

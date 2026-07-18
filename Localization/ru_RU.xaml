@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">Ссылка</sys:String>
     <sys:String x:Key="MTDA_ImageSources">Источники изображений</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">Исходные ключи и тесты</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">Исходная библиотечная интеграция</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">Интеграции библиотек</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Использует интеграцию библиотеки Playnite, которая импортировала игру. Соответствие определяется точно по PluginId игры.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Использовать исходную интеграцию для обложек, значков и фонов</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Использовать ее метаданные как надежный контекст ИИ</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Использовать ее фактические поля в строгом режиме</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">Обнаруженные интеграции библиотек</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Отключите интеграцию здесь, чтобы Metadata AI не обращался к ней. Для отсутствующих полей автоматически используются настроенные резервные источники.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">Обновить интеграции</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Точное изображение из библиотечной интеграции игры</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Резервная копия и восстановление</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Экспортируйте или импортируйте текущие настройки Metadata AI, включая поставщиков, шаблоны, правила полей, память словаря и настройки источников медиа.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Примечание: API-ключи и секреты шифруются для текущего пользователя Windows. В другой учетной записи или на другом компьютере их потребуется ввести заново.</sys:String>

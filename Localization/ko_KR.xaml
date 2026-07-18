@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">참조</sys:String>
     <sys:String x:Key="MTDA_ImageSources">이미지 출처</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">소스 키 및 테스트</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">원본 라이브러리 연동</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">라이브러리 연동</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">각 게임을 가져온 Playnite 라이브러리 연동을 사용합니다. 게임의 PluginId로 정확하게 일치시킵니다.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">표지, 아이콘 및 배경에 원본 연동 사용</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">메타데이터를 신뢰할 수 있는 AI 컨텍스트로 사용</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">엄격 모드에서 사실 필드 사용</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">감지된 라이브러리 연동</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Metadata AI가 사용하지 않을 연동은 여기서 비활성화하세요. 누락된 필드에는 설정된 대체 소스가 자동으로 사용됩니다.</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">연동 새로 고침</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">게임 라이브러리 연동의 정확한 이미지</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">백업 및 복원</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">제공업체, 템플릿, 필드 규칙, 어휘 메모리, 미디어 소스 구성을 포함한 현재 Metadata AI 설정을 내보내거나 가져옵니다.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">참고: API 키와 비밀 값은 현재 Windows 사용자용으로 암호화됩니다. 다른 계정이나 컴퓨터에서는 다시 입력해야 합니다.</sys:String>

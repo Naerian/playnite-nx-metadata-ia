@@ -157,7 +157,7 @@ namespace MetaDataIAPlugin
                 throw new InvalidOperationException(PluginLocalization.GetString("MTDA_ErrorMetadataProviderNotConfigured", "Metadata AI is not configured. Open the plugin settings and set endpoint, model and API key."));
             }
 
-            cachedResult = new MetadataGenerationService(settings).GenerateAsync(options.GameData).GetAwaiter().GetResult();
+            cachedResult = new MetadataGenerationService(settings, plugin.Api).GenerateAsync(options.GameData).GetAwaiter().GetResult();
             return cachedResult;
         }
 

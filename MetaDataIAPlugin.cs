@@ -236,7 +236,7 @@ namespace MetaDataIAPlugin
                     try
                     {
                         progress.Text = Loc("MTDA_ProgressGeneratingMetadata", "Generating AI metadata...");
-                        result = new MetadataGenerationService(settings.Settings).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
+                        result = new MetadataGenerationService(settings.Settings, PlayniteApi).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
                     {
@@ -294,7 +294,7 @@ namespace MetaDataIAPlugin
                         progress.Text = Loc("MTDA_ProgressGeneratingMetadataGame", "Generating AI metadata: ") + game.Name;
                         try
                         {
-                            var result = new MetadataGenerationService(activeSettings).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
+                            var result = new MetadataGenerationService(activeSettings, PlayniteApi).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
                                 MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
@@ -916,7 +916,11 @@ namespace MetaDataIAPlugin
             var infoPanel = new StackPanel { Margin = new Thickness(0, 8, 0, 8) };
             infoPanel.Children.Add(new TextBlock
             {
-                Text = string.IsNullOrWhiteSpace(option.SourceName) ? "Fuente desconocida" : option.SourceName,
+                Text = string.IsNullOrWhiteSpace(option.SourceName)
+                    ? Loc("MTDA_UnknownSource", "Unknown source")
+                    : string.Equals(option.SourceName, MetaDataIASettings.SourceOriginIntegration, StringComparison.OrdinalIgnoreCase)
+                        ? Loc("MTDA_SourceOriginIntegration", "Origin library integration")
+                        : option.SourceName,
                 FontWeight = FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             });

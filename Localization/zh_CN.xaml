@@ -78,6 +78,16 @@
     <sys:String x:Key="MTDA_Reference">参考</sys:String>
     <sys:String x:Key="MTDA_ImageSources">图片来源</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">源密钥和测试</sys:String>
+    <sys:String x:Key="MTDA_SourceOriginIntegration">来源库集成</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsTab">游戏库集成</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">使用导入每个游戏的 Playnite 游戏库集成。通过游戏的 PluginId 进行精确匹配。</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">将来源集成用于封面、图标和背景</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">将其元数据用作可信的 AI 上下文</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">在严格模式下使用其事实字段</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDetected">检测到的游戏库集成</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">可在此禁用不希望 Metadata AI 查询的集成。缺失字段会自动使用已配置的备用来源。</sys:String>
+    <sys:String x:Key="MTDA_RefreshOriginIntegrations">刷新集成</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">来自游戏库集成的精确图片</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">备份和还原</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">导出或导入当前 Metadata AI 设置，包括提供商、模板、字段规则、词汇记忆和媒体来源配置。</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">注意：API 密钥和机密会针对当前 Windows 用户加密。在其他账户或电脑上需要重新输入。</sys:String>

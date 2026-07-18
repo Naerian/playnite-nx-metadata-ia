@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Playnite.SDK;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
@@ -16,11 +17,13 @@ namespace MetaDataIAPlugin
     public class MetadataGenerationService
     {
         private readonly MetaDataIASettings settings;
+        private readonly IPlayniteAPI playniteApi;
         private List<OfficialStoreMetadata> officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
-        public MetadataGenerationService(MetaDataIASettings settings)
+        public MetadataGenerationService(MetaDataIASettings settings, IPlayniteAPI playniteApi = null)
         {
             this.settings = settings;
+            this.playniteApi = playniteApi;
         }
 
         public async Task<AiMetadataResult> GenerateAsync(Game game, CancellationToken cancellationToken = default(CancellationToken))
@@ -109,7 +112,7 @@ namespace MetaDataIAPlugin
             try
             {
                 var fallbackSettings = settings.CreateLocalFallbackSettings(provider);
-                return await new MetadataGenerationService(fallbackSettings).GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
+                return await new MetadataGenerationService(fallbackSettings, playniteApi).GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -365,7 +368,10 @@ namespace MetaDataIAPlugin
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
             context["requestedDescriptionTokens"] = ExtractTemplateTokens(settings.ResolveTemplate(game));
-            context["officialStoreContextEnabled"] = settings.UseOfficialStoreContext;
+            var trustedContextEnabled = settings.UseOfficialStoreContext ||
+                                        settings.UseOriginIntegrationAsAiContext ||
+                                        settings.UseOriginIntegrationForFactualMetadata;
+            context["officialStoreContextEnabled"] = trustedContextEnabled;
             officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
             if (!string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
@@ -386,25 +392,41 @@ namespace MetaDataIAPlugin
                 context["existingMetadataMode"] = settings.ExistingMetadataMode;
             }
 
+            if ((settings.UseOriginIntegrationAsAiContext || settings.UseOriginIntegrationForFactualMetadata) && playniteApi != null)
+            {
+                var integrationService = new PlayniteIntegrationService(playniteApi, settings);
+                var integrationResult = await integrationService.GetOriginMetadataAsync(game, cancellationToken).ConfigureAwait(false);
+                var integrationContext = integrationService.ToTrustedContext(integrationResult, game);
+                if (integrationContext != null && integrationContext.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(integrationContext);
+                }
+            }
+
             if (settings.UseOfficialStoreContext)
             {
                 var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
-                officialContextForCurrentRequest = officialContext;
-                if (officialContext.Count > 0)
+                officialContextForCurrentRequest.AddRange(officialContext);
+            }
+
+            if (officialContextForCurrentRequest.Count > 0)
+            {
+                context["officialStoreContext"] = officialContextForCurrentRequest.Select(x => new
                 {
-                    context["officialStoreContext"] = officialContext.Select(x => new
-                    {
-                        source = x.SourceName,
-                        url = x.StoreUrl,
-                        title = x.Title,
-                        description = x.Description,
-                        genres = x.Genres,
-                        features = x.Features,
-                        developers = x.Developers,
-                        publishers = x.Publishers,
-                        ageRating = x.AgeRating
-                    }).ToList();
-                }
+                    source = x.SourceName,
+                    exactMatch = x.IsExactMatch,
+                    url = x.StoreUrl,
+                    title = x.Title,
+                    description = x.Description,
+                    genres = x.Genres,
+                    features = x.Features,
+                    developers = x.Developers,
+                    publishers = x.Publishers,
+                    ageRating = x.AgeRating,
+                    regions = x.Regions,
+                    releaseDate = x.ReleaseDate,
+                    links = x.Links.Select(link => new { name = link.Name, url = link.Url }).ToList()
+                }).ToList();
             }
 
             return "Generate normalized metadata for this game. " +
@@ -1234,7 +1256,9 @@ namespace MetaDataIAPlugin
 
         private void ApplyStrictFactualGuard(AiMetadataResult result, Game game)
         {
-            if (result == null || !settings.UseOfficialStoreContext || !settings.StrictCompanyAgeRegion)
+            if (result == null ||
+                !(settings.UseOfficialStoreContext || settings.UseOriginIntegrationForFactualMetadata) ||
+                !settings.StrictCompanyAgeRegion)
             {
                 return;
             }
@@ -1258,7 +1282,7 @@ namespace MetaDataIAPlugin
                 settings.MaxAgeRatings);
 
             result.Regions = ResolveStrictField(
-                new List<string>(),
+                FirstOfficialList(x => x.Regions),
                 ExistingNames(game == null ? null : game.Regions),
                 settings.ExistingMetadataMode,
                 settings.MaxRegions);
