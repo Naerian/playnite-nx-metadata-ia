@@ -5,9 +5,9 @@
     <sys:String x:Key="MTDA_TabAI">AI</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">模板</sys:String>
     <sys:String x:Key="MTDA_TabMedia">媒体</sys:String>
-    <sys:String x:Key="MTDA_TabImport">进口</sys:String>
+    <sys:String x:Key="MTDA_TabImport">导入</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">维护</sys:String>
-    <sys:String x:Key="MTDA_TabFields">领域</sys:String>
+    <sys:String x:Key="MTDA_TabFields">字段</sys:String>
     <sys:String x:Key="MTDA_TabRules">规则</sys:String>
     <sys:String x:Key="MTDA_OpenAICompatibleProvider">兼容 OpenAI 的 AI 提供商</sys:String>
     <sys:String x:Key="MTDA_AiSectionProvider">提供商和连接</sys:String>
@@ -43,7 +43,7 @@
     <sys:String x:Key="MTDA_ProviderUsageTimedOut">用量查询未在90秒内完成。</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageApiKeyRequired">请先输入提供商 API 密钥。</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">无法获取用量信息 (HTTP {0})。</sys:String>
-    <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
+    <sys:String x:Key="MTDA_Endpoint">端点</sys:String>
     <sys:String x:Key="MTDA_RestoreEndpoint">恢复端点</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API密钥</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">仅当提供商需要时才将其粘贴到此处。对于本地 LM Studio 和 Ollama，这通常是空的。不要将您的 ChatGPT 密钥粘贴到此处：它必须是来自所选提供商的 API 密钥。</sys:String>
@@ -63,7 +63,7 @@
     <sys:String x:Key="MTDA_CurrentMetadataHelp">作为上下文使用，人工智能可以考虑现有数据，而不必复制它。规范化尝试修复和统一当前的元数据。忽略不会将这些详细信息发送给 AI。</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">使用官方来源作为 AI 上下文</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContextHelp">启用后，Metadata AI 会在调用 AI 之前尝试读取 Steam、Xbox Store、PlayStation Store 或 Epic Store 等官方来源。AI 会将这些信息作为事实上下文，然后根据你的模板进行翻译或规范化。</sys:String>
-    <sys:String x:Key="MTDA_StrictCompanyAgeRegion">除非可以合理确定，否则请勿发明公司、年龄分级或地区</sys:String>
+    <sys:String x:Key="MTDA_StrictCompanyAgeRegion">无可靠证据时不创建开发商、发行商、年龄分级或地区</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructions">额外的自定义说明</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructionsHelp">将此用于其他编辑规则：品牌基调、要避免的词语、所需的结构、首选名称或决定细节是否可靠的标准。</sys:String>
     <sys:String x:Key="MTDA_New">新的</sys:String>
@@ -74,7 +74,7 @@
     <sys:String x:Key="MTDA_TemplateName">模板名称</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">您可以在模板中使用 HTML。 Playnite 呈现 &lt;p&gt;、&lt;h3&gt;、&lt;ul&gt;、&lt;li&gt; 和 &lt;br/&gt; 等标签，因此描述不会显得拥挤在一起。</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">可用于描述的标记</sys:String>
-    <sys:String x:Key="MTDA_Token">Token</sys:String>
+    <sys:String x:Key="MTDA_Token">令牌</sys:String>
     <sys:String x:Key="MTDA_Reference">参考</sys:String>
     <sys:String x:Key="MTDA_ImageSources">图片来源</sys:String>
     <sys:String x:Key="MTDA_SourceKeysAndTests">源密钥和测试</sys:String>
@@ -163,14 +163,14 @@
     <sys:String x:Key="MTDA_SpecialFields">特殊领域</sys:String>
     <sys:String x:Key="MTDA_SortingName">排序名称</sys:String>
     <sys:String x:Key="MTDA_Links">链接</sys:String>
-    <sys:String x:Key="MTDA_CompaniesLimitHelp">对于公司来说，建议值为 1：插件尝试仅存储主要开发者/发行商，并避免支持、移植、多人游戏或区域发行工作室。</sys:String>
+    <sys:String x:Key="MTDA_CompaniesLimitHelp">对于公司，推荐值为 1：插件尝试仅存储主要开发商/发行商，避免支持、移植、多玩家或地区发行工作室。</sys:String>
     <sys:String x:Key="MTDA_SortingLinksHelp">排序名称在本地计算：它检测带有 2/3、II/III 或 v2/v3 的续集，并生成诸如基本名称 01、02、03 之类的值。链接尝试使用官方 URL；如果游戏来自 Steam 并具有 AppId，则会可靠地添加商店 URL。</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">标签前缀</sys:String>
     <sys:String x:Key="MTDA_TagPrefixHelp">如果您输入前缀，则会将其添加到每个新标签之前。示例：人工智能：开放世界。</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">类别前缀</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">对插件创建的类别进行分组很有用。示例：元：操作。</sys:String>
     <sys:String x:Key="MTDA_Blacklist">术语黑名​​单</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">术语以逗号、分号或换行符分隔。如果建议包含一项，则在应用之前将其丢弃。</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">输入用逗号、分号或换行分隔的词语或短语。任何生成的标签、类型、特性、分类、开发商、发行商、年龄分级或地区包含这些词汇的都会在应用前被丢弃。用于屏蔽模糊、不需要、重复或翻译错误的词汇。</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">启用自动模板规则</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">如果禁用，插件将始终使用“模板”选项卡中选定的模板。如果启用，源、平台或类型规则可以自动替换它。</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">按游戏类型划分的模板规则</sys:String>
@@ -179,64 +179,64 @@
     <sys:String x:Key="MTDA_PlatformRulesHelp">用于根据游戏平台选择模板。它优先于游戏类型规则。格式：平台=模板名称。示例：任天堂 Switch=短。对于较短的手持设备描述、更具技术性的 PC 文本或特殊仿真模板非常有用。</sys:String>
     <sys:String x:Key="MTDA_SourceRules">按来源划分的规则</sys:String>
     <sys:String x:Key="MTDA_SourceRulesHelp">用于根据导入游戏的源或库选择模板，例如 Steam、GOG、Epic、Xbox、PlayStation 或自定义源。它优先于平台和类型。格式：来源=模板名称。示例：蒸汽=长。</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateReview">生成并审查 AI 元数据</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateApply">生成并应用 AI 元数据</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateReview">在 Playnite 编辑器中生成并预览</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateApply">生成并应用配置的元数据</sys:String>
     <sys:String x:Key="MTDA_MenuApplyAllList">适用于列表中的所有游戏</sys:String>
     <sys:String x:Key="MTDA_MenuApplySelected">适用于选定的游戏</sys:String>
-    <sys:String x:Key="MTDA_MenuSetDescriptions">设置描述</sys:String>
-    <sys:String x:Key="MTDA_MenuSetTags">设置标签</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCategories">设置类别</sys:String>
-    <sys:String x:Key="MTDA_MenuSetGenres">设置流派</sys:String>
-    <sys:String x:Key="MTDA_MenuSetFeatures">设置功能</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCompanies">设定公司</sys:String>
-    <sys:String x:Key="MTDA_MenuSetAgeRegion">设置年龄和地区</sys:String>
-    <sys:String x:Key="MTDA_MenuSetLinks">设置链接</sys:String>
-    <sys:String x:Key="MTDA_MenuSetSortingName">设置排序名称</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCover">设置封面</sys:String>
-    <sys:String x:Key="MTDA_MenuSetIcon">设置图标</sys:String>
-    <sys:String x:Key="MTDA_MenuSetBackground">设置背景</sys:String>
-    <sys:String x:Key="MTDA_MenuSetFullMedia">设置完整媒体</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCovers">设置封面</sys:String>
-    <sys:String x:Key="MTDA_MenuSetIcons">设置图标</sys:String>
-    <sys:String x:Key="MTDA_MenuSetBackgrounds">设置背景</sys:String>
-    <sys:String x:Key="MTDA_ApplyMedia">Apply media</sys:String>
-    <sys:String x:Key="MTDA_ConfirmApplyScope">Metadata AI will be applied to {0} game(s) from {1}.
+    <sys:String x:Key="MTDA_MenuSetDescriptions">生成描述</sys:String>
+    <sys:String x:Key="MTDA_MenuSetTags">生成标签</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCategories">生成分类</sys:String>
+    <sys:String x:Key="MTDA_MenuSetGenres">生成类型</sys:String>
+    <sys:String x:Key="MTDA_MenuSetFeatures">生成特性</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCompanies">生成开发商和发行商</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAgeRegion">生成年龄评级和地区</sys:String>
+    <sys:String x:Key="MTDA_MenuSetLinks">生成链接</sys:String>
+    <sys:String x:Key="MTDA_MenuSetSortingName">生成排序名称</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCover">查找封面</sys:String>
+    <sys:String x:Key="MTDA_MenuSetIcon">查找图标</sys:String>
+    <sys:String x:Key="MTDA_MenuSetBackground">查找背景</sys:String>
+    <sys:String x:Key="MTDA_MenuSetFullMedia">查找所有媒体</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCovers">查找封面</sys:String>
+    <sys:String x:Key="MTDA_MenuSetIcons">查找图标</sys:String>
+    <sys:String x:Key="MTDA_MenuSetBackgrounds">查找背景</sys:String>
+    <sys:String x:Key="MTDA_ApplyMedia">应用媒体</sys:String>
+    <sys:String x:Key="MTDA_ConfirmApplyScope">Metadata AI 将应用于来自 {1} 的 {0} 个游戏。
 
-This may take a while and consume usage from the configured API. Do you want to continue?</sys:String>
-    <sys:String x:Key="MTDA_ErrorAiNoUsefulContent">The AI provider did not return useful content.</sys:String>
-    <sys:String x:Key="MTDA_ErrorAiNoUsefulText">The AI provider did not return useful text.</sys:String>
-    <sys:String x:Key="MTDA_ErrorAiResponseNotParsed">The AI response could not be interpreted.</sys:String>
-    <sys:String x:Key="MTDA_ErrorConfigureBeforeGenerate">Configure the endpoint, model and API key for Metadata AI before generating metadata.</sys:String>
-    <sys:String x:Key="MTDA_ErrorLocalFallbackUnavailable">Metadata AI tried to use the free local fallback, but no local provider was available.
+这可能需要一些时间并消耗配置的 API 使用额度。是否继续？</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiNoUsefulContent">AI 提供者未返回有用内容。</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiNoUsefulText">AI 提供者未返回有用文本。</sys:String>
+    <sys:String x:Key="MTDA_ErrorAiResponseNotParsed">无法解析 AI 响应。</sys:String>
+    <sys:String x:Key="MTDA_ErrorConfigureBeforeGenerate">生成元数据前请先配置 Metadata AI 的端点、模型和 API 密钥。</sys:String>
+    <sys:String x:Key="MTDA_ErrorLocalFallbackUnavailable">Metadata AI 尝试使用免费本地备用，但没有可用的本地提供者。
 
-Check that LM Studio has the local server active at http://localhost:1234 or that Ollama is running at http://localhost:11434.
+请检查 LM Studio 是否在 http://localhost:1234 启动本地服务器，或 Ollama 是否在 http://localhost:11434 运行。
 
-Fallback errors:
+备用错误：
 {0}</sys:String>
-    <sys:String x:Key="MTDA_ErrorMalformedAiJson">The AI returned a response with an invalid format and it could not be interpreted.
+    <sys:String x:Key="MTDA_ErrorMalformedAiJson">AI 返回了格式无效的响应，无法解析。
 
-The plugin will continue with the rest of the games. You can retry this game, reduce text length, or switch to a model that follows JSON more reliably.
+插件将继续处理其他游戏。您可以重试此游戏，减少文本长度，或切换到更可靠遵循 JSON 格式的模型。
 
-Brief detail: </sys:String>
-    <sys:String x:Key="MTDA_ErrorMediaProviderNotConfigured">Metadata AI media is not configured. Open the plugin settings and configure at least one usable media source.</sys:String>
-    <sys:String x:Key="MTDA_ErrorMediaWithoutUrl">The media source returned an image without a usable URL.</sys:String>
-    <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Metadata AI is not configured. Open the plugin settings and set endpoint, model and API key.</sys:String>
-    <sys:String x:Key="MTDA_ErrorNoImagesFound">No images were found for this game in the configured media sources.</sys:String>
-    <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">No media candidate could be downloaded.</sys:String>
+简要详情：</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaProviderNotConfigured">Metadata AI 媒体未配置。请打开插件设置并配置至少一个可用的媒体来源。</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaWithoutUrl">媒体来源返回了无可用 URL 的图片。</sys:String>
+    <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">Metadata AI 未配置。请打开插件设置并设置端点、模型和 API 密钥。</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoImagesFound">在配置的媒体来源中未找到此游戏的图片。</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">未能下载任何媒体候选项。</sys:String>
     <sys:String x:Key="MTDA_ErrorMediaUnavailable">此图片已无法从来源获取。请重新打开媒体选择器并选择其他图片。</sys:String>
-    <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">No media candidates were found for this game in the configured sources.</sys:String>
-    <sys:String x:Key="MTDA_ErrorNoMediaSources">There are no configured or available media sources.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
+    <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">在配置的来源中未找到此游戏的媒体候选项。</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoMediaSources">没有配置或可用的媒体来源。</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderAuth">AI 提供者未通过身份验证。
 
-Check the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderConnection">Could not connect to the configured provider.
+请检查 API 密钥、端点和配置的模型。如果使用本地 LM Studio 或 Ollama，API 密钥通常可以为空。</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderConnection">无法连接到配置的提供者。
 
-Check that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.
+请检查端点是否正确，且提供者是否存在。如果使用 LM Studio 或 Ollama，请确保应用已打开，本地服务器已激活，且模型已加载或下载。
 
-Brief detail: </sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderGeneric">The AI provider returned an error ({0}).
+简要详情：</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderGeneric">AI 提供者返回错误（{0}）。
 
-Check the configured provider, endpoint, model and API key. If the problem continues, try another model or a local provider.</sys:String>
+请检查配置的提供者、端点、模型和 API 密钥。如果问题持续，尝试其他模型或本地提供者。</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderModelNotFound">The configured provider or model does not exist, or is not available for your account.
 
 Check that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.
@@ -245,182 +245,182 @@ Examples:
 - Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
 - Ollama: the name shown by &amp;apos;ollama list&amp;apos;
 - LM Studio: the model loaded in the local server</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderQuota">Your AI provider rejected the request because the account has no available quota.
+    <sys:String x:Key="MTDA_ErrorProviderQuota">您的 AI 提供者拒绝请求，账户无可用配额。
 
-With OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.
+对于 OpenAI，通常表示无有效 API 余额或已达月度限制。
 
-Free options:
-- Use a local OpenAI-compatible provider such as LM Studio or Ollama and change the endpoint in the plugin settings.
-- Process fewer games and fewer generated fields, although this will not help if the quota is zero.
-- Use a small local model for metadata and keep cloud AI only for occasional cases.
+免费选项：
+- 使用本地兼容 OpenAI 的提供者，如 LM Studio 或 Ollama，并在插件设置中更改端点。
+- 减少处理的游戏数量和生成字段，尽管配额为零时无效。
+- 使用小型本地模型生成元数据，仅偶尔使用云端 AI。
 
-Local endpoint examples:
+本地端点示例：
 LM Studio: http://localhost:1234/v1/chat/completions
 Ollama: http://localhost:11434/v1/chat/completions
 
-For local providers, the API key can be empty.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderRateLimit">The AI provider has temporarily limited requests.
+本地提供者 API 密钥可为空。</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderRateLimit">AI 提供者暂时限制了请求。
 
-Try waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderTechnical">The provider returned a technical error. Check the configuration or try another model.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderUnavailable">The AI provider is overloaded or the selected model is temporarily unavailable.
+请等待几分钟，减少一次处理的游戏数量，或使用限制较少的模型/本地端点。</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderTechnical">提供者返回技术错误。请检查配置或尝试其他模型。</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderUnavailable">AI 提供者过载或所选模型暂时不可用。
 
-If you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.
+使用 Gemini 时，即使拥有 Gemini Pro/Google AI Pro 订阅，API 仍有独立限制和可用性。
 
-What you can do without paying:
-- Wait a few minutes and try again.
-- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.
-- Process fewer games at once.
-- Use LM Studio or Ollama locally if you want to avoid external quotas.</sys:String>
-    <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure the SteamGridDB API key in the Media tab before downloading images.</sys:String>
-    <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
-    <sys:String x:Key="MTDA_ErrorUnspecified">Unspecified error.</sys:String>
-    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences.</sys:String>
-    <sys:String x:Key="MTDA_MediaInfoOfficial">Official</sys:String>
-    <sys:String x:Key="MTDA_MediaInfoScore">Score</sys:String>
-    <sys:String x:Key="MTDA_MediaInfoSize">Size</sys:String>
-    <sys:String x:Key="MTDA_MediaInfoStyle">Style</sys:String>
-    <sys:String x:Key="MTDA_MediaPickerTitle">Choose media</sys:String>
-    <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI applied {0} media file(s).</sys:String>
-    <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI updated {0} game(s). Errors: {1}</sys:String>
-    <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI updated media for {0} game(s). Applied files: {1}.</sys:String>
-    <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI updated {0} game(s).</sys:String>
-    <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">There are no candidates for this media type.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesCurrentList">There are no games in the current list.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesMedia">There are no games to apply media to.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesMetadata">There are no games to apply Metadata AI to.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesSortingName">There are no games to apply sorting names to.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoMediaTypesEnabled">No media type is enabled in the selected configuration.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoSelectedGames">No games are selected.</sys:String>
-    <sys:String x:Key="MTDA_MessageSelectMediaBeforeApply">Select at least one media item before applying changes.</sys:String>
-    <sys:String x:Key="MTDA_MessageSortingNameUpdated">Metadata AI updated sorting names for {0} game(s).</sys:String>
-    <sys:String x:Key="MTDA_NoCommunity">No / community</sys:String>
-    <sys:String x:Key="MTDA_NotSpecified">Not specified</sys:String>
-    <sys:String x:Key="MTDA_OptionApplyAppend">Append without deleting</sys:String>
-    <sys:String x:Key="MTDA_OptionApplyEmptyOnly">Only if empty</sys:String>
-    <sys:String x:Key="MTDA_OptionApplyOverwrite">Overwrite</sys:String>
-    <sys:String x:Key="MTDA_OptionApplySkip">Do not touch</sys:String>
-    <sys:String x:Key="MTDA_OptionBackground4K">Fullscreen 4K (3840x2160)</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundFullHd">Fullscreen Full HD (1920x1080)</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundLogoAny">Any</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">Prefer without logo</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundLogoWithLogo">Prefer with logo</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundQhd">Fullscreen QHD (2560x1440)</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundSteamHero">Steam hero (3840x1240)</sys:String>
-    <sys:String x:Key="MTDA_OptionBackgroundSteamHeroSmall">Light Steam hero (1920x620)</sys:String>
-    <sys:String x:Key="MTDA_OptionCoverHorizontal">Horizontal/banner (920x430)</sys:String>
+无需付费可尝试：
+- 等待几分钟后重试。
+- 如果使用 Pro 模型，切换到 gemini-2.5-flash 或 gemini-2.5-flash-lite。
+- 减少一次处理的游戏数量。
+- 若想避免外部配额，使用本地 LM Studio 或 Ollama。</sys:String>
+    <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">下载图片前请在媒体标签页配置 SteamGridDB API 密钥。</sys:String>
+    <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB 无法返回图片（{0}）。请检查 API 密钥或稍后重试。</sys:String>
+    <sys:String x:Key="MTDA_ErrorUnspecified">未指定错误。</sys:String>
+    <sys:String x:Key="MTDA_MediaHelp">插件结合多种媒体来源：官方 Steam、PlayStation Store、Xbox Store、Epic Store（可用时）、配置了 API 密钥的 SteamGridDB 社区资源，以及启用时的 RAWG、MobyGames 和 IGDB。自动模式优先官方资源，然后应用格式、评分和筛选偏好。</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoOfficial">官方</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoScore">评分</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoSize">大小</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoStyle">风格</sys:String>
+    <sys:String x:Key="MTDA_MediaPickerTitle">选择媒体</sys:String>
+    <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI 应用了 {0} 个媒体文件。</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI 更新了 {0} 个游戏。错误：{1}</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI 更新了 {0} 个游戏的媒体。应用的文件数：{1}。</sys:String>
+    <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI 更新了 {0} 个游戏。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">此媒体类型没有候选项。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesCurrentList">当前列表中没有游戏。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesMedia">没有游戏可应用媒体。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesMetadata">没有游戏可应用 Metadata AI。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesSortingName">没有游戏可应用排序名称。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoMediaTypesEnabled">所选配置中未启用任何媒体类型。</sys:String>
+    <sys:String x:Key="MTDA_MessageNoSelectedGames">未选择任何游戏。</sys:String>
+    <sys:String x:Key="MTDA_MessageSelectMediaBeforeApply">应用更改前请至少选择一个媒体项。</sys:String>
+    <sys:String x:Key="MTDA_MessageSortingNameUpdated">Metadata AI 更新了 {0} 个游戏的排序名称。</sys:String>
+    <sys:String x:Key="MTDA_NoCommunity">无 / 社区</sys:String>
+    <sys:String x:Key="MTDA_NotSpecified">未指定</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyAppend">追加不删除</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyEmptyOnly">仅当为空时</sys:String>
+    <sys:String x:Key="MTDA_OptionApplyOverwrite">覆盖</sys:String>
+    <sys:String x:Key="MTDA_OptionApplySkip">不修改</sys:String>
+    <sys:String x:Key="MTDA_OptionBackground4K">全屏 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundFullHd">全屏全高清 (1920x1080)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoAny">任意</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">优先无标志</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundLogoWithLogo">优先有标志</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundQhd">全屏QHD (2560x1440)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundSteamHero">Steam英雄图 (3840x1240)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundSteamHeroSmall">轻量Steam英雄图 (1920x620)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverHorizontal">横向/横幅 (920x430)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverPlayniteDefined">由 Playnite 定义</sys:String>
-    <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite vertical (600x900)</sys:String>
-    <sys:String x:Key="MTDA_OptionCoverSquare">Playnite square (600x600)</sys:String>
-    <sys:String x:Key="MTDA_OptionIconCircle">Circle 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">Original/transparent</sys:String>
-    <sys:String x:Key="MTDA_OptionIconRounded">Rounded 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconSquare">Square 256</sys:String>
-    <sys:String x:Key="MTDA_OptionLengthExtraLong">Extra long</sys:String>
-    <sys:String x:Key="MTDA_OptionLengthLong">Long</sys:String>
-    <sys:String x:Key="MTDA_OptionLengthMedium">Medium</sys:String>
-    <sys:String x:Key="MTDA_OptionLengthShort">Short</sys:String>
-    <sys:String x:Key="MTDA_OptionMediaMultipleSources">Multiple sources</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite竖版 (600x900)</sys:String>
+    <sys:String x:Key="MTDA_OptionCoverSquare">Playnite方形 (600x600)</sys:String>
+    <sys:String x:Key="MTDA_OptionIconCircle">圆形 256</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">原始/透明</sys:String>
+    <sys:String x:Key="MTDA_OptionIconRounded">圆角 256</sys:String>
+    <sys:String x:Key="MTDA_OptionIconSquare">方形 256</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthExtraLong">超长</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthLong">长</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthMedium">中等</sys:String>
+    <sys:String x:Key="MTDA_OptionLengthShort">短</sys:String>
+    <sys:String x:Key="MTDA_OptionMediaMultipleSources">多来源</sys:String>
     <sys:String x:Key="MTDA_OptionMediaSteamGridDb">SteamGridDB</sys:String>
-    <sys:String x:Key="MTDA_OptionMetadataContext">Use as context</sys:String>
-    <sys:String x:Key="MTDA_OptionMetadataIgnore">Ignore</sys:String>
-    <sys:String x:Key="MTDA_OptionMetadataNormalize">Normalize</sys:String>
-    <sys:String x:Key="MTDA_OptionOriginal">Original</sys:String>
-    <sys:String x:Key="MTDA_OptionToneBrief">Brief</sys:String>
-    <sys:String x:Key="MTDA_OptionToneCritical">Critical</sys:String>
-    <sys:String x:Key="MTDA_OptionToneEncyclopedic">Encyclopedic</sys:String>
-    <sys:String x:Key="MTDA_OptionToneEnthusiastic">Enthusiastic</sys:String>
-    <sys:String x:Key="MTDA_OptionToneFamily">Family-friendly</sys:String>
-    <sys:String x:Key="MTDA_OptionToneGamer">Gamer</sys:String>
-    <sys:String x:Key="MTDA_OptionToneNeutral">Neutral</sys:String>
-    <sys:String x:Key="MTDA_OptionToneRetro">Retro</sys:String>
-    <sys:String x:Key="MTDA_OptionToneStore">Store</sys:String>
-    <sys:String x:Key="MTDA_OptionToneTechnical">Technical</sys:String>
-    <sys:String x:Key="MTDA_ProgressApplyingMediaKind">Applying {0}...</sys:String>
-    <sys:String x:Key="MTDA_ProgressDownloadingMedia">Downloading media: </sys:String>
-    <sys:String x:Key="MTDA_ProgressGeneratingMetadata">Generating AI metadata...</sys:String>
-    <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">Generating AI metadata: </sys:String>
-    <sys:String x:Key="MTDA_ProgressSearchingMediaKind">Searching for {0} in media sources...</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingClaude">Claude API usually requires its own billing; having Claude Pro on the web does not mean you have API credit.</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingCustom">Check the provider terms before processing large libraries.</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingFreeQuota">It may work without paying if you choose a free model/quota, but if you hit limits or high demand you will need to wait, switch to a more available model, or enable billing depending on the provider.</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingLocal">Recommended option if you do not want to pay: the cost is your own hardware. Speed and quality depend on the model and your PC.</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingOpenAI">Signing in with ChatGPT Plus is not enough for this plugin: you need an OpenAI Platform API key and API billing/credit. Plus only gives benefits inside ChatGPT.</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataContext">用作上下文</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataIgnore">忽略</sys:String>
+    <sys:String x:Key="MTDA_OptionMetadataNormalize">标准化</sys:String>
+    <sys:String x:Key="MTDA_OptionOriginal">原始</sys:String>
+    <sys:String x:Key="MTDA_OptionToneBrief">简洁</sys:String>
+    <sys:String x:Key="MTDA_OptionToneCritical">批判性</sys:String>
+    <sys:String x:Key="MTDA_OptionToneEncyclopedic">百科全书式</sys:String>
+    <sys:String x:Key="MTDA_OptionToneEnthusiastic">热情</sys:String>
+    <sys:String x:Key="MTDA_OptionToneFamily">适合家庭</sys:String>
+    <sys:String x:Key="MTDA_OptionToneGamer">玩家风格</sys:String>
+    <sys:String x:Key="MTDA_OptionToneNeutral">中性</sys:String>
+    <sys:String x:Key="MTDA_OptionToneRetro">复古</sys:String>
+    <sys:String x:Key="MTDA_OptionToneStore">商店风格</sys:String>
+    <sys:String x:Key="MTDA_OptionToneTechnical">技术性</sys:String>
+    <sys:String x:Key="MTDA_ProgressApplyingMediaKind">应用 {0} 中...</sys:String>
+    <sys:String x:Key="MTDA_ProgressDownloadingMedia">正在下载媒体：</sys:String>
+    <sys:String x:Key="MTDA_ProgressGeneratingMetadata">正在生成 AI 元数据...</sys:String>
+    <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">正在生成 AI 元数据：</sys:String>
+    <sys:String x:Key="MTDA_ProgressSearchingMediaKind">正在媒体源中搜索 {0}...</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingClaude">Claude API 通常需要单独计费；拥有 Claude Pro 网页版并不代表你有 API 使用额度。</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingCustom">处理大型库前请先查看提供商条款。</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingFreeQuota">选择免费模型/额度可能无需付费，但遇到限制或高需求时需等待、切换更可用模型或根据提供商启用计费。</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingLocal">如果不想付费，推荐此选项：成本是你的硬件。速度和质量取决于模型和你的电脑。</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingOpenAI">仅登录 ChatGPT Plus 不足以使用此插件：你需要 OpenAI 平台 API 密钥和 API 计费/额度。Plus 仅在 ChatGPT 内提供额外功能。</sys:String>
     <sys:String x:Key="MTDA_ProviderClaude">Claude Anthropic</sys:String>
-    <sys:String x:Key="MTDA_ProviderCustom">Custom OpenAI-compatible</sys:String>
+    <sys:String x:Key="MTDA_ProviderCustom">自定义 OpenAI 兼容</sys:String>
     <sys:String x:Key="MTDA_ProviderGemini">Google Gemini</sys:String>
     <sys:String x:Key="MTDA_ProviderGroq">Groq</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpClaude">Claude Anthropic: create the key in Anthropic Console. The claude.ai subscription and the API are separate products.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpCustom">Custom provider: use the URL, model, and API key specified by that OpenAI-compatible provider.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpGemini">Google Gemini: create the key in Google AI Studio. Gemini Pro/Google AI Pro in the app does not automatically increase API quota or availability; the API has its own tiers and limits.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpGroq">Groq: create the key in GroqCloud Console. It usually offers a free start with usage limits.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio local: no API key is needed. Open LM Studio, load a model, and enable the local server in the Developer tab.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpClaude">Claude Anthropic：在 Anthropic 控制台创建密钥。claude.ai 订阅和 API 是独立产品。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCustom">自定义提供商：使用该 OpenAI 兼容提供商指定的 URL、模型和 API 密钥。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGemini">Google Gemini：在 Google AI Studio 创建密钥。应用内的 Gemini Pro/Google AI Pro 不自动增加 API 配额或可用性；API 有独立等级和限制。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGroq">Groq：在 GroqCloud 控制台创建密钥。通常提供带使用限制的免费起步。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio 本地：无需 API 密钥。打开 LM Studio，加载模型，并在开发者选项卡启用本地服务器。</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpOllama">Ollama local: no API key is needed. Install Ollama, download a model with &amp;apos;ollama pull&amp;apos;, and keep the local service running.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpOpenRouter">OpenRouter: create the key in OpenRouter. You can choose free models if the model ends in :free or appears as Free, but they have limits and variable availability.</sys:String>
-    <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio local</sys:String>
-    <sys:String x:Key="MTDA_ProviderOllama">Ollama local</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI：在 platform.openai.com/api-keys 创建密钥。ChatGPT Plus/Pro 不包含 API 使用权限；API 使用在 OpenAI 平台单独计费。</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenRouter">OpenRouter：在 OpenRouter 创建密钥。可选择以 :free 结尾或显示为 Free 的免费模型，但它们有使用限制且可用性不稳定。</sys:String>
+    <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio 本地</sys:String>
+    <sys:String x:Key="MTDA_ProviderOllama">Ollama 本地</sys:String>
     <sys:String x:Key="MTDA_ProviderOpenAI">OpenAI</sys:String>
     <sys:String x:Key="MTDA_ProviderOpenRouter">OpenRouter</sys:String>
-    <sys:String x:Key="MTDA_ScopeAllGamesInList">all games in the list</sys:String>
-    <sys:String x:Key="MTDA_Select">Select</sys:String>
-    <sys:String x:Key="MTDA_Selected">Selected</sys:String>
-    <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria.</sys:String>
-    <sys:String x:Key="MTDA_TestMediaSuccess">{0} is responding correctly.
+    <sys:String x:Key="MTDA_ScopeAllGamesInList">列表中的所有游戏</sys:String>
+    <sys:String x:Key="MTDA_Select">选择</sys:String>
+    <sys:String x:Key="MTDA_Selected">已选择</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} 有响应，但未为测试游戏 ({1}) 返回候选项。连接似乎正常，但此来源未找到符合当前条件的有效媒体。</sys:String>
+    <sys:String x:Key="MTDA_TestMediaSuccess">{0} 响应正常。
 
-Test game: {1}
-Covers: {2}
-Icons: {3}
-Backgrounds: {4}</sys:String>
-    <sys:String x:Key="MTDA_TestProviderInstruction">Connection test: answer with the minimum possible text.</sys:String>
-    <sys:String x:Key="MTDA_TestProviderSuccess">The provider is responding correctly.</sys:String>
-    <sys:String x:Key="MTDA_TokenAgeRatingsHelp">Age ratings.</sys:String>
-    <sys:String x:Key="MTDA_TokenCategoriesHelp">Generated categories.</sys:String>
-    <sys:String x:Key="MTDA_TokenDevelopersHelp">Developers.</sys:String>
-    <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Estimated length when it can be inferred.</sys:String>
-    <sys:String x:Key="MTDA_TokenFeaturesHelp">Main feature list.</sys:String>
-    <sys:String x:Key="MTDA_TokenGameplayHelp">How it plays and the main gameplay loop.</sys:String>
-    <sys:String x:Key="MTDA_TokenGenresHelp">Generated genres.</sys:String>
-    <sys:String x:Key="MTDA_TokenNotesHelp">Additional editorial notes.</sys:String>
-    <sys:String x:Key="MTDA_TokenPerspectiveHelp">Perspective/camera or main view.</sys:String>
-    <sys:String x:Key="MTDA_TokenPlayModesHelp">Known play modes.</sys:String>
-    <sys:String x:Key="MTDA_TokenPremiseHelp">Narrative premise or main concept.</sys:String>
-    <sys:String x:Key="MTDA_TokenPublishersHelp">Publishers/companies.</sys:String>
-    <sys:String x:Key="MTDA_TokenRecommendedForHelp">Type of player who may enjoy it.</sys:String>
-    <sys:String x:Key="MTDA_TokenRegionsHelp">Regions.</sys:String>
-    <sys:String x:Key="MTDA_TokenSettingHelp">Setting or world.</sys:String>
-    <sys:String x:Key="MTDA_TokenShortHelp">Brief game summary.</sys:String>
-    <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Similar games or useful references.</sys:String>
-    <sys:String x:Key="MTDA_TokenSynopsisHelp">General synopsis.</sys:String>
-    <sys:String x:Key="MTDA_TokenTagsHelp">Generated tags.</sys:String>
-    <sys:String x:Key="MTDA_TokenToneHelp">Tone: serious, humorous, dark, relaxed, etc.</sys:String>
-    <sys:String x:Key="MTDA_Unknown">Unknown</sys:String>
-    <sys:String x:Key="MTDA_Yes">Yes</sys:String>
+测试游戏：{1}
+封面：{2}
+图标：{3}
+背景：{4}</sys:String>
+    <sys:String x:Key="MTDA_TestProviderInstruction">连接测试：请用最简短的文本回复。</sys:String>
+    <sys:String x:Key="MTDA_TestProviderSuccess">提供者响应正常。</sys:String>
+    <sys:String x:Key="MTDA_TokenAgeRatingsHelp">年龄分级。</sys:String>
+    <sys:String x:Key="MTDA_TokenCategoriesHelp">生成的类别。</sys:String>
+    <sys:String x:Key="MTDA_TokenDevelopersHelp">开发者。</sys:String>
+    <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">可推断时的预计时长。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeaturesHelp">主要功能列表。</sys:String>
+    <sys:String x:Key="MTDA_TokenGameplayHelp">玩法及主要游戏循环。</sys:String>
+    <sys:String x:Key="MTDA_TokenGenresHelp">生成的类型。</sys:String>
+    <sys:String x:Key="MTDA_TokenNotesHelp">额外编辑备注。</sys:String>
+    <sys:String x:Key="MTDA_TokenPerspectiveHelp">视角/摄像机或主要视图。</sys:String>
+    <sys:String x:Key="MTDA_TokenPlayModesHelp">已知的游戏模式。</sys:String>
+    <sys:String x:Key="MTDA_TokenPremiseHelp">叙事前提或主要概念。</sys:String>
+    <sys:String x:Key="MTDA_TokenPublishersHelp">发行商/公司。</sys:String>
+    <sys:String x:Key="MTDA_TokenRecommendedForHelp">可能喜欢此游戏的玩家类型。</sys:String>
+    <sys:String x:Key="MTDA_TokenRegionsHelp">地区。</sys:String>
+    <sys:String x:Key="MTDA_TokenSettingHelp">设定或世界背景。</sys:String>
+    <sys:String x:Key="MTDA_TokenShortHelp">简短的游戏简介。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGamesHelp">类似游戏或有用的参考。</sys:String>
+    <sys:String x:Key="MTDA_TokenSynopsisHelp">总体简介。</sys:String>
+    <sys:String x:Key="MTDA_TokenTagsHelp">生成的标签。</sys:String>
+    <sys:String x:Key="MTDA_TokenToneHelp">语气：严肃、幽默、黑暗、轻松等。</sys:String>
+    <sys:String x:Key="MTDA_Unknown">未知</sys:String>
+    <sys:String x:Key="MTDA_Yes">是</sys:String>
     <sys:String x:Key="MTDA_TemplateShort">短版</sys:String>
     <sys:String x:Key="MTDA_TemplateMedium">中等</sys:String>
     <sys:String x:Key="MTDA_TemplateLong">长版</sys:String>
-    <sys:String x:Key="MTDA_TemplateRpg">RPG</sys:String>
+    <sys:String x:Key="MTDA_TemplateRpg">角色扮演</sys:String>
     <sys:String x:Key="MTDA_TemplateAdventure">冒险</sys:String>
     <sys:String x:Key="MTDA_TemplateIndie">独立游戏</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">模拟器</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">加载更多（剩余 {0}）</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">高级模式</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
-    <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
-    <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemory">本地词汇记忆</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">从应用的元数据中学习的首选可重用术语。格式：language.field=value; value。例如：es.tags=Disparos; Cooperativo。编辑它以合并变体或强制使用您偏好的措辞。</sys:String>
+    <sys:String x:Key="MTDA_OpenInBrowser">在浏览器中打开</sys:String>
+    <sys:String x:Key="MTDA_Discard">放弃</sys:String>
     <sys:String x:Key="MTDA_Cancel">取消</sys:String>
     <sys:String x:Key="MTDA_Configure">配置</sys:String>
     <sys:String x:Key="MTDA_SourcePriority">来源优先级</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityShort">来源</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityHelp">当自动媒体模式找到多个有效候选项时，控制优先使用哪个来源。已禁用或没有 API Key 的来源会被忽略。</sys:String>
-    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">配置来源优先级</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">{0} 来源优先级</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityDialogHelp">启用此媒体类型要使用的来源，并使用箭头调整顺序。</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">请至少选择一个来源。</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityAccepted">来源优先级已更新。</sys:String>
     <sys:String x:Key="MTDA_Save">保存</sys:String>
     <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI 已取消。停止前已更新 {0} 个游戏。</sys:String>
-    <sys:String x:Key="MTDA_MessageMediaCancelled">媒体搜索已取消。停止前已更新 {0} 个游戏。</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI 取消了媒体操作。处理的游戏数：{0}。应用的文件数：{1}。</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} 没有为测试游戏 ({1}) 返回媒体候选项。Epic Store 是辅助来源，可能会阻止自动读取。</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} 已响应，但没有为测试游戏 ({1}) 返回可用媒体。Microsoft Store 搜索可能受市场区域影响。</sys:String>
     <sys:String x:Key="MTDA_MediaDiagnosticsTitle">来源诊断：</sys:String>
@@ -468,4 +468,145 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutSupportTitle">支持开发</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">如果 Metadata AI 对你有帮助，可以通过 Ko-fi 支持后续开发。</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">在 Ko-fi 上支持</sys:String>
+    <sys:String x:Key="MTDA_FieldBehaviorTitle">字段生成与应用规则</sys:String>
+    <sys:String x:Key="MTDA_FieldBehaviorHelp">选择 Metadata AI 可生成的字段、每个结果的应用方式，以及列表字段允许的最大值数量。</sys:String>
+    <sys:String x:Key="MTDA_Maximum">最大值</sys:String>
+    <sys:String x:Key="MTDA_UseExistingPlayniteValues">使用 Playnite 现有值</sys:String>
+    <sys:String x:Key="MTDA_UseExistingPlayniteValuesHelp">• 使用 Playnite 值意味着启用后，Metadata AI 只能选择该字段在 Playnite 数据库中已存在的值，避免生成措辞不同但几乎相同的标签、类型、特性或分类。</sys:String>
+    <sys:String x:Key="MTDA_FieldAccuracyNotesTitle">准确性说明</sys:String>
+    <sys:String x:Key="MTDA_DeveloperPublisherAccuracyNote">• 开发商和发行商：最大值为 1 时仅保留主要署名的开发商或发行商。更高限制可能在有可靠证据时包含额外署名的合作者。</sys:String>
+    <sys:String x:Key="MTDA_SortingNameAccuracyNote">• 排序名称：本地计算续作编号（如 2/3、II/III 或 v2/v3），生成稳定的系列顺序，如基础名称 01、02、03。</sys:String>
+    <sys:String x:Key="MTDA_PrefixesTitle">创建值的前缀</sys:String>
+    <sys:String x:Key="MTDA_BlacklistTitle">排除词汇</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceSetupTitle">首次设置</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceSetupHelp">重新打开引导助手以选择安全的配置文件、提供者、语言和启用的字段。完成时不会修改游戏。</sys:String>
+    <sys:String x:Key="MTDA_OpenSetupWizard">打开设置助手</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceHistoryTitle">更改历史和恢复</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceHistoryHelp">查看最近20次Metadata AI操作、其来源和受影响字段，或恢复操作到之前状态。</sys:String>
+    <sys:String x:Key="MTDA_OpenHistory">打开更改历史</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardTitle">Metadata AI设置助手</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardStep">第 {0} 步，共4步</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSkip">暂时跳过</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardBack">返回</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardNext">下一步</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFinish">保存配置</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardPurposeTitle">选择语言和安全的起点</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardPurposeHelp">助手仅准备配置，完成后不会修改任何游戏。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProfile">配置方案</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileBalanced">平衡且安全（推荐）</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileMissing">仅填写缺失的元数据</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileNormalize">规范现有库</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileMedia">仅媒体</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileCurrent">保持当前配置</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProfileHelp">您可以稍后微调每个字段。现有安装不会自动重置。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderTitle">配置 AI 提供商</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderHelp">本地提供商如 LM Studio 和 Ollama 可无需付费 API。若所选提供商不需 API 密钥，可留空。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderAdvancedHelp">端点会自动选择。自定义端点可在 AI 选项卡的高级模式中使用。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderTestSuccess">提供商测试成功完成。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFieldsTitle">选择 Metadata AI 可更改的内容</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFieldsHelp">这些开关控制生成。配置方案选择的应用规则决定是否保留、追加或替换现有值。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSummaryTitle">检查配置</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardEnabledFields">启用字段</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSummaryHelp">保存仅更改插件配置。使用 Metadata AI 菜单中的模拟更改功能，先检查真实游戏再应用。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardDesktopOnly">设置助手仅在桌面模式可用。您当前的设置保持不变。</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSaved">Metadata AI 配置已保存，未修改任何游戏。</sys:String>
+    <sys:String x:Key="MTDA_MenuSetupWizard">打开首次设置助手</sys:String>
+    <sys:String x:Key="MTDA_MenuSimulateChanges">预览并选择 Metadata AI 变更</sys:String>
+    <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">预览并选择所选游戏或当前列表的元数据变更</sys:String>
+    <sys:String x:Key="MTDA_MenuHistory">查看更改历史</sys:String>
+    <sys:String x:Key="MTDA_MenuViewProvenance">查看最近的 Metadata AI 来源</sys:String>
+    <sys:String x:Key="MTDA_SimulationTitle">Metadata AI 模拟</sys:String>
+    <sys:String x:Key="MTDA_SimulationHelp">未写入任何更改。应用时将重用这些生成结果，而不会再次调用 AI 提供者。单个游戏时，还可在应用前选择封面、图标和背景候选项。</sys:String>
+    <sys:String x:Key="MTDA_SimulationQuotaWarning">模拟将对配置的 AI 提供者查询 {0} 个游戏，可能会消耗 API 配额。不会修改库。是否继续？</sys:String>
+    <sys:String x:Key="MTDA_ProgressSimulatingGame">模拟更改中：</sys:String>
+    <sys:String x:Key="MTDA_SimulationApply">应用模拟更改</sys:String>
+    <sys:String x:Key="MTDA_SimulationNoChanges">当前应用规则下不会产生任何更改。</sys:String>
+    <sys:String x:Key="MTDA_SimulationBefore">之前</sys:String>
+    <sys:String x:Key="MTDA_SimulationAfter">之后</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplied">Metadata AI 已对 {0} 个游戏应用模拟更改。</sys:String>
+    <sys:String x:Key="MTDA_HistoryTitle">Metadata AI 历史记录</sys:String>
+    <sys:String x:Key="MTDA_HistoryEmpty">尚无 Metadata AI 更改记录。</sys:String>
+    <sys:String x:Key="MTDA_HistoryClear">清除历史记录</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndo">撤销选定操作</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoAllSelected">撤销所有选中历史记录</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGame">撤销此游戏操作</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGameConfirm">是否将 {0} 恢复到此 Metadata AI 操作之前的状态？之后对相同字段的手动更改可能会被覆盖。</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGameComplete">Metadata AI 已恢复 {0}。</sys:String>
+    <sys:String x:Key="MTDA_HistoryGamesCount">{0} 个游戏</sys:String>
+    <sys:String x:Key="MTDA_HistoryChangedFields">更改的字段</sys:String>
+    <sys:String x:Key="MTDA_HistoryDesktopOnly">详细更改历史仅在桌面模式下可用。</sys:String>
+    <sys:String x:Key="MTDA_HistoryClearConfirm">清除 Metadata AI 历史记录及其媒体备份？此操作不可撤销。</sys:String>
+    <sys:String x:Key="MTDA_HistoryCleared">Metadata AI 历史记录已清除。</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoConfirm">将所选操作更改的所有游戏恢复到之前的 Metadata AI 状态？之后对这些字段的手动更改可能会被覆盖。</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoComplete">Metadata AI 已恢复 {0} 个游戏。</sys:String>
+    <sys:String x:Key="MTDA_HistoryAutoImportMetadata">自动导入元数据</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplyMetadata">应用 AI 元数据</sys:String>
+    <sys:String x:Key="MTDA_HistoryAutoImportMedia">自动导入媒体</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplyMedia">应用媒体</sys:String>
+    <sys:String x:Key="MTDA_HistoryCuratedMedia">应用选定媒体</sys:String>
+    <sys:String x:Key="MTDA_HistorySortingNames">应用排序名称</sys:String>
+    <sys:String x:Key="MTDA_HistoryReviewedMetadata">已审核的 AI 元数据</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplySimulation">应用模拟元数据</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceTitle">元数据来源</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSource">来源</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethod">方法</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidence">置信度</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceEmpty">此游戏尚无 Metadata AI 来源记录。请先应用生成的元数据；模拟预览中会显示来源，但不会写入历史。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodTrusted">可信上下文</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodNormalized">AI 归一化</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodIdentity">基于游戏身份生成</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodDeterministic">本地确定性规则</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodMedia">下载的媒体</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceHigh">高</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceMedium">中</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceLow">低；建议审核</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceExisting">现有 Playnite 元数据</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceLocalRule">Metadata AI 本地规则</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceAiProvider">AI 提供者</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailTrusted">该值受可信来源上下文限制。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailNormalizedOfficial">来源作为事实上下文提供，AI 进行了规范化。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailNormalizedExisting">当前库元数据作为上下文提供，AI 进行了规范化。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailIdentity">无字段特定可信来源。应用前请审核该值。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailDeterministic">Metadata AI 本地计算该值，未请求 AI 提供者。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailMedia">此媒体文件从指定来源下载。</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceOriginalUrl">原始 URL</sys:String>
+    <sys:String x:Key="MTDA_None">无</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendationHelp">推荐基于完整性、来源、置信度和可能的信息丢失本地计算。不会再次调用 AI 提供者，不能替代您的人工审核。</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectRecommended">选择推荐项</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectAll">全选</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectNone">全不选</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplySelected">应用所选更改</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyGame">应用此游戏的元数据变更</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendedOnly">仅推荐项</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectedCount">已选择 {0} / {1} 项更改</sys:String>
+    <sys:String x:Key="MTDA_SimulationWorthApplying">值得应用</sys:String>
+    <sys:String x:Key="MTDA_SimulationReviewRecommended">建议审核</sys:String>
+    <sys:String x:Key="MTDA_SimulationKeepCurrent">保留当前数据更安全</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendationSummary">推荐: {0} | 审核: {1} | 保留当前: {2}</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommended">推荐</sys:String>
+    <sys:String x:Key="MTDA_SimulationReview">审核</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyField">应用此字段</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonMissing">填补空字段</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonTrusted">由可信来源或高置信度证据支持</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonDeterministic">使用确定性规则本地计算得出</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonAddsInformation">增加信息且不减少当前列表</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonLowConfidence">来源置信度低</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonRemovesInformation">建议列表项少于当前列表</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonShorterDescription">建议描述明显更短</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonEmptyResult">建议值为空</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonReplacesExisting">替换现有信息，需审核</sys:String>
+    <sys:String x:Key="MTDA_MenuTools">历史与来源</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectedSummary">已选择 {0} 个，共 {1} 个元数据变更 | 已选择 {2} 个媒体变更</sys:String>
+    <sys:String x:Key="MTDA_SimulationMetadataTitle">元数据变更</sys:String>
+    <sys:String x:Key="MTDA_SimulationMediaTitle">媒体预览</sys:String>
+    <sys:String x:Key="MTDA_SimulationCurrentMedia">当前</sys:String>
+    <sys:String x:Key="MTDA_SimulationProposedMedia">建议</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyMedia">应用此媒体变更</sys:String>
+    <sys:String x:Key="MTDA_SimulationChooseMedia">选择 {0}</sys:String>
+    <sys:String x:Key="MTDA_SimulationChangeMedia">更改选择</sys:String>
+    <sys:String x:Key="MTDA_UseSelection">使用所选项</sys:String>
+    <sys:String x:Key="MTDA_MenuGameHistory">查看此游戏的历史记录</sys:String>
+    <sys:String x:Key="MTDA_HistoryGameTitle">Metadata AI 历史记录 - {0}</sys:String>
+    <sys:String x:Key="MTDA_HistoryGameEmpty">没有为 {0} 记录 Metadata AI 历史。</sys:String>
+    <sys:String x:Key="MTDA_SimulationKeepBadge">保留</sys:String>
 </ResourceDictionary>

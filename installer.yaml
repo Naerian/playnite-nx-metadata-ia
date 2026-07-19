@@ -1,11 +1,14 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.3
+  - Version: 1.2.4
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-07-18
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.3/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_3.pext
+    ReleaseDate: 2026-07-19
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.4/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_4.pext
     Changelog:
-      - Added exact metadata and media reuse from the Playnite library integration that owns each game.
-      - Added trusted AI context and strict factual fields from origin library integrations.
-      - Added per-integration controls and automatic fallback to configured public and external sources.
-      - Added non-destructive source-priority migration for existing installations.
+      - Added a guided first-time setup assistant with safe starter profiles.
+      - Added metadata simulation with before-and-after values, local recommendations and selective apply.
+      - Added validated cover, icon and background proposals to single-game simulations.
+      - Added a 20-operation change history with global and per-game undo, including media backups.
+      - Added field-level provenance and confidence views.
+      - Improved simulator layout, recommendation badges and modal window restoration.
+      - Updated documentation and all included localizations.

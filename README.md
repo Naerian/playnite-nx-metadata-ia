@@ -36,7 +36,11 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Generate metadata in a selected output language from a dropdown.
 - Use official store data as factual AI context before rewriting, translating, or normalizing text.
 - Reuse the Playnite library integration that imported each game as an exact, trusted metadata and media source.
-- Use stricter factual guards for companies, age ratings, and regions to reduce invented metadata.
+- Use stricter factual guards for developers, publishers, age ratings, and regions to reduce invented metadata.
+- Start with a guided first-time setup assistant that configures a safe profile without touching the library.
+- Simulate metadata changes before applying them, including before/after values and field-level source information.
+- Record the last 20 Metadata AI operations and undo metadata or media changes, including restored media file backups.
+- Inspect field provenance to see whether a value was normalized from an origin integration, official store context, existing Playnite metadata, a local deterministic rule, or unsupported AI generation that should be reviewed.
 - Automatically process newly imported games after library updates.
 - Generate media assets from multiple configurable sources.
 - Configure media source priority separately for covers, icons, and backgrounds.
@@ -146,6 +150,18 @@ When trusted context is enabled, the extension first asks the Playnite library i
 
 If the plugin cannot find reliable official context, the AI can still generate descriptive text from the game name and existing Playnite metadata, but stricter options can prevent sensitive fields such as developers, publishers, age ratings, and regions from being created when confidence is low.
 
+## Safe workflow, simulation and provenance
+
+On a new installation, the setup assistant asks for the output language, intended workflow, AI provider and enabled fields. Finishing the assistant only saves settings; it never starts a library update. Existing installations are migrated as already configured and are not reset or forced through the assistant. It can be reopened later from **Maintenance** or the **Metadata AI** extension menu.
+
+Use **Preview and choose Metadata AI changes** from a game's context menu, or **Preview and choose metadata changes for selected games or current list** from the extension menu, to generate an in-memory dry run. The preview shows the current and proposed value for every field together with its source, confidence, and a local recommendation. You can select changes per field or per game, choose only the recommended metadata changes, or clear the selection. For a single game, the same window also preloads the best validated cover, icon, and background proposals according to the configured automatic media priorities. Each proposal can be replaced through the regular media picker. Nothing is downloaded or written until you select a media change and apply the final selection.
+
+Recommendations are calculated locally from completeness, provenance, confidence, and possible information loss. They do not make another AI request and are intended as guidance rather than a factual guarantee. Applying from the preview reuses the generated result and only writes the selected metadata and media changes.
+
+Every successful Metadata AI apply operation is added to the change history. History stores affected fields, provenance, and the previous Playnite values. The game context menu provides a history filtered to that game, while the extension menu retains the complete history. Undoing one game removes that entry from the general operation as well. When media is replaced, its old internal file is copied into Metadata AI's private history storage before cleanup so the operation can restore it. The history keeps the latest 20 operations and contains no provider API keys.
+
+Provenance is deliberately explicit about uncertainty. Trusted origin integrations and exact official-store matches are marked separately from existing Playnite context. Values generated only from the game identity are marked as low confidence and should be reviewed before applying.
+
 ## Media options
 
 The extension can apply media automatically or show a candidate picker for single-game workflows.
@@ -215,7 +231,7 @@ The main sections are:
 - **Import**: automatic processing for newly imported games.
 - **Fields**: per-field generation and apply rules.
 - **Rules**: automatic template selection by game type, platform, or source.
-- **Maintenance**: export or import the plugin configuration as a backup, and scan for obsolete unreferenced media. API credentials are protected with Windows DPAPI for the current user, both in Playnite's stored settings and in exported backups.
+- **Maintenance**: reopen the setup assistant, export or import configuration backups, scan for obsolete unreferenced media, and inspect or undo the last 20 Metadata AI operations. API credentials are protected with Windows DPAPI for the current user, both in Playnite's stored settings and in exported backups.
 
 ## Description templates
 

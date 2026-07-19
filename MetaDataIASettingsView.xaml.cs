@@ -76,6 +76,25 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void OpenSetupWizard_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.SyncSelectedTemplate();
+                viewModel.Plugin.OpenSetupWizard(false);
+            }
+        }
+
+        private void OpenHistory_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Plugin.ShowHistory();
+            }
+        }
+
         private void LoadPasswordBoxes(MetaDataIASettings settings)
         {
             if (settings == null)

@@ -217,6 +217,8 @@ namespace MetaDataIAPlugin
         private string ollamaFallbackModel = "llama3.1";
         private bool companyLimitDefaultsMigrated = false;
         private bool safeDefaultsMigrated = false;
+        private bool setupWizardCompleted = false;
+        private bool setupWizardMigrationApplied = false;
         private bool autoImportNewGames = false;
         private bool autoImportGenerateMetadata = true;
         private bool autoImportGenerateMedia = false;
@@ -440,6 +442,8 @@ namespace MetaDataIAPlugin
         public string OllamaFallbackModel { get { return ollamaFallbackModel; } set { SetValue(ref ollamaFallbackModel, value); } }
         public bool CompanyLimitDefaultsMigrated { get { return companyLimitDefaultsMigrated; } set { SetValue(ref companyLimitDefaultsMigrated, value); } }
         public bool SafeDefaultsMigrated { get { return safeDefaultsMigrated; } set { SetValue(ref safeDefaultsMigrated, value); } }
+        public bool SetupWizardCompleted { get { return setupWizardCompleted; } set { SetValue(ref setupWizardCompleted, value); } }
+        public bool SetupWizardMigrationApplied { get { return setupWizardMigrationApplied; } set { SetValue(ref setupWizardMigrationApplied, value); } }
         public bool AutoImportNewGames { get { return autoImportNewGames; } set { SetValue(ref autoImportNewGames, value); } }
         public bool AutoImportGenerateMetadata { get { return autoImportGenerateMetadata; } set { SetValue(ref autoImportGenerateMetadata, value); } }
         public bool AutoImportGenerateMedia { get { return autoImportGenerateMedia; } set { SetValue(ref autoImportGenerateMedia, value); } }
@@ -2007,8 +2011,23 @@ namespace MetaDataIAPlugin
             Settings = savedSettings ?? new MetaDataIASettings();
             Settings.UnprotectSecretsAfterLoad();
             Settings.EnsureDefaults(savedSettings != null);
+            if (savedSettings != null && !Settings.SetupWizardMigrationApplied)
+            {
+                Settings.SetupWizardCompleted = true;
+                Settings.SetupWizardMigrationApplied = true;
+                plugin.SaveSettingsSecurely(Settings);
+            }
+            else if (savedSettings == null)
+            {
+                Settings.SetupWizardMigrationApplied = true;
+            }
             RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings.GetActiveTemplate();
+        }
+
+        public bool IsSetupWizardPending
+        {
+            get { return Settings != null && !Settings.SetupWizardCompleted; }
         }
 
         public void RefreshOriginLibraryIntegrations()
@@ -2126,6 +2145,23 @@ namespace MetaDataIAPlugin
 
             importedSettings.EnsureDefaults();
             Settings = importedSettings;
+            RefreshOriginLibraryIntegrations();
+            SelectedTemplate = Settings.GetActiveTemplate();
+            editingClone = Serialization.GetClone(Settings);
+            plugin.SaveSettingsSecurely(Settings);
+        }
+
+        public void ReplaceSettingsFromWizard(MetaDataIASettings wizardSettings)
+        {
+            if (wizardSettings == null)
+            {
+                return;
+            }
+
+            wizardSettings.SetupWizardCompleted = true;
+            wizardSettings.SetupWizardMigrationApplied = true;
+            wizardSettings.EnsureDefaults();
+            Settings = wizardSettings;
             RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings.GetActiveTemplate();
             editingClone = Serialization.GetClone(Settings);

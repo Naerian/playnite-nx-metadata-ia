@@ -59,6 +59,9 @@
     <Compile Include="AiProviderException.cs" />
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
+    <Compile Include="MetadataHistoryService.cs" />
+    <Compile Include="MetadataTrustModels.cs" />
+    <Compile Include="MetadataTrustWindows.cs" />
     <Compile Include="MediaGenerationService.cs" />
     <Compile Include="MediaStorageCleanupService.cs" />
     <Compile Include="OfficialStoreDataService.cs" />

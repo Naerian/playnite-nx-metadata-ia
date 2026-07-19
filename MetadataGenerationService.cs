@@ -215,6 +215,123 @@ namespace MetaDataIAPlugin
             ApplyStrictFactualGuard(result, game);
             result.Normalize(settings, game);
             ApplyStrictFactualGuard(result, game);
+            AttachProvenance(result, game);
+        }
+
+        private void AttachProvenance(AiMetadataResult result, Game game)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            result.Provenance = new List<MetadataFieldProvenance>();
+            AddTextProvenance(result, game, "description", result.Description, x => x.Description, game == null ? null : game.Description);
+            AddListProvenance(result, game, "genres", result.Genres, x => x.Genres, ExistingNames(game == null ? null : game.Genres));
+            AddListProvenance(result, game, "tags", result.Tags, null, ExistingNames(game == null ? null : game.Tags));
+            AddListProvenance(result, game, "features", result.Features, x => x.Features, ExistingNames(game == null ? null : game.Features));
+            AddListProvenance(result, game, "developers", result.Developers, x => x.Developers, ExistingNames(game == null ? null : game.Developers));
+            AddListProvenance(result, game, "publishers", result.Publishers, x => x.Publishers, ExistingNames(game == null ? null : game.Publishers));
+            AddListProvenance(result, game, "ageRatings", result.AgeRatings, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating }, ExistingNames(game == null ? null : game.AgeRatings));
+            AddListProvenance(result, game, "regions", result.Regions, x => x.Regions, ExistingNames(game == null ? null : game.Regions));
+            AddListProvenance(result, game, "categories", result.Categories, null, ExistingNames(game == null ? null : game.Categories));
+            AddLinksProvenance(result, game);
+
+            if (settings.GenerateSortingName)
+            {
+                result.Provenance.Add(new MetadataFieldProvenance
+                {
+                    Field = "sortingName",
+                    Source = "Metadata AI local rule",
+                    Method = "deterministic",
+                    Confidence = "high",
+                    Detail = "Generated locally from the library title and detected series order."
+                });
+            }
+        }
+
+        private void AddTextProvenance(AiMetadataResult result, Game game, string field, string value, Func<OfficialStoreMetadata, string> officialSelector, string existing)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            var official = FindOfficialSource(x => !string.IsNullOrWhiteSpace(officialSelector(x)));
+            result.Provenance.Add(BuildProvenance(field, official, !string.IsNullOrWhiteSpace(existing), true));
+        }
+
+        private void AddListProvenance(AiMetadataResult result, Game game, string field, List<string> values, Func<OfficialStoreMetadata, List<string>> officialSelector, List<string> existing)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return;
+            }
+
+            var official = officialSelector == null ? null : FindOfficialSource(x =>
+            {
+                var selected = officialSelector(x);
+                return selected != null && selected.Any(y => !string.IsNullOrWhiteSpace(y));
+            });
+            result.Provenance.Add(BuildProvenance(field, official, existing != null && existing.Count > 0, field != "developers" && field != "publishers" && field != "ageRatings" && field != "regions"));
+        }
+
+        private void AddLinksProvenance(AiMetadataResult result, Game game)
+        {
+            if (result.Links == null || result.Links.Count == 0)
+            {
+                return;
+            }
+
+            var official = FindOfficialSource(x => x.Links != null && x.Links.Count > 0);
+            var hasExisting = game != null && game.Links != null && game.Links.Count > 0;
+            result.Provenance.Add(BuildProvenance("links", official, hasExisting, false));
+        }
+
+        private OfficialStoreMetadata FindOfficialSource(Func<OfficialStoreMetadata, bool> hasField)
+        {
+            return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && hasField(x))
+                .OrderByDescending(x => x.IsExactMatch)
+                .FirstOrDefault();
+        }
+
+        private MetadataFieldProvenance BuildProvenance(string field, OfficialStoreMetadata official, bool hasExisting, bool editorial)
+        {
+            if (official != null)
+            {
+                return new MetadataFieldProvenance
+                {
+                    Field = field,
+                    Source = official.SourceName,
+                    Method = editorial ? "ai-normalized" : "trusted-context",
+                    Confidence = official.IsExactMatch ? "high" : "medium",
+                    Detail = editorial
+                        ? "The source was supplied as factual context and the AI normalized it."
+                        : "The value was constrained by trusted source context."
+                };
+            }
+
+            if (hasExisting && !string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
+            {
+                return new MetadataFieldProvenance
+                {
+                    Field = field,
+                    Source = "Existing Playnite metadata",
+                    Method = "ai-normalized",
+                    Confidence = "medium",
+                    Detail = "Current library metadata was supplied as context and normalized by the AI."
+                };
+            }
+
+            return new MetadataFieldProvenance
+            {
+                Field = field,
+                Source = "AI provider: " + settings.ProviderPreset,
+                Method = "generated-from-identity",
+                Confidence = "low",
+                Detail = "No field-specific trusted source was available. Review this value before applying it."
+            };
         }
 
         private bool RequiresGeneratedDescription()

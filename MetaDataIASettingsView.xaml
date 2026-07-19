@@ -912,17 +912,20 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_GenerateAndApply}" Style="{StaticResource SectionHeaderText}"/>
+                            <TextBlock Text="{DynamicResource MTDA_FieldBehaviorTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
+                        <TextBlock Text="{DynamicResource MTDA_FieldBehaviorHelp}" Style="{StaticResource HintText}"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="90"/>
                                 <ColumnDefinition Width="170"/>
                                 <ColumnDefinition Width="90"/>
-                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="190"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -938,8 +941,8 @@
                             <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="3" Text="Max." FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_ExistingOnly}" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="0,8,0,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}" Margin="0,8,0,0"/>
@@ -989,45 +992,49 @@
                             <TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Settings.MaxCategories}" Margin="0,4,8,0"/>
                             <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}" Margin="0,8,0,0"/>
 
+                            <TextBlock Grid.Row="10" Text="{DynamicResource MTDA_SortingName}" Margin="0,8,0,0"/>
+                            <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}" Margin="0,8,0,0"/>
+                            <ComboBox Grid.Row="10" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,4,8,0"/>
+
+                            <TextBlock Grid.Row="11" Text="{DynamicResource MTDA_Links}" Margin="0,8,0,0"/>
+                            <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}" Margin="0,8,0,0"/>
+                            <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
+                            <TextBox Grid.Row="11" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,4,8,0"/>
+
                         </Grid>
                         <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_SpecialFields}" Style="{StaticResource SectionHeaderText}"/>
+                            <TextBlock Text="{DynamicResource MTDA_FieldAccuracyNotesTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="150"/>
-                                <ColumnDefinition Width="90"/>
-                                <ColumnDefinition Width="170"/>
-                                <ColumnDefinition Width="90"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                        <Border BorderBrush="{DynamicResource GlyphBrush}"
+                                Background="{DynamicResource ControlBackgroundBrush}"
+                                BorderThickness="1"
+                                Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource MTDA_DeveloperPublisherAccuracyNote}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_SortingNameAccuracyNote}"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="{DynamicResource MTDA_UseExistingPlayniteValuesHelp}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
 
-                            <TextBlock Grid.Row="0" Text="{DynamicResource MTDA_SortingName}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,4,8,0"/>
-
-                            <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Links}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,4,8,0"/>
-                        </Grid>
-                        <TextBlock Text="{DynamicResource MTDA_CompaniesLimitHelp}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,8,0,0"/>
-                        <TextBlock Text="{DynamicResource MTDA_SortingLinksHelp}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0"/>
-
-                        <TextBlock Text="{DynamicResource MTDA_TagPrefix}" Margin="0,16,0,0"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_PrefixesTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_TagPrefix}"/>
                         <TextBox Text="{Binding Settings.TagPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_TagPrefixHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_CategoryPrefix}"/>
                         <TextBox Text="{Binding Settings.CategoryPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_CategoryPrefixHelp}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_Blacklist}"/>
+                        <TextBlock Text="{DynamicResource MTDA_CategoryPrefixHelp}" TextWrapping="Wrap"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_BlacklistTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_Blacklist}" Margin="0,0,0,2"/>
                         <TextBox Text="{Binding Settings.Blacklist, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
@@ -1044,6 +1051,17 @@
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
                         <Border Style="{StaticResource FirstSectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupHelp}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_OpenSetupWizard}"
+                                HorizontalAlignment="Left"
+                                MinWidth="220"
+                                Click="OpenSetupWizard_OnClick"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupHelp}"
@@ -1074,6 +1092,17 @@
                                 HorizontalAlignment="Left"
                                 MinWidth="220"
                                 Click="CleanupObsoleteMedia_OnClick"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryHelp}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_OpenHistory}"
+                                HorizontalAlignment="Left"
+                                MinWidth="220"
+                                Click="OpenHistory_OnClick"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

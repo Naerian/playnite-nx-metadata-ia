@@ -60,10 +60,10 @@
     <sys:String x:Key="MTDA_LengthHelp">La lunghezza globale determina anche il numero di elementi restituiti negli elenchi. Per il testo, la lunghezza per token ti consente di ottimizzare ciascun blocco: per la sinossi, Breve=1 paragrafo, Medio=2, Lungo=3 e Molto lungo=4-5.</sys:String>
     <sys:String x:Key="MTDA_LengthPerToken">Lunghezza per token</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Metadati attuali</sys:String>
-    <sys:String x:Key="MTDA_CurrentMetadataHelp">L&apos;utilizzo come contesto consente all&apos;IA di considerare i dati esistenti senza necessariamente copiarli. Normalize tenta di correggere e unificare i metadati correnti. Ignora non invia tali dettagli all&apos;IA.</sys:String>
+    <sys:String x:Key="MTDA_CurrentMetadataHelp">L'utilizzo come contesto consente all'IA di considerare i dati esistenti senza necessariamente copiarli. Normalize tenta di correggere e unificare i metadati correnti. Ignora non invia tali dettagli all'IA.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Usa fonti ufficiali come contesto IA</sys:String>
-    <sys:String x:Key="MTDA_OfficialStoreContextHelp">Quando è attivo, Metadata AI prova a leggere una fonte ufficiale come Steam, Xbox Store, PlayStation Store o Epic Store prima di chiamare l&apos;IA. L&apos;IA usa queste informazioni come contesto fattuale e poi le traduce o normalizza secondo il tuo modello.</sys:String>
-    <sys:String x:Key="MTDA_StrictCompanyAgeRegion">Non inventare aziende, classificazioni per età o regioni se non ragionevolmente sicuro</sys:String>
+    <sys:String x:Key="MTDA_OfficialStoreContextHelp">Quando è attivo, Metadata AI prova a leggere una fonte ufficiale come Steam, Xbox Store, PlayStation Store o Epic Store prima di chiamare l'IA. L'IA usa queste informazioni come contesto fattuale e poi le traduce o normalizza secondo il tuo modello.</sys:String>
+    <sys:String x:Key="MTDA_StrictCompanyAgeRegion">Non creare sviluppatori, editori, classificazioni di età o regioni senza prove affidabili</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructions">Istruzioni extra personalizzate</sys:String>
     <sys:String x:Key="MTDA_ExtraInstructionsHelp">Usalo per regole editoriali aggiuntive: tono del marchio, parole da evitare, struttura desiderata, nomi preferiti o criteri per decidere se un dettaglio è affidabile.</sys:String>
     <sys:String x:Key="MTDA_New">Nuovo</sys:String>
@@ -80,14 +80,14 @@
     <sys:String x:Key="MTDA_SourceKeysAndTests">Chiavi e test dei sorgenti</sys:String>
     <sys:String x:Key="MTDA_SourceOriginIntegration">Integrazione libreria di origine</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsTab">Integrazioni libreria</sys:String>
-    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa l&apos;integrazione della libreria Playnite che ha importato ogni gioco. La corrispondenza è esatta tramite il PluginId del gioco.</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usa l&apos;integrazione di origine per copertine, icone e sfondi</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa l'integrazione della libreria Playnite che ha importato ogni gioco. La corrispondenza è esatta tramite il PluginId del gioco.</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usa l'integrazione di origine per copertine, icone e sfondi</sys:String>
     <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usa i suoi metadati come contesto IA affidabile</sys:String>
     <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Usa i suoi campi fattuali in modalità rigorosa</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDetected">Integrazioni libreria rilevate</sys:String>
-    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Disattiva qui un&apos;integrazione per impedire a Metadata AI di interrogarla. Per i campi mancanti vengono usate automaticamente le fonti di riserva configurate.</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationsHelp">Disattiva qui un'integrazione per impedire a Metadata AI di interrogarla. Per i campi mancanti vengono usate automaticamente le fonti di riserva configurate.</sys:String>
     <sys:String x:Key="MTDA_RefreshOriginIntegrations">Aggiorna integrazioni</sys:String>
-    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Media esatto dall&apos;integrazione libreria del gioco</sys:String>
+    <sys:String x:Key="MTDA_OriginIntegrationExactMedia">Media esatto dall'integrazione libreria del gioco</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupTitle">Backup e ripristino</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupHelp">Esporta o importa le impostazioni attuali di Metadata AI, inclusi provider, modelli, regole dei campi, memoria del vocabolario e configurazione delle fonti media.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceBackupPrivateHelp">Nota: le API key e i segreti sono crittografati per l’utente Windows corrente. Con un altro account o computer dovrai inserirli di nuovo.</sys:String>
@@ -103,14 +103,14 @@
     <sys:String x:Key="MTDA_OfficialSteam">Steam ufficiale</sys:String>
     <sys:String x:Key="MTDA_OfficialSteamHelp">Nessuna chiave API richiesta. Utilizza le risorse Steam pubbliche quando il gioco può essere abbinato a un AppID.</sys:String>
     <sys:String x:Key="MTDA_TestOfficialSteam">Prova Steam ufficiale</sys:String>
-    <sys:String x:Key="MTDA_SteamGridDbHelp">Ottienilo dal tuo profilo SteamGridDB, in Preferenze/API. È facoltativo per i giochi Steam, ma consigliato: aggiunge copertine della comunità, eroi/sfondi e icone quando Steam ufficiale non ha un&apos;immagine adatta.</sys:String>
+    <sys:String x:Key="MTDA_SteamGridDbHelp">Ottienilo dal tuo profilo SteamGridDB, in Preferenze/API. È facoltativo per i giochi Steam, ma consigliato: aggiunge copertine della comunità, eroi/sfondi e icone quando Steam ufficiale non ha un'immagine adatta.</sys:String>
     <sys:String x:Key="MTDA_OpenSteamGridDb">Apri SteamGridDB</sys:String>
     <sys:String x:Key="MTDA_TestSteamGridDb">Prova SteamGridDB</sys:String>
     <sys:String x:Key="MTDA_RawgHelp">RAWG richiede una chiave API per ogni richiesta. Fornisce principalmente immagini principali e screenshot per gli sfondi.</sys:String>
     <sys:String x:Key="MTDA_TestRawg">Prova RAWG</sys:String>
     <sys:String x:Key="MTDA_MobyGamesHelp">MobyGames utilizza api_key e può fornire copertine e screenshot, particolarmente utili per i giochi classici.</sys:String>
     <sys:String x:Key="MTDA_TestMobyGames">Prova MobyGames</sys:String>
-    <sys:String x:Key="MTDA_IgdbHelp">Il plugin genera automaticamente il token di accesso Twitch/IGDB con questi dettagli. Non è necessario copiare manualmente i token temporanei. Fornisce copertine, screenshot e opere d&apos;arte.</sys:String>
+    <sys:String x:Key="MTDA_IgdbHelp">Il plugin genera automaticamente il token di accesso Twitch/IGDB con questi dettagli. Non è necessario copiare manualmente i token temporanei. Fornisce copertine, screenshot e opere d'arte.</sys:String>
     <sys:String x:Key="MTDA_TestIgdb">Prova IGDB</sys:String>
     <sys:String x:Key="MTDA_Media">Media</sys:String>
     <sys:String x:Key="MTDA_Field">Campo</sys:String>
@@ -132,20 +132,20 @@
     <sys:String x:Key="MTDA_SourceIgdb">IGDB: copertine, artwork e screenshot</sys:String>
     <sys:String x:Key="MTDA_MissingApiKeyHelp">Se una fonte attiva non ha una chiave API configurata, il plugin la salterà automaticamente durante il recupero dei dati.</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreference">Preferenza per il logo per gli sfondi</sys:String>
-    <sys:String x:Key="MTDA_BackgroundLogoPreferenceHelp">Non tutte le fonti espongono perfettamente queste informazioni. Il plugin lo usa come preferenza: se non riesce a dirlo, sceglie l&apos;immagine che meglio si adatta al formato.</sys:String>
+    <sys:String x:Key="MTDA_BackgroundLogoPreferenceHelp">Non tutte le fonti espongono perfettamente queste informazioni. Il plugin lo usa come preferenza: se non riesce a dirlo, sceglie l'immagine che meglio si adatta al formato.</sys:String>
     <sys:String x:Key="MTDA_SelectionCriteria">Criteri di selezione</sys:String>
     <sys:String x:Key="MTDA_AvoidNsfw">Evita il contenuto NSFW quando la fonte lo contrassegna</sys:String>
     <sys:String x:Key="MTDA_AvoidBlurred">Evita stili sfocati nelle copertine e negli sfondi</sys:String>
     <sys:String x:Key="MTDA_PreferOfficial">Preferire le risorse ufficiali quando la fonte lo indica</sys:String>
     <sys:String x:Key="MTDA_AvoidConsoleCovers">Se possibile, evitare coperture con strisce/logo della console</sys:String>
     <sys:String x:Key="MTDA_SquareIconPreferGrid">Per le icone quadrate, dai la priorità alle griglie quadrate rispetto alle icone trasparenti</sys:String>
-    <sys:String x:Key="MTDA_SquareIconPreferGridHelp">Quest&apos;ultima opzione evita molte icone rotonde o loghi trasparenti: dà priorità a un&apos;immagine quadrata e la converte in un&apos;icona 256x256.</sys:String>
+    <sys:String x:Key="MTDA_SquareIconPreferGridHelp">Quest'ultima opzione evita molte icone rotonde o loghi trasparenti: dà priorità a un'immagine quadrata e la converte in un'icona 256x256.</sys:String>
     <sys:String x:Key="MTDA_MaxMediaResults">Risultati massimi da rivedere per partita</sys:String>
-    <sys:String x:Key="MTDA_MaxMediaResultsHelp">Quanti candidati da tutte le fonti vengono valutati prima di scegliere quello più vicino al preset. Valori più alti possono migliorare la selezione, ma richiedono un po&apos; più tempo.</sys:String>
+    <sys:String x:Key="MTDA_MaxMediaResultsHelp">Quanti candidati da tutte le fonti vengono valutati prima di scegliere quello più vicino al preset. Valori più alti possono migliorare la selezione, ma richiedono un po' più tempo.</sys:String>
     <sys:String x:Key="MTDA_AutoImportNewGames">Importa metadati con Metadata AI quando vengono rilevati nuovi giochi</sys:String>
     <sys:String x:Key="MTDA_AutoImportNewGamesHelp">Il plugin ricorda i giochi esistenti e, dopo un aggiornamento della libreria, elabora solo i nuovi ID. Funziona dopo Playnite, quindi può sovrascrivere o completare ciò che Playnite ha scaricato in base alle modalità di applicazione configurate.</sys:String>
-    <sys:String x:Key="MTDA_AutoImportGenerateMetadata">Genera metadati di testo ed elenchi con l&apos;intelligenza artificiale</sys:String>
-    <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">Utilizza le impostazioni delle schede AI, Modelli, Campi e Regole. Se l&apos;AI non è configurata, questa parte viene saltata.</sys:String>
+    <sys:String x:Key="MTDA_AutoImportGenerateMetadata">Genera metadati di testo ed elenchi con l'intelligenza artificiale</sys:String>
+    <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">Utilizza le impostazioni delle schede AI, Modelli, Campi e Regole. Se l'AI non è configurata, questa parte viene saltata.</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMedia">Scarica i contenuti multimediali automaticamente</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMediaHelp">Utilizza le impostazioni della scheda Media. Per i giochi Steam è possibile utilizzare Steam ufficiale senza chiave; SteamGridDB viene utilizzato come fonte aggiuntiva se è configurata una chiave API.</sys:String>
     <sys:String x:Key="MTDA_AutoImportPlayniteNote">Nota: Playnite non offre un modo affidabile per consentire a un plugin di disattivare globalmente il download dei metadati durante l’importazione. Metadata AI viene eseguito dopo e segue le regole di sovrascrittura, aggiunta o riempimento dei campi vuoti.</sys:String>
@@ -164,13 +164,13 @@
     <sys:String x:Key="MTDA_SortingName">Ordinamento del nome</sys:String>
     <sys:String x:Key="MTDA_Links">Collegamenti</sys:String>
     <sys:String x:Key="MTDA_CompaniesLimitHelp">Per le aziende, il valore consigliato è 1: il plugin cerca di memorizzare solo lo sviluppatore/editore principale ed evitare studi di supporto, porting, multiplayer o distribuzione regionale.</sys:String>
-    <sys:String x:Key="MTDA_SortingLinksHelp">L&apos;ordinamento dei nomi viene calcolato localmente: rileva i sequel con 2/3, II/III o v2/v3 e genera valori come Nome base 01, 02, 03. I collegamenti tentano di utilizzare URL ufficiali; se il gioco proviene da Steam e ha un AppId, l&apos;URL del negozio viene aggiunto in modo affidabile.</sys:String>
-    <sys:String x:Key="MTDA_TagPrefix">Prefisso dell&apos;etichetta</sys:String>
+    <sys:String x:Key="MTDA_SortingLinksHelp">L'ordinamento dei nomi viene calcolato localmente: rileva i sequel con 2/3, II/III o v2/v3 e genera valori come Nome base 01, 02, 03. I collegamenti tentano di utilizzare URL ufficiali; se il gioco proviene da Steam e ha un AppId, l'URL del negozio viene aggiunto in modo affidabile.</sys:String>
+    <sys:String x:Key="MTDA_TagPrefix">Prefisso dell'etichetta</sys:String>
     <sys:String x:Key="MTDA_TagPrefixHelp">Se inserisci un prefisso, verrà aggiunto prima di ogni nuovo tag. Esempio: AI: mondo aperto.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefisso di categoria</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Utile per raggruppare le categorie create dal plugin. Esempio: Meta: Azione.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Lista nera dei termini</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">Termini separati da virgola, punto e virgola o interruzione di riga. Se un suggerimento ne contiene uno, viene scartato prima di essere applicato.</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">Inserisci parole o frasi separate da virgole, punti e virgola o interruzioni di riga. Qualsiasi tag, genere, caratteristica, categoria, sviluppatore, editore, classificazione di età o regione generati contenenti uno di questi termini verranno scartati prima dell'applicazione. Usalo per bloccare vocaboli vaghi, indesiderati, duplicati o tradotti in modo errato.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">Abilita le regole automatiche dei modelli</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">Se disabilitato, il plugin utilizza sempre il modello selezionato dalla scheda Modelli. Se abilitato, le regole di origine, piattaforma o tipo possono sostituirlo automaticamente.</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">Regole del modello per tipo di gioco</sys:String>
@@ -179,103 +179,103 @@
     <sys:String x:Key="MTDA_PlatformRulesHelp">Utilizzato per scegliere un modello in base alla piattaforma del gioco. Ha la priorità sulle regole del tipo di gioco. Formato: Piattaforma=NomeTemplate. Esempio: Nintendo Switch=Breve. Utile per descrizioni più brevi sul palmare, testi più tecnici per PC o modelli di emulazione speciali.</sys:String>
     <sys:String x:Key="MTDA_SourceRules">Regole per fonte</sys:String>
     <sys:String x:Key="MTDA_SourceRulesHelp">Utilizzato per scegliere un modello in base alla fonte o alla libreria da cui è stato importato il gioco, ad esempio Steam, GOG, Epic, Xbox, PlayStation o una fonte personalizzata. Ha la priorità sulla piattaforma e sul tipo. Formato: Origine=NomeTemplate. Esempio: Steam=Lungo.</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateReview">Genera e rivedi i metadati AI</sys:String>
-    <sys:String x:Key="MTDA_MenuGenerateApply">Genera e applica metadati AI</sys:String>
-    <sys:String x:Key="MTDA_MenuApplyAllList">Applica a tutti i giochi nell&apos;elenco</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateReview">Genera e rivedi nell'editor di Playnite</sys:String>
+    <sys:String x:Key="MTDA_MenuGenerateApply">Genera e applica i metadata configurati</sys:String>
+    <sys:String x:Key="MTDA_MenuApplyAllList">Applica a tutti i giochi nell'elenco</sys:String>
     <sys:String x:Key="MTDA_MenuApplySelected">Applica ai giochi selezionati</sys:String>
-    <sys:String x:Key="MTDA_MenuSetDescriptions">Imposta le descrizioni</sys:String>
-    <sys:String x:Key="MTDA_MenuSetTags">Imposta i tag</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCategories">Imposta le categorie</sys:String>
-    <sys:String x:Key="MTDA_MenuSetGenres">Imposta i generi</sys:String>
-    <sys:String x:Key="MTDA_MenuSetFeatures">Imposta le funzionalità</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCompanies">Impostare le aziende</sys:String>
-    <sys:String x:Key="MTDA_MenuSetAgeRegion">Imposta età e regione</sys:String>
-    <sys:String x:Key="MTDA_MenuSetLinks">Imposta collegamenti</sys:String>
-    <sys:String x:Key="MTDA_MenuSetSortingName">Imposta il nome dell&apos;ordinamento</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCover">Impostare la copertura</sys:String>
-    <sys:String x:Key="MTDA_MenuSetIcon">Imposta l&apos;icona</sys:String>
-    <sys:String x:Key="MTDA_MenuSetBackground">Imposta lo sfondo</sys:String>
-    <sys:String x:Key="MTDA_MenuSetFullMedia">Imposta supporto completo</sys:String>
-    <sys:String x:Key="MTDA_MenuSetCovers">Impostare le copertine</sys:String>
-    <sys:String x:Key="MTDA_MenuSetIcons">Imposta le icone</sys:String>
-    <sys:String x:Key="MTDA_MenuSetBackgrounds">Imposta gli sfondi</sys:String>
+    <sys:String x:Key="MTDA_MenuSetDescriptions">Genera descrizione</sys:String>
+    <sys:String x:Key="MTDA_MenuSetTags">Genera tag</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCategories">Genera categorie</sys:String>
+    <sys:String x:Key="MTDA_MenuSetGenres">Genera generi</sys:String>
+    <sys:String x:Key="MTDA_MenuSetFeatures">Genera caratteristiche</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCompanies">Genera sviluppatori e publisher</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAgeRegion">Genera classificazioni e regioni d'età</sys:String>
+    <sys:String x:Key="MTDA_MenuSetLinks">Genera link</sys:String>
+    <sys:String x:Key="MTDA_MenuSetSortingName">Genera nome per ordinamento</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCover">Trova copertina</sys:String>
+    <sys:String x:Key="MTDA_MenuSetIcon">Trova icona</sys:String>
+    <sys:String x:Key="MTDA_MenuSetBackground">Trova sfondo</sys:String>
+    <sys:String x:Key="MTDA_MenuSetFullMedia">Trova tutti i media</sys:String>
+    <sys:String x:Key="MTDA_MenuSetCovers">Trova copertine</sys:String>
+    <sys:String x:Key="MTDA_MenuSetIcons">Trova icone</sys:String>
+    <sys:String x:Key="MTDA_MenuSetBackgrounds">Trova sfondi</sys:String>
     <sys:String x:Key="MTDA_ApplyMedia">Applicare i media</sys:String>
-    <sys:String x:Key="MTDA_ConfirmApplyScope">L&apos;intelligenza artificiale dei metadati verrà applicata a {0} giochi da {1}.
+    <sys:String x:Key="MTDA_ConfirmApplyScope">L'intelligenza artificiale dei metadati verrà applicata a {0} giochi da {1}.
 
-L&apos;operazione potrebbe richiedere del tempo e consumare l&apos;utilizzo dell&apos;API configurata. Vuoi continuare?</sys:String>
+L'operazione potrebbe richiedere del tempo e consumare l'utilizzo dell'API configurata. Vuoi continuare?</sys:String>
     <sys:String x:Key="MTDA_ErrorAiNoUsefulContent">Il fornitore di intelligenza artificiale non ha restituito contenuti utili.</sys:String>
     <sys:String x:Key="MTDA_ErrorAiNoUsefulText">Il fornitore di intelligenza artificiale non ha restituito testo utile.</sys:String>
-    <sys:String x:Key="MTDA_ErrorAiResponseNotParsed">Non è stato possibile interpretare la risposta dell&apos;IA.</sys:String>
-    <sys:String x:Key="MTDA_ErrorConfigureBeforeGenerate">Configura l&apos;endpoint, il modello e la chiave API per Metadata AI prima di generare metadati.</sys:String>
-    <sys:String x:Key="MTDA_ErrorLocalFallbackUnavailable">Metadata AI tried to use the free local fallback, but no local provider was available.
+    <sys:String x:Key="MTDA_ErrorAiResponseNotParsed">Non è stato possibile interpretare la risposta dell'IA.</sys:String>
+    <sys:String x:Key="MTDA_ErrorConfigureBeforeGenerate">Configura l'endpoint, il modello e la chiave API per Metadata AI prima di generare metadati.</sys:String>
+    <sys:String x:Key="MTDA_ErrorLocalFallbackUnavailable">Metadata AI ha tentato di usare il fallback locale gratuito, ma nessun provider locale è disponibile.
 
-Check that LM Studio has the local server active at http://localhost:1234 or that Ollama is running at http://localhost:11434.
+Verifica che LM Studio abbia il server locale attivo su http://localhost:1234 o che Ollama sia in esecuzione su http://localhost:11434.
 
-Fallback errors:
+Errori di fallback:
 {0}</sys:String>
-    <sys:String x:Key="MTDA_ErrorMalformedAiJson">L&apos;IA ha restituito una risposta con un formato non valido e non è stato possibile interpretarla.
+    <sys:String x:Key="MTDA_ErrorMalformedAiJson">L'IA ha restituito una risposta con un formato non valido e non è stato possibile interpretarla.
 
 Il plugin continuerà con il resto dei giochi. Puoi riprovare questo gioco, ridurre la lunghezza del testo o passare a un modello che segue JSON in modo più affidabile.
 
 Breve dettaglio:</sys:String>
     <sys:String x:Key="MTDA_ErrorMediaProviderNotConfigured">Il supporto AI dei metadati non è configurato. Apri le impostazioni del plugin e configura almeno una fonte multimediale utilizzabile.</sys:String>
-    <sys:String x:Key="MTDA_ErrorMediaWithoutUrl">La fonte multimediale ha restituito un&apos;immagine senza un URL utilizzabile.</sys:String>
-    <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">L&apos;intelligenza artificiale dei metadati non è configurata. Apri le impostazioni del plugin e imposta endpoint, modello e chiave API.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaWithoutUrl">La fonte multimediale ha restituito un'immagine senza un URL utilizzabile.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMetadataProviderNotConfigured">L'intelligenza artificiale dei metadati non è configurata. Apri le impostazioni del plugin e imposta endpoint, modello e chiave API.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoImagesFound">Non è stata trovata alcuna immagine per questo gioco nelle fonti multimediali configurate.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidateDownloaded">Nessun candidato multimediale può essere scaricato.</sys:String>
-    <sys:String x:Key="MTDA_ErrorMediaUnavailable">Questa immagine non è più disponibile dalla fonte. Riapri il selettore multimediale per sceglierne un&apos;altra.</sys:String>
+    <sys:String x:Key="MTDA_ErrorMediaUnavailable">Questa immagine non è più disponibile dalla fonte. Riapri il selettore multimediale per sceglierne un'altra.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaCandidatesForGame">Nessun candidato multimediale trovato per questo gioco nelle fonti configurate.</sys:String>
     <sys:String x:Key="MTDA_ErrorNoMediaSources">Non sono presenti origini multimediali configurate o disponibili.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderAuth">The AI provider did not accept the authentication.
+    <sys:String x:Key="MTDA_ErrorProviderAuth">Il provider AI non ha accettato l'autenticazione.
 
-Check the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderConnection">Could not connect to the configured provider.
+Controlla la chiave API, l'endpoint e il modello configurato. Se usi LM Studio o Ollama localmente, la chiave API può solitamente essere vuota.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderConnection">Impossibile connettersi al provider configurato.
 
-Check that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.
+Verifica che l'endpoint sia scritto correttamente e che il provider esista. Se usi LM Studio o Ollama, assicurati che l'app sia aperta, il server locale attivo e il modello caricato o scaricato.
 
-Brief detail: </sys:String>
+Dettaglio breve: </sys:String>
     <sys:String x:Key="MTDA_ErrorProviderGeneric">Il provider AI ha restituito un errore ({0}).
 
-Controlla il provider, l&apos;endpoint, il modello e la chiave API configurati. Se il problema persiste, prova un altro modello o un fornitore locale.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderModelNotFound">The configured provider or model does not exist, or is not available for your account.
+Controlla il provider, l'endpoint, il modello e la chiave API configurati. Se il problema persiste, prova un altro modello o un fornitore locale.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderModelNotFound">Il provider o modello configurato non esiste o non è disponibile per il tuo account.
 
-Check that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.
+Controlla che provider, endpoint e nome modello siano scritti correttamente. Se hai digitato manualmente il modello, copia il nome esatto dalla documentazione o console del provider.
 
-Examples:
-- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
-- Ollama: the name shown by &apos;ollama list&apos;
-- LM Studio: the model loaded in the local server</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderQuota">Your AI provider rejected the request because the account has no available quota.
+Esempi:
+- Gemini: gemini-2.5-flash o gemini-2.5-flash-lite
+- Ollama: il nome mostrato da 'ollama list'
+- LM Studio: il modello caricato nel server locale</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderQuota">Il tuo provider AI ha rifiutato la richiesta perché l'account non ha quota disponibile.
 
-With OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.
+Con OpenAI, questo di solito significa che non ci sono crediti/bilancio API attivi o che è stato raggiunto il limite mensile.
 
-Free options:
-- Use a local OpenAI-compatible provider such as LM Studio or Ollama and change the endpoint in the plugin settings.
-- Process fewer games and fewer generated fields, although this will not help if the quota is zero.
-- Use a small local model for metadata and keep cloud AI only for occasional cases.
+Opzioni gratuite:
+- Usa un provider locale compatibile con OpenAI come LM Studio o Ollama e cambia l'endpoint nelle impostazioni del plugin.
+- Processa meno giochi e meno campi generati, anche se questo non aiuterà se la quota è zero.
+- Usa un modello locale piccolo per i metadata e mantieni l'AI cloud solo per casi occasionali.
 
-Local endpoint examples:
+Esempi di endpoint locali:
 LM Studio: http://localhost:1234/v1/chat/completions
 Ollama: http://localhost:11434/v1/chat/completions
 
-For local providers, the API key can be empty.</sys:String>
+Per i provider locali, la chiave API può essere vuota.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderRateLimit">Il fornitore di intelligenza artificiale ha richieste temporaneamente limitate.
 
 Prova ad attendere qualche minuto, a elaborare meno giochi contemporaneamente o a utilizzare un modello/endpoint locale con meno restrizioni.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderTechnical">Il provider ha restituito un errore tecnico. Controlla la configurazione o prova un altro modello.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderUnavailable">The AI provider is overloaded or the selected model is temporarily unavailable.
+    <sys:String x:Key="MTDA_ErrorProviderUnavailable">Il provider AI è sovraccarico o il modello selezionato è temporaneamente non disponibile.
 
-If you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.
+Se usi Gemini, questo può succedere anche se hai Gemini Pro/Google AI Pro nell'app: l'API Gemini ha limiti e disponibilità propri, separati dall'abbonamento all'app.
 
-What you can do without paying:
-- Wait a few minutes and try again.
-- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.
-- Process fewer games at once.
-- Use LM Studio or Ollama locally if you want to avoid external quotas.</sys:String>
+Cosa puoi fare senza pagare:
+- Aspetta qualche minuto e riprova.
+- Passa a gemini-2.5-flash o gemini-2.5-flash-lite se usavi un modello Pro.
+- Processa meno giochi contemporaneamente.
+- Usa LM Studio o Ollama localmente se vuoi evitare quote esterne.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configura la chiave API SteamGridDB nella scheda Media prima di scaricare le immagini.</sys:String>
-    <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
+    <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB non ha potuto restituire le immagini ({0}). Controlla la chiave API o riprova più tardi.</sys:String>
     <sys:String x:Key="MTDA_ErrorUnspecified">Errore non specificato.</sys:String>
-    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences.</sys:String>
+    <sys:String x:Key="MTDA_MediaHelp">Il plugin combina fonti media: Steam ufficiale, PlayStation Store, Xbox Store, Epic Store quando utilizzabile, SteamGridDB come fonte comunitaria se configuri la sua chiave API, più RAWG, MobyGames e IGDB quando abilitati. In modalità automatica dà priorità agli asset ufficiali e poi applica preferenze di formato, punteggio e filtro.</sys:String>
     <sys:String x:Key="MTDA_MediaInfoOfficial">Ufficiale</sys:String>
     <sys:String x:Key="MTDA_MediaInfoScore">Punto</sys:String>
     <sys:String x:Key="MTDA_MediaInfoSize">Misurare</sys:String>
@@ -283,17 +283,17 @@ What you can do without paying:
     <sys:String x:Key="MTDA_MediaPickerTitle">Scegli il supporto</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadati AI applicati {0} file multimediali.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadati AI aggiornati {0} gioco/i. Errori: {1}</sys:String>
-    <sys:String x:Key="MTDA_MessageMediaUpdated">Media aggiornati dall&apos;AI dei metadati per {0} gioco/i. File applicati: {1}.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaUpdated">Media aggiornati dall'AI dei metadati per {0} gioco/i. File applicati: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadati AI aggiornati {0} gioco/i.</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">Non ci sono candidati per questo tipo di media.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesCurrentList">Non ci sono giochi nell&apos;elenco attuale.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesCurrentList">Non ci sono giochi nell'elenco attuale.</sys:String>
     <sys:String x:Key="MTDA_MessageNoGamesMedia">Non ci sono giochi a cui applicare i media.</sys:String>
-    <sys:String x:Key="MTDA_MessageNoGamesMetadata">Non ci sono giochi a cui applicare l&apos;intelligenza artificiale dei metadati.</sys:String>
+    <sys:String x:Key="MTDA_MessageNoGamesMetadata">Non ci sono giochi a cui applicare l'intelligenza artificiale dei metadati.</sys:String>
     <sys:String x:Key="MTDA_MessageNoGamesSortingName">Non ci sono giochi a cui applicare i nomi di ordinamento.</sys:String>
     <sys:String x:Key="MTDA_MessageNoMediaTypesEnabled">Nessun tipo di supporto è abilitato nella configurazione selezionata.</sys:String>
     <sys:String x:Key="MTDA_MessageNoSelectedGames">Nessun gioco selezionato.</sys:String>
     <sys:String x:Key="MTDA_MessageSelectMediaBeforeApply">Seleziona almeno un elemento multimediale prima di applicare le modifiche.</sys:String>
-    <sys:String x:Key="MTDA_MessageSortingNameUpdated">L&apos;intelligenza artificiale dei metadati ha aggiornato i nomi di ordinamento per {0} gioco/i.</sys:String>
+    <sys:String x:Key="MTDA_MessageSortingNameUpdated">L'intelligenza artificiale dei metadati ha aggiornato i nomi di ordinamento per {0} gioco/i.</sys:String>
     <sys:String x:Key="MTDA_NoCommunity">No/comunità</sys:String>
     <sys:String x:Key="MTDA_NotSpecified">Non specificato</sys:String>
     <sys:String x:Key="MTDA_OptionApplyAppend">Aggiungi senza eliminare</sys:String>
@@ -341,28 +341,28 @@ What you can do without paying:
     <sys:String x:Key="MTDA_ProgressGeneratingMetadata">Generazione di metadati AI in corso...</sys:String>
     <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">Generazione di metadati AI:</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaKind">Ricerca di {0} nelle fonti multimediali...</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingClaude">Claude API usually requires its own billing; having Claude Pro on the web does not mean you have API credit.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingClaude">Claude API di solito richiede una fatturazione propria; avere Claude Pro sul web non significa avere credito API.</sys:String>
     <sys:String x:Key="MTDA_ProviderBillingCustom">Controlla i termini del fornitore prima di elaborare librerie di grandi dimensioni.</sys:String>
     <sys:String x:Key="MTDA_ProviderBillingFreeQuota">Potrebbe funzionare senza pagare se scegli un modello/quota gratuito, ma se raggiungi limiti o una domanda elevata dovrai attendere, passare a un modello più disponibile o abilitare la fatturazione a seconda del fornitore.</sys:String>
     <sys:String x:Key="MTDA_ProviderBillingLocal">Opzione consigliata se non vuoi pagare: il costo è il tuo hardware. La velocità e la qualità dipendono dal modello e dal PC.</sys:String>
-    <sys:String x:Key="MTDA_ProviderBillingOpenAI">Signing in with ChatGPT Plus is not enough for this plugin: you need an OpenAI Platform API key and API billing/credit. Plus only gives benefits inside ChatGPT.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingOpenAI">Accedere con ChatGPT Plus non basta per questo plugin: serve una chiave API OpenAI Platform e fatturazione/credito API. Plus offre benefici solo dentro ChatGPT.</sys:String>
     <sys:String x:Key="MTDA_ProviderClaude">Claude Anthropic</sys:String>
-    <sys:String x:Key="MTDA_ProviderCustom">Custom OpenAI-compatible</sys:String>
+    <sys:String x:Key="MTDA_ProviderCustom">Personalizzato compatibile OpenAI</sys:String>
     <sys:String x:Key="MTDA_ProviderGemini">Google Gemini</sys:String>
     <sys:String x:Key="MTDA_ProviderGroq">Groq</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpClaude">Claude Anthropic: create the key in Anthropic Console. The claude.ai subscription and the API are separate products.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpCustom">Custom provider: use the URL, model, and API key specified by that OpenAI-compatible provider.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpGemini">Google Gemini: create the key in Google AI Studio. Gemini Pro/Google AI Pro in the app does not automatically increase API quota or availability; the API has its own tiers and limits.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpGroq">Groq: create the key in GroqCloud Console. It usually offers a free start with usage limits.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio local: no API key is needed. Open LM Studio, load a model, and enable the local server in the Developer tab.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpOllama">Ollama local: no API key is needed. Install Ollama, download a model with &apos;ollama pull&apos;, and keep the local service running.</sys:String>
-    <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpClaude">Claude Anthropic: crea la chiave in Anthropic Console. L'abbonamento claude.ai e l'API sono prodotti separati.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpCustom">Provider personalizzato: usa URL, modello e chiave API forniti da quel provider compatibile OpenAI.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGemini">Google Gemini: crea la chiave in Google AI Studio. Gemini Pro/Google AI Pro nell'app non aumenta automaticamente quota o disponibilità API; l'API ha livelli e limiti propri.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpGroq">Groq: crea la chiave in GroqCloud Console. Di solito offre un inizio gratuito con limiti di utilizzo.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio locale: non serve chiave API. Apri LM Studio, carica un modello e abilita il server locale nella scheda Sviluppatore.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOllama">Ollama locale: non serve chiave API. Installa Ollama, scarica un modello con 'ollama pull' e tieni attivo il servizio locale.</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI: crea la chiave su platform.openai.com/api-keys. ChatGPT Plus/Pro non include l'uso API; l'API usa fatturazione separata nella OpenAI Platform.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpOpenRouter">OpenRouter: crea la chiave in OpenRouter. Puoi scegliere modelli gratuiti se il modello termina con :free o appare come gratuito, ma hanno limiti e disponibilità variabili.</sys:String>
-    <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio local</sys:String>
-    <sys:String x:Key="MTDA_ProviderOllama">Ollama local</sys:String>
+    <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio locale</sys:String>
+    <sys:String x:Key="MTDA_ProviderOllama">Ollama locale</sys:String>
     <sys:String x:Key="MTDA_ProviderOpenAI">OpenAI</sys:String>
     <sys:String x:Key="MTDA_ProviderOpenRouter">OpenRouter</sys:String>
-    <sys:String x:Key="MTDA_ScopeAllGamesInList">tutti i giochi nell&apos;elenco</sys:String>
+    <sys:String x:Key="MTDA_ScopeAllGamesInList">tutti i giochi nell'elenco</sys:String>
     <sys:String x:Key="MTDA_Select">Selezionare</sys:String>
     <sys:String x:Key="MTDA_Selected">Selezionato</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} risponde, ma non ha restituito candidati per il gioco di prova ({1}). Il collegamento sembra funzionare, ma questa fonte non ha trovato media utili con i criteri attuali.</sys:String>
@@ -405,22 +405,22 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_TemplateEmulation">Emulazione</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Carica altro ({0} rimanenti)</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Modalità avanzata</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
-    <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
-    <sys:String x:Key="MTDA_Discard">Discard</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemory">Memoria vocabolario locale</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Termini riutilizzabili preferiti appresi dai metadata applicati. Formato: lingua.campo=valore; valore. Esempio: es.tags=Disparos; Cooperativo. Modificalo per unire varianti o forzare la tua formulazione preferita.</sys:String>
+    <sys:String x:Key="MTDA_OpenInBrowser">Apri nel browser</sys:String>
+    <sys:String x:Key="MTDA_Discard">Annulla</sys:String>
     <sys:String x:Key="MTDA_Cancel">Annulla</sys:String>
     <sys:String x:Key="MTDA_Configure">Configura</sys:String>
     <sys:String x:Key="MTDA_SourcePriority">Priorità fonti</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityShort">Fonti</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityHelp">Controlla quale fonte vince quando la modalità automatica trova più candidati validi. Le fonti disattivate o senza API key vengono ignorate.</sys:String>
-    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Configura priorità fonti</sys:String>
+    <sys:String x:Key="MTDA_SourcePriorityDialogTitle">Priorità fonte {0}</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityDialogHelp">Attiva le fonti da usare per questo tipo di media e cambia il loro ordine con le frecce.</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityAtLeastOne">Seleziona almeno una fonte.</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityAccepted">Priorità fonti aggiornata.</sys:String>
     <sys:String x:Key="MTDA_Save">Salva</sys:String>
     <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI è stato annullato. {0} gioco/i aggiornati prima dell interruzione.</sys:String>
-    <sys:String x:Key="MTDA_MessageMediaCancelled">La ricerca media è stata annullata. {0} gioco/i aggiornati prima dell interruzione.</sys:String>
+    <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI ha annullato l'operazione media. Giochi processati: {0}. File applicati: {1}.</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} non ha restituito candidati media per il gioco di prova ({1}). Epic Store è una fonte di supporto e può bloccare le letture automatiche.</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} ha risposto, ma non ha restituito media utili per il gioco di prova ({1}). La ricerca Microsoft Store può dipendere dal mercato.</sys:String>
     <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnostica fonti:</sys:String>
@@ -471,4 +471,145 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutSupportTitle">Sostieni lo sviluppo</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Se Metadata AI ti è utile, puoi sostenerne lo sviluppo su Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Sostieni su Ko-fi</sys:String>
+    <sys:String x:Key="MTDA_FieldBehaviorTitle">Regole per la generazione e l'applicazione dei campi</sys:String>
+    <sys:String x:Key="MTDA_FieldBehaviorHelp">Scegli quali campi Metadata AI può generare, come applicare ogni risultato e il numero massimo di valori consentiti nei campi elenco.</sys:String>
+    <sys:String x:Key="MTDA_Maximum">Massimo</sys:String>
+    <sys:String x:Key="MTDA_UseExistingPlayniteValues">Usa valori Playnite</sys:String>
+    <sys:String x:Key="MTDA_UseExistingPlayniteValuesHelp">• Usare i valori Playnite significa che, se abilitato, Metadata AI può selezionare solo valori già presenti nel tuo database Playnite per quel campo. Questo evita la creazione di tag, generi, caratteristiche o categorie quasi identici con formulazioni diverse.</sys:String>
+    <sys:String x:Key="MTDA_FieldAccuracyNotesTitle">Note sull'accuratezza</sys:String>
+    <sys:String x:Key="MTDA_DeveloperPublisherAccuracyNote">• Sviluppatori ed editori: un massimo di 1 mantiene solo lo sviluppatore o editore principale accreditato. Limiti più alti possono includere collaboratori aggiuntivi accreditati quando sono disponibili prove affidabili.</sys:String>
+    <sys:String x:Key="MTDA_SortingNameAccuracyNote">• Nome per ordinamento: calcolato localmente da numerazioni di sequel come 2/3, II/III o v2/v3 per produrre un ordine di serie stabile come Nome base 01, 02, 03.</sys:String>
+    <sys:String x:Key="MTDA_PrefixesTitle">Prefissi per i valori creati</sys:String>
+    <sys:String x:Key="MTDA_BlacklistTitle">Termini esclusi</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceSetupTitle">Configurazione iniziale</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceSetupHelp">Riapri l'assistente guidato per scegliere un profilo sicuro, il provider, la lingua e i campi abilitati. Non modifica mai i giochi al termine.</sys:String>
+    <sys:String x:Key="MTDA_OpenSetupWizard">Apri assistente configurazione</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceHistoryTitle">Cronologia modifiche e ripristino</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceHistoryHelp">Esamina le ultime 20 operazioni di Metadata AI, la loro origine e i campi interessati, oppure ripristina un'operazione allo stato precedente.</sys:String>
+    <sys:String x:Key="MTDA_OpenHistory">Apri cronologia modifiche</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardTitle">Assistente configurazione Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardStep">Passo {0} di 4</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSkip">Salta per ora</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardBack">Indietro</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardNext">Avanti</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFinish">Salva configurazione</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardPurposeTitle">Scegli lingua e punto di partenza sicuro</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardPurposeHelp">L'assistente prepara solo la configurazione. Non modificherà alcun gioco al termine.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProfile">Profilo configurazione</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileBalanced">Bilanciato e sicuro (consigliato)</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileMissing">Completa solo i metadati mancanti</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileNormalize">Normalizza una libreria esistente</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileMedia">Solo media</sys:String>
+    <sys:String x:Key="MTDA_SetupProfileCurrent">Mantieni configurazione attuale</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProfileHelp">Puoi perfezionare ogni campo in seguito. Le installazioni esistenti non vengono mai resettate automaticamente.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderTitle">Configura il provider AI</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderHelp">I provider locali come LM Studio e Ollama possono funzionare senza API a pagamento. La chiave API può restare vuota se il provider selezionato non ne richiede una.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderAdvancedHelp">L'endpoint viene selezionato automaticamente. Gli endpoint personalizzati restano disponibili dalla modalità Avanzata nella scheda AI.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardProviderTestSuccess">Test del provider completato con successo.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFieldsTitle">Scegli cosa Metadata AI può modificare</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardFieldsHelp">Questi interruttori controllano la generazione. Le regole di applicazione selezionate dal profilo decidono ancora se i valori esistenti vengono preservati, aggiunti o sostituiti.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSummaryTitle">Rivedi la configurazione</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardEnabledFields">Campi abilitati</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSummaryHelp">Salvare modifica solo la configurazione del plugin. Usa Simula modifiche dal menu Metadata AI per ispezionare un gioco reale prima di applicare qualsiasi cosa.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardDesktopOnly">L'assistente di configurazione è disponibile in modalità Desktop. Le tue impostazioni attuali rimangono invariate.</sys:String>
+    <sys:String x:Key="MTDA_SetupWizardSaved">La configurazione di Metadata AI è stata salvata. Nessun gioco è stato modificato.</sys:String>
+    <sys:String x:Key="MTDA_MenuSetupWizard">Apri assistente di configurazione iniziale</sys:String>
+    <sys:String x:Key="MTDA_MenuSimulateChanges">Anteprima e selezione modifiche Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">Anteprima e selezione modifiche metadata per giochi selezionati o lista corrente</sys:String>
+    <sys:String x:Key="MTDA_MenuHistory">Visualizza cronologia modifiche</sys:String>
+    <sys:String x:Key="MTDA_MenuViewProvenance">Visualizza ultima provenienza Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_SimulationTitle">Simulazione Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_SimulationHelp">Nessuna modifica è stata salvata. Applicando si riutilizzeranno questi risultati generati senza richiamare di nuovo l'AI. Per un gioco puoi anche scegliere copertina, icona e sfondo prima di applicare.</sys:String>
+    <sys:String x:Key="MTDA_SimulationQuotaWarning">La simulazione interrogherà il provider AI configurato per {0} giochi e potrebbe consumare quota API. Non modificherà la libreria. Continuare?</sys:String>
+    <sys:String x:Key="MTDA_ProgressSimulatingGame">Simulazione modifiche: </sys:String>
+    <sys:String x:Key="MTDA_SimulationApply">Applica modifiche simulate</sys:String>
+    <sys:String x:Key="MTDA_SimulationNoChanges">Con le regole di applicazione attuali non verrebbero effettuate modifiche.</sys:String>
+    <sys:String x:Key="MTDA_SimulationBefore">Prima</sys:String>
+    <sys:String x:Key="MTDA_SimulationAfter">Dopo</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplied">Metadata AI ha applicato le modifiche simulate a {0} gioco(i).</sys:String>
+    <sys:String x:Key="MTDA_HistoryTitle">Cronologia di Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_HistoryEmpty">Non ci sono ancora modifiche registrate di Metadata AI.</sys:String>
+    <sys:String x:Key="MTDA_HistoryClear">Cancella cronologia</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndo">Annulla operazione selezionata</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoAllSelected">Annulla tutta la cronologia selezionata</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGame">Annulla per questo gioco</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGameConfirm">Ripristinare {0} allo stato precedente a questa operazione di Metadata AI? Modifiche manuali successive agli stessi campi potrebbero essere sovrascritte.</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoGameComplete">Metadata AI ha ripristinato {0}.</sys:String>
+    <sys:String x:Key="MTDA_HistoryGamesCount">{0} gioco(i)</sys:String>
+    <sys:String x:Key="MTDA_HistoryChangedFields">Campi modificati</sys:String>
+    <sys:String x:Key="MTDA_HistoryDesktopOnly">La cronologia dettagliata delle modifiche è disponibile in modalità Desktop.</sys:String>
+    <sys:String x:Key="MTDA_HistoryClearConfirm">Cancellare la cronologia di Metadata AI e i suoi backup media? Questa operazione non può essere annullata.</sys:String>
+    <sys:String x:Key="MTDA_HistoryCleared">La cronologia di Metadata AI è stata cancellata.</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoConfirm">Ripristinare ogni gioco modificato dall’operazione selezionata allo stato precedente di Metadata AI? Modifiche manuali successive agli stessi campi potrebbero essere sovrascritte.</sys:String>
+    <sys:String x:Key="MTDA_HistoryUndoComplete">Metadata AI ha ripristinato {0} gioco(i).</sys:String>
+    <sys:String x:Key="MTDA_HistoryAutoImportMetadata">Importazione automatica dei metadata</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplyMetadata">Applica metadata AI</sys:String>
+    <sys:String x:Key="MTDA_HistoryAutoImportMedia">Importazione automatica dei media</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplyMedia">Applica media</sys:String>
+    <sys:String x:Key="MTDA_HistoryCuratedMedia">Applica media selezionati</sys:String>
+    <sys:String x:Key="MTDA_HistorySortingNames">Applica nomi di ordinamento</sys:String>
+    <sys:String x:Key="MTDA_HistoryReviewedMetadata">Metadata AI revisionati</sys:String>
+    <sys:String x:Key="MTDA_HistoryApplySimulation">Applica metadata simulati</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceTitle">Provenienza metadata</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSource">Fonte</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethod">Metodo</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidence">Affidabilità</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceEmpty">Non ci sono ancora dati di provenienza Metadata AI registrati per questo gioco. Applica prima i metadati generati; le simulazioni mostrano la provenienza nella loro anteprima senza scrivere la cronologia.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodTrusted">Contesto attendibile</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodNormalized">Normalizzato da AI</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodIdentity">Generato dall'identità del gioco</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodDeterministic">Regola deterministica locale</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodMedia">Media scaricati</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceHigh">Alta</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceMedium">Media</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceLow">Bassa; revisione consigliata</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceExisting">Metadati Playnite esistenti</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceLocalRule">Regola locale Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceSourceAiProvider">Fornitore AI</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailTrusted">Il valore è stato vincolato da un contesto di fonte attendibile.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailNormalizedOfficial">La fonte è stata fornita come contesto fattuale e l'AI l'ha normalizzata.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailNormalizedExisting">I metadati attuali della libreria sono stati forniti come contesto e normalizzati dall'AI.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailIdentity">Non era disponibile una fonte attendibile specifica per il campo. Controlla questo valore prima di applicarlo.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailDeterministic">Metadata AI ha calcolato questo valore localmente senza consultare il fornitore AI.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailMedia">Questo file media è stato scaricato dalla fonte indicata.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceOriginalUrl">URL originale</sys:String>
+    <sys:String x:Key="MTDA_None">Nessuno</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendationHelp">Le raccomandazioni sono calcolate localmente da completezza, provenienza, fiducia e possibile perdita di informazioni. Non richiamano nuovamente il provider AI e non possono sostituire la tua revisione.</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectRecommended">Seleziona raccomandati</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectAll">Seleziona tutto</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectNone">Deseleziona tutto</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplySelected">Applica modifiche selezionate</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyGame">Applica modifiche metadata a questo gioco</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendedOnly">Solo raccomandati</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectedCount">{0} di {1} modifiche selezionate</sys:String>
+    <sys:String x:Key="MTDA_SimulationWorthApplying">Vale la pena applicare</sys:String>
+    <sys:String x:Key="MTDA_SimulationReviewRecommended">Revisione consigliata</sys:String>
+    <sys:String x:Key="MTDA_SimulationKeepCurrent">Mantenere i dati attuali è più sicuro</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommendationSummary">Raccomandati: {0} | Da rivedere: {1} | Mantieni attuali: {2}</sys:String>
+    <sys:String x:Key="MTDA_SimulationRecommended">Raccomandato</sys:String>
+    <sys:String x:Key="MTDA_SimulationReview">Da rivedere</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyField">Applica questo campo</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonMissing">compila un campo vuoto</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonTrusted">supportato da una fonte affidabile o evidenza ad alta fiducia</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonDeterministic">calcolato localmente usando una regola deterministica</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonAddsInformation">aggiunge informazioni senza ridurre la lista attuale</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonLowConfidence">la fiducia nella fonte è bassa</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonRemovesInformation">la lista proposta contiene meno elementi di quella attuale</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonShorterDescription">la descrizione proposta è sostanzialmente più breve</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonEmptyResult">il valore proposto è vuoto</sys:String>
+    <sys:String x:Key="MTDA_SimulationReasonReplacesExisting">sostituisce informazioni esistenti e dovrebbe essere rivisto</sys:String>
+    <sys:String x:Key="MTDA_MenuTools">Cronologia e provenienza</sys:String>
+    <sys:String x:Key="MTDA_SimulationSelectedSummary">{0} di {1} modifiche metadata selezionate | {2} modifiche media selezionate</sys:String>
+    <sys:String x:Key="MTDA_SimulationMetadataTitle">Modifiche metadata</sys:String>
+    <sys:String x:Key="MTDA_SimulationMediaTitle">Anteprima media</sys:String>
+    <sys:String x:Key="MTDA_SimulationCurrentMedia">Attuale</sys:String>
+    <sys:String x:Key="MTDA_SimulationProposedMedia">Proposto</sys:String>
+    <sys:String x:Key="MTDA_SimulationApplyMedia">Applica questa modifica media</sys:String>
+    <sys:String x:Key="MTDA_SimulationChooseMedia">Scegli {0}</sys:String>
+    <sys:String x:Key="MTDA_SimulationChangeMedia">Cambia selezione</sys:String>
+    <sys:String x:Key="MTDA_UseSelection">Usa selezione</sys:String>
+    <sys:String x:Key="MTDA_MenuGameHistory">Visualizza cronologia di questo gioco</sys:String>
+    <sys:String x:Key="MTDA_HistoryGameTitle">Cronologia Metadata AI - {0}</sys:String>
+    <sys:String x:Key="MTDA_HistoryGameEmpty">Non è presente alcuna cronologia Metadata AI per {0}.</sys:String>
+    <sys:String x:Key="MTDA_SimulationKeepBadge">Mantieni</sys:String>
 </ResourceDictionary>

@@ -30,6 +30,7 @@ namespace MetaDataIAPlugin
         public string FileName { get; set; }
         public byte[] Content { get; set; }
         public string SourceUrl { get; set; }
+        public string SourceName { get; set; }
     }
 
     public class MediaPreviewOption
@@ -120,7 +121,8 @@ namespace MetaDataIAPlugin
                 Kind = kind,
                 FileName = BuildFileName(game.Name, kind, processed.Extension),
                 Content = processed.Content,
-                SourceUrl = selectedBytes.Candidate.Url
+                SourceUrl = selectedBytes.Candidate.Url,
+                SourceName = selectedBytes.Candidate.SourceName
             };
         }
 
@@ -137,19 +139,47 @@ namespace MetaDataIAPlugin
 
             return OrderCandidates(validated, kind)
                 .Take(maximum)
-                .Select(x => new MediaPreviewOption
-                {
-                    Kind = kind,
-                    Url = x.Url,
-                    Width = x.Width,
-                    Height = x.Height,
-                    Style = x.Style,
-                    Score = x.Score,
-                    Extension = x.Extension,
-                    SourceName = x.SourceName,
-                    IsOfficial = x.IsOfficial
-                })
+                .Select(x => ToPreviewOption(x, kind))
                 .ToList();
+        }
+
+        public async Task<MediaPreviewOption> GetRecommendedPreviewOptionAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))
+        {
+            if (game == null)
+            {
+                throw new ArgumentNullException("game");
+            }
+
+            var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
+            var automaticCandidates = GetAutomaticCandidates(candidates, kind);
+            if (automaticCandidates.Count == 0)
+            {
+                return null;
+            }
+
+            var maximum = Math.Max(1, settings.MediaSearchMaxResults);
+            var validated = await ValidatePreviewCandidatesAsync(
+                OrderCandidates(automaticCandidates, kind).ToList(),
+                maximum,
+                cancelToken).ConfigureAwait(false);
+            var selected = OrderCandidates(validated, kind).FirstOrDefault();
+            return selected == null ? null : ToPreviewOption(selected, kind);
+        }
+
+        private static MediaPreviewOption ToPreviewOption(MediaCandidate candidate, MediaKind kind)
+        {
+            return new MediaPreviewOption
+            {
+                Kind = kind,
+                Url = candidate.Url,
+                Width = candidate.Width,
+                Height = candidate.Height,
+                Style = candidate.Style,
+                Score = candidate.Score,
+                Extension = candidate.Extension,
+                SourceName = candidate.SourceName,
+                IsOfficial = candidate.IsOfficial
+            };
         }
 
         public async Task<int> CountPreviewOptionsAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))
@@ -212,7 +242,8 @@ namespace MetaDataIAPlugin
                 Kind = option.Kind,
                 FileName = BuildFileName(game.Name, option.Kind, processed.Extension),
                 Content = processed.Content,
-                SourceUrl = option.Url
+                SourceUrl = option.Url,
+                SourceName = option.SourceName
             };
         }
 

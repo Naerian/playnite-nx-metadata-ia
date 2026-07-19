@@ -20,6 +20,7 @@ namespace MetaDataIAPlugin
     {
         private static readonly ILogger logger = LogManager.GetLogger();
         private readonly MetaDataIASettingsViewModel settings;
+        private readonly MetadataHistoryService history;
 
         public override Guid Id
         {
@@ -107,6 +108,7 @@ namespace MetaDataIAPlugin
         {
             PluginLocalization.Initialize(api);
             settings = new MetaDataIASettingsViewModel(this);
+            history = new MetadataHistoryService(api, GetPluginUserDataPath());
             Properties = new MetadataPluginProperties
             {
                 HasSettings = true
@@ -131,6 +133,10 @@ namespace MetaDataIAPlugin
         public override void OnApplicationStarted(OnApplicationStartedEventArgs args)
         {
             SeedKnownGamesIfNeeded();
+            if (settings.IsSetupWizardPending && !IsFullscreenMode)
+            {
+                PlayniteApi.MainView.UIDispatcher.BeginInvoke(new Action(() => OpenSetupWizard(true)));
+            }
         }
 
         public override void OnLibraryUpdated(OnLibraryUpdatedEventArgs args)
@@ -154,7 +160,14 @@ namespace MetaDataIAPlugin
             {
                 yield return new GameMenuItem
                 {
-                    Description = Loc("MTDA_MenuGenerateReview", "Generar y revisar metadatos IA"),
+                    Description = Loc("MTDA_MenuSimulateChanges", "Preview and choose Metadata AI changes"),
+                    MenuSection = MenuRoot,
+                    Action = actionArgs => SimulateChanges(actionArgs.Games, settings.Settings)
+                };
+
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_MenuGenerateReview", "Generate and review in Playnite editor"),
                     MenuSection = MenuRoot,
                     Action = actionArgs => GenerateAndReview(actionArgs.Games.FirstOrDefault())
                 };
@@ -162,15 +175,15 @@ namespace MetaDataIAPlugin
 
             yield return new GameMenuItem
             {
-                Description = Loc("MTDA_MenuGenerateApply", "Generar y aplicar metadatos IA"),
+                Description = Loc("MTDA_MenuGenerateApply", "Generate and apply configured metadata"),
                 MenuSection = MenuRoot,
                 Action = actionArgs => GenerateAndApply(actionArgs.Games, settings.Settings)
             };
 
             yield return CreateGameMenuItem("Establecer descripciones", activeSettings => CreateFocusedSettings("description"));
-            yield return CreateGameMenuItem("Establecer etiquetas", activeSettings => CreateFocusedSettings("tags"));
-            yield return CreateGameMenuItem("Establecer categorias", activeSettings => CreateFocusedSettings("categories"));
             yield return CreateGameMenuItem("Establecer generos", activeSettings => CreateFocusedSettings("genres"));
+            yield return CreateGameMenuItem("Establecer categorias", activeSettings => CreateFocusedSettings("categories"));
+            yield return CreateGameMenuItem("Establecer etiquetas", activeSettings => CreateFocusedSettings("tags"));
             yield return CreateGameMenuItem("Establecer caracteristicas", activeSettings => CreateFocusedSettings("features"));
             yield return CreateGameMenuItem("Establecer compañías", activeSettings => CreateFocusedSettings("companies"));
             yield return CreateGameMenuItem("Establecer edad y region", activeSettings => CreateFocusedSettings("age-region"));
@@ -181,10 +194,51 @@ namespace MetaDataIAPlugin
             yield return CreateGameMediaMenuItem("Establecer icono", activeSettings => CreateFocusedMediaSettings("icon"));
             yield return CreateGameMediaMenuItem("Establecer fondo", activeSettings => CreateFocusedMediaSettings("background"));
             yield return CreateGameMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
+
+            if (!IsFullscreenMode)
+            {
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_MenuGameHistory", "View history for this game"),
+                    MenuSection = MenuRoot + "|" + Loc("MTDA_MenuTools", "History and provenance"),
+                    Action = actionArgs => ShowGameHistory(actionArgs.Games.FirstOrDefault())
+                };
+
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_MenuViewProvenance", "View last Metadata AI provenance"),
+                    MenuSection = MenuRoot + "|" + Loc("MTDA_MenuTools", "History and provenance"),
+                    Action = actionArgs => ShowLatestProvenance(actionArgs.Games.FirstOrDefault())
+                };
+            }
         }
 
         public override IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs args)
         {
+            if (!IsFullscreenMode)
+            {
+                yield return new MainMenuItem
+                {
+                    Description = Loc("MTDA_MenuSetupWizard", "Open first-time setup assistant"),
+                    MenuSection = MenuRoot,
+                    Action = actionArgs => OpenSetupWizard(false)
+                };
+
+                yield return new MainMenuItem
+                {
+                    Description = Loc("MTDA_MenuSimulateSelectedOrList", "Simulate selected games or current list"),
+                    MenuSection = MenuRoot,
+                    Action = actionArgs => SimulateChanges(GetSelectedOrFilteredGames(), settings.Settings)
+                };
+
+                yield return new MainMenuItem
+                {
+                    Description = Loc("MTDA_MenuHistory", "View change history"),
+                    MenuSection = MenuRoot,
+                    Action = actionArgs => ShowHistory()
+                };
+            }
+
             yield return new MainMenuItem
             {
                 Description = Loc("MTDA_MenuApplyAllList", "Aplicar a todos los juegos de la lista"),
@@ -200,9 +254,9 @@ namespace MetaDataIAPlugin
             };
 
             yield return CreateMainMenuItem("Establecer descripciones", activeSettings => CreateFocusedSettings("description"));
-            yield return CreateMainMenuItem("Establecer etiquetas", activeSettings => CreateFocusedSettings("tags"));
-            yield return CreateMainMenuItem("Establecer categorias", activeSettings => CreateFocusedSettings("categories"));
             yield return CreateMainMenuItem("Establecer generos", activeSettings => CreateFocusedSettings("genres"));
+            yield return CreateMainMenuItem("Establecer categorias", activeSettings => CreateFocusedSettings("categories"));
+            yield return CreateMainMenuItem("Establecer etiquetas", activeSettings => CreateFocusedSettings("tags"));
             yield return CreateMainMenuItem("Establecer caracteristicas", activeSettings => CreateFocusedSettings("features"));
             yield return CreateMainMenuItem("Establecer compañías", activeSettings => CreateFocusedSettings("companies"));
             yield return CreateMainMenuItem("Establecer edad y region", activeSettings => CreateFocusedSettings("age-region"));
@@ -280,6 +334,9 @@ namespace MetaDataIAPlugin
                 var processed = 0;
                 var cancelled = false;
                 var errors = new List<string>();
+                var historyOperation = history.BeginOperation(silent
+                    ? Loc("MTDA_HistoryAutoImportMetadata", "Automatic metadata import")
+                    : Loc("MTDA_HistoryApplyMetadata", "Apply AI metadata"));
                 PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
                 {
                     progress.ProgressMaxValue = games.Count;
@@ -297,7 +354,10 @@ namespace MetaDataIAPlugin
                             var result = new MetadataGenerationService(activeSettings, PlayniteApi).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
+                                var before = history.Capture(game, historyOperation, false);
                                 MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
+                                var after = history.Capture(game, historyOperation, false);
+                                history.AddGame(historyOperation, game, before, after, result.Provenance);
                                 LearnVocabulary(activeSettings, result);
                             }));
                             processed++;
@@ -322,6 +382,8 @@ namespace MetaDataIAPlugin
                         progress.CurrentProgressValue = processed + errors.Count;
                     }
                 }, new GlobalProgressOptions(PluginTitle, true));
+
+                history.SaveOperation(historyOperation);
 
                 if (errors.Count > 0)
                 {
@@ -381,6 +443,9 @@ namespace MetaDataIAPlugin
                 var qualitySkipped = 0;
                 var cancelled = false;
                 var errors = new List<string>();
+                var historyOperation = history.BeginOperation(silent
+                    ? Loc("MTDA_HistoryAutoImportMedia", "Automatic media import")
+                    : Loc("MTDA_HistoryApplyMedia", "Apply media"));
                 PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
                 {
                     progress.ProgressMaxValue = games.Count;
@@ -396,7 +461,15 @@ namespace MetaDataIAPlugin
                         progress.Text = Loc("MTDA_ProgressDownloadingMedia", "Downloading media: ") + game.Name;
                         try
                         {
-                            var appliedForGame = ApplyEnabledMedia(service, game, progress);
+                            GameMetadataSnapshot before = null;
+                            progress.MainDispatcher.Invoke(new Action(() => before = history.Capture(game, historyOperation, true)));
+                            var mediaProvenance = new List<MetadataFieldProvenance>();
+                            var appliedForGame = ApplyEnabledMedia(service, game, progress, mediaProvenance);
+                            progress.MainDispatcher.Invoke(new Action(() =>
+                            {
+                                var after = history.Capture(game, historyOperation, false);
+                                history.AddGame(historyOperation, game, before, after, mediaProvenance);
+                            }));
                             appliedMedia += appliedForGame;
                             processed++;
                         }
@@ -416,6 +489,8 @@ namespace MetaDataIAPlugin
 
                     qualitySkipped = service.StrictQualitySkipCount;
                 }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true));
+
+                history.SaveOperation(historyOperation);
 
                 if (errors.Count > 0)
                 {
@@ -447,6 +522,350 @@ namespace MetaDataIAPlugin
             }
         }
 
+        public void OpenSetupWizard(bool firstRun = false)
+        {
+            if (IsFullscreenMode)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_SetupWizardDesktopOnly", "The setup assistant is available in Desktop mode. Your current settings remain unchanged."), PluginTitle);
+                return;
+            }
+
+            var window = new SetupWizardWindow(this, settings.Settings, firstRun);
+            var accepted = window.ShowDialog();
+            if (accepted == true && window.ResultSettings != null)
+            {
+                settings.ReplaceSettingsFromWizard(window.ResultSettings);
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_SetupWizardSaved", "The Metadata AI configuration was saved. No games were modified."), PluginTitle);
+            }
+            else if (firstRun && window.Skipped)
+            {
+                settings.Settings.SetupWizardCompleted = true;
+                settings.Settings.SetupWizardMigrationApplied = true;
+                SaveSettingsSecurely(settings.Settings);
+            }
+        }
+
+        public void SimulateChanges(List<Game> games, MetaDataIASettings activeSettings)
+        {
+            if (games == null || games.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMetadata", "There are no games to apply Metadata AI to."), PluginTitle);
+                return;
+            }
+
+            if (!EnsureConfigured())
+            {
+                return;
+            }
+
+            if (games.Count > 1)
+            {
+                var confirmation = PlayniteApi.Dialogs.ShowMessage(
+                    string.Format(Loc("MTDA_SimulationQuotaWarning", "The simulation will query the configured AI provider for {0} games and may consume API quota. It will not modify the library. Continue?"), games.Count),
+                    PluginTitle,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (confirmation != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            var simulations = new List<MetadataSimulationResult>();
+            var cancelled = false;
+            PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
+            {
+                progress.ProgressMaxValue = games.Count;
+                var index = 0;
+                foreach (var game in games)
+                {
+                    if (progress.CancelToken.IsCancellationRequested)
+                    {
+                        cancelled = true;
+                        break;
+                    }
+
+                    progress.Text = Loc("MTDA_ProgressSimulatingGame", "Simulating changes: ") + game.Name;
+                    var simulation = new MetadataSimulationResult { Game = game };
+                    try
+                    {
+                        simulation.Result = new MetadataGenerationService(activeSettings, PlayniteApi).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
+                        progress.MainDispatcher.Invoke(new Action(() =>
+                        {
+                            simulation.Changes = MetadataChangePreviewService.Build(PlayniteApi, game, simulation.Result, activeSettings);
+                        }));
+                        if (games.Count == 1 && activeSettings.IsMediaConfigured)
+                        {
+                            simulation.MediaChanges = BuildSimulationMediaProposals(game, activeSettings, progress.CancelToken, text => progress.Text = text);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        cancelled = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, "Failed to simulate metadata for " + game.Name);
+                        simulation.Error = UserError(ex);
+                    }
+
+                    simulations.Add(simulation);
+                    index++;
+                    progress.CurrentProgressValue = index;
+                }
+            }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_SimulationTitle", "Simulation"), true));
+
+            if (cancelled || simulations.Count == 0)
+            {
+                return;
+            }
+
+            var window = new SimulationWindow(this, simulations, activeSettings);
+            var owner = window.Owner ?? PlayniteApi.Dialogs.GetCurrentAppWindow();
+            bool? accepted = null;
+            try
+            {
+                accepted = window.ShowDialog();
+            }
+            finally
+            {
+                RestoreWindowActivation(owner);
+            }
+
+            if (accepted == true && window.ApplyRequested)
+            {
+                ApplySimulationResults(simulations, activeSettings);
+            }
+        }
+
+        private List<MediaSimulationChange> BuildSimulationMediaProposals(
+            Game game,
+            MetaDataIASettings activeSettings,
+            System.Threading.CancellationToken cancelToken,
+            Action<string> progressText)
+        {
+            var proposals = new List<MediaSimulationChange>();
+            foreach (var kind in new[] { MediaKind.Cover, MediaKind.Icon, MediaKind.Background })
+            {
+                cancelToken.ThrowIfCancellationRequested();
+                try
+                {
+                    if (progressText != null)
+                    {
+                        progressText(string.Format(
+                            Loc("MTDA_ProgressSearchingMediaKind", "Searching for {0} in media sources..."),
+                            MediaKindName(kind).ToLowerInvariant()));
+                    }
+
+                    var focus = kind == MediaKind.Cover ? "cover" : kind == MediaKind.Icon ? "icon" : "background";
+                    var focusedSettings = CreateFocusedMediaSettings(activeSettings, focus);
+                    var option = new MediaGenerationService(focusedSettings, PlayniteApi)
+                        .GetRecommendedPreviewOptionAsync(game, kind, cancelToken)
+                        .GetAwaiter()
+                        .GetResult();
+                    if (option != null)
+                    {
+                        proposals.Add(new MediaSimulationChange
+                        {
+                            Kind = kind,
+                            Option = option,
+                            Settings = focusedSettings,
+                            IsSelected = false
+                        });
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn(ex, "Failed to prepare simulated media proposal for " + game.Name + " (" + kind + ").");
+                }
+            }
+
+            return proposals;
+        }
+
+        private void ApplySimulationResults(IEnumerable<MetadataSimulationResult> simulations, MetaDataIASettings activeSettings)
+        {
+            var operation = history.BeginOperation(Loc("MTDA_HistoryApplySimulation", "Apply simulated metadata"));
+            var applied = 0;
+            var mediaErrors = new List<string>();
+            foreach (var simulation in simulations ?? Enumerable.Empty<MetadataSimulationResult>())
+            {
+                var selectedFields = new HashSet<string>(
+                    simulation.Changes == null
+                        ? Enumerable.Empty<string>()
+                        : simulation.Changes.Where(x => x.IsSelected).Select(x => x.Field),
+                    StringComparer.OrdinalIgnoreCase);
+                var selectedMedia = (simulation.MediaChanges ?? new List<MediaSimulationChange>())
+                    .Where(x => x != null && x.IsSelected && x.Option != null && x.Settings != null)
+                    .ToList();
+                if (simulation.Game == null || (selectedFields.Count == 0 && selectedMedia.Count == 0))
+                {
+                    continue;
+                }
+
+                var selectedSettings = simulation.Result == null ? null : CreateSimulationApplySettings(activeSettings, selectedFields);
+                var selectedResult = simulation.Result == null ? new AiMetadataResult() : FilterSimulationResult(simulation.Result, selectedFields);
+                var before = history.Capture(simulation.Game, operation, selectedMedia.Count > 0);
+                if (selectedFields.Count > 0)
+                {
+                    MetadataApplyService.Apply(PlayniteApi, simulation.Game, selectedResult, selectedSettings);
+                    LearnVocabulary(selectedSettings, selectedResult);
+                }
+
+                var provenance = new List<MetadataFieldProvenance>(selectedResult.Provenance ?? new List<MetadataFieldProvenance>());
+                var appliedMediaProvenance = ApplySimulationMediaChanges(simulation.Game, selectedMedia, mediaErrors);
+                provenance.AddRange(appliedMediaProvenance);
+                var after = history.Capture(simulation.Game, operation, false);
+                if (selectedFields.Count > 0 || appliedMediaProvenance.Count > 0)
+                {
+                    history.AddGame(operation, simulation.Game, before, after, provenance);
+                    applied++;
+                }
+            }
+
+            history.SaveOperation(operation);
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_SimulationApplied", "Metadata AI applied the simulated changes to {0} game(s)."), applied), PluginTitle);
+            if (mediaErrors.Count > 0)
+            {
+                PlayniteApi.Dialogs.ShowErrorMessage(string.Join(Environment.NewLine + Environment.NewLine, mediaErrors), PluginTitle);
+            }
+        }
+
+        private List<MetadataFieldProvenance> ApplySimulationMediaChanges(Game game, List<MediaSimulationChange> changes, List<string> errors)
+        {
+            var provenance = new List<MetadataFieldProvenance>();
+            if (game == null || changes == null || changes.Count == 0)
+            {
+                return provenance;
+            }
+
+            PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
+            {
+                foreach (var change in changes)
+                {
+                    if (progress.CancelToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        progress.Text = string.Format(Loc("MTDA_ProgressApplyingMediaKind", "Applying {0}..."), MediaKindName(change.Kind).ToLowerInvariant());
+                        var service = new MediaGenerationService(change.Settings, PlayniteApi);
+                        var media = service.GenerateFromOptionAsync(game, change.Option, progress.CancelToken).GetAwaiter().GetResult();
+                        progress.MainDispatcher.Invoke(new Action(() =>
+                        {
+                            MediaGenerationService.ApplyMediaFile(PlayniteApi, game, media);
+                            PlayniteApi.Database.Games.Update(game);
+                        }));
+                        provenance.Add(new MetadataFieldProvenance
+                        {
+                            Field = change.Kind == MediaKind.Cover ? "cover" : change.Kind == MediaKind.Icon ? "icon" : "background",
+                            Source = string.IsNullOrWhiteSpace(change.Option.SourceName) ? Loc("MTDA_UnknownSource", "Unknown source") : change.Option.SourceName,
+                            Method = "downloaded-media",
+                            Confidence = change.Option.IsOfficial ? "high" : "medium",
+                            Detail = change.Option.Url
+                        });
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, "Failed to apply simulated media for " + game.Name);
+                        errors.Add(game.Name + " - " + MediaKindName(change.Kind) + ": " + UserError(ex));
+                    }
+                }
+            }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_ApplyMedia", "Apply media"), true) { IsIndeterminate = true });
+            return provenance;
+        }
+
+        private static MetaDataIASettings CreateSimulationApplySettings(MetaDataIASettings source, HashSet<string> selectedFields)
+        {
+            var clone = Serialization.GetClone(source);
+            if (!selectedFields.Contains("description")) { clone.GenerateDescription = false; clone.DescriptionApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("genres")) { clone.GenerateGenres = false; clone.GenresApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("tags")) { clone.GenerateTags = false; clone.TagsApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("features")) { clone.GenerateFeatures = false; clone.FeaturesApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("developers")) { clone.GenerateDevelopers = false; clone.DevelopersApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("publishers")) { clone.GeneratePublishers = false; clone.PublishersApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("ageRatings")) { clone.GenerateAgeRatings = false; clone.AgeRatingsApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("regions")) { clone.GenerateRegions = false; clone.RegionsApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("categories")) { clone.GenerateCategories = false; clone.CategoriesApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("sortingName")) { clone.GenerateSortingName = false; clone.SortingNameApplyMode = MetaDataIASettings.ApplySkip; }
+            if (!selectedFields.Contains("links")) { clone.GenerateLinks = false; clone.LinksApplyMode = MetaDataIASettings.ApplySkip; }
+            return clone;
+        }
+
+        private static AiMetadataResult FilterSimulationResult(AiMetadataResult source, HashSet<string> selectedFields)
+        {
+            var clone = Serialization.GetClone(source);
+            if (!selectedFields.Contains("description")) clone.Description = string.Empty;
+            if (!selectedFields.Contains("genres")) clone.Genres = new List<string>();
+            if (!selectedFields.Contains("tags")) clone.Tags = new List<string>();
+            if (!selectedFields.Contains("features")) clone.Features = new List<string>();
+            if (!selectedFields.Contains("developers")) clone.Developers = new List<string>();
+            if (!selectedFields.Contains("publishers")) clone.Publishers = new List<string>();
+            if (!selectedFields.Contains("ageRatings")) clone.AgeRatings = new List<string>();
+            if (!selectedFields.Contains("regions")) clone.Regions = new List<string>();
+            if (!selectedFields.Contains("categories")) clone.Categories = new List<string>();
+            if (!selectedFields.Contains("links")) clone.Links = new List<AiMetadataLink>();
+            clone.Provenance = (clone.Provenance ?? new List<MetadataFieldProvenance>())
+                .Where(x => x != null && selectedFields.Contains(x.Field))
+                .ToList();
+            return clone;
+        }
+
+        public void ShowHistory()
+        {
+            if (IsFullscreenMode)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_HistoryDesktopOnly", "The detailed change history is available in Desktop mode."), PluginTitle);
+                return;
+            }
+
+            new HistoryWindow(this, history).ShowDialog();
+        }
+
+        private void ShowGameHistory(Game game)
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            if (IsFullscreenMode)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_HistoryDesktopOnly", "The detailed change history is available in Desktop mode."), PluginTitle);
+                return;
+            }
+
+            new HistoryWindow(this, history, game.Id, game.Name).ShowDialog();
+        }
+
+        private void ShowLatestProvenance(Game game)
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            var entry = history.GetLatestForGame(game.Id);
+            if (entry == null || entry.Provenance == null || entry.Provenance.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_ProvenanceEmpty", "There is no recorded Metadata AI provenance for this game yet. Run a simulation or apply generated metadata first."), PluginTitle);
+                return;
+            }
+
+            new ProvenanceWindow(this, game.Name, entry.Provenance).ShowDialog();
+        }
+
         private void LearnVocabulary(MetaDataIASettings activeSettings, AiMetadataResult result)
         {
             if (settings == null || settings.Settings == null || result == null)
@@ -476,7 +895,11 @@ namespace MetaDataIAPlugin
             ApplyMedia(games, activeSettings);
         }
 
-        private void ShowMediaChooser(Game game, MetaDataIASettings activeSettings)
+        private void ShowMediaChooser(
+            Game game,
+            MetaDataIASettings activeSettings,
+            Action<MetaDataIASettings, List<MediaPreviewOption>> selectionHandler = null,
+            Window dialogOwner = null)
         {
             if (game == null)
             {
@@ -576,7 +999,7 @@ namespace MetaDataIAPlugin
             };
             ApplyPlayniteWindowStyle(window);
 
-            var owner = PlayniteApi.Dialogs.GetCurrentAppWindow();
+            var owner = dialogOwner ?? PlayniteApi.Dialogs.GetCurrentAppWindow();
             if (owner != null)
             {
                 window.Owner = owner;
@@ -674,7 +1097,9 @@ namespace MetaDataIAPlugin
 
             applyChangesButton = new Button
             {
-                Content = Loc("MTDA_ApplyChanges", "Apply changes"),
+                Content = selectionHandler == null
+                    ? Loc("MTDA_ApplyChanges", "Apply changes")
+                    : Loc("MTDA_UseSelection", "Use selection"),
                 MinWidth = 130,
                 IsEnabled = false,
                 Margin = new Thickness(0, 0, 8, 0)
@@ -706,13 +1131,81 @@ namespace MetaDataIAPlugin
             root.Children.Add(buttonsPanel);
 
             window.Content = root;
-            var accepted = window.ShowDialog();
+            bool? accepted = null;
+            try
+            {
+                accepted = window.ShowDialog();
+            }
+            finally
+            {
+                RestoreWindowActivation(owner);
+            }
 
             if (accepted == true && selectedOptions.Count > 0)
             {
                 var orderedOptions = kinds.Where(selectedOptions.ContainsKey).Select(kind => selectedOptions[kind]).ToList();
-                ApplySelectedMediaOptions(game, pickerSettings, orderedOptions);
+                if (selectionHandler != null)
+                {
+                    selectionHandler(pickerSettings, orderedOptions);
+                }
+                else
+                {
+                    ApplySelectedMediaOptions(game, pickerSettings, orderedOptions);
+                }
             }
+        }
+
+        private static void RestoreWindowActivation(Window owner)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            try
+            {
+                owner.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!owner.IsVisible)
+                    {
+                        return;
+                    }
+
+                    owner.IsEnabled = true;
+                    owner.Activate();
+                    owner.Focus();
+                }));
+            }
+            catch
+            {
+            }
+        }
+
+        internal MediaSimulationChange SelectMediaForSimulation(Game game, MediaKind kind, MetaDataIASettings activeSettings, Window owner)
+        {
+            if (game == null || activeSettings == null)
+            {
+                return null;
+            }
+
+            var focus = kind == MediaKind.Cover ? "cover" : kind == MediaKind.Icon ? "icon" : "background";
+            var focusedSettings = CreateFocusedMediaSettings(activeSettings, focus);
+            MediaSimulationChange selected = null;
+            ShowMediaChooser(game, focusedSettings, (pickerSettings, options) =>
+            {
+                var option = options == null ? null : options.FirstOrDefault(x => x.Kind == kind);
+                if (option != null)
+                {
+                    selected = new MediaSimulationChange
+                    {
+                        Kind = kind,
+                        Option = option,
+                        Settings = pickerSettings,
+                        IsSelected = true
+                    };
+                }
+            }, owner);
+            return selected;
         }
 
         private static UIElement CreateCropPickerControl(string label, string hint, IEnumerable<LocalizedOption> options, string selectedValue, Action<string> changed)
@@ -1017,10 +1510,14 @@ namespace MetaDataIAPlugin
 
                 Exception applyError = null;
                 var appliedCount = 0;
+                var appliedOptions = new List<MediaPreviewOption>();
+                var historyOperation = history.BeginOperation(Loc("MTDA_HistoryCuratedMedia", "Apply selected media"));
+                GameMetadataSnapshot before = null;
                 PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
                 {
                     try
                     {
+                        progress.MainDispatcher.Invoke(new Action(() => before = history.Capture(game, historyOperation, true)));
                         var service = new MediaGenerationService(activeSettings, PlayniteApi);
                         foreach (var option in options)
                         {
@@ -1035,6 +1532,7 @@ namespace MetaDataIAPlugin
                             {
                                 MediaGenerationService.ApplyMediaFile(PlayniteApi, game, media);
                             }));
+                            appliedOptions.Add(option);
                             appliedCount++;
                         }
 
@@ -1056,6 +1554,18 @@ namespace MetaDataIAPlugin
                 {
                     throw applyError;
                 }
+
+                var after = history.Capture(game, historyOperation, false);
+                var mediaProvenance = appliedOptions.Select(x => new MetadataFieldProvenance
+                {
+                    Field = x.Kind == MediaKind.Cover ? "cover" : x.Kind == MediaKind.Icon ? "icon" : "background",
+                    Source = string.IsNullOrWhiteSpace(x.SourceName) ? Loc("MTDA_UnknownSource", "Unknown source") : x.SourceName,
+                    Method = "downloaded-media",
+                    Confidence = x.IsOfficial ? "high" : "medium",
+                    Detail = x.Url
+                }).ToList();
+                history.AddGame(historyOperation, game, before, after, mediaProvenance);
+                history.SaveOperation(historyOperation);
 
                 PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageAppliedMediaFiles", "Metadata AI applied {0} media file(s)."), appliedCount), PluginTitle);
             }
@@ -1154,6 +1664,7 @@ namespace MetaDataIAPlugin
             }
 
             var processed = 0;
+            var historyOperation = history.BeginOperation(Loc("MTDA_HistorySortingNames", "Apply sorting names"));
             foreach (var game in games)
             {
                 var sortingName = SortingNameService.Generate(PlayniteApi, game);
@@ -1162,15 +1673,30 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
+                var before = history.Capture(game, historyOperation, false);
                 game.SortingName = sortingName;
                 PlayniteApi.Database.Games.Update(game);
+                var after = history.Capture(game, historyOperation, false);
+                history.AddGame(historyOperation, game, before, after, new[]
+                {
+                    new MetadataFieldProvenance
+                    {
+                        Field = "sortingName",
+                        Source = "Metadata AI local rule",
+                        Method = "deterministic",
+                        Confidence = "high",
+                        Detail = "Generated locally from the library title and detected series order."
+                    }
+                });
                 processed++;
             }
+
+            history.SaveOperation(historyOperation);
 
             PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_MessageSortingNameUpdated", "Metadata AI updated sorting names for {0} game(s)."), processed), PluginTitle);
         }
 
-        private int ApplyEnabledMedia(MediaGenerationService service, Game game, GlobalProgressActionArgs progress)
+        private int ApplyEnabledMedia(MediaGenerationService service, Game game, GlobalProgressActionArgs progress, List<MetadataFieldProvenance> provenance)
         {
             var applied = 0;
             foreach (var kind in new[] { MediaKind.Cover, MediaKind.Icon, MediaKind.Background })
@@ -1184,6 +1710,18 @@ namespace MetaDataIAPlugin
                 if (media == null)
                 {
                     continue;
+                }
+
+                if (provenance != null)
+                {
+                    provenance.Add(new MetadataFieldProvenance
+                    {
+                        Field = kind == MediaKind.Cover ? "cover" : kind == MediaKind.Icon ? "icon" : "background",
+                        Source = string.IsNullOrWhiteSpace(media.SourceName) ? Loc("MTDA_UnknownSource", "Unknown source") : media.SourceName,
+                        Method = "downloaded-media",
+                        Confidence = "medium",
+                        Detail = media.SourceUrl
+                    });
                 }
 
                 progress.MainDispatcher.Invoke(new Action(() =>
@@ -1418,6 +1956,8 @@ namespace MetaDataIAPlugin
 
             var original = Serialization.GetClone(game);
             var reviewSettings = CreateNativeReviewSettings(activeSettings);
+            var historyOperation = history.BeginOperation(Loc("MTDA_HistoryReviewedMetadata", "Reviewed AI metadata"));
+            var before = history.Capture(game, historyOperation, false);
 
             try
             {
@@ -1431,6 +1971,9 @@ namespace MetaDataIAPlugin
                 else
                 {
                     logger.Info("Metadata AI native edit review accepted for " + game.Name);
+                    var after = history.Capture(game, historyOperation, false);
+                    history.AddGame(historyOperation, game, before, after, result.Provenance);
+                    history.SaveOperation(historyOperation);
                     LearnVocabulary(reviewSettings, result);
                 }
             }
@@ -1884,7 +2427,12 @@ namespace MetaDataIAPlugin
 
         private MetaDataIASettings CreateFocusedMediaSettings(string focus)
         {
-            var clone = Serialization.GetClone(settings.Settings);
+            return CreateFocusedMediaSettings(settings.Settings, focus);
+        }
+
+        private static MetaDataIASettings CreateFocusedMediaSettings(MetaDataIASettings source, string focus)
+        {
+            var clone = Serialization.GetClone(source);
             clone.DownloadCoverImage = false;
             clone.DownloadIcon = false;
             clone.DownloadBackgroundImage = false;

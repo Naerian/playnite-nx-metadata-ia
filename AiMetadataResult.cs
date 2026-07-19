@@ -26,6 +26,7 @@ namespace MetaDataIAPlugin
 
     public class AiMetadataResult
     {
+        public List<MetadataFieldProvenance> Provenance { get; set; }
         public string Short { get; set; }
         public string Synopsis { get; set; }
         public string Premise { get; set; }
@@ -51,6 +52,7 @@ namespace MetaDataIAPlugin
 
         public AiMetadataResult()
         {
+            Provenance = new List<MetadataFieldProvenance>();
             Features = new List<string>();
             Genres = new List<string>();
             Tags = new List<string>();
@@ -646,5 +648,14 @@ namespace MetaDataIAPlugin
 
             return result;
         }
+    }
+
+    public class MetadataFieldProvenance
+    {
+        public string Field { get; set; }
+        public string Source { get; set; }
+        public string Method { get; set; }
+        public string Confidence { get; set; }
+        public string Detail { get; set; }
     }
 }
