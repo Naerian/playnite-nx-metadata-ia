@@ -26,9 +26,15 @@ namespace MetaDataIAPlugin
             }
 
             var current = Analyze(game.Name);
+            var assignedSeries = GetAssignedSeriesName(api, game);
             if (current.Number > 0)
             {
-                return Format(current.BaseName, current.Number);
+                return Format(string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number);
+            }
+
+            if (!string.IsNullOrWhiteSpace(assignedSeries))
+            {
+                return Format(assignedSeries, GetSeriesOrder(api, game));
             }
 
             var allGames = api == null ? new List<Game>() : api.Database.Games.GetClone().ToList();
@@ -38,6 +44,75 @@ namespace MetaDataIAPlugin
                 .Any(x => x.Number > 1 && SameBase(x.BaseName, current.BaseName));
 
             return hasSequels ? Format(current.BaseName, 1) : string.Empty;
+        }
+
+        public static string GenerateSeriesName(IPlayniteAPI api, Game game)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return string.Empty;
+            }
+
+            var current = Analyze(game.Name);
+            var assignedSeries = GetAssignedSeriesName(api, game);
+            if (!string.IsNullOrWhiteSpace(assignedSeries))
+            {
+                return assignedSeries;
+            }
+
+            if (current.Number > 0)
+            {
+                return current.BaseName;
+            }
+
+            var allGames = api == null ? new List<Game>() : api.Database.Games.GetClone().ToList();
+            var hasNumberedEntry = allGames
+                .Where(x => x != null && x.Id != game.Id)
+                .Select(x => Analyze(x.Name))
+                .Any(x => x.Number > 0 && SameBase(x.BaseName, current.BaseName));
+
+            return hasNumberedEntry ? current.BaseName : string.Empty;
+        }
+
+        private static string GetAssignedSeriesName(IPlayniteAPI api, Game game)
+        {
+            if (game == null || game.SeriesIds == null || game.SeriesIds.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var firstSeries = game.Series == null ? null : game.Series.FirstOrDefault(x => x != null && !string.IsNullOrWhiteSpace(x.Name));
+            if (firstSeries != null)
+            {
+                return firstSeries.Name.Trim();
+            }
+
+            if (api == null)
+            {
+                return string.Empty;
+            }
+
+            var series = api.Database.Series.Get(game.SeriesIds[0]);
+            return series == null || string.IsNullOrWhiteSpace(series.Name) ? string.Empty : series.Name.Trim();
+        }
+
+        private static int GetSeriesOrder(IPlayniteAPI api, Game game)
+        {
+            if (api == null || game == null || game.SeriesIds == null || game.SeriesIds.Count == 0)
+            {
+                return 1;
+            }
+
+            var seriesIds = new HashSet<Guid>(game.SeriesIds);
+            var related = api.Database.Games.GetClone()
+                .Where(x => x != null && x.SeriesIds != null && x.SeriesIds.Any(seriesIds.Contains))
+                .OrderBy(x => x.ReleaseDate.HasValue ? x.ReleaseDate.Value.Year : int.MaxValue)
+                .ThenBy(x => x.ReleaseDate.HasValue && x.ReleaseDate.Value.Month.HasValue ? x.ReleaseDate.Value.Month.Value : 13)
+                .ThenBy(x => x.ReleaseDate.HasValue && x.ReleaseDate.Value.Day.HasValue ? x.ReleaseDate.Value.Day.Value : 32)
+                .ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            var index = related.FindIndex(x => x.Id == game.Id);
+            return index < 0 ? 1 : index + 1;
         }
 
         private static string Format(string baseName, int number)
@@ -83,8 +158,13 @@ namespace MetaDataIAPlugin
 
         private static string RemoveEditionNoise(string value)
         {
+            var cleaned = Regex.Replace(
+                value ?? string.Empty,
+                @"\s*[\(\[](?:\d{4}|classic|original|legacy|remastered|remake|definitive|complete|ultimate|deluxe|goty|game of the year|director'?s cut|special edition|anniversary edition|enhanced edition)[\)\]]\s*$",
+                string.Empty,
+                RegexOptions.IgnoreCase).Trim();
             return Regex.Replace(
-                value,
+                cleaned,
                 @"\s*\b(Game of the Year|GOTY|Definitive|Complete|Ultimate|Deluxe|Remastered|Remake|Director'?s Cut|Special Edition|Anniversary Edition|Enhanced Edition)\b.*$",
                 string.Empty,
                 RegexOptions.IgnoreCase).Trim();

@@ -2,6 +2,7 @@ using Newtonsoft.Json.Linq;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -25,6 +26,7 @@ namespace MetaDataIAPlugin
         public List<Link> Links { get; set; }
         public string AgeRating { get; set; }
         public string ReleaseDate { get; set; }
+        public List<string> Series { get; set; }
         public bool IsExactMatch { get; set; }
 
         public OfficialStoreMetadata()
@@ -35,6 +37,7 @@ namespace MetaDataIAPlugin
             Publishers = new List<string>();
             Regions = new List<string>();
             Links = new List<Link>();
+            Series = new List<string>();
         }
 
         public bool HasUsefulData()
@@ -47,7 +50,8 @@ namespace MetaDataIAPlugin
                    Regions.Count > 0 ||
                    Links.Count > 0 ||
                    !string.IsNullOrWhiteSpace(AgeRating) ||
-                   !string.IsNullOrWhiteSpace(ReleaseDate);
+                   !string.IsNullOrWhiteSpace(ReleaseDate) ||
+                   Series.Count > 0;
         }
     }
 
@@ -110,6 +114,7 @@ namespace MetaDataIAPlugin
 
                 if (metadata != null && metadata.HasUsefulData())
                 {
+                    metadata.IsExactMatch = true;
                     result.Add(metadata);
                     break;
                 }
@@ -252,7 +257,8 @@ namespace MetaDataIAPlugin
                 Description = CleanHtml((string)data["detailed_description"] ?? (string)data["short_description"]),
                 Genres = ReadNameArray(data["genres"]),
                 Developers = ReadStringArray(data["developers"]),
-                Publishers = ReadStringArray(data["publishers"])
+                Publishers = ReadStringArray(data["publishers"]),
+                ReleaseDate = data["release_date"] == null ? string.Empty : NormalizeReleaseDate((string)data["release_date"]["date"])
             };
         }
 
@@ -518,7 +524,8 @@ namespace MetaDataIAPlugin
                 Features = capabilities == null ? new List<string>() : ReadStringArray(capabilities.Properties().Select(x => x.Value)),
                 Developers = SplitCompanies((string)product["developerName"]),
                 Publishers = SplitCompanies((string)product["publisherName"]),
-                AgeRating = string.IsNullOrWhiteSpace(board) || string.IsNullOrWhiteSpace(value) ? null : board + " " + value
+                AgeRating = string.IsNullOrWhiteSpace(board) || string.IsNullOrWhiteSpace(value) ? null : board + " " + value,
+                ReleaseDate = NormalizeReleaseDate((string)product["releaseDate"] ?? (string)product["originalReleaseDate"])
             };
         }
 
@@ -859,6 +866,20 @@ namespace MetaDataIAPlugin
             var decoded = WebUtility.HtmlDecode(value);
             decoded = Regex.Replace(decoded, "\\s+", " ").Trim();
             return decoded;
+        }
+
+        private static string NormalizeReleaseDate(string value)
+        {
+            var text = CleanText(value);
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            DateTime parsed;
+            foreach (var culture in new[] { CultureInfo.InvariantCulture, CultureInfo.GetCultureInfo("en-US"), CultureInfo.GetCultureInfo("es-ES"), CultureInfo.CurrentCulture })
+            {
+                if (DateTime.TryParse(text, culture, DateTimeStyles.AllowWhiteSpaces, out parsed))
+                    return parsed.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            }
+            var year = Regex.Match(text, @"\b(19|20)\d{2}\b");
+            return year.Success ? year.Value : string.Empty;
         }
 
         private static List<string> ReadNameArray(JToken token)

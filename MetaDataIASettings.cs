@@ -165,6 +165,8 @@ namespace MetaDataIAPlugin
         private bool generateCategories = true;
         private bool generateSortingName = true;
         private bool generateLinks = false;
+        private bool generateReleaseDate = true;
+        private bool generateSeries = true;
         private string descriptionApplyMode = ApplyEmptyOnly;
         private string genresApplyMode = ApplyAppend;
         private string tagsApplyMode = ApplyAppend;
@@ -176,6 +178,8 @@ namespace MetaDataIAPlugin
         private string categoriesApplyMode = ApplyAppend;
         private string sortingNameApplyMode = ApplyEmptyOnly;
         private string linksApplyMode = ApplyAppend;
+        private string releaseDateApplyMode = ApplyEmptyOnly;
+        private string seriesApplyMode = ApplyEmptyOnly;
         private int maxGenres = 4;
         private int maxTags = 10;
         private int maxFeatures = 8;
@@ -185,6 +189,7 @@ namespace MetaDataIAPlugin
         private int maxRegions = 3;
         private int maxCategories = 6;
         private int maxLinks = 5;
+        private int maxSeries = 1;
         private string tagPrefix = string.Empty;
         private string categoryPrefix = string.Empty;
         private string blacklist = string.Empty;
@@ -268,6 +273,12 @@ namespace MetaDataIAPlugin
         private string coverCropAnchor = CropAnchorCenter;
         private string backgroundCropAnchor = CropAnchorCenter;
         private string processedImageQuality = ImageQualityBalanced;
+        private bool mediaRepairOnlyWhenBetter = true;
+        private bool mediaMinimumQualityEnabled = true;
+        private int mediaMinimumCoverWidth = 600;
+        private int mediaMinimumIconWidth = 256;
+        private int mediaMinimumBackgroundWidth = 1920;
+        private bool enableExtraMetadataLoaderLogos = false;
 
         public const string DefaultShortTemplate = "<p>{short}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}";
         public const string DefaultMediumTemplate = "<h3>Descripcion breve</h3>\n<p>{short}</p>\n\n<h3>Sinopsis</h3>\n<p>{synopsis}</p>\n\n<h3>Caracteristicas principales</h3>\n{features}\n\n<h3>Modos de juego</h3>\n<p>{playModes}</p>\n\n<h3>Duracion estimada</h3>\n<p>{estimatedLength}</p>\n\n<h3>Recomendado para</h3>\n<p>{recommendedFor}</p>";
@@ -390,6 +401,8 @@ namespace MetaDataIAPlugin
         public bool GenerateCategories { get { return generateCategories; } set { SetValue(ref generateCategories, value); } }
         public bool GenerateSortingName { get { return generateSortingName; } set { SetValue(ref generateSortingName, value); } }
         public bool GenerateLinks { get { return generateLinks; } set { SetValue(ref generateLinks, value); } }
+        public bool GenerateReleaseDate { get { return generateReleaseDate; } set { SetValue(ref generateReleaseDate, value); } }
+        public bool GenerateSeries { get { return generateSeries; } set { SetValue(ref generateSeries, value); } }
         public string DescriptionApplyMode { get { return descriptionApplyMode; } set { SetValue(ref descriptionApplyMode, value); } }
         public string GenresApplyMode { get { return genresApplyMode; } set { SetValue(ref genresApplyMode, value); } }
         public string TagsApplyMode { get { return tagsApplyMode; } set { SetValue(ref tagsApplyMode, value); } }
@@ -401,6 +414,8 @@ namespace MetaDataIAPlugin
         public string CategoriesApplyMode { get { return categoriesApplyMode; } set { SetValue(ref categoriesApplyMode, value); } }
         public string SortingNameApplyMode { get { return sortingNameApplyMode; } set { SetValue(ref sortingNameApplyMode, value); } }
         public string LinksApplyMode { get { return linksApplyMode; } set { SetValue(ref linksApplyMode, value); } }
+        public string ReleaseDateApplyMode { get { return releaseDateApplyMode; } set { SetValue(ref releaseDateApplyMode, value); } }
+        public string SeriesApplyMode { get { return seriesApplyMode; } set { SetValue(ref seriesApplyMode, value); } }
         public int MaxGenres { get { return maxGenres; } set { SetValue(ref maxGenres, Clamp(value)); } }
         public int MaxTags { get { return maxTags; } set { SetValue(ref maxTags, Clamp(value)); } }
         public int MaxFeatures { get { return maxFeatures; } set { SetValue(ref maxFeatures, Clamp(value)); } }
@@ -410,6 +425,7 @@ namespace MetaDataIAPlugin
         public int MaxRegions { get { return maxRegions; } set { SetValue(ref maxRegions, Clamp(value)); } }
         public int MaxCategories { get { return maxCategories; } set { SetValue(ref maxCategories, Clamp(value)); } }
         public int MaxLinks { get { return maxLinks; } set { SetValue(ref maxLinks, Clamp(value)); } }
+        public int MaxSeries { get { return maxSeries; } set { SetValue(ref maxSeries, Math.Max(1, Math.Min(5, value))); } }
         public string TagPrefix { get { return tagPrefix; } set { SetValue(ref tagPrefix, value); } }
         public string CategoryPrefix { get { return categoryPrefix; } set { SetValue(ref categoryPrefix, value); } }
         public string Blacklist { get { return blacklist; } set { SetValue(ref blacklist, value); } }
@@ -554,6 +570,12 @@ namespace MetaDataIAPlugin
         public string CoverCropAnchor { get { return coverCropAnchor; } set { SetValue(ref coverCropAnchor, value); } }
         public string BackgroundCropAnchor { get { return backgroundCropAnchor; } set { SetValue(ref backgroundCropAnchor, value); } }
         public string ProcessedImageQuality { get { return processedImageQuality; } set { SetValue(ref processedImageQuality, value); } }
+        public bool MediaRepairOnlyWhenBetter { get { return mediaRepairOnlyWhenBetter; } set { SetValue(ref mediaRepairOnlyWhenBetter, value); } }
+        public bool MediaMinimumQualityEnabled { get { return mediaMinimumQualityEnabled; } set { SetValue(ref mediaMinimumQualityEnabled, value); } }
+        public int MediaMinimumCoverWidth { get { return mediaMinimumCoverWidth; } set { SetValue(ref mediaMinimumCoverWidth, Math.Max(64, value)); } }
+        public int MediaMinimumIconWidth { get { return mediaMinimumIconWidth; } set { SetValue(ref mediaMinimumIconWidth, Math.Max(32, value)); } }
+        public int MediaMinimumBackgroundWidth { get { return mediaMinimumBackgroundWidth; } set { SetValue(ref mediaMinimumBackgroundWidth, Math.Max(320, value)); } }
+        public bool EnableExtraMetadataLoaderLogos { get { return enableExtraMetadataLoaderLogos; } set { SetValue(ref enableExtraMetadataLoaderLogos, value); } }
 
         [DontSerialize]
         public string MediaCoverSourcePrioritySummary { get { return BuildSourcePrioritySummary(MediaCoverSourcePriority, DefaultCoverSourcePriority); } }
@@ -630,6 +652,8 @@ namespace MetaDataIAPlugin
             CoverImageApplyMode = EnsureApplyMode(CoverImageApplyMode, ApplyEmptyOnly);
             IconApplyMode = EnsureApplyMode(IconApplyMode, ApplyEmptyOnly);
             BackgroundImageApplyMode = EnsureApplyMode(BackgroundImageApplyMode, ApplyEmptyOnly);
+            ReleaseDateApplyMode = EnsureApplyMode(ReleaseDateApplyMode, ApplyEmptyOnly);
+            SeriesApplyMode = EnsureApplyMode(SeriesApplyMode, ApplyEmptyOnly);
             CoverImagePreset = EnsureOption(CoverImagePreset, CoverPresetPlayniteDefined);
             IconPreset = EnsureOption(IconPreset, IconPresetOriginal);
             BackgroundImagePreset = EnsureOption(BackgroundImagePreset, BackgroundPresetSteamHero);

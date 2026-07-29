@@ -115,6 +115,25 @@ namespace MetaDataIAPlugin
             return Generate().Links.Select(x => new Link(x.Name, x.Url));
         }
 
+        public override ReleaseDate? GetReleaseDate(GetMetadataFieldArgs args)
+        {
+            if (!settings.GenerateReleaseDate || settings.ReleaseDateApplyMode == MetaDataIASettings.ApplySkip)
+                return null;
+            var result = Generate();
+            if ((result.Conflicts ?? new List<MetadataFieldConflict>()).Any(x => x.Field == "releaseDate")) return null;
+            ReleaseDate parsed;
+            return ReleaseDate.TryDeserialize(result.ReleaseDate, out parsed) ? parsed : (ReleaseDate?)null;
+        }
+
+        public override IEnumerable<MetadataProperty> GetSeries(GetMetadataFieldArgs args)
+        {
+            if (!settings.GenerateSeries || settings.SeriesApplyMode == MetaDataIASettings.ApplySkip)
+                return Enumerable.Empty<MetadataProperty>();
+            var result = Generate();
+            if ((result.Conflicts ?? new List<MetadataFieldConflict>()).Any(x => x.Field == "series")) return Enumerable.Empty<MetadataProperty>();
+            return result.Series.Select(x => new MetadataNameProperty(x));
+        }
+
         public override MetadataFile GetCoverImage(GetMetadataFieldArgs args)
         {
             if (!settings.DownloadCoverImage || settings.CoverImageApplyMode == MetaDataIASettings.ApplySkip)

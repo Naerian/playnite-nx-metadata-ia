@@ -40,22 +40,22 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), settings.StrictCompanyAgeRegion), settings.DevelopersApplyMode, settings.MaxDevelopers);
+                if (!HasConflict(result, "developers")) game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), settings.StrictCompanyAgeRegion), settings.DevelopersApplyMode, settings.MaxDevelopers);
             }
 
             if (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), settings.StrictCompanyAgeRegion), settings.PublishersApplyMode, settings.MaxPublishers);
+                if (!HasConflict(result, "publishers")) game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), settings.StrictCompanyAgeRegion), settings.PublishersApplyMode, settings.MaxPublishers);
             }
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.StrictCompanyAgeRegion), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
+                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.StrictCompanyAgeRegion), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), settings.StrictCompanyAgeRegion), settings.RegionsApplyMode, settings.MaxRegions);
+                if (!HasConflict(result, "regions")) game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), settings.StrictCompanyAgeRegion), settings.RegionsApplyMode, settings.MaxRegions);
             }
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
@@ -75,6 +75,21 @@ namespace MetaDataIAPlugin
             if (settings.GenerateLinks && settings.LinksApplyMode != MetaDataIASettings.ApplySkip)
             {
                 game.Links = MergeLinks(game.Links, result.Links, settings.LinksApplyMode, settings.MaxLinks);
+            }
+
+            if (settings.GenerateReleaseDate && !HasConflict(result, "releaseDate") && !string.IsNullOrWhiteSpace(result.ReleaseDate))
+            {
+                ReleaseDate parsed;
+                if (ReleaseDate.TryDeserialize(result.ReleaseDate, out parsed) &&
+                    (settings.ReleaseDateApplyMode == MetaDataIASettings.ApplyOverwrite || !game.ReleaseDate.HasValue))
+                {
+                    game.ReleaseDate = parsed;
+                }
+            }
+
+            if (settings.GenerateSeries && !HasConflict(result, "series") && settings.SeriesApplyMode != MetaDataIASettings.ApplySkip)
+            {
+                game.SeriesIds = MergeIds(game.SeriesIds, Ensure(api.Database.Series, Limit(result.Series, settings.MaxSeries), false), settings.SeriesApplyMode, settings.MaxSeries);
             }
 
             api.Database.Games.Update(game);
@@ -108,6 +123,12 @@ namespace MetaDataIAPlugin
             return (names ?? Enumerable.Empty<string>())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Take(Math.Max(1, maxItems));
+        }
+
+        private static bool HasConflict(AiMetadataResult result, string field)
+        {
+            return result != null && (result.Conflicts ?? new List<MetadataFieldConflict>())
+                .Any(x => string.Equals(x.Field, field, StringComparison.OrdinalIgnoreCase));
         }
 
         private static List<Guid> MergeIds(List<Guid> current, IEnumerable<Guid> generated, string mode, int maxItems)

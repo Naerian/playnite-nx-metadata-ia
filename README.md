@@ -37,6 +37,7 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Use official store data as factual AI context before rewriting, translating, or normalizing text.
 - Reuse the Playnite library integration that imported each game as an exact, trusted metadata and media source.
 - Use stricter factual guards for developers, publishers, age ratings, and regions to reduce invented metadata.
+- Fill release dates and series only when an exact origin integration or trusted official source supplies the value; conflicting trusted values are shown for review and are not applied automatically.
 - Start with a guided first-time setup assistant that configures a safe profile without touching the library.
 - Simulate metadata changes before applying them, including before/after values and field-level source information.
 - Record the last 20 Metadata AI operations and undo metadata or media changes, including restored media file backups.
@@ -45,6 +46,9 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Generate media assets from multiple configurable sources.
 - Configure media source priority separately for covers, icons, and backgrounds.
 - Control automatic media selection by source, usable resolution, or strict no-upscaling rules.
+- Audit the current library for missing enabled fields, broken image references, unreadable or nearly blank images, and media below configurable resolution thresholds.
+- Lock cover, icon, background, or optional logo media per game so automatic, batch, and simulated workflows cannot replace them.
+- Repair low-quality media selectively and replace existing files only when a validated candidate is measurably better.
 - Choose crop origin and JPEG output quality independently from the final image dimensions.
 - Review media candidates manually for single-game workflows before applying them, or let the extension pick automatically in batch workflows.
 - Remove replaced media automatically and scan for unreferenced covers, icons, and backgrounds from the Maintenance tab.
@@ -193,9 +197,9 @@ In manual single-game workflows, the media picker shows candidates grouped by me
 
 ## Logos and trailers
 
-Metadata AI focuses on Playnite's standard media fields: covers, icons, and backgrounds.
+Metadata AI focuses primarily on Playnite's standard media fields: covers, icons, and backgrounds. An optional integration can search SteamGridDB logos and save the selected transparent PNG in Extra Metadata Loader's per-game folder. This requires Extra Metadata Loader and is disabled by default; Metadata AI does not register a competing theme-media system.
 
-For clear logos, trailer videos, microtrailers, and theme-specific extra media, use Extra Metadata Loader together with a compatible Playnite theme. Many custom themes already support Extra Metadata Loader controls, so it is better to let that extension handle those assets instead of duplicating a separate logo system here.
+Extra Metadata Loader remains responsible for exposing logos to compatible themes. Trailer videos, microtrailers, and other theme-specific media are intentionally left to that extension.
 
 ## Installation
 
@@ -231,7 +235,7 @@ The main sections are:
 - **Import**: automatic processing for newly imported games.
 - **Fields**: per-field generation and apply rules.
 - **Rules**: automatic template selection by game type, platform, or source.
-- **Maintenance**: reopen the setup assistant, export or import configuration backups, scan for obsolete unreferenced media, and inspect or undo the last 20 Metadata AI operations. API credentials are protected with Windows DPAPI for the current user, both in Playnite's stored settings and in exported backups.
+- **Maintenance**: reopen the setup assistant, run the library audit and selective media repair, export or import configuration backups, scan for obsolete unreferenced media, and inspect or undo the last 20 Metadata AI operations. API credentials are protected with Windows DPAPI for the current user, both in Playnite's stored settings and in exported backups.
 
 ## Description templates
 

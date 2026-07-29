@@ -8,6 +8,23 @@ using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
 {
+    public class MetadataConflictValue
+    {
+        public string Source { get; set; }
+        public string Value { get; set; }
+    }
+
+    public class MetadataFieldConflict
+    {
+        public string Field { get; set; }
+        public List<MetadataConflictValue> Values { get; set; }
+
+        public MetadataFieldConflict()
+        {
+            Values = new List<MetadataConflictValue>();
+        }
+    }
+
     public class MetadataChangeItem
     {
         public string Field { get; set; }
@@ -17,6 +34,7 @@ namespace MetaDataIAPlugin
         public string Recommendation { get; set; }
         public string RecommendationReason { get; set; }
         public bool IsSelected { get; set; }
+        public MetadataFieldConflict Conflict { get; set; }
     }
 
     public class MetadataSimulationResult
@@ -66,6 +84,8 @@ namespace MetaDataIAPlugin
             AddList(changes, "ageRatings", Names(game.AgeRatings), result.AgeRatings, settings.GenerateAgeRatings, settings.AgeRatingsApplyMode, settings.MaxAgeRatings, settings.StrictCompanyAgeRegion, api.Database.AgeRatings.Select(x => x.Name), result);
             AddList(changes, "regions", Names(game.Regions), result.Regions, settings.GenerateRegions, settings.RegionsApplyMode, settings.MaxRegions, settings.StrictCompanyAgeRegion, api.Database.Regions.Select(x => x.Name), result);
             AddList(changes, "categories", Names(game.Categories), result.Categories, settings.GenerateCategories, settings.CategoriesApplyMode, settings.MaxCategories, settings.PreferExistingCategories, api.Database.Categories.Select(x => x.Name), result);
+            AddScalar(changes, "releaseDate", game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty, result.ReleaseDate, settings.GenerateReleaseDate, settings.ReleaseDateApplyMode, result);
+            AddList(changes, "series", Names(game.Series), result.Series, settings.GenerateSeries, settings.SeriesApplyMode, settings.MaxSeries, false, api.Database.Series.Select(x => x.Name), result);
 
             if (settings.GenerateSortingName && settings.SortingNameApplyMode != MetaDataIASettings.ApplySkip)
             {
@@ -102,6 +122,7 @@ namespace MetaDataIAPlugin
 
             foreach (var change in changes)
             {
+                change.Conflict = (result.Conflicts ?? new List<MetadataFieldConflict>()).FirstOrDefault(x => string.Equals(x.Field, change.Field, StringComparison.OrdinalIgnoreCase));
                 MetadataChangeRecommendationService.Evaluate(change);
             }
 
@@ -204,6 +225,7 @@ namespace MetaDataIAPlugin
         public const string ReasonShorterDescription = "shorter-description";
         public const string ReasonReplacesExisting = "replaces-existing";
         public const string ReasonEmptyResult = "empty-result";
+        public const string ReasonSourceConflict = "source-conflict";
 
         public static void Evaluate(MetadataChangeItem change)
         {
@@ -214,6 +236,11 @@ namespace MetaDataIAPlugin
 
             var before = (change.Before ?? string.Empty).Trim();
             var after = (change.After ?? string.Empty).Trim();
+            if (change.Conflict != null && change.Conflict.Values != null && change.Conflict.Values.Count > 1)
+            {
+                Set(change, Review, ReasonSourceConflict);
+                return;
+            }
             if (string.IsNullOrWhiteSpace(after))
             {
                 Set(change, KeepCurrent, ReasonEmptyResult);
@@ -298,7 +325,9 @@ namespace MetaDataIAPlugin
             return string.Equals(field, "developers", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(field, "publishers", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(field, "ageRatings", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(field, "regions", StringComparison.OrdinalIgnoreCase);
+                   string.Equals(field, "regions", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(field, "releaseDate", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(field, "series", StringComparison.OrdinalIgnoreCase);
         }
 
         private static int CountItems(string value, string field)

@@ -166,7 +166,8 @@ namespace MetaDataIAPlugin
                 Publishers = ResolveProperties(metadata.Publishers, id => NameOf(playniteApi.Database.Companies.Get(id))),
                 Regions = ResolveProperties(metadata.Regions, id => NameOf(playniteApi.Database.Regions.Get(id))),
                 Links = links.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url)).Select(x => new Link(x.Name, x.Url)).ToList(),
-                ReleaseDate = metadata.ReleaseDate.HasValue ? metadata.ReleaseDate.Value.ToString() : string.Empty,
+                ReleaseDate = metadata.ReleaseDate.HasValue ? metadata.ReleaseDate.Value.Serialize() : string.Empty,
+                Series = ResolveProperties(metadata.Series, id => NameOf(playniteApi.Database.Series.Get(id))),
                 IsExactMatch = true
             };
 

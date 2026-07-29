@@ -1,7 +1,7 @@
 ﻿Id: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Name: Metadata AI
 Author: Narian
-Version: 1.2.4
+Version: 1.2.5
 Module: MetaDataIAPlugin.dll
 Type: MetadataProvider
 Icon: media\icon.png

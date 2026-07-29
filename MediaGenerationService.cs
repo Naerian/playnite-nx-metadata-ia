@@ -21,7 +21,8 @@ namespace MetaDataIAPlugin
     {
         Cover,
         Icon,
-        Background
+        Background,
+        Logo
     }
 
     public class GeneratedMediaFile
@@ -110,6 +111,10 @@ namespace MetaDataIAPlugin
 
             var selected = ChooseCandidate(automaticCandidates, kind);
             var selectedBytes = await DownloadBestBytes(automaticCandidates, selected, kind, cancelToken).ConfigureAwait(false);
+            if (kind != MediaKind.Logo && selectedBytes.Content != null && IsMostlyBlankBytes(selectedBytes.Content, kind))
+            {
+                selectedBytes = await DownloadFirstNonBlank(automaticCandidates.Where(x => x != selected), kind, cancelToken).ConfigureAwait(false);
+            }
             if (selectedBytes.Candidate == null || string.IsNullOrWhiteSpace(selectedBytes.Candidate.Url))
             {
                 throw new InvalidOperationException(Loc("MTDA_ErrorMediaWithoutUrl", "The media source returned an image without a usable URL."));
@@ -237,6 +242,10 @@ namespace MetaDataIAPlugin
             }
 
             var processed = ProcessImage(bytes, option.Kind, option.Extension);
+            if (option.Kind != MediaKind.Logo && IsMostlyBlankBytes(bytes, option.Kind))
+            {
+                throw new InvalidOperationException(Loc("MTDA_ErrorBlankMedia", "This candidate is almost entirely black or transparent. Choose another image."));
+            }
             return new GeneratedMediaFile
             {
                 Kind = option.Kind,
@@ -429,7 +438,7 @@ namespace MetaDataIAPlugin
 
             var candidates = new List<MediaCandidate>();
             var diagnostics = new List<string>();
-            if (settings.UseOriginIntegrationForMedia && playniteApi != null)
+            if (kind != MediaKind.Logo && settings.UseOriginIntegrationForMedia && playniteApi != null)
             {
                 try
                 {
@@ -466,7 +475,7 @@ namespace MetaDataIAPlugin
 
             var steamId = await ResolveSteamAppId(game, cancelToken).ConfigureAwait(false);
 
-            if (settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots)
+            if (kind != MediaKind.Logo && (settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots))
             {
                 if (string.IsNullOrWhiteSpace(steamId))
                 {
@@ -489,19 +498,19 @@ namespace MetaDataIAPlugin
             }
 
             var officialStores = new OfficialStoreDataService(settings);
-            if (settings.MediaUsePsnStore)
+            if (kind != MediaKind.Logo && settings.MediaUsePsnStore)
             {
                 var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourcePsnStore, sourceCandidates);
             }
 
-            if (settings.MediaUseXboxStore)
+            if (kind != MediaKind.Logo && settings.MediaUseXboxStore)
             {
                 var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceXboxStore, sourceCandidates);
             }
 
-            if (settings.MediaUseEpicStore)
+            if (kind != MediaKind.Logo && settings.MediaUseEpicStore)
             {
                 var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceEpicStore, sourceCandidates);
@@ -554,7 +563,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.MediaUseRawg)
+            if (kind != MediaKind.Logo && settings.MediaUseRawg)
             {
                 if (string.IsNullOrWhiteSpace(settings.RawgApiKey))
                 {
@@ -578,7 +587,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.MediaUseMobyGames)
+            if (kind != MediaKind.Logo && settings.MediaUseMobyGames)
             {
                 if (string.IsNullOrWhiteSpace(settings.MobyGamesApiKey))
                 {
@@ -602,7 +611,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.MediaUseIgdb)
+            if (kind != MediaKind.Logo && settings.MediaUseIgdb)
             {
                 if (string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
                     (string.IsNullOrWhiteSpace(settings.IgdbAccessToken) && string.IsNullOrWhiteSpace(settings.IgdbClientSecret)))
@@ -939,7 +948,7 @@ namespace MetaDataIAPlugin
 
         private async Task<List<MediaCandidate>> GetCandidates(int gameId, MediaKind kind, CancellationToken cancelToken)
         {
-            var path = kind == MediaKind.Cover ? "grids" : kind == MediaKind.Icon ? "icons" : "heroes";
+            var path = kind == MediaKind.Cover ? "grids" : kind == MediaKind.Icon ? "icons" : kind == MediaKind.Logo ? "logos" : "heroes";
             var query = BuildAssetQuery(kind, true, true);
             var json = await TryGetJson(ApiBase + "/" + path + "/game/" + gameId + query, cancelToken).ConfigureAwait(false);
             var data = json["data"] as JArray;
@@ -2138,6 +2147,43 @@ namespace MetaDataIAPlugin
             throw lastError ?? new InvalidOperationException(Loc("MTDA_ErrorNoMediaCandidateDownloaded", "No media candidate could be downloaded."));
         }
 
+        private static async Task<DownloadedCandidate> DownloadFirstNonBlank(IEnumerable<MediaCandidate> candidates, MediaKind kind, CancellationToken cancelToken)
+        {
+            Exception lastError = null;
+            foreach (var candidate in candidates ?? new List<MediaCandidate>())
+            {
+                try
+                {
+                    var bytes = await DownloadBytes(candidate.Url, cancelToken).ConfigureAwait(false);
+                    if (!IsMostlyBlankBytes(bytes, kind)) return new DownloadedCandidate { Candidate = candidate, Content = bytes };
+                }
+                catch (Exception ex) { lastError = ex; }
+            }
+            throw lastError ?? new InvalidOperationException(Loc("MTDA_ErrorNoMediaCandidateDownloaded", "No usable media candidate could be downloaded."));
+        }
+
+        private static bool IsMostlyBlankBytes(byte[] bytes, MediaKind kind)
+        {
+            try
+            {
+                using (var image = Image.FromStream(new MemoryStream(bytes)))
+                using (var sample = new Bitmap(24, 24))
+                using (var graphics = Graphics.FromImage(sample))
+                {
+                    graphics.DrawImage(image, 0, 0, 24, 24);
+                    var blank = 0;
+                    for (var y = 0; y < 24; y++)
+                    for (var x = 0; x < 24; x++)
+                    {
+                        var c = sample.GetPixel(x, y);
+                        if ((kind != MediaKind.Icon && c.A < 12) || (c.A > 200 && c.R < 8 && c.G < 8 && c.B < 8)) blank++;
+                    }
+                    return blank >= 520;
+                }
+            }
+            catch { return true; }
+        }
+
         private async Task<DownloadedCandidate> TryDownloadNonConsoleCover(List<MediaCandidate> candidates, MediaCandidate preferred, CancellationToken cancelToken)
         {
             var ordered = OrderCandidates(candidates, MediaKind.Cover)
@@ -2175,6 +2221,10 @@ namespace MetaDataIAPlugin
 
         private ProcessedImage ProcessImage(byte[] bytes, MediaKind kind, string originalExtension)
         {
+            if (kind == MediaKind.Logo)
+            {
+                return new ProcessedImage { Content = bytes, Extension = DetectImageExtension(bytes, originalExtension) };
+            }
             var target = GetTargetSize(kind);
             var forcePng = kind == MediaKind.Icon && settings.IconPreset != MetaDataIASettings.IconPresetOriginal;
             if (target.Width <= 0 || target.Height <= 0)
@@ -2560,6 +2610,10 @@ namespace MetaDataIAPlugin
 
         private Size GetTargetSize(MediaKind kind)
         {
+            if (kind == MediaKind.Logo)
+            {
+                return Size.Empty;
+            }
             if (kind == MediaKind.Cover)
             {
                 if (settings.CoverImagePreset == MetaDataIASettings.CoverPresetSquare)
@@ -3013,7 +3067,7 @@ namespace MetaDataIAPlugin
         private static string BuildFileName(string gameName, MediaKind kind, string extension)
         {
             var safeName = string.Join("_", (gameName ?? "game").Split(Path.GetInvalidFileNameChars()));
-            var suffix = kind == MediaKind.Cover ? "cover" : kind == MediaKind.Icon ? "icon" : "background";
+            var suffix = kind == MediaKind.Cover ? "cover" : kind == MediaKind.Icon ? "icon" : kind == MediaKind.Logo ? "logo" : "background";
             return safeName + "_" + suffix + (string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension);
         }
 

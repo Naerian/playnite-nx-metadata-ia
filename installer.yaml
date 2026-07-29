@@ -1,14 +1,15 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.4
+  - Version: 1.2.5
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-07-19
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.4/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_4.pext
+    ReleaseDate: 2026-07-29
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.5/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_5.pext
     Changelog:
-      - Added a guided first-time setup assistant with safe starter profiles.
-      - Added metadata simulation with before-and-after values, local recommendations and selective apply.
-      - Added validated cover, icon and background proposals to single-game simulations.
-      - Added a 20-operation change history with global and per-game undo, including media backups.
-      - Added field-level provenance and confidence views.
-      - Improved simulator layout, recommendation badges and modal window restoration.
+      - Added a library audit with selective repair for metadata and media issues.
+      - Added configurable media quality thresholds and per-game media replacement locks.
+      - Added optional SteamGridDB logo search for Extra Metadata Loader.
+      - Improved release date, series and sorting name generation with stricter factual safeguards.
+      - Redesigned multi-game metadata preview with game navigation and selective changes.
+      - Added selected-game filtering to audit, history and metadata provenance.
+      - Improved cancellation, failed repair handling and unresolved audit issue retention.
       - Updated documentation and all included localizations.

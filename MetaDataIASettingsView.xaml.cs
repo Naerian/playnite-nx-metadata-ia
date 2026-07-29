@@ -95,6 +95,15 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void AuditLibrary_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Plugin.ShowLibraryAudit();
+            }
+        }
+
         private void LoadPasswordBoxes(MetaDataIASettings settings)
         {
             if (settings == null)

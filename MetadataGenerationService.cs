@@ -213,9 +213,83 @@ namespace MetaDataIAPlugin
         private void PrepareResult(AiMetadataResult result, Game game)
         {
             ApplyStrictFactualGuard(result, game);
+            ApplyTrustedFactualFields(result);
             result.Normalize(settings, game);
             ApplyStrictFactualGuard(result, game);
             AttachProvenance(result, game);
+        }
+
+        private void ApplyTrustedFactualFields(AiMetadataResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            result.Conflicts = new List<MetadataFieldConflict>();
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && x.IsExactMatch)
+                .ToList();
+
+            DetectListConflict(result, "developers", sources, x => x.Developers);
+            DetectListConflict(result, "publishers", sources, x => x.Publishers);
+            DetectListConflict(result, "ageRatings", sources, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating });
+            DetectListConflict(result, "regions", sources, x => x.Regions);
+
+            var dates = sources
+                .Where(x => !string.IsNullOrWhiteSpace(x.ReleaseDate))
+                .Select(x => new MetadataConflictValue { Source = x.SourceName, Value = x.ReleaseDate.Trim() })
+                .ToList();
+            AddConflictIfNeeded(result, "releaseDate", dates);
+            if (settings.GenerateReleaseDate && dates.Count > 0)
+            {
+                result.ReleaseDate = dates[0].Value;
+            }
+            else
+            {
+                result.ReleaseDate = string.Empty;
+            }
+
+            var series = sources
+                .Where(x => x.Series != null && x.Series.Count > 0)
+                .Select(x => new MetadataConflictValue { Source = x.SourceName, Value = string.Join(", ", x.Series.Where(y => !string.IsNullOrWhiteSpace(y))) })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                .ToList();
+            AddConflictIfNeeded(result, "series", series);
+            result.Series = settings.GenerateSeries && series.Count > 0
+                ? series[0].Value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Take(settings.MaxSeries).ToList()
+                : new List<string>();
+        }
+
+        private static void DetectListConflict(AiMetadataResult result, string field, IEnumerable<OfficialStoreMetadata> sources, Func<OfficialStoreMetadata, List<string>> selector)
+        {
+            var values = sources
+                .Select(x => new MetadataConflictValue
+                {
+                    Source = x.SourceName,
+                    Value = string.Join(", ", (selector(x) ?? new List<string>()).Where(y => !string.IsNullOrWhiteSpace(y)).Select(y => y.Trim()))
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                .ToList();
+            AddConflictIfNeeded(result, field, values);
+        }
+
+        private static void AddConflictIfNeeded(AiMetadataResult result, string field, List<MetadataConflictValue> values)
+        {
+            var distinct = (values ?? new List<MetadataConflictValue>())
+                .GroupBy(x => NormalizeConflictValue(x.Value), StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
+                .ToList();
+            if (distinct.Count > 1)
+            {
+                result.Conflicts.Add(new MetadataFieldConflict { Field = field, Values = values });
+            }
+        }
+
+        private static string NormalizeConflictValue(string value)
+        {
+            return string.Join("|", (value ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim().ToLowerInvariant()).OrderBy(x => x));
         }
 
         private void AttachProvenance(AiMetadataResult result, Game game)
@@ -236,6 +310,8 @@ namespace MetaDataIAPlugin
             AddListProvenance(result, game, "regions", result.Regions, x => x.Regions, ExistingNames(game == null ? null : game.Regions));
             AddListProvenance(result, game, "categories", result.Categories, null, ExistingNames(game == null ? null : game.Categories));
             AddLinksProvenance(result, game);
+            AddTextProvenance(result, game, "releaseDate", result.ReleaseDate, x => x.ReleaseDate, game != null && game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty);
+            AddListProvenance(result, game, "series", result.Series, x => x.Series, ExistingNames(game == null ? null : game.Series));
 
             if (settings.GenerateSortingName)
             {
@@ -443,9 +519,7 @@ namespace MetaDataIAPlugin
 
                 var content = ExtractAnthropicContent(responseText);
                 var result = ParseResult(content);
-                ApplyStrictFactualGuard(result, game);
-                result.Normalize(settings, game);
-                ApplyStrictFactualGuard(result, game);
+                PrepareResult(result, game);
                 return result;
             }
         }
@@ -504,6 +578,8 @@ namespace MetaDataIAPlugin
                     publishers = Names(game.Publishers),
                     ageRatings = Names(game.AgeRatings),
                     regions = Names(game.Regions),
+                    releaseDate = game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty,
+                    series = Names(game.Series),
                     links = game.Links == null ? new List<object>() : game.Links.Select(x => new { name = x.Name, url = x.Url }).Cast<object>().ToList()
                 };
                 context["existingMetadataMode"] = settings.ExistingMetadataMode;
@@ -542,6 +618,7 @@ namespace MetaDataIAPlugin
                     ageRating = x.AgeRating,
                     regions = x.Regions,
                     releaseDate = x.ReleaseDate,
+                    series = x.Series,
                     links = x.Links.Select(link => new { name = link.Name, url = link.Url }).ToList()
                 }).ToList();
             }

@@ -61,6 +61,8 @@ namespace MetaDataIAPlugin
     {
         public string Description { get; set; }
         public string SortingName { get; set; }
+        public ReleaseDate? ReleaseDate { get; set; }
+        public List<Guid> SeriesIds { get; set; }
         public List<Guid> GenreIds { get; set; }
         public List<Guid> TagIds { get; set; }
         public List<Guid> FeatureIds { get; set; }
@@ -80,6 +82,7 @@ namespace MetaDataIAPlugin
         public GameMetadataSnapshot()
         {
             GenreIds = new List<Guid>();
+            SeriesIds = new List<Guid>();
             TagIds = new List<Guid>();
             FeatureIds = new List<Guid>();
             DeveloperIds = new List<Guid>();
@@ -125,6 +128,8 @@ namespace MetaDataIAPlugin
             {
                 Description = game.Description,
                 SortingName = game.SortingName,
+                ReleaseDate = game.ReleaseDate,
+                SeriesIds = Copy(game.SeriesIds),
                 GenreIds = Copy(game.GenreIds),
                 TagIds = Copy(game.TagIds),
                 FeatureIds = Copy(game.FeatureIds),
@@ -315,6 +320,8 @@ namespace MetaDataIAPlugin
             var fields = new HashSet<string>(changedFields ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
             if (fields.Contains("description")) game.Description = snapshot.Description;
             if (fields.Contains("sortingName")) game.SortingName = snapshot.SortingName;
+            if (fields.Contains("releaseDate")) game.ReleaseDate = snapshot.ReleaseDate;
+            if (fields.Contains("series")) game.SeriesIds = Copy(snapshot.SeriesIds);
             if (fields.Contains("genres")) game.GenreIds = Copy(snapshot.GenreIds);
             if (fields.Contains("tags")) game.TagIds = Copy(snapshot.TagIds);
             if (fields.Contains("features")) game.FeatureIds = Copy(snapshot.FeatureIds);
@@ -450,6 +457,8 @@ namespace MetaDataIAPlugin
             var changed = new List<string>();
             if (!string.Equals(before.Description, after.Description, StringComparison.Ordinal)) changed.Add("description");
             if (!string.Equals(before.SortingName, after.SortingName, StringComparison.Ordinal)) changed.Add("sortingName");
+            if (!Nullable.Equals(before.ReleaseDate, after.ReleaseDate)) changed.Add("releaseDate");
+            if (!Same(before.SeriesIds, after.SeriesIds)) changed.Add("series");
             if (!Same(before.GenreIds, after.GenreIds)) changed.Add("genres");
             if (!Same(before.TagIds, after.TagIds)) changed.Add("tags");
             if (!Same(before.FeatureIds, after.FeatureIds)) changed.Add("features");

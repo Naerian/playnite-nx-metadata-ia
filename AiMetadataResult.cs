@@ -27,6 +27,7 @@ namespace MetaDataIAPlugin
     public class AiMetadataResult
     {
         public List<MetadataFieldProvenance> Provenance { get; set; }
+        public List<MetadataFieldConflict> Conflicts { get; set; }
         public string Short { get; set; }
         public string Synopsis { get; set; }
         public string Premise { get; set; }
@@ -48,11 +49,14 @@ namespace MetaDataIAPlugin
         public List<string> Regions { get; set; }
         public List<string> Categories { get; set; }
         public List<AiMetadataLink> Links { get; set; }
+        public string ReleaseDate { get; set; }
+        public List<string> Series { get; set; }
         public string Description { get; set; }
 
         public AiMetadataResult()
         {
             Provenance = new List<MetadataFieldProvenance>();
+            Conflicts = new List<MetadataFieldConflict>();
             Features = new List<string>();
             Genres = new List<string>();
             Tags = new List<string>();
@@ -62,6 +66,7 @@ namespace MetaDataIAPlugin
             Regions = new List<string>();
             Categories = new List<string>();
             Links = new List<AiMetadataLink>();
+            Series = new List<string>();
         }
 
         public void Normalize(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
@@ -107,6 +112,8 @@ namespace MetaDataIAPlugin
                 .Take(settings.MaxCategories)
                 .ToList();
             Links = CleanLinks(Links, settings.MaxLinks);
+            ReleaseDate = Clean(ReleaseDate);
+            Series = CleanList(Series, settings.MaxSeries, blacklist, string.Empty);
             AddReliableSourceLinks(game, settings);
             EnsureFeatureFallback(settings);
             Description = BuildDescription(settings, game);

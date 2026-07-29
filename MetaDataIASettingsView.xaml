@@ -876,6 +876,23 @@
                         <TextBlock Text="{DynamicResource MTDA_MaxMediaResults}"/>
                         <TextBox Text="{Binding Settings.MediaSearchMaxResults}" Width="80" HorizontalAlignment="Left" Margin="0,2,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_MaxMediaResultsHelp}" TextWrapping="Wrap"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MediaQualityAndRepair}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <CheckBox Content="{DynamicResource MTDA_MediaRepairOnlyWhenBetter}" IsChecked="{Binding Settings.MediaRepairOnlyWhenBetter}" Margin="0,0,0,6"/>
+                        <CheckBox Content="{DynamicResource MTDA_MediaMinimumQualityEnabled}" IsChecked="{Binding Settings.MediaMinimumQualityEnabled}" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel><TextBlock Text="{DynamicResource MTDA_CoverMinimumWidth}"/><TextBox Text="{Binding Settings.MediaMinimumCoverWidth}" Margin="0,3,0,0"/></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="{DynamicResource MTDA_IconMinimumWidth}"/><TextBox Text="{Binding Settings.MediaMinimumIconWidth}" Margin="0,3,0,0"/></StackPanel>
+                            <StackPanel Grid.Column="4"><TextBlock Text="{DynamicResource MTDA_BackgroundMinimumWidth}"/><TextBox Text="{Binding Settings.MediaMinimumBackgroundWidth}" Margin="0,3,0,0"/></StackPanel>
+                        </Grid>
+                        <TextBlock Text="{DynamicResource MTDA_MediaQualityAndRepairHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogos}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <CheckBox Content="{DynamicResource MTDA_EnableExtraMetadataLogos}" IsChecked="{Binding Settings.EnableExtraMetadataLoaderLogos}" Margin="0,0,0,8"/>
+                        <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogosHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -924,6 +941,8 @@
                                 <ColumnDefinition Width="190"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -1000,6 +1019,15 @@
                             <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}" Margin="0,8,0,0"/>
                             <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
                             <TextBox Grid.Row="11" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,4,8,0"/>
+
+                            <TextBlock Grid.Row="12" Text="{DynamicResource MTDA_ReleaseDate}" Margin="0,8,0,0"/>
+                            <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.GenerateReleaseDate}" Margin="0,8,0,0"/>
+                            <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ReleaseDateApplyMode}" Margin="0,4,8,0"/>
+
+                            <TextBlock Grid.Row="13" Text="{DynamicResource MTDA_Series}" Margin="0,8,0,0"/>
+                            <CheckBox Grid.Row="13" Grid.Column="1" IsChecked="{Binding Settings.GenerateSeries}" Margin="0,8,0,0"/>
+                            <ComboBox Grid.Row="13" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SeriesApplyMode}" Margin="0,4,8,0"/>
+                            <TextBox Grid.Row="13" Grid.Column="3" Text="{Binding Settings.MaxSeries}" Margin="0,4,8,0"/>
 
                         </Grid>
                         <Border Style="{StaticResource SectionHeaderBorder}">
@@ -1092,6 +1120,12 @@
                                 HorizontalAlignment="Left"
                                 MinWidth="220"
                                 Click="CleanupObsoleteMedia_OnClick"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_AuditTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_AuditMaintenanceHelp}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_MenuAuditLibrary}" HorizontalAlignment="Left" MinWidth="220" Click="AuditLibrary_OnClick"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>
