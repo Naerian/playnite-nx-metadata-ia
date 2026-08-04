@@ -429,11 +429,12 @@ namespace MetaDataIAPlugin
                             var result = new MetadataGenerationService(activeSettings, PlayniteApi).GenerateAsync(game, progress.CancelToken).GetAwaiter().GetResult();
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
+                                var resultToApply = PrepareResultForDirectBatchApply(result, activeSettings, games.Count > 1 || silent);
                                 var before = history.Capture(game, historyOperation, false);
-                                MetadataApplyService.Apply(PlayniteApi, game, result, activeSettings);
+                                MetadataApplyService.Apply(PlayniteApi, game, resultToApply, activeSettings);
                                 var after = history.Capture(game, historyOperation, false);
-                                history.AddGame(historyOperation, game, before, after, result.Provenance);
-                                LearnVocabulary(activeSettings, result);
+                                history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
+                                LearnVocabulary(activeSettings, resultToApply);
                             }));
                             processed++;
                         }
@@ -488,6 +489,49 @@ namespace MetaDataIAPlugin
                     PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
                 }
             }
+        }
+
+        private static AiMetadataResult PrepareResultForDirectBatchApply(AiMetadataResult result, MetaDataIASettings activeSettings, bool batchMode)
+        {
+            if (result == null || activeSettings == null || !batchMode || !activeSettings.StrictCompanyAgeRegion)
+            {
+                return result;
+            }
+
+            var clone = Serialization.GetClone(result);
+            RemoveLowConfidenceFactualField(clone, "developers", () => clone.Developers = new List<string>());
+            RemoveLowConfidenceFactualField(clone, "publishers", () => clone.Publishers = new List<string>());
+            RemoveLowConfidenceFactualField(clone, "ageRatings", () => clone.AgeRatings = new List<string>());
+            RemoveLowConfidenceFactualField(clone, "regions", () => clone.Regions = new List<string>());
+            RemoveLowConfidenceFactualField(clone, "releaseDate", () => clone.ReleaseDate = string.Empty);
+            RemoveLowConfidenceFactualField(clone, "series", () => clone.Series = new List<string>());
+            return clone;
+        }
+
+        private static void RemoveLowConfidenceFactualField(AiMetadataResult result, string field, Action clear)
+        {
+            if (result == null || clear == null || string.IsNullOrWhiteSpace(field))
+            {
+                return;
+            }
+
+            var provenance = (result.Provenance ?? new List<MetadataFieldProvenance>())
+                .FirstOrDefault(x => string.Equals(x.Field, field, StringComparison.OrdinalIgnoreCase));
+            var confidence = provenance == null ? string.Empty : provenance.Confidence ?? string.Empty;
+            var method = provenance == null ? string.Empty : provenance.Method ?? string.Empty;
+            var trusted = string.Equals(confidence, "high", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(confidence, "medium", StringComparison.OrdinalIgnoreCase) &&
+                          !string.Equals(method, "generated-from-identity", StringComparison.OrdinalIgnoreCase);
+
+            if (trusted)
+            {
+                return;
+            }
+
+            clear();
+            result.Provenance = (result.Provenance ?? new List<MetadataFieldProvenance>())
+                .Where(x => !string.Equals(x.Field, field, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
         private void ApplyMedia(List<Game> games, MetaDataIASettings activeSettings, bool silent = false)
@@ -1522,7 +1566,6 @@ namespace MetaDataIAPlugin
             });
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoSize", "Size"), option.Width > 0 && option.Height > 0 ? option.Width + " x " + option.Height : Loc("MTDA_Unknown", "Unknown")));
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoStyle", "Style"), string.IsNullOrWhiteSpace(option.Style) ? Loc("MTDA_NotSpecified", "Not specified") : option.Style));
-            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoScore", "Score"), option.Score.ToString()));
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoOfficial", "Official"), option.IsOfficial ? Loc("MTDA_Yes", "Yes") : Loc("MTDA_NoCommunity", "No / community")));
             stack.Children.Add(infoPanel);
 

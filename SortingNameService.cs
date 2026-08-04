@@ -74,6 +74,38 @@ namespace MetaDataIAPlugin
             return hasNumberedEntry ? current.BaseName : string.Empty;
         }
 
+        public static bool HasSeriesEvidence(IPlayniteAPI api, Game game)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(GetAssignedSeriesName(api, game)))
+            {
+                return true;
+            }
+
+            if (api == null)
+            {
+                return false;
+            }
+
+            var current = Analyze(game.Name);
+            var related = api.Database.Games.GetClone()
+                .Where(x => x != null && x.Id != game.Id)
+                .Select(x => Analyze(x.Name))
+                .Where(x => SameBase(x.BaseName, current.BaseName))
+                .ToList();
+
+            if (current.Number > 0)
+            {
+                return related.Any();
+            }
+
+            return related.Any(x => x.Number > 0);
+        }
+
         private static string GetAssignedSeriesName(IPlayniteAPI api, Game game)
         {
             if (game == null || game.SeriesIds == null || game.SeriesIds.Count == 0)

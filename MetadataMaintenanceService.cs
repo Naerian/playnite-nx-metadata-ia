@@ -238,6 +238,7 @@ namespace MetaDataIAPlugin
                     "Series",
                     settings.GenerateSeries,
                     (game.SeriesIds == null || game.SeriesIds.Count == 0) &&
+                    SortingNameService.HasSeriesEvidence(api, game) &&
                     !string.IsNullOrWhiteSpace(SortingNameService.GenerateSeriesName(api, game)));
                 AddMissing(
                     issues,

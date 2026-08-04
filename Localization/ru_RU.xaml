@@ -81,9 +81,9 @@
     <sys:String x:Key="MTDA_SourceOriginIntegration">Исходная библиотечная интеграция</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsTab">Интеграции библиотек</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDescription">Использует интеграцию библиотеки Playnite, которая импортировала игру. Соответствие определяется точно по PluginId игры.</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Использовать исходную интеграцию для обложек, значков и фонов</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Использовать ее метаданные как надежный контекст ИИ</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Использовать ее фактические поля в строгом режиме</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Получать медиа из интеграции, которая импортировала игру (обложки, значки и фоны), перед использованием других источников</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Использовать метаданные этой интеграции как надежный контекст перед запросом к ИИ</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">В строгом режиме применять только проверяемые факты из этой интеграции, например разработчиков, издателей, возрастные рейтинги и регионы</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDetected">Обнаруженные интеграции библиотек</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsHelp">Отключите интеграцию здесь, чтобы Metadata AI не обращался к ней. Для отсутствующих полей автоматически используются настроенные резервные источники.</sys:String>
     <sys:String x:Key="MTDA_RefreshOriginIntegrations">Обновить интеграции</sys:String>
@@ -691,4 +691,20 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_HistorySelectedEmpty">Для выбранных игр нет сохранённой истории Metadata AI.</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSelectedTitle">Источники метаданных - выбрано игр: {0}</sys:String>
     <sys:String x:Key="MTDA_SimulationChangesCount">Изменений: {0}</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsHelp">Экспортирует текстовый отчёт с версией плагина, путём Playnite, активными источниками и важными настройками. API-ключи и секреты не сохраняются.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidationRemovedAll">лучшие кандидаты были недоступны или нечитабельны</sys:String>
+    <sys:String x:Key="MTDA_ExportDiagnostics">Экспортировать диагностику</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExported">Диагностический отчёт экспортирован.</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPenalty">не соответствует предпочтению логотипа</sys:String>
+    <sys:String x:Key="MTDA_MediaRankFormatScore">оценка формата {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankBelowTarget">ниже настроенного размера вывода</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoWhyRanked">Почему кандидат показан здесь</sys:String>
+    <sys:String x:Key="MTDA_MediaRankOfficial">официальный или доверенный источник</sys:String>
+    <sys:String x:Key="MTDA_MediaRankSourcePriority">приоритет источника {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankMeetsTarget">соответствует настроенному размеру вывода</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPreference">соответствует предпочтению логотипа</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">Диагностика для поддержки</sys:String>
+    <sys:String x:Key="MTDA_MediaRankUsablePixels">полезных пикселей {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidation">Проверка</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExportFailed">Не удалось экспортировать диагностический отчёт.</sys:String>
 </ResourceDictionary>

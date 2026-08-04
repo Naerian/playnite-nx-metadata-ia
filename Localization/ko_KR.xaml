@@ -81,9 +81,9 @@
     <sys:String x:Key="MTDA_SourceOriginIntegration">원본 라이브러리 연동</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsTab">라이브러리 연동</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDescription">각 게임을 가져온 Playnite 라이브러리 연동을 사용합니다. 게임의 PluginId로 정확하게 일치시킵니다.</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">표지, 아이콘 및 배경에 원본 연동 사용</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">메타데이터를 신뢰할 수 있는 AI 컨텍스트로 사용</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">엄격 모드에서 사실 필드 사용</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">다른 소스를 사용하기 전에 게임을 가져온 연동에서 미디어(표지, 아이콘, 배경)를 가져옵니다</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">AI에 요청하기 전에 해당 연동의 메타데이터를 신뢰할 수 있는 컨텍스트로 사용합니다</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">엄격 모드에서는 개발사, 배급사, 연령 등급, 지역처럼 해당 연동에서 확인 가능한 사실만 적용합니다</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDetected">감지된 라이브러리 연동</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsHelp">Metadata AI가 사용하지 않을 연동은 여기서 비활성화하세요. 누락된 필드에는 설정된 대체 소스가 자동으로 사용됩니다.</sys:String>
     <sys:String x:Key="MTDA_RefreshOriginIntegrations">연동 새로 고침</sys:String>
@@ -691,4 +691,20 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_HistorySelectedEmpty">선택한 게임에 기록된 Metadata AI 내역이 없습니다.</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSelectedTitle">메타데이터 출처 - 선택한 게임 {0}개</sys:String>
     <sys:String x:Key="MTDA_SimulationChangesCount">변경 {0}개</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsHelp">플러그인 버전, Playnite 경로, 활성 소스 및 주요 설정이 포함된 텍스트 보고서를 내보냅니다. API 키와 비밀 값은 저장하지 않습니다.</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidationRemovedAll">상위 후보를 사용할 수 없거나 읽을 수 없습니다</sys:String>
+    <sys:String x:Key="MTDA_ExportDiagnostics">진단 내보내기</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExported">진단 보고서를 내보냈습니다.</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPenalty">로고 선호도와 일치하지 않음</sys:String>
+    <sys:String x:Key="MTDA_MediaRankFormatScore">형식 점수 {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankBelowTarget">설정된 출력 크기보다 작음</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoWhyRanked">여기에 표시되는 이유</sys:String>
+    <sys:String x:Key="MTDA_MediaRankOfficial">공식 또는 신뢰할 수 있는 소스</sys:String>
+    <sys:String x:Key="MTDA_MediaRankSourcePriority">소스 우선순위 {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankMeetsTarget">설정된 출력 크기를 충족함</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPreference">로고 선호도와 일치</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">지원 진단</sys:String>
+    <sys:String x:Key="MTDA_MediaRankUsablePixels">사용 가능한 픽셀 {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidation">검증</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExportFailed">진단 보고서를 내보낼 수 없습니다.</sys:String>
 </ResourceDictionary>

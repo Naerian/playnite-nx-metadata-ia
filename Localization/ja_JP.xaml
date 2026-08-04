@@ -81,9 +81,9 @@
     <sys:String x:Key="MTDA_SourceOriginIntegration">元のライブラリ連携</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsTab">ライブラリ連携</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDescription">各ゲームをインポートした Playnite ライブラリ連携を使用します。ゲームの PluginId により正確に照合されます。</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">カバー、アイコン、背景に元の連携を使用する</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">メタデータを信頼できる AI コンテキストとして使用する</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">厳格モードで事実フィールドを使用する</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">他のソースを使う前に、そのゲームを取り込んだ連携からメディア（カバー、アイコン、背景）を取得する</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">AI に依頼する前に、その連携のメタデータを信頼できるコンテキストとして使用する</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">厳格モードでは、開発元、販売元、年齢レーティング、地域など、その連携から確認できる事実だけを適用する</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDetected">検出されたライブラリ連携</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsHelp">Metadata AI から使用させたくない連携はここで無効にできます。不足する項目には設定済みの代替ソースが自動的に使用されます。</sys:String>
     <sys:String x:Key="MTDA_RefreshOriginIntegrations">連携を更新</sys:String>
@@ -691,4 +691,20 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_HistorySelectedEmpty">選択したゲームの Metadata AI 履歴は記録されていません。</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSelectedTitle">メタデータの出典 - 選択した {0} ゲーム</sys:String>
     <sys:String x:Key="MTDA_SimulationChangesCount">{0} 件の変更</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsHelp">プラグインのバージョン、Playnite パス、有効なソース、主要設定を含むテキストレポートを出力します。API キーやシークレットは保存されません。</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidationRemovedAll">上位候補が利用不可、または読み取れませんでした</sys:String>
+    <sys:String x:Key="MTDA_ExportDiagnostics">診断をエクスポート</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExported">診断レポートをエクスポートしました。</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPenalty">ロゴ設定に一致しない</sys:String>
+    <sys:String x:Key="MTDA_MediaRankFormatScore">形式スコア {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankBelowTarget">設定された出力サイズを下回っています</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoWhyRanked">ここに表示される理由</sys:String>
+    <sys:String x:Key="MTDA_MediaRankOfficial">公式または信頼できるソース</sys:String>
+    <sys:String x:Key="MTDA_MediaRankSourcePriority">ソース優先度 {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankMeetsTarget">設定された出力サイズを満たしています</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPreference">ロゴ設定に一致</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">サポート診断</sys:String>
+    <sys:String x:Key="MTDA_MediaRankUsablePixels">有効ピクセル {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidation">検証</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExportFailed">診断レポートをエクスポートできませんでした。</sys:String>
 </ResourceDictionary>

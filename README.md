@@ -53,6 +53,7 @@ The extension does not generate AI artwork. Media assets are fetched from config
 - Review media candidates manually for single-game workflows before applying them, or let the extension pick automatically in batch workflows.
 - Remove replaced media automatically and scan for unreferenced covers, icons, and backgrounds from the Maintenance tab.
 - Export and import extension settings for backup or Playnite reinstalls.
+- Export a support diagnostics report with configuration summaries and recent media/audit signals without including API keys.
 - Localized settings UI using Playnite's native `Localization/*.xaml` resource system.
 
 ## Supported AI providers

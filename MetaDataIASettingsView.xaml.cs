@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -350,6 +351,126 @@ namespace MetaDataIAPlugin
                     Loc("MTDA_CleanupObsoleteMediaFailed", "Could not clean obsolete media files.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message),
                     PluginTitle);
             }
+        }
+
+        private void ExportDiagnostics_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || viewModel.Settings == null || viewModel.Plugin == null || viewModel.Plugin.Api == null)
+            {
+                return;
+            }
+
+            try
+            {
+                viewModel.SyncSelectedTemplate();
+                var dialog = new SaveFileDialog
+                {
+                    Title = Loc("MTDA_ExportDiagnostics", "Export diagnostics"),
+                    Filter = "Text (*.txt)|*.txt",
+                    FileName = "MetadataAI_Diagnostics_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".txt"
+                };
+
+                if (dialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                File.WriteAllText(dialog.FileName, BuildDiagnosticsReport(viewModel), Encoding.UTF8);
+                MessageBox.Show(Loc("MTDA_DiagnosticsExported", "Diagnostics report exported."), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Loc("MTDA_DiagnosticsExportFailed", "Could not export diagnostics report.") + "\n\n" + MetadataGenerationService.SanitizeForUser(ex.Message), PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private static string BuildDiagnosticsReport(MetaDataIASettingsViewModel viewModel)
+        {
+            var settings = viewModel.Settings;
+            var api = viewModel.Plugin.Api;
+            var games = api.Database.Games.GetClone().ToList();
+            var builder = new StringBuilder();
+            builder.AppendLine("Metadata AI diagnostics");
+            builder.AppendLine("Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            builder.AppendLine("Plugin version: " + typeof(MetaDataIAPlugin).Assembly.GetName().Version);
+            builder.AppendLine("Playnite mode: " + (api.ApplicationInfo == null ? "Unknown" : api.ApplicationInfo.Mode.ToString()));
+            builder.AppendLine("Configuration path: " + (api.Paths == null ? string.Empty : api.Paths.ConfigurationPath));
+            builder.AppendLine();
+
+            builder.AppendLine("AI provider");
+            builder.AppendLine("- Provider: " + settings.ProviderPreset);
+            builder.AppendLine("- Endpoint: " + settings.Endpoint);
+            builder.AppendLine("- Model: " + settings.Model);
+            builder.AppendLine("- Output language: " + settings.Language);
+            builder.AppendLine("- Configured: " + settings.IsConfigured);
+            builder.AppendLine("- Strict factual mode: " + settings.StrictCompanyAgeRegion);
+            builder.AppendLine("- Official/source context: " + settings.UseOfficialStoreContext);
+            builder.AppendLine("- Origin integration as AI context: " + settings.UseOriginIntegrationAsAiContext);
+            builder.AppendLine("- Origin factual fields in strict mode: " + settings.UseOriginIntegrationForFactualMetadata);
+            builder.AppendLine();
+
+            builder.AppendLine("Enabled metadata fields");
+            builder.AppendLine("- Description: " + settings.GenerateDescription + " / " + settings.DescriptionApplyMode);
+            builder.AppendLine("- Genres: " + settings.GenerateGenres + " / " + settings.GenresApplyMode + " / max " + settings.MaxGenres + " / existing only " + settings.PreferExistingGenres);
+            builder.AppendLine("- Tags: " + settings.GenerateTags + " / " + settings.TagsApplyMode + " / max " + settings.MaxTags + " / existing only " + settings.PreferExistingTags);
+            builder.AppendLine("- Features: " + settings.GenerateFeatures + " / " + settings.FeaturesApplyMode + " / max " + settings.MaxFeatures + " / existing only " + settings.PreferExistingFeatures);
+            builder.AppendLine("- Categories: " + settings.GenerateCategories + " / " + settings.CategoriesApplyMode + " / max " + settings.MaxCategories + " / existing only " + settings.PreferExistingCategories);
+            builder.AppendLine("- Developers: " + settings.GenerateDevelopers + " / " + settings.DevelopersApplyMode + " / max " + settings.MaxDevelopers);
+            builder.AppendLine("- Publishers: " + settings.GeneratePublishers + " / " + settings.PublishersApplyMode + " / max " + settings.MaxPublishers);
+            builder.AppendLine("- Age ratings: " + settings.GenerateAgeRatings + " / " + settings.AgeRatingsApplyMode);
+            builder.AppendLine("- Regions: " + settings.GenerateRegions + " / " + settings.RegionsApplyMode);
+            builder.AppendLine("- Release date: " + settings.GenerateReleaseDate + " / " + settings.ReleaseDateApplyMode);
+            builder.AppendLine("- Series: " + settings.GenerateSeries + " / " + settings.SeriesApplyMode);
+            builder.AppendLine("- Sorting name: " + settings.GenerateSortingName + " / " + settings.SortingNameApplyMode);
+            builder.AppendLine("- Links: " + settings.GenerateLinks + " / " + settings.LinksApplyMode);
+            builder.AppendLine();
+
+            builder.AppendLine("Media");
+            builder.AppendLine("- Cover enabled: " + settings.DownloadCoverImage + " / " + settings.CoverImageApplyMode + " / " + settings.CoverImagePreset);
+            builder.AppendLine("- Icon enabled: " + settings.DownloadIcon + " / " + settings.IconApplyMode + " / " + settings.IconPreset);
+            builder.AppendLine("- Background enabled: " + settings.DownloadBackgroundImage + " / " + settings.BackgroundImageApplyMode + " / " + settings.BackgroundImagePreset);
+            builder.AppendLine("- Automatic priority: " + settings.MediaAutomaticPriority);
+            builder.AppendLine("- Processed image quality: " + settings.ProcessedImageQuality);
+            builder.AppendLine("- Minimum quality enabled: " + settings.MediaMinimumQualityEnabled);
+            builder.AppendLine("- Minimum cover width: " + settings.MediaMinimumCoverWidth);
+            builder.AppendLine("- Minimum icon width: " + settings.MediaMinimumIconWidth);
+            builder.AppendLine("- Minimum background width: " + settings.MediaMinimumBackgroundWidth);
+            builder.AppendLine("- Repair only when better: " + settings.MediaRepairOnlyWhenBetter);
+            builder.AppendLine("- Prefer official: " + settings.MediaPreferOfficial);
+            builder.AppendLine("- Avoid NSFW: " + settings.MediaAvoidNsfw);
+            builder.AppendLine("- Avoid blurred: " + settings.MediaAvoidBlurred);
+            builder.AppendLine("- Avoid console covers: " + settings.MediaAvoidConsoleCovers);
+            builder.AppendLine("- Source integration media: " + settings.UseOriginIntegrationForMedia);
+            builder.AppendLine("- Steam official: " + settings.MediaUseSteamOfficial);
+            builder.AppendLine("- Steam screenshots: " + settings.MediaUseSteamScreenshots);
+            builder.AppendLine("- SteamGridDB: " + settings.MediaUseSteamGridDb + " / key set " + HasValue(settings.SteamGridDbApiKey));
+            builder.AppendLine("- RAWG: " + settings.MediaUseRawg + " / key set " + HasValue(settings.RawgApiKey));
+            builder.AppendLine("- MobyGames: " + settings.MediaUseMobyGames + " / key set " + HasValue(settings.MobyGamesApiKey));
+            builder.AppendLine("- IGDB: " + settings.MediaUseIgdb + " / client id set " + HasValue(settings.IgdbClientId) + " / secret set " + HasValue(settings.IgdbClientSecret) + " / access token set " + HasValue(settings.IgdbAccessToken));
+            builder.AppendLine("- PS Store: " + settings.MediaUsePsnStore);
+            builder.AppendLine("- Xbox Store: " + settings.MediaUseXboxStore);
+            builder.AppendLine("- Epic Store: " + settings.MediaUseEpicStore);
+            builder.AppendLine("- Cover source priority: " + settings.MediaCoverSourcePriority);
+            builder.AppendLine("- Icon source priority: " + settings.MediaIconSourcePriority);
+            builder.AppendLine("- Background source priority: " + settings.MediaBackgroundSourcePriority);
+            builder.AppendLine();
+
+            builder.AppendLine("Library");
+            builder.AppendLine("- Games: " + games.Count);
+            builder.AppendLine("- Hidden games: " + games.Count(x => x.Hidden));
+            builder.AppendLine("- Games without cover: " + games.Count(x => string.IsNullOrWhiteSpace(x.CoverImage)));
+            builder.AppendLine("- Games without icon: " + games.Count(x => string.IsNullOrWhiteSpace(x.Icon)));
+            builder.AppendLine("- Games without background: " + games.Count(x => string.IsNullOrWhiteSpace(x.BackgroundImage)));
+            builder.AppendLine("- Games without description: " + games.Count(x => string.IsNullOrWhiteSpace(x.Description)));
+            builder.AppendLine();
+            builder.AppendLine("Secrets are intentionally omitted. Only whether a credential is set is reported.");
+            return builder.ToString();
+        }
+
+        private static string HasValue(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "no" : "yes";
         }
 
         private static string FormatFileSize(long bytes)

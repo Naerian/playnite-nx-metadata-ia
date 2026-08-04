@@ -18,15 +18,15 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.2.5`
-- Latest release tag: `v1.2.5`
-- Latest release commit: `821900c`
+- Latest released version: `1.2.6`
+- Latest release tag: `v1.2.6`
+- Latest release commit: see tag `v1.2.6`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_5.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_6.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.2.5
-- Public package SHA-256 verified for v1.2.5:
-  `82E1BE844F72BA12AF3586693D24B593C47DACD34CFC360A70B65B7EBC25EEAD`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.2.6
+- Public package SHA-256 verified for v1.2.6:
+  `5B3DAE70CCDFAE53B74D70025F27248215DFBD09E4C2668A65EB07893A575A73`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -64,6 +64,8 @@ Main capabilities currently implemented:
 - History and provenance windows, with selected-game filtering.
 - Library audit with selective repair for metadata and media issues.
 - Media cleanup and stale file maintenance helpers.
+- Support diagnostics export for sharing configuration summaries and recent
+  media/audit signals without exposing API keys.
 - Localizations in `Localization/*.xaml`; all locale files should contain the
   same resource keys.
 
@@ -264,4 +266,3 @@ Recommended recovery flow:
    ```text
    Continue Metadata AI. Read docs/CODEX_HANDOFF.md first.
    ```
-

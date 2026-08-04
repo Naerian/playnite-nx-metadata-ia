@@ -45,6 +45,7 @@ namespace MetaDataIAPlugin
         public string Extension { get; set; }
         public string SourceName { get; set; }
         public bool IsOfficial { get; set; }
+        public string RankingDetails { get; set; }
 
         public string DisplayText
         {
@@ -109,6 +110,21 @@ namespace MetaDataIAPlugin
                 return null;
             }
 
+            var orderedAutomatic = OrderCandidates(automaticCandidates, kind).ToList();
+            var validatedAutomatic = await ValidatePreviewCandidatesAsync(
+                orderedAutomatic,
+                Math.Max(1, Math.Min(12, settings.MediaSearchMaxResults)),
+                cancelToken).ConfigureAwait(false);
+            if (validatedAutomatic.Count > 0)
+            {
+                automaticCandidates = validatedAutomatic;
+            }
+            else
+            {
+                AddDiagnosticForGame(game, kind, Loc("MTDA_MediaDiagValidation", "Validation"), Loc("MTDA_MediaDiagValidationRemovedAll", "top-ranked candidates were unavailable or not readable"));
+                automaticCandidates = orderedAutomatic;
+            }
+
             var selected = ChooseCandidate(automaticCandidates, kind);
             var selectedBytes = await DownloadBestBytes(automaticCandidates, selected, kind, cancelToken).ConfigureAwait(false);
             if (kind != MediaKind.Logo && selectedBytes.Content != null && IsMostlyBlankBytes(selectedBytes.Content, kind))
@@ -171,7 +187,7 @@ namespace MetaDataIAPlugin
             return selected == null ? null : ToPreviewOption(selected, kind);
         }
 
-        private static MediaPreviewOption ToPreviewOption(MediaCandidate candidate, MediaKind kind)
+        private MediaPreviewOption ToPreviewOption(MediaCandidate candidate, MediaKind kind)
         {
             return new MediaPreviewOption
             {
@@ -183,7 +199,8 @@ namespace MetaDataIAPlugin
                 Score = candidate.Score,
                 Extension = candidate.Extension,
                 SourceName = candidate.SourceName,
-                IsOfficial = candidate.IsOfficial
+                IsOfficial = candidate.IsOfficial,
+                RankingDetails = BuildRankingDetails(candidate, kind)
             };
         }
 
@@ -422,6 +439,22 @@ namespace MetaDataIAPlugin
             }
 
             diagnostics.Add("- " + sourceName + ": " + detail);
+        }
+
+        private void AddDiagnosticForGame(Game game, MediaKind kind, string sourceName, string detail)
+        {
+            var cacheKey = BuildCandidateCacheKey(game, kind);
+            lock (CandidateCacheLock)
+            {
+                List<string> diagnostics;
+                if (!CandidateDiagnosticsCache.TryGetValue(cacheKey, out diagnostics))
+                {
+                    diagnostics = new List<string>();
+                    CandidateDiagnosticsCache[cacheKey] = diagnostics;
+                }
+
+                AddDiagnostic(diagnostics, sourceName, detail);
+            }
         }
 
         private async Task<List<MediaCandidate>> GetCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
@@ -1383,6 +1416,55 @@ namespace MetaDataIAPlugin
                 .ThenByDescending(x => x.Score)
                 .ThenByDescending(x => (long)x.Width * x.Height)
                 .ThenBy(x => target.Width <= 0 || target.Height <= 0 ? 0 : Math.Abs(x.Width - target.Width) + Math.Abs(x.Height - target.Height));
+        }
+
+        private string BuildRankingDetails(MediaCandidate candidate, MediaKind kind)
+        {
+            if (candidate == null)
+            {
+                return string.Empty;
+            }
+
+            var target = GetTargetSize(kind);
+            var parts = new List<string>();
+            var userPriority = UserSourcePriorityScore(candidate, kind);
+            var sourcePriority = SourceScore(candidate);
+            var format = FormatScore(candidate, kind, target);
+            var logo = LogoScore(candidate, kind);
+            var area = UsablePixelArea(candidate, target);
+            var largeEnough = IsCandidateLargeEnoughForTarget(candidate, target);
+
+            parts.Add(string.Format(Loc("MTDA_MediaRankSourcePriority", "source priority {0}"), userPriority > 0 ? userPriority : sourcePriority));
+            if (candidate.IsOfficial)
+            {
+                parts.Add(Loc("MTDA_MediaRankOfficial", "official or trusted source"));
+            }
+            if (candidate.Width > 0 && candidate.Height > 0)
+            {
+                parts.Add(candidate.Width + "x" + candidate.Height);
+            }
+            if (target.Width > 0 && target.Height > 0)
+            {
+                parts.Add(largeEnough
+                    ? Loc("MTDA_MediaRankMeetsTarget", "meets the configured output size")
+                    : Loc("MTDA_MediaRankBelowTarget", "below the configured output size"));
+            }
+            if (format != 0)
+            {
+                parts.Add(string.Format(Loc("MTDA_MediaRankFormatScore", "format score {0}"), format));
+            }
+            if (kind == MediaKind.Background && logo != 0)
+            {
+                parts.Add(logo > 0
+                    ? Loc("MTDA_MediaRankLogoPreference", "matches the logo preference")
+                    : Loc("MTDA_MediaRankLogoPenalty", "does not match the logo preference"));
+            }
+            if (area > 0)
+            {
+                parts.Add(string.Format(Loc("MTDA_MediaRankUsablePixels", "usable pixels {0}"), area));
+            }
+
+            return string.Join(" · ", parts);
         }
 
         private static bool IsCandidateLargeEnoughForTarget(MediaCandidate candidate, Size target)

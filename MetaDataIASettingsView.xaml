@@ -550,15 +550,18 @@
                             <TabItem Header="{DynamicResource MTDA_OriginIntegrationsTab}">
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDescription}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationMedia}"
-                                              IsChecked="{Binding Settings.UseOriginIntegrationForMedia}"
-                                              Margin="0,0,0,6"/>
-                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationAiContext}"
-                                              IsChecked="{Binding Settings.UseOriginIntegrationAsAiContext}"
-                                              Margin="0,0,0,6"/>
-                                    <CheckBox Content="{DynamicResource MTDA_EnableOriginIntegrationFacts}"
-                                              IsChecked="{Binding Settings.UseOriginIntegrationForFactualMetadata}"
-                                              Margin="0,0,0,10"/>
+                                    <CheckBox IsChecked="{Binding Settings.UseOriginIntegrationForMedia}"
+                                              Margin="0,0,0,6">
+                                        <TextBlock Text="{DynamicResource MTDA_EnableOriginIntegrationMedia}" TextWrapping="Wrap"/>
+                                    </CheckBox>
+                                    <CheckBox IsChecked="{Binding Settings.UseOriginIntegrationAsAiContext}"
+                                              Margin="0,0,0,6">
+                                        <TextBlock Text="{DynamicResource MTDA_EnableOriginIntegrationAiContext}" TextWrapping="Wrap"/>
+                                    </CheckBox>
+                                    <CheckBox IsChecked="{Binding Settings.UseOriginIntegrationForFactualMetadata}"
+                                              Margin="0,0,0,10">
+                                        <TextBlock Text="{DynamicResource MTDA_EnableOriginIntegrationFacts}" TextWrapping="Wrap"/>
+                                    </CheckBox>
                                     <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDetected}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <ItemsControl ItemsSource="{Binding OriginLibraryIntegrations}" Margin="0,0,0,8">
                                         <ItemsControl.ItemTemplate>
@@ -1126,6 +1129,17 @@
                         </Border>
                         <TextBlock Text="{DynamicResource MTDA_AuditMaintenanceHelp}" TextWrapping="Wrap" Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_MenuAuditLibrary}" HorizontalAlignment="Left" MinWidth="220" Click="AuditLibrary_OnClick"/>
+
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsHelp}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="{DynamicResource MTDA_ExportDiagnostics}"
+                                HorizontalAlignment="Left"
+                                MinWidth="220"
+                                Click="ExportDiagnostics_OnClick"/>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>

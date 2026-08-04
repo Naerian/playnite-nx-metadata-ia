@@ -81,9 +81,9 @@
     <sys:String x:Key="MTDA_SourceOriginIntegration">Integración de origen</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsTab">Integraciones de biblioteca</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDescription">Usa la integración de biblioteca de Playnite que importó cada juego. La coincidencia es exacta mediante el PluginId del juego, por lo que un juego de Steam nunca se consulta mediante EA, Xbox u otra integración ajena.</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Usar la integración de origen para portadas, iconos y fondos</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usar sus metadatos como contexto fiable para la IA</sys:String>
-    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">Usar sus campos factuales en el modo estricto</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationMedia">Obtener medios desde la integración que importó el juego (portadas, iconos y fondos) antes de usar otras fuentes</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationAiContext">Usar los metadatos de esa integración como contexto fiable antes de pedir contenido a la IA</sys:String>
+    <sys:String x:Key="MTDA_EnableOriginIntegrationFacts">En modo estricto, aplicar solo datos comprobables de esa integración, como desarrolladores, editores, edad y región</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsDetected">Integraciones de biblioteca detectadas</sys:String>
     <sys:String x:Key="MTDA_OriginIntegrationsHelp">Desactiva aquí una integración para impedir que Metadata AI la consulte. Si una integración no ofrece el campo solicitado, se usan automáticamente las fuentes de respaldo configuradas.</sys:String>
     <sys:String x:Key="MTDA_RefreshOriginIntegrations">Actualizar integraciones</sys:String>
@@ -694,4 +694,20 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_HistorySelectedEmpty">No hay historial de Metadata AI registrado para los juegos seleccionados.</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSelectedTitle">Procedencia de metadatos - {0} juegos seleccionados</sys:String>
     <sys:String x:Key="MTDA_SimulationChangesCount">{0} cambio(s)</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidationRemovedAll">los candidatos mejor posicionados no estaban disponibles o no eran legibles</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoWhyRanked">Por qué aparece aquí</sys:String>
+    <sys:String x:Key="MTDA_ExportDiagnostics">Exportar diagnóstico</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExported">Informe de diagnóstico exportado.</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPenalty">no coincide con la preferencia de logo</sys:String>
+    <sys:String x:Key="MTDA_MediaRankFormatScore">puntuación de formato {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaRankBelowTarget">por debajo del tamaño de salida configurado</sys:String>
+    <sys:String x:Key="MTDA_MediaRankOfficial">fuente oficial o fiable</sys:String>
+    <sys:String x:Key="MTDA_MediaRankSourcePriority">prioridad de fuente {0}</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsHelp">Exporta un informe de texto con la versión del plugin, ruta de Playnite, fuentes activas y ajustes importantes. No guarda API keys ni secretos.</sys:String>
+    <sys:String x:Key="MTDA_MediaRankMeetsTarget">cumple el tamaño de salida configurado</sys:String>
+    <sys:String x:Key="MTDA_MediaRankLogoPreference">coincide con la preferencia de logo</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">Diagnóstico para soporte</sys:String>
+    <sys:String x:Key="MTDA_MediaRankUsablePixels">píxeles útiles {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaDiagValidation">Validación</sys:String>
+    <sys:String x:Key="MTDA_DiagnosticsExportFailed">No se pudo exportar el informe de diagnóstico.</sys:String>
 </ResourceDictionary>

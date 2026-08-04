@@ -1,15 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.5
+  - Version: 1.2.6
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-07-29
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.5/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_5.pext
+    ReleaseDate: 2026-08-04
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.6/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_6.pext
     Changelog:
-      - Added a library audit with selective repair for metadata and media issues.
-      - Added configurable media quality thresholds and per-game media replacement locks.
-      - Added optional SteamGridDB logo search for Extra Metadata Loader.
-      - Improved release date, series and sorting name generation with stricter factual safeguards.
-      - Redesigned multi-game metadata preview with game navigation and selective changes.
-      - Added selected-game filtering to audit, history and metadata provenance.
-      - Improved cancellation, failed repair handling and unresolved audit issue retention.
-      - Updated documentation and all included localizations.
+      - Improved media integration labels and wrapping in settings.
+      - Added stricter automatic media candidate validation before applying images.
+      - Added support diagnostics export without API secrets.
+      - Made batch metadata application more conservative for low-confidence factual fields.
+      - Reduced false-positive series audit issues for isolated numbered titles.
+      - Hid internal media scoring details from the media picker.
