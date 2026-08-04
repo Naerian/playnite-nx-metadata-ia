@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">プロバイダーが必要とする場合にのみ、ここに貼り付けてください。ローカルの LM Studio と Ollama の場合、これは通常空です。 ChatGPT キーをここに貼り付けないでください。選択したプロバイダーからの API キーである必要があります。</sys:String>
     <sys:String x:Key="MTDA_Model">モデル</sys:String>
     <sys:String x:Key="MTDA_TestProvider">テストプロバイダー</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">LM Studioを無料で使用する</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Ollamaを無料で使用する</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">無料のローカルフォールバック</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">クォータ、制限、または需要が高いためにクラウド プロバイダーが失敗した場合は、ローカル プロバイダーを試してください</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">これを機能させるには、LM Studio のローカル サーバーが有効になっているか、ダウンロードされたモデルで Ollama が実行されている必要があります。ローカルプロバイダーの場合、API キーは空です。</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">年齢制限と地域を生成</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">リンクを設定</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">ソート名を設定</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">すべてのフィールドを設定</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">カバーを探す</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">アイコンを探す</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">背景を探す</sys:String>
@@ -242,7 +241,7 @@ API キー、エンドポイント、設定されたモデルを確認してく�
 プロバイダー、エンドポイント、モデル名が正しく記述されていることを確認してください。モデルを手動で入力した場合は、プロバイダーのドキュメントまたはコンソールから正確な名前をコピーします。
 
 例:
-- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: 「ollam リスト」で表示される名前
 - LM Studio: ローカルサーバーにロードされたモデル</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">アカウントに利用可能な割り当てがないため、AI プロバイダーはリクエストを拒否しました。
@@ -269,7 +268,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
 
 料金を支払わずにできること:
 - 数分待ってからもう一度試してください。
-- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.
+- Switch to gemini-3.5-flash-lite if you were using another model.
 - 一度に処理するゲームの数を減らします。
 - Use LM Studio or Ollama locally if you want to avoid external quotas.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">画像をダウンロードする前に、[メディア] タブで SteamGridDB API キーを設定します。</sys:String>
@@ -283,6 +282,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MediaPickerTitle">メディアの選択</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">メタデータ AI は {0} 個のメディア ファイルを適用しました。</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">メタデータ AI が {0} ゲームを更新しました。エラー: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">更新されなかったゲーム ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">メタデータ AI が {0} ゲームのメディアを更新しました。適用されたファイル: {1}。</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">メタデータ AI が {0} ゲームを更新しました。</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">このメディア タイプには候補がありません。</sys:String>

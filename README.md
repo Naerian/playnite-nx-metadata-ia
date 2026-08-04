@@ -95,7 +95,7 @@ General setup:
 | --- | --- | --- | --- |
 | OpenRouter Free | No, with daily and availability limits | `openrouter/free` | Create a key at [OpenRouter](https://openrouter.ai/settings/keys). The free router chooses an available free model for every request, so speed and consistency can vary. |
 | Groq | No, within the free plan limits | `llama-3.1-8b-instant` | Create a key in the [GroqCloud Console](https://console.groq.com/keys). Groq is usually the fastest free cloud option, but request and token limits apply. |
-| Google Gemini | No, within the Gemini API free tier | `gemini-2.5-flash` | Create a key in [Google AI Studio](https://aistudio.google.com/app/apikey). A Gemini app subscription is unrelated to Gemini API quotas. |
+| Google Gemini | No, within the Gemini API free tier | `gemini-3.5-flash-lite` | Create a key in [Google AI Studio](https://aistudio.google.com/app/apikey). A Gemini app subscription is unrelated to Gemini API quotas. |
 | Cerebras | No, within the free tier limits | `gpt-oss-120b` | Create a key in [Cerebras Cloud](https://cloud.cerebras.ai/). The free tier provides fast inference with lower rate limits than paid tiers. |
 | Mistral AI | No, in Studio Free mode | `mistral-small-latest` | Create a key in [Mistral Studio](https://console.mistral.ai/). Free mode does not require a credit card, but usage and rate limits apply. |
 | LM Studio | No; runs on your PC | `local-model` | Install LM Studio, download and load a model, then enable its local server in the Developer tab. Keep LM Studio running while Metadata AI is working. |

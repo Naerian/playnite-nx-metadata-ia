@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">仅当提供商需要时才将其粘贴到此处。对于本地 LM Studio 和 Ollama，这通常是空的。不要将您的 ChatGPT 密钥粘贴到此处：它必须是来自所选提供商的 API 密钥。</sys:String>
     <sys:String x:Key="MTDA_Model">模型</sys:String>
     <sys:String x:Key="MTDA_TestProvider">测试提供商</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">免费使用 LM Studio</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">免费使用奥拉马</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">免费本地后备</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">如果云提供商因配额、限制或高需求而失败，请尝试本地提供商</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">要实现此功能，LM Studio 必须启用其本地服务器，或者 Ollama 必须在下载模型的情况下运行。对于本地提供商来说，API 密钥为空。</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">生成年龄评级和地区</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">设置链接</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">设置排序名称</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">设置所有字段</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">查找封面</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">查找图标</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">查找背景</sys:String>
@@ -242,7 +241,7 @@
 Check that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.
 
 Examples:
-- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: the name shown by &amp;apos;ollama list&amp;apos;
 - LM Studio: the model loaded in the local server</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">您的 AI 提供者拒绝请求，账户无可用配额。
@@ -269,7 +268,7 @@ Ollama: http://localhost:11434/v1/chat/completions
 
 无需付费可尝试：
 - 等待几分钟后重试。
-- 如果使用 Pro 模型，切换到 gemini-2.5-flash 或 gemini-2.5-flash-lite。
+- 如果正在使用其他模型，请切换到 gemini-3.5-flash-lite。
 - 减少一次处理的游戏数量。
 - 若想避免外部配额，使用本地 LM Studio 或 Ollama。</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">下载图片前请在媒体标签页配置 SteamGridDB API 密钥。</sys:String>
@@ -283,6 +282,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_MediaPickerTitle">选择媒体</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI 应用了 {0} 个媒体文件。</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI 更新了 {0} 个游戏。错误：{1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">未更新的游戏（{0} 个）：</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI 更新了 {0} 个游戏的媒体。应用的文件数：{1}。</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI 更新了 {0} 个游戏。</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">此媒体类型没有候选项。</sys:String>

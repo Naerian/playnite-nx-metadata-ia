@@ -1263,7 +1263,7 @@ namespace MetaDataIAPlugin
             if (ProviderPreset == ProviderOpenAI)
             {
                 Endpoint = "https://api.openai.com/v1/chat/completions";
-                Model = string.IsNullOrWhiteSpace(Model) ? "gpt-4.1-mini" : Model;
+                Model = "gpt-4.1-mini";
             }
             else if (ProviderPreset == ProviderLmStudio)
             {
@@ -1278,7 +1278,7 @@ namespace MetaDataIAPlugin
             else if (ProviderPreset == ProviderGemini)
             {
                 Endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-                Model = "gemini-2.5-flash";
+                Model = "gemini-3.5-flash-lite";
             }
             else if (ProviderPreset == ProviderClaude)
             {
@@ -1354,14 +1354,6 @@ namespace MetaDataIAPlugin
             {
                 Endpoint = "https://api.mistral.ai/v1/chat/completions";
             }
-        }
-
-        public void ApplyFreeLocalPreset(string provider)
-        {
-            ProviderPreset = provider;
-            ApplyProviderPreset();
-            ApiKey = string.Empty;
-            EnableLocalFallback = true;
         }
 
         public MetaDataIASettings CreateLocalFallbackSettings(string provider)

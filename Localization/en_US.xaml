@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Paste it here only if the provider requires it. For local LM Studio and Ollama this is usually empty. Do not paste your ChatGPT key here: it must be an API key from the selected provider.</sys:String>
     <sys:String x:Key="MTDA_Model">Model</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Test provider</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Use LM Studio free</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Use Ollama free</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Free local fallback</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">If the cloud provider fails because of quota, limits or high demand, try local providers</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">To make this work, LM Studio must have its local server enabled or Ollama must be running with the model downloaded. The API key is empty for local providers.</sys:String>
@@ -202,6 +200,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Generate age ratings and regions</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Set links</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Set sorting name</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Set all fields</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Find cover</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Find icon</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Find background</sys:String>
@@ -252,7 +251,7 @@ Check the configured provider, endpoint, model and API key. If the problem conti
 Check that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.
 
 Examples:
-- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: the name shown by &apos;ollama list&apos;
 - LM Studio: the model loaded in the local server</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Your AI provider rejected the request because the account has no available quota.
@@ -279,7 +278,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
 
 What you can do without paying:
 - Wait a few minutes and try again.
-- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.
+- Switch to gemini-3.5-flash-lite if you were using another model.
 - Process fewer games at once.
 - Use LM Studio or Ollama locally if you want to avoid external quotas.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure the SteamGridDB API key in the Media tab before downloading images.</sys:String>
@@ -303,6 +302,7 @@ What you can do without paying:
     <sys:String x:Key="MTDA_MediaPickerTitle">Choose media</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadata AI applied {0} media file(s).</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI updated {0} game(s). Errors: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Games not updated ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI cancelled the operation. Processed games: {0}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI cancelled the media operation. Processed games: {0}. Applied files: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI updated media for {0} game(s). Applied files: {1}.</sys:String>

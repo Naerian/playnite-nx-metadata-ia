@@ -156,10 +156,9 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
         {
-            var request = new
+            var request = JObject.FromObject(new
             {
                 model = settings.Model,
-                temperature = 0.0,
                 max_tokens = 4096,
                 messages = new[]
                 {
@@ -174,7 +173,11 @@ namespace MetaDataIAPlugin
                         content = userPrompt
                     }
                 }
-            };
+            });
+            if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
+            {
+                request["temperature"] = 0.0;
+            }
 
             using (var client = new HttpClient())
             using (var message = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint))
@@ -1402,7 +1405,7 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("does not exist", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderModelNotFound", "The configured provider or model does not exist, or is not available for your account.\n\nCheck that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.\n\nExamples:\n- Gemini: gemini-2.5-flash or gemini-2.5-flash-lite\n- Ollama: the name shown by 'ollama list'\n- LM Studio: the model loaded in the local server"),
+                    Loc("MTDA_ErrorProviderModelNotFound", "The configured provider or model does not exist, or is not available for your account.\n\nCheck that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.\n\nExamples:\n- Gemini: gemini-3.5-flash-lite\n- Ollama: the name shown by 'ollama list'\n- LM Studio: the model loaded in the local server"),
                     true,
                     responseText);
             }
@@ -1421,7 +1424,7 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("unavailable", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-2.5-flash or gemini-2.5-flash-lite if you were using a Pro model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
+                    Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-3.5-flash-lite if you were using another model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
                     true,
                     responseText);
             }

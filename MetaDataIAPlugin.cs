@@ -218,6 +218,8 @@ namespace MetaDataIAPlugin
             yield return CreateGameMenuItem("Establecer fecha de lanzamiento", activeSettings => CreateFocusedSettings("releaseDate"));
             yield return CreateGameMenuItem("Establecer serie", activeSettings => CreateFocusedSettings("series"));
             yield return CreateGameSortingMenuItem("Establecer orden de nombre");
+            yield return CreateGameSubmenuSeparator("MTDA_TabFields", "Campos");
+            yield return CreateGameMenuItem("Establecer todos los campos", activeSettings => activeSettings);
 
             yield return CreateGameMediaMenuItem("Establecer portada", activeSettings => CreateFocusedMediaSettings("cover"));
             yield return CreateGameMediaMenuItem("Establecer icono", activeSettings => CreateFocusedMediaSettings("icon"));
@@ -231,6 +233,7 @@ namespace MetaDataIAPlugin
                     Action = actionArgs => FindAndApplyLogo(actionArgs.Games.FirstOrDefault())
                 };
             }
+            yield return CreateGameSubmenuSeparator("MTDA_TabMedia", "Media");
             yield return CreateGameMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
 
             if (!IsFullscreenMode && !multipleGames)
@@ -337,10 +340,13 @@ namespace MetaDataIAPlugin
             yield return CreateMainMenuItem("Establecer fecha de lanzamiento", activeSettings => CreateFocusedSettings("releaseDate"));
             yield return CreateMainMenuItem("Establecer serie", activeSettings => CreateFocusedSettings("series"));
             yield return CreateMainSortingMenuItem("Establecer orden de nombre");
+            yield return CreateMainSubmenuSeparator("MTDA_TabFields", "Campos");
+            yield return CreateMainMenuItem("Establecer todos los campos", activeSettings => activeSettings);
 
             yield return CreateMainMediaMenuItem("Establecer portadas", activeSettings => CreateFocusedMediaSettings("cover"));
             yield return CreateMainMediaMenuItem("Establecer iconos", activeSettings => CreateFocusedMediaSettings("icon"));
             yield return CreateMainMediaMenuItem("Establecer fondos", activeSettings => CreateFocusedMediaSettings("background"));
+            yield return CreateMainSubmenuSeparator("MTDA_TabMedia", "Media");
             yield return CreateMainMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
         }
 
@@ -409,6 +415,7 @@ namespace MetaDataIAPlugin
                 var processed = 0;
                 var cancelled = false;
                 var errors = new List<string>();
+                var updatedGameIds = new HashSet<Guid>();
                 var historyOperation = history.BeginOperation(silent
                     ? Loc("MTDA_HistoryAutoImportMetadata", "Automatic metadata import")
                     : Loc("MTDA_HistoryApplyMetadata", "Apply AI metadata"));
@@ -437,6 +444,7 @@ namespace MetaDataIAPlugin
                                 LearnVocabulary(activeSettings, resultToApply);
                             }));
                             processed++;
+                            updatedGameIds.Add(game.Id);
                         }
                         catch (OperationCanceledException)
                         {
@@ -469,7 +477,8 @@ namespace MetaDataIAPlugin
                     }
                     else
                     {
-                        ShowBatchErrors(processed, errors);
+                        var notUpdatedGames = games.Where(x => x != null && !updatedGameIds.Contains(x.Id)).ToList();
+                        ShowBatchErrors(processed, errors, 0, notUpdatedGames);
                     }
                 }
                 else if (cancelled && !silent)
@@ -1999,12 +2008,24 @@ namespace MetaDataIAPlugin
             return MetadataGenerationService.SanitizeForUser(ex.Message);
         }
 
-        private void ShowBatchErrors(int processed, List<string> errors, int qualitySkipped = 0)
+        private void ShowBatchErrors(int processed, List<string> errors, int qualitySkipped = 0, IEnumerable<Game> notUpdatedGames = null)
         {
             var separator = "\n\n" + new string('-', 90) + "\n\n";
             var message = string.Format(Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"), processed, errors.Count) + "\n\n" +
                           string.Join(separator, errors);
             message = AppendQualitySkipSummary(message, qualitySkipped);
+
+            var notUpdatedNames = (notUpdatedGames ?? Enumerable.Empty<Game>())
+                .Where(x => x != null)
+                .Select(x => string.IsNullOrWhiteSpace(x.Name) ? x.Id.ToString() : x.Name)
+                .ToList();
+            if (notUpdatedNames.Count > 0)
+            {
+                message += separator +
+                           string.Format(Loc("MTDA_MessageGamesNotUpdated", "Games not updated ({0}):"), notUpdatedNames.Count) +
+                           Environment.NewLine + Environment.NewLine +
+                           string.Join(Environment.NewLine, notUpdatedNames.Select(x => "• " + x));
+            }
 
             if (IsFullscreenMode)
             {
@@ -2413,6 +2434,15 @@ namespace MetaDataIAPlugin
             };
         }
 
+        private MainMenuItem CreateMainSubmenuSeparator(string sectionKey, string sectionFallback)
+        {
+            return new MainMenuItem
+            {
+                Description = "-",
+                MenuSection = MenuRoot + "|" + Loc(sectionKey, sectionFallback)
+            };
+        }
+
         private GameMenuItem CreateGameMenuItem(string description, Func<MetaDataIASettings, MetaDataIASettings> settingsFactory)
         {
             return new GameMenuItem
@@ -2420,6 +2450,15 @@ namespace MetaDataIAPlugin
                 Description = Loc(MenuKey(description), description),
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabFields", "Campos"),
                 Action = actionArgs => GenerateAndApply(actionArgs.Games, settingsFactory(settings.Settings))
+            };
+        }
+
+        private GameMenuItem CreateGameSubmenuSeparator(string sectionKey, string sectionFallback)
+        {
+            return new GameMenuItem
+            {
+                Description = "-",
+                MenuSection = MenuRoot + "|" + Loc(sectionKey, sectionFallback)
             };
         }
 
@@ -2812,6 +2851,7 @@ namespace MetaDataIAPlugin
                 case "Establecer fecha de lanzamiento": return "MTDA_MenuSetReleaseDate";
                 case "Establecer serie": return "MTDA_MenuSetSeries";
                 case "Establecer orden de nombre": return "MTDA_MenuSetSortingName";
+                case "Establecer todos los campos": return "MTDA_MenuSetAllFields";
                 case "Establecer portada": return "MTDA_MenuSetCover";
                 case "Establecer icono": return "MTDA_MenuSetIcon";
                 case "Establecer fondo": return "MTDA_MenuSetBackground";

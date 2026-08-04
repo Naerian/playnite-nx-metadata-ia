@@ -178,85 +178,30 @@ namespace MetaDataIAPlugin
         private string BuildDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
             var template = settings.ResolveTemplate(game) ?? string.Empty;
-            var featureText = Features.Count == 0
-                ? string.Empty
-                : string.Join("\n", Features.Select(x => "- " + x));
-
-            if (IsHtmlTemplate(template))
-            {
-                featureText = Features.Count == 0
-                    ? string.Empty
-                    : "<ul>\n" + string.Join("\n", Features.Select(x => "<li>" + EscapeHtml(x) + "</li>")) + "\n</ul>";
-            }
-
-            var html = IsHtmlTemplate(template);
             var description = template;
 
-            if (html)
-            {
-                description = ReplaceHtmlTextToken(description, "short", Short);
-                description = ReplaceHtmlTextToken(description, "synopsis", Synopsis);
-                description = ReplaceHtmlTextToken(description, "premise", Premise);
-                description = ReplaceHtmlTextToken(description, "gameplay", Gameplay);
-                description = ReplaceHtmlTextToken(description, "tone", Tone);
-                description = ReplaceHtmlTextToken(description, "setting", Setting);
-                description = ReplaceHtmlTextToken(description, "perspective", Perspective);
-                description = ReplaceHtmlTextToken(description, "playModes", PlayModes);
-                description = ReplaceHtmlTextToken(description, "estimatedLength", EstimatedLength);
-                description = ReplaceHtmlTextToken(description, "similarGames", SimilarGames);
-                description = ReplaceHtmlTextToken(description, "notes", Notes);
-                description = ReplaceHtmlTextToken(description, "recommendedFor", RecommendedFor);
-            }
-            else
-            {
-                description = description
-                    .Replace("{short}", Short ?? string.Empty)
-                    .Replace("{synopsis}", Synopsis ?? string.Empty)
-                    .Replace("{premise}", Premise ?? string.Empty)
-                    .Replace("{gameplay}", Gameplay ?? string.Empty)
-                    .Replace("{tone}", Tone ?? string.Empty)
-                    .Replace("{setting}", Setting ?? string.Empty)
-                    .Replace("{perspective}", Perspective ?? string.Empty)
-                    .Replace("{playModes}", PlayModes ?? string.Empty)
-                    .Replace("{estimatedLength}", EstimatedLength ?? string.Empty)
-                    .Replace("{similarGames}", SimilarGames ?? string.Empty)
-                    .Replace("{notes}", Notes ?? string.Empty)
-                    .Replace("{recommendedFor}", RecommendedFor ?? string.Empty);
-            }
+            description = ReplaceHtmlTextToken(description, "short", Short);
+            description = ReplaceHtmlTextToken(description, "synopsis", Synopsis);
+            description = ReplaceHtmlTextToken(description, "premise", Premise);
+            description = ReplaceHtmlTextToken(description, "gameplay", Gameplay);
+            description = ReplaceHtmlTextToken(description, "tone", Tone);
+            description = ReplaceHtmlTextToken(description, "setting", Setting);
+            description = ReplaceHtmlTextToken(description, "perspective", Perspective);
+            description = ReplaceHtmlTextToken(description, "playModes", PlayModes);
+            description = ReplaceHtmlTextToken(description, "estimatedLength", EstimatedLength);
+            description = ReplaceHtmlTextToken(description, "similarGames", SimilarGames);
+            description = ReplaceHtmlTextToken(description, "notes", Notes);
+            description = ReplaceHtmlTextToken(description, "recommendedFor", RecommendedFor);
 
-            return description
-                .Replace("{genres}", FormatList(Genres))
-                .Replace("{tags}", FormatList(Tags))
-                .Replace("{developers}", FormatList(Developers))
-                .Replace("{publishers}", FormatList(Publishers))
-                .Replace("{ageRatings}", FormatList(AgeRatings))
-                .Replace("{regions}", FormatList(Regions))
-                .Replace("{categories}", FormatList(Categories))
-                .Replace("{features}", featureText)
-                .Trim();
-        }
-
-        private static bool IsHtmlTemplate(string template)
-        {
-            if (string.IsNullOrWhiteSpace(template))
-            {
-                return false;
-            }
-
-            return template.IndexOf("<p", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   template.IndexOf("<h", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   template.IndexOf("<ul", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   template.IndexOf("<br", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static string FormatList(IEnumerable<string> values)
-        {
-            if (values == null)
-            {
-                return string.Empty;
-            }
-
-            return string.Join("\n", values.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => "- " + x));
+            description = ReplaceHtmlListToken(description, "genres", Genres);
+            description = ReplaceHtmlListToken(description, "tags", Tags);
+            description = ReplaceHtmlListToken(description, "developers", Developers);
+            description = ReplaceHtmlListToken(description, "publishers", Publishers);
+            description = ReplaceHtmlListToken(description, "ageRatings", AgeRatings);
+            description = ReplaceHtmlListToken(description, "regions", Regions);
+            description = ReplaceHtmlListToken(description, "categories", Categories);
+            description = ReplaceHtmlListToken(description, "features", Features);
+            return description.Trim();
         }
 
         private static string ReplaceHtmlTextToken(string template, string token, string value)
@@ -278,6 +223,46 @@ namespace MetaDataIAPlugin
                 RegexOptions.IgnoreCase);
 
             return result.Replace("{" + token + "}", inline);
+        }
+
+        private static string ReplaceHtmlListToken(string template, string token, IEnumerable<string> values)
+        {
+            var tokenPattern = Regex.Escape("{" + token + "}");
+            var list = FormatHtmlList(values);
+            var inline = FormatHtmlListInline(values);
+
+            var result = Regex.Replace(
+                template,
+                @"<(?<tag>p|ul)\b[^>]*>\s*" + tokenPattern + @"\s*</\k<tag>>",
+                match => list,
+                RegexOptions.IgnoreCase);
+
+            result = Regex.Replace(
+                result,
+                @"(?m)^\s*" + tokenPattern + @"\s*$",
+                match => list,
+                RegexOptions.IgnoreCase);
+
+            return result.Replace("{" + token + "}", inline);
+        }
+
+        private static string FormatHtmlList(IEnumerable<string> values)
+        {
+            var items = (values ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => "<li>" + EscapeHtml(x.Trim()) + "</li>")
+                .ToList();
+
+            return items.Count == 0
+                ? string.Empty
+                : "<ul>\n" + string.Join("\n", items) + "\n</ul>";
+        }
+
+        private static string FormatHtmlListInline(IEnumerable<string> values)
+        {
+            return string.Join(", ", (values ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => EscapeHtml(x.Trim())));
         }
 
         private static string FormatHtmlParagraphs(string value)

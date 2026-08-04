@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Cole-o aqui somente se o provedor exigir. Para LM Studio e Ollama locais, geralmente está vazio. Não cole sua chave ChatGPT aqui: ela deve ser uma chave API do provedor selecionado.</sys:String>
     <sys:String x:Key="MTDA_Model">Modelo</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Provedor de teste</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Use o LM Studio gratuitamente</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Use Ollama gratuitamente</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Reserva local gratuita</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Se o provedor de nuvem falhar devido a cotas, limites ou alta demanda, tente provedores locais</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Para que isso funcione, o LM Studio deve estar com seu servidor local habilitado ou o Ollama deve estar rodando com o modelo baixado. A chave API está vazia para provedores locais.</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Gerar classificações etárias e regiões</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Definir links</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Definir nome para ordenação</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Definir todos os campos</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Encontrar capa</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Encontrar ícone</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Encontrar plano de fundo</sys:String>
@@ -242,7 +241,7 @@ Verifique o provedor configurado, endpoint, modelo e chave de API. Se o problema
 Verifique se o provedor, o endpoint e o nome do modelo estão escritos corretamente. Se você digitou o modelo manualmente, copie o nome exato da documentação do provedor ou do console.
 
 Exemplos:
-- Gêmeos: gemini-2.5-flash ou gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: o nome mostrado pela 'lista ollama'
 - LM Studio: o modelo carregado no servidor local</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Seu provedor de IA rejeitou a solicitação porque a conta não tem cota disponível.
@@ -269,7 +268,7 @@ Se você estiver usando o Gemini, isso pode acontecer mesmo se você tiver o Gem
 
 O que você pode fazer sem pagar:
 - Aguarde alguns minutos e tente novamente.
-- Mude para gemini-2.5-flash ou gemini-2.5-flash-lite se você estiver usando um modelo Pro.
+- Mude para gemini-3.5-flash-lite se estiver usando outro modelo.
 - Processe menos jogos de uma vez.
 - Use LM Studio ou Ollama localmente se quiser evitar cotas externas.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure a chave da API SteamGridDB na guia Mídia antes de baixar as imagens.</sys:String>
@@ -283,6 +282,7 @@ O que você pode fazer sem pagar:
     <sys:String x:Key="MTDA_MediaPickerTitle">Escolha a mídia</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">A IA de metadados aplicou {0} arquivo(s) de mídia.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI atualizou {0} jogo(s). Erros: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Jogos não atualizados ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Mídia atualizada da Metadata AI para {0} jogos. Arquivos aplicados: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI atualizou {0} jogo(s).</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">Não há candidatos para este tipo de mídia.</sys:String>

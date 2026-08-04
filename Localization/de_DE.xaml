@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Fügen Sie es hier nur ein, wenn der Anbieter es verlangt. Für lokales LM Studio und Ollama ist dies normalerweise leer. Fügen Sie hier nicht Ihren ChatGPT-Schlüssel ein: Es muss ein API-Schlüssel des ausgewählten Anbieters sein.</sys:String>
     <sys:String x:Key="MTDA_Model">Modell</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Testanbieter</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Nutzen Sie LM Studio kostenlos</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Nutzen Sie Ollama kostenlos</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Kostenloser lokaler Fallback</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Wenn der Cloud-Anbieter aufgrund von Kontingenten, Limits oder hoher Nachfrage ausfällt, versuchen Sie es mit lokalen Anbietern</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Damit dies funktioniert, muss der lokale Server von LM Studio aktiviert sein oder Ollama muss mit dem heruntergeladenen Modell ausgeführt werden. Bei lokalen Anbietern ist der API-Schlüssel leer.</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Altersfreigaben und Regionen generieren</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Links festlegen</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Sortiername festlegen</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Alle Felder festlegen</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Cover finden</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Icon finden</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Hintergrund finden</sys:String>
@@ -242,7 +241,7 @@ Kurzinfo: </sys:String>
 Überprüfen Sie, ob Anbieter, Endpunkt und Modellname korrekt geschrieben sind. Wenn Sie das Modell manuell eingegeben haben, kopieren Sie den genauen Namen aus der Anbieter-Dokumentation oder Konsole.
 
 Beispiele:
-- Gemini: gemini-2.5-flash oder gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: der Name, der bei 'ollama list' angezeigt wird
 - LM Studio: das im lokalen Server geladene Modell</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Ihr KI-Anbieter hat die Anfrage abgelehnt, da kein verfügbares Kontingent vorhanden ist.
@@ -269,7 +268,7 @@ Bei Nutzung von Gemini kann dies auch bei Gemini Pro/Google AI Pro in der App pa
 
 Was Sie ohne Bezahlung tun können:
 - Warten Sie einige Minuten und versuchen Sie es erneut.
-- Wechseln Sie zu gemini-2.5-flash oder gemini-2.5-flash-lite, wenn Sie ein Pro-Modell nutzten.
+- Wechseln Sie zu gemini-3.5-flash-lite, wenn Sie ein anderes Modell verwendet haben.
 - Verarbeiten Sie weniger Spiele gleichzeitig.
 - Nutzen Sie LM Studio oder Ollama lokal, um externe Kontingente zu vermeiden.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Konfigurieren Sie den SteamGridDB-API-Schlüssel auf der Registerkarte „Medien“, bevor Sie Bilder herunterladen.</sys:String>
@@ -283,6 +282,7 @@ Was Sie ohne Bezahlung tun können:
     <sys:String x:Key="MTDA_MediaPickerTitle">Wählen Sie Medien</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadaten-KI hat {0} Mediendatei(en) angewendet.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadaten-KI hat {0} Spiel(e) aktualisiert. Fehler: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Nicht aktualisierte Spiele ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI aktualisierte Medien für {0} Spiel(e). Angewandte Dateien: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadaten-KI hat {0} Spiel(e) aktualisiert.</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">Für diesen Medientyp gibt es keine Kandidaten.</sys:String>

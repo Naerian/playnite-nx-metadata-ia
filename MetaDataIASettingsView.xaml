@@ -215,9 +215,7 @@
                         <TextBox Text="{Binding Settings.Model, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,10"/>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Button Content="{DynamicResource MTDA_TestProvider}" MinWidth="130" Margin="0,0,8,0" Click="TestProvider_OnClick"/>
-                            <Button Content="{DynamicResource MTDA_UseLmStudioFree}" MinWidth="150" Margin="0,0,8,0" Click="UseLmStudio_OnClick"/>
-                            <Button Content="{DynamicResource MTDA_UseOllamaFree}" MinWidth="140" Click="UseOllama_OnClick"/>
+                            <Button Content="{DynamicResource MTDA_TestProvider}" MinWidth="130" Click="TestProvider_OnClick"/>
                         </StackPanel>
                         <Border x:Name="ProviderTestStatusPanel" Style="{StaticResource TestOperationBorder}">
                             <StackPanel>

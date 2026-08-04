@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Wklej tutaj tylko wtedy, gdy dostawca tego wymaga. Dla lokalnych LM Studio i Ollama zwykle zostawia sie to pole puste. Nie wklejaj tutaj klucza ChatGPT: to musi byc klucz API wybranego dostawcy.</sys:String>
     <sys:String x:Key="MTDA_Model">Model</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Testuj dostawce</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Uzyj LM Studio za darmo</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Uzyj Ollama za darmo</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Darmowy lokalny fallback</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Jesli dostawca w chmurze zawiedzie przez limit, kwote lub obciazenie, sproboj dostawcow lokalnych</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Aby to dzialalo, LM Studio musi miec wlaczony lokalny serwer albo Ollama musi dzialac z pobranym modelem. Klucz API dla lokalnych dostawcow zostaje pusty.</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Generuj oceny wiekowe i regiony</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Ustaw linki</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Ustaw nazwę sortowania</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Ustaw wszystkie pola</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Znajdź okładkę</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Znajdź ikonę</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Znajdź tło</sys:String>
@@ -242,7 +241,7 @@ Sprawdź skonfigurowanego dostawcę, punkt końcowy, model i klucz API. Jeśli p
 Sprawdź, czy dostawca, punkt końcowy i nazwa modelu zostały zapisane poprawnie. Jeśli wpisałeś model ręcznie, skopiuj dokładną nazwę z dokumentacji dostawcy lub konsoli.
 
 Przykłady:
-- Gemini: gemini-2.5-flash lub gemini-2.5-flash-lite
+- Gemini: gemini-3.5-flash-lite
 - Ollama: nazwa wyświetlana na „liście ollama”
 - LM Studio: model załadowany na serwer lokalny</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Twój dostawca sztucznej inteligencji odrzucił żądanie, ponieważ na koncie nie ma dostępnego limitu.
@@ -269,7 +268,7 @@ Jeśli korzystasz z Gemini, może się to zdarzyć nawet wtedy, gdy w aplikacji 
 
 Co możesz zrobić bez płacenia:
 - Poczekaj kilka minut i spróbuj ponownie.
-- Przełącz na gemini-2.5-flash lub gemini-2.5-flash-lite, jeśli korzystałeś z modelu Pro.
+- Przełącz na gemini-3.5-flash-lite, jeśli korzystasz z innego modelu.
 - Przetwarzaj mniej gier na raz.
 - Użyj lokalnie LM Studio lub Ollama, jeśli chcesz uniknąć zewnętrznych limitów.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Przed pobraniem obrazów skonfiguruj klucz API SteamGridDB na karcie Media.</sys:String>
@@ -283,6 +282,7 @@ Co możesz zrobić bez płacenia:
     <sys:String x:Key="MTDA_MediaPickerTitle">Wybierz multimedia</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Metadane AI zastosowały {0} plików multimedialnych.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Sztuczna inteligencja metadanych zaktualizowała gry ({0}). Błędy: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Gry, które nie zostały zaktualizowane ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Zaktualizowano multimedia Metadata AI dla gier ({0}). Zastosowane pliki: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Sztuczna inteligencja metadanych zaktualizowała gry ({0}).</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">Nie ma kandydatów na ten typ mediów.</sys:String>

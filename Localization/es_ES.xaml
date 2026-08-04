@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Pegala aqui solo si el proveedor la requiere. Para LM Studio y Ollama locales normalmente se deja vacia. No pegues aqui la clave de ChatGPT: debe ser una clave de API del proveedor elegido.</sys:String>
     <sys:String x:Key="MTDA_Model">Modelo</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Probar proveedor</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Usar LM Studio gratis</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Usar Ollama gratis</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Fallback local gratuito</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Si el proveedor cloud falla por cuota, limite o saturacion, probar proveedores locales</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Para que funcione, LM Studio debe tener activo el servidor local o Ollama debe estar arrancado con el modelo descargado. La API key queda vacia en local.</sys:String>
@@ -202,6 +200,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Generar clasificaciones por edad y regiones</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Establecer enlaces</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Establecer orden de nombre</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Establecer todos los campos</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Buscar portada</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Buscar icono</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Buscar fondo</sys:String>
@@ -245,12 +244,12 @@ Comprueba la URL del endpoint, tu conexión a internet y si el servicio está di
     <sys:String x:Key="MTDA_ErrorProviderGeneric">El proveedor de IA devolvió un error ({0}).
 
 Verifique el proveedor configurado, el punto final, el modelo y la clave API. Si el problema continúa, pruebe con otro modelo o con un proveedor local.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderModelNotFound">El proveedor o modelo configurado no existe, o no está disponible para tu cuenta.
+    <sys:String x:Key="MTDA_ErrorProviderModelNotFound">El proveedor o modelo configurado no existe, o no está disponible para tu proyecto.
 
-Comprueba que el nombre está bien escrito y que tu cuenta tiene acceso a ese modelo.</sys:String>
-    <sys:String x:Key="MTDA_ErrorProviderQuota">El proveedor de IA rechazó la petición porque la cuenta no tiene cuota disponible.
+Comprueba el proveedor, el endpoint y el nombre exacto del modelo. Para Gemini, pulsa «Aplicar proveedor» y usa gemini-3.5-flash-lite.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderQuota">El proveedor de IA rechazó la petición porque la cuenta o el proyecto no tienen cuota disponible.
 
-Puedes esperar a que se restablezca la cuota gratuita, cambiar a un modelo gratuito disponible, usar un proveedor local como Ollama/LM Studio o configurar otra API key.</sys:String>
+Con OpenAI, normalmente significa que la API no tiene saldo o facturación activa; ChatGPT Plus se factura por separado. Crear otra clave en el mismo proyecto no añade saldo. Con otros proveedores, revisa la cuota del proyecto o usa Ollama/LM Studio para evitar límites externos.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderRateLimit">El proveedor de IA ha limitado temporalmente las solicitudes.
 
 Intente esperar unos minutos, procesar menos juegos a la vez o utilizar un modelo/punto final local con menos restricciones.</sys:String>
@@ -279,6 +278,7 @@ Puedes esperar unos minutos, probar otro modelo o cambiar a otro proveedor.</sys
     <sys:String x:Key="MTDA_MediaPickerTitle">Elige medios</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">La IA de metadatos aplicó {0} archivo(s) multimedia.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI actualizó {0} juego(s). Errores: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Juegos no actualizados ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI canceló la operación. Juegos procesados: {0}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI canceló la operación de media. Juegos procesados: {0}. Archivos aplicados: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI actualizó medios para {0} juego(s). Archivos aplicados: {1}.</sys:String>

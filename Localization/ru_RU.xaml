@@ -49,8 +49,6 @@
     <sys:String x:Key="MTDA_ApiKeyHelp">Вставляйте его сюда только в том случае, если этого требует провайдер. Для местных LM Studio и Ollama это обычно пусто. Не вставляйте сюда свой ключ ChatGPT: это должен быть ключ API от выбранного провайдера.</sys:String>
     <sys:String x:Key="MTDA_Model">Модель</sys:String>
     <sys:String x:Key="MTDA_TestProvider">Поставщик тестов</sys:String>
-    <sys:String x:Key="MTDA_UseLmStudioFree">Используйте LM Studio бесплатно</sys:String>
-    <sys:String x:Key="MTDA_UseOllamaFree">Используйте Олламу бесплатно</sys:String>
     <sys:String x:Key="MTDA_FreeLocalFallback">Бесплатный локальный запасной вариант</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Если поставщик облачных услуг терпит неудачу из-за квоты, ограничений или высокого спроса, попробуйте местных поставщиков.</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Чтобы это работало, в LM Studio должен быть включен локальный сервер или должен быть запущен Ollama с загруженной моделью. Ключ API пуст для местных поставщиков.</sys:String>
@@ -192,6 +190,7 @@
     <sys:String x:Key="MTDA_MenuSetAgeRegion">Создать возрастные рейтинги и регионы</sys:String>
     <sys:String x:Key="MTDA_MenuSetLinks">Установить ссылки</sys:String>
     <sys:String x:Key="MTDA_MenuSetSortingName">Установить сортировочное имя</sys:String>
+    <sys:String x:Key="MTDA_MenuSetAllFields">Установить все поля</sys:String>
     <sys:String x:Key="MTDA_MenuSetCover">Найти обложку</sys:String>
     <sys:String x:Key="MTDA_MenuSetIcon">Найти иконку</sys:String>
     <sys:String x:Key="MTDA_MenuSetBackground">Найти фон</sys:String>
@@ -242,7 +241,7 @@
 Проверьте правильность написания поставщика, конечной точки и имени модели. Если вы ввели модель вручную, скопируйте точное имя из документации поставщика или консоли.
 
 Примеры:
-- Близнецы: Gemini-2,5-flash или Gemini-2,5-flash-lite.
+- Gemini: gemini-3.5-flash-lite
 - Оллама: имя, отображаемое в «списке олламы».
 - LM Studio: модель загружена на локальный сервер.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Ваш провайдер искусственного интеллекта отклонил запрос, поскольку в учетной записи нет доступной квоты.
@@ -269,7 +268,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
 
 Что можно сделать без оплаты:
 - Подождите несколько минут и повторите попытку.
-- Переключитесь на Gemini-2.5-flash или Gemini-2.5-flash-lite, если вы использовали модель Pro.
+- Переключитесь на gemini-3.5-flash-lite, если вы используете другую модель.
 - Обрабатывать меньше игр одновременно.
 - Используйте LM Studio или Ollama локально, если хотите избежать внешних квот.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Настройте ключ API SteamGridDB на вкладке «Медиа» перед загрузкой изображений.</sys:String>
@@ -283,6 +282,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MediaPickerTitle">Выберите медиа</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">Метаданные AI применили {0} медиафайлов.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Метаданные AI обновили {0} игры. Ошибки: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageGamesNotUpdated">Необновлённые игры ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Метаданные AI обновлены для {0} игр. Примененные файлы: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Метаданные AI обновили {0} игры.</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">Кандидатов для этого типа СМИ нет.</sys:String>

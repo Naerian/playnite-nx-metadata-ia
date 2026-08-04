@@ -1206,28 +1206,6 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private void UseLmStudio_OnClick(object sender, RoutedEventArgs e)
-        {
-            ApplyFreeLocalProvider(MetaDataIASettings.ProviderLmStudio);
-        }
-
-        private void UseOllama_OnClick(object sender, RoutedEventArgs e)
-        {
-            ApplyFreeLocalProvider(MetaDataIASettings.ProviderOllama);
-        }
-
-        private void ApplyFreeLocalProvider(string provider)
-        {
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel == null)
-            {
-                return;
-            }
-
-            viewModel.Settings.ApplyFreeLocalPreset(provider);
-            LoadPasswordBoxes(viewModel.Settings);
-        }
-
         private void ConfigureCoverSourcePriority_OnClick(object sender, RoutedEventArgs e)
         {
             ConfigureSourcePriority(sender as FrameworkElement, MediaKind.Cover);
