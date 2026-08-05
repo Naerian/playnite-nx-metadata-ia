@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">Nueva</sys:String>
     <sys:String x:Key="MTDA_Delete">Eliminar</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Restaurar por defecto</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">Duplicar</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">Restaurar todas…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">Predeterminada</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">Modificada</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">Personalizada</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">Los cambios se guardarán al aceptar la configuración.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">¿Eliminar la plantilla «{0}»?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">¿Sustituir todas las plantillas por las predeterminadas? Las plantillas personalizadas se eliminarán.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">copia</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">Nueva plantilla</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">Plantillas guardadas</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">Contenido de la plantilla</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nombre de plantilla</sys:String>
@@ -752,4 +762,13 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB ha encontrado el título, pero no ha devuelto un identificador de juego válido.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB ha identificado el juego, pero no está asignado a ninguna colección o franquicia.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB ha encontrado la serie, pero no ha sido posible situar el juego con seguridad entre sus lanzamientos principales.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">Actualizar modelos</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">Consultando los modelos disponibles...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">{0} modelos compatibles disponibles. También puedes escribir uno manualmente.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">El proveedor no ha devuelto modelos de texto compatibles. Puedes escribir uno manualmente.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">No se ha podido actualizar la lista de modelos: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">No se ha podido obtener la lista de modelos (HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configura primero un endpoint válido para el proveedor.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Introduce la clave API del proveedor para consultar sus modelos disponibles.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">La lista de modelos no está disponible ahora mismo. Puedes introducir el modelo manualmente.</sys:String>
 </ResourceDictionary>

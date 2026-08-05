@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">새로운</sys:String>
     <sys:String x:Key="MTDA_Delete">삭제</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">기본값 복원</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">복제</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">모두 복원…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">기본</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">수정됨</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">사용자 지정</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">설정을 확인하면 변경 사항이 저장됩니다.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">템플릿 “{0}”을 삭제하시겠습니까?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">모든 템플릿을 기본값으로 바꾸시겠습니까? 사용자 지정 템플릿은 삭제됩니다.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">복사본</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">새 템플릿</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">저장된 템플릿</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">템플릿 내용</sys:String>
     <sys:String x:Key="MTDA_TemplateName">템플릿 이름</sys:String>
@@ -749,4 +759,13 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">모델 새로 고침</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">사용 가능한 모델을 불러오는 중...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">호환 모델 {0}개를 사용할 수 있습니다. 직접 입력할 수도 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">호환되는 텍스트 모델이 반환되지 않았습니다. 직접 입력할 수 있습니다.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">모델 목록을 업데이트할 수 없습니다: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">모델 목록을 가져올 수 없습니다(HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">먼저 올바른 제공자 엔드포인트를 설정하세요.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">사용 가능한 모델을 불러오려면 API 키를 입력하세요.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">현재 모델 목록을 사용할 수 없습니다. 모델을 직접 입력할 수 있습니다.</sys:String>
 </ResourceDictionary>

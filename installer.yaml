@@ -1,13 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.7
+  - Version: 1.2.8
     RequiredApiVersion: 6.15.0
-    ReleaseDate: 2026-08-04
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.7/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_7.pext
+    ReleaseDate: 2026-08-05
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.8/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_8.pext
     Changelog:
-      - Improved media integration labels and wrapping in settings.
-      - Added stricter automatic media candidate validation before applying images.
-      - Added support diagnostics export without API secrets.
-      - Made batch metadata application more conservative for low-confidence factual fields.
-      - Reduced false-positive series audit issues for isolated numbered titles.
-      - Hid internal media scoring details from the media picker.
+      - Redesigned the settings interface with clearer themed sections and navigation.
+      - Added automatic provider model discovery while preserving custom model names.
+      - Improved template editing, token reference and configuration summaries.
+      - Improved media source status, testing, download rules and Extra Metadata logo integration.
+      - Made series and sorting-name lookup more reliable through structured IGDB release data.
+      - Added clearer batch results with the games that could not be updated.

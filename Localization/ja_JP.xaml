@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">新しい</sys:String>
     <sys:String x:Key="MTDA_Delete">消去</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">デフォルトに戻す</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">複製</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">すべて復元…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">既定</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">変更済み</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">カスタム</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">設定を確定すると変更が保存されます。</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">テンプレート「{0}」を削除しますか？</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">すべてのテンプレートを既定値に戻しますか？カスタムテンプレートは削除されます。</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">コピー</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">新しいテンプレート</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">保存済みテンプレート</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">テンプレート内容</sys:String>
     <sys:String x:Key="MTDA_TemplateName">テンプレート名</sys:String>
@@ -749,4 +759,13 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">モデルを更新</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">利用可能なモデルを読み込んでいます...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">互換性のあるモデルが {0} 件あります。手動入力もできます。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">互換性のあるテキストモデルが返されませんでした。手動で入力できます。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">モデル一覧を更新できませんでした: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">モデル一覧を取得できませんでした (HTTP {0})。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">有効なプロバイダーエンドポイントを先に設定してください。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">利用可能なモデルを読み込むには API キーを入力してください。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">モデル一覧は現在利用できません。モデルを手動で入力できます。</sys:String>
 </ResourceDictionary>

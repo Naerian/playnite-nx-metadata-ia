@@ -8,11 +8,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using Playnite.SDK.Data;
@@ -20,6 +22,26 @@ using Playnite.SDK.Models;
 
 namespace MetaDataIAPlugin
 {
+    public sealed class SubtractValueConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var width = value is double ? (double)value : 0d;
+            double subtraction;
+            if (!double.TryParse(System.Convert.ToString(parameter, CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out subtraction))
+            {
+                subtraction = 0d;
+            }
+
+            return Math.Max(0d, width - subtraction);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
     public partial class MetaDataIASettingsView : UserControl
     {
         private Popup sourcePriorityPopup;
@@ -32,6 +54,10 @@ namespace MetaDataIAPlugin
         private TestOperationState mediaTestOperation;
         private CancellationTokenSource providerUsageRefreshCancellation;
         private bool providerUsageRefreshActive;
+        private CancellationTokenSource providerModelsRefreshCancellation;
+        private bool providerModelsRefreshActive;
+        private readonly ObservableCollection<string> providerModelIds = new ObservableCollection<string>();
+        private string lastAppliedProviderPreset;
         private MetaDataIASettings observedSettings;
         private string lastProviderTestDetails;
         private string lastMediaTestDetails;
@@ -59,6 +85,7 @@ namespace MetaDataIAPlugin
         public MetaDataIASettingsView()
         {
             InitializeComponent();
+            ProviderModelComboBox.ItemsSource = providerModelIds;
             MoveNavigationItem(LibrarySectionNavigation, FieldsNavigationItem, 0);
             LibrarySectionNavigation.SelectedItem = FieldsNavigationItem;
             Unloaded += MetaDataIASettingsView_OnUnloaded;
@@ -69,10 +96,12 @@ namespace MetaDataIAPlugin
                 if (viewModel != null)
                 {
                     ObserveSettings(viewModel.Settings);
+                    lastAppliedProviderPreset = viewModel.Settings.ProviderPreset;
                     viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
                     RefreshConfigurationSummary();
                     Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
+                    Dispatcher.BeginInvoke(new Action(async () => await RefreshProviderModelsAsync(false)));
                 }
             };
         }
@@ -98,6 +127,12 @@ namespace MetaDataIAPlugin
                 providerUsageRefreshCancellation.Cancel();
                 providerUsageRefreshCancellation.Dispose();
                 providerUsageRefreshCancellation = null;
+            }
+            if (providerModelsRefreshCancellation != null)
+            {
+                providerModelsRefreshCancellation.Cancel();
+                providerModelsRefreshCancellation.Dispose();
+                providerModelsRefreshCancellation = null;
             }
         }
 
@@ -156,13 +191,14 @@ namespace MetaDataIAPlugin
                     : Loc("MTDA_SourceStatusError", "Error"));
             }
             ConfigurationProviderSummaryText.Text = string.Format(
-                "• {0}: {1}\n• {2}: {3}",
+                "• {0}: {1}\n• {2}: {3}\n• {4}: {5}",
                 Loc("MTDA_Provider", "Provider"),
                 string.IsNullOrWhiteSpace(settings.ProviderPreset) ? Loc("MTDA_NotConfigured", "Not configured") : settings.ProviderPreset,
                 Loc("MTDA_Model", "Model"),
-                string.IsNullOrWhiteSpace(settings.Model) ? Loc("MTDA_NoModel", "No model") : settings.Model);
-            ConfigurationProviderEndpointText.Text = "• " + Loc("MTDA_Endpoint", "Endpoint") + ": " +
-                (string.IsNullOrWhiteSpace(settings.Endpoint) ? Loc("MTDA_NotConfigured", "Not configured") : settings.Endpoint);
+                string.IsNullOrWhiteSpace(settings.Model) ? Loc("MTDA_NoModel", "No model") : settings.Model,
+                Loc("MTDA_Endpoint", "Endpoint"),
+                string.IsNullOrWhiteSpace(settings.Endpoint) ? Loc("MTDA_NotConfigured", "Not configured") : settings.Endpoint);
+            ConfigurationProviderEndpointText.Visibility = Visibility.Collapsed;
             ConfigurationProviderStatusText.Text = providerStatus;
             var providerStatusBrush = providerReady && providerTestSucceeded != false ? "PositiveRatingBrush" : "WarningBrush";
             ConfigurationProviderStatusText.SetResourceReference(TextBlock.ForegroundProperty, providerStatusBrush);
@@ -258,6 +294,13 @@ namespace MetaDataIAPlugin
             textBlock.SetResourceReference(
                 TextBlock.ForegroundProperty,
                 enabled ? "PositiveRatingBrush" : "WarningBrush");
+            var badge = textBlock.Parent as Border;
+            if (badge != null)
+            {
+                badge.SetResourceReference(
+                    Border.BorderBrushProperty,
+                    enabled ? "PositiveRatingBrush" : "WarningBrush");
+            }
         }
 
         private void RefreshMediaSourceStatuses(MetaDataIASettings settings)
@@ -271,7 +314,8 @@ namespace MetaDataIAPlugin
             SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
             SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
             SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
-                !string.IsNullOrWhiteSpace(settings.IgdbClientId) && !string.IsNullOrWhiteSpace(settings.IgdbClientSecret));
+                !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
+                (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken)));
         }
 
         private static void SetSourceStatus(TextBlock target, bool enabled, bool configured)
@@ -286,9 +330,13 @@ namespace MetaDataIAPlugin
                 : !configured
                     ? Loc("MTDA_SourceStatusNeedsKey", "Needs credentials")
                     : Loc("MTDA_SourceStatusActive", "Active");
-            target.SetResourceReference(
-                TextBlock.ForegroundProperty,
-                enabled && configured ? "PositiveRatingBrush" : enabled ? "WarningBrush" : "TextBrush");
+            var statusBrush = enabled && configured ? "PositiveRatingBrush" : enabled ? "WarningBrush" : "GlyphBrush";
+            target.SetResourceReference(TextBlock.ForegroundProperty, statusBrush);
+            var badge = target.Parent as Border;
+            if (badge != null)
+            {
+                badge.SetResourceReference(Border.BorderBrushProperty, statusBrush);
+            }
             target.Opacity = enabled ? 1.0 : 0.65;
         }
 
@@ -403,14 +451,32 @@ namespace MetaDataIAPlugin
             if (viewModel != null)
             {
                 viewModel.AddTemplate();
+                FocusTemplateNameEditor();
+            }
+        }
+
+        private void DuplicateTemplate_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null && viewModel.SelectedTemplate != null)
+            {
+                viewModel.DuplicateSelectedTemplate();
+                FocusTemplateNameEditor();
             }
         }
 
         private void DeleteTemplate_OnClick(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel != null)
+            if (viewModel != null && viewModel.CanDeleteSelectedTemplate)
             {
+                var templateName = viewModel.SelectedTemplate == null ? string.Empty : viewModel.SelectedTemplate.DisplayName;
+                var message = string.Format(Loc("MTDA_DeleteTemplateConfirm", "Delete template '{0}'?"), templateName);
+                if (MessageBox.Show(message, PluginTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
                 viewModel.DeleteSelectedTemplate();
             }
         }
@@ -420,8 +486,23 @@ namespace MetaDataIAPlugin
             var viewModel = DataContext as MetaDataIASettingsViewModel;
             if (viewModel != null)
             {
+                var message = Loc("MTDA_RestoreTemplatesConfirm", "Replace all templates with the defaults? Custom templates will be removed.");
+                if (MessageBox.Show(message, PluginTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
                 viewModel.RestoreDefaultTemplates();
             }
+        }
+
+        private void FocusTemplateNameEditor()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                TemplateNameBox.Focus();
+                TemplateNameBox.SelectAll();
+            }), DispatcherPriority.Input);
         }
 
         private void ExportSettingsBackup_OnClick(object sender, RoutedEventArgs e)
@@ -708,14 +789,35 @@ namespace MetaDataIAPlugin
             return bytes + " B";
         }
 
-        private void ApplyProvider_OnClick(object sender, RoutedEventArgs e)
+        private async void ApplyProvider_OnClick(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
             if (viewModel != null)
             {
+                CancelProviderModelsRefresh();
+                var selectedProvider = viewModel.Settings.ProviderPreset;
+                var previousModel = viewModel.Settings.Model;
+                var preserveCustomModel = string.Equals(
+                    lastAppliedProviderPreset,
+                    selectedProvider,
+                    StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(previousModel);
+
                 viewModel.Settings.ApplyProviderPreset();
+                if (preserveCustomModel)
+                {
+                    viewModel.Settings.Model = previousModel;
+                }
+
+                lastAppliedProviderPreset = selectedProvider;
+                var appliedModel = viewModel.Settings.Model;
+                providerModelIds.Clear();
+                AddCurrentProviderModel(appliedModel);
+                viewModel.Settings.Model = appliedModel;
+                ProviderModelComboBox.Text = appliedModel ?? string.Empty;
                 LoadPasswordBoxes(viewModel.Settings);
                 RefreshProviderUsageDisplay(null);
+                await RefreshProviderModelsAsync(false);
             }
         }
 
@@ -742,6 +844,127 @@ namespace MetaDataIAPlugin
         private void ProviderPreset_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
+        }
+
+        private async void RefreshProviderModels_OnClick(object sender, RoutedEventArgs e)
+        {
+            await RefreshProviderModelsAsync(true);
+        }
+
+        private async Task RefreshProviderModelsAsync(bool manual)
+        {
+            if (providerModelsRefreshActive || ProviderModelComboBox == null || ProviderModelsStatusText == null)
+            {
+                return;
+            }
+
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var settings = viewModel == null ? null : viewModel.Settings;
+            if (settings == null)
+            {
+                return;
+            }
+
+            AddCurrentProviderModel(settings.Model);
+            if (RequiresApiKeyForModelListing(settings) && string.IsNullOrWhiteSpace(settings.ApiKey))
+            {
+                ProviderModelsStatusText.Text = Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models.");
+                return;
+            }
+
+            if (providerModelsRefreshCancellation != null)
+            {
+                providerModelsRefreshCancellation.Cancel();
+                providerModelsRefreshCancellation.Dispose();
+            }
+
+            providerModelsRefreshCancellation = new CancellationTokenSource();
+            var cancellation = providerModelsRefreshCancellation;
+            providerModelsRefreshActive = true;
+            RefreshProviderModelsButton.IsEnabled = false;
+            ProviderModelsStatusText.Text = Loc("MTDA_ProviderModelsLoading", "Loading available models...");
+
+            try
+            {
+                var models = await ProviderModelService.GetModelsAsync(settings, cancellation.Token);
+                if (cancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var configuredModel = settings.Model;
+                providerModelIds.Clear();
+                foreach (var model in models)
+                {
+                    providerModelIds.Add(model.Id);
+                }
+
+                AddCurrentProviderModel(configuredModel);
+                if (!string.Equals(settings.Model, configuredModel, StringComparison.Ordinal))
+                {
+                    settings.Model = configuredModel;
+                }
+
+                ProviderModelComboBox.Text = configuredModel ?? string.Empty;
+                ProviderModelsStatusText.Text = models.Count == 0
+                    ? Loc("MTDA_ProviderModelsEmpty", "The provider did not return compatible text models. You can still enter one manually.")
+                    : string.Format(Loc("MTDA_ProviderModelsLoaded", "{0} compatible models available. You can also enter one manually."), models.Count);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                ProviderModelsStatusText.Text = manual
+                    ? string.Format(Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
+                    : Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually.");
+            }
+            finally
+            {
+                if (ReferenceEquals(providerModelsRefreshCancellation, cancellation))
+                {
+                    providerModelsRefreshActive = false;
+                    RefreshProviderModelsButton.IsEnabled = true;
+                    providerModelsRefreshCancellation.Dispose();
+                    providerModelsRefreshCancellation = null;
+                }
+            }
+        }
+
+        private void AddCurrentProviderModel(string model)
+        {
+            if (string.IsNullOrWhiteSpace(model) || providerModelIds.Any(x => string.Equals(x, model, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            providerModelIds.Insert(0, model.Trim());
+        }
+
+        private static bool RequiresApiKeyForModelListing(MetaDataIASettings settings)
+        {
+            return settings.ProviderPreset == MetaDataIASettings.ProviderOpenAI ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderGemini ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderClaude ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderMistral ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderGroq ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderCerebras;
+        }
+
+        private void CancelProviderModelsRefresh()
+        {
+            if (providerModelsRefreshCancellation != null)
+            {
+                providerModelsRefreshCancellation.Cancel();
+                providerModelsRefreshCancellation.Dispose();
+                providerModelsRefreshCancellation = null;
+            }
+
+            providerModelsRefreshActive = false;
+            if (RefreshProviderModelsButton != null)
+            {
+                RefreshProviderModelsButton.IsEnabled = true;
+            }
         }
 
         private void OpenProviderUsage_OnClick(object sender, RoutedEventArgs e)

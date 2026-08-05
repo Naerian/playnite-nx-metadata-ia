@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">New</sys:String>
     <sys:String x:Key="MTDA_Delete">Delete</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Restore defaults</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">Duplicate</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">Restore all…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">Default</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">Modified</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">Custom</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">Changes are saved when you accept the settings.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">Delete template “{0}”?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">Replace all templates with the defaults? Custom templates will be removed.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">copy</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">New template</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">Saved templates</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">Template content</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Template name</sys:String>
@@ -776,4 +786,13 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">Refresh models</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">Loading available models...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">{0} compatible models available. You can also enter one manually.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">The provider did not return compatible text models. You can still enter one manually.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">The model list could not be updated: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">Could not obtain the model list (HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configure a valid provider endpoint first.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Enter the provider API key to load its available models.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">The model list is not available right now. You can enter the model manually.</sys:String>
 </ResourceDictionary>

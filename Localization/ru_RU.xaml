@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">Новый</sys:String>
     <sys:String x:Key="MTDA_Delete">Удалить</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Восстановить настройки по умолчанию</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">Дублировать</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">Восстановить все…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">По умолчанию</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">Изменено</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">Пользовательский</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">Изменения сохраняются после подтверждения настроек.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">Удалить шаблон «{0}»?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">Заменить все шаблоны стандартными? Пользовательские шаблоны будут удалены.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">копия</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">Новый шаблон</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">Сохраненные шаблоны</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">Содержимое шаблона</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Имя шаблона</sys:String>
@@ -749,4 +759,13 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">Обновить модели</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">Загрузка доступных моделей...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">Доступно совместимых моделей: {0}. Модель также можно ввести вручную.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">Провайдер не вернул совместимых текстовых моделей. Модель можно ввести вручную.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">Не удалось обновить список моделей: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">Не удалось получить список моделей (HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Сначала настройте корректный адрес провайдера.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Введите API-ключ провайдера для загрузки доступных моделей.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">Список моделей сейчас недоступен. Модель можно ввести вручную.</sys:String>
 </ResourceDictionary>

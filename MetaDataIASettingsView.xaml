@@ -1,22 +1,25 @@
 ﻿<UserControl x:Class="MetaDataIAPlugin.MetaDataIASettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MetaDataIAPlugin"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="720" d:DesignWidth="900">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <local:SubtractValueConverter x:Key="MediaSourceHeaderWidthConverter"/>
         <Style x:Key="SectionHeaderBorder" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="Padding" Value="0,0,0,6"/>
-            <Setter Property="Margin" Value="0,18,0,10"/>
+            <Setter Property="Padding" Value="0,0,0,8"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style x:Key="SectionHeaderText" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
-        <Style x:Key="SecurePasswordBox" TargetType="PasswordBox">
+        <Style x:Key="SecurePasswordBox" TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
@@ -108,6 +111,34 @@
             <Setter Property="Opacity" Value="0.85"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
+        <Style x:Key="SettingsCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <Style x:Key="AdvancedSettingsCard" TargetType="Border" BasedOn="{StaticResource SettingsCard}">
+            <Setter Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="2,1,1,1"/>
+        </Style>
+        <Style x:Key="PageIntroCard" TargetType="Border" BasedOn="{StaticResource SettingsCard}">
+            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="4,1,1,1"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+        <Style x:Key="FieldTableRow" TargetType="Border">
+            <Setter Property="Grid.ColumnSpan" Value="5"/>
+            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Opacity" Value="0.42"/>
+            <Setter Property="MinHeight" Value="48"/>
+        </Style>
         <Style x:Key="TokenHelpText" TargetType="TextBlock" BasedOn="{StaticResource TokenCellText}">
             <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}"/>
             <Setter Property="Opacity" Value="0.85"/>
@@ -118,6 +149,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
             <Setter Property="Visibility" Value="Collapsed"/>
         </Style>
         <Style x:Key="SummaryCard" TargetType="Border">
@@ -127,14 +159,22 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+            <Setter Property="MinHeight" Value="92"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
         <Style x:Key="SummaryCardTitle" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+        <Style x:Key="SummaryTitleSeparator" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="0,0,0,9"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
         <Style x:Key="SummaryCardValue" TargetType="TextBlock">
             <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Margin" Value="0"/>
         </Style>
         <Style x:Key="SummaryCardDetail" TargetType="TextBlock">
             <Setter Property="TextWrapping" Value="Wrap"/>
@@ -147,6 +187,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,2"/>
             <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="MinHeight" Value="24"/>
         </Style>
         <Style x:Key="SummaryStatusRow" TargetType="DockPanel">
             <Setter Property="LastChildFill" Value="True"/>
@@ -186,6 +227,10 @@
                                 <Setter TargetName="NavigationItemBorder" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
                                 <Setter TargetName="NavigationHeader" Property="TextElement.FontWeight" Value="SemiBold"/>
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="NavigationItemBorder" Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
+                                <Setter TargetName="NavigationItemBorder" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -206,20 +251,16 @@
                             <Border Background="{DynamicResource ControlBackgroundBrush}"
                                     BorderBrush="{DynamicResource GlyphBrush}"
                                     BorderThickness="1"
-                                    Padding="8">
+                                    Padding="8"
+                                    CornerRadius="{DynamicResource ControlCornerRadius}">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <TabPanel x:Name="HeaderPanel" IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
                                 </ScrollViewer>
                             </Border>
-                            <Border Grid.Column="2"
-                                    Background="{DynamicResource ControlBackgroundBrush}"
-                                    BorderBrush="{DynamicResource GlyphBrush}"
-                                    BorderThickness="1"
-                                    Padding="12">
-                                <ContentPresenter x:Name="PART_SelectedContentHost"
-                                                  ContentSource="SelectedContent"
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                            </Border>
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              Grid.Column="2"
+                                              ContentSource="SelectedContent"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -249,6 +290,10 @@
                                 <Setter TargetName="TopTabBorder" Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
                                 <Setter TargetName="TopTabBorder" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
                                 <Setter TargetName="TopTabHeader" Property="TextElement.FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="TopTabBorder" Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
+                                <Setter TargetName="TopTabBorder" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -290,6 +335,12 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         </Style>
+        <Style x:Key="MediaSourceHeaderText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="14,0,12,0"/>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -300,7 +351,12 @@
             <TabItem Header="{DynamicResource MTDA_TabOverview}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
-                        <TextBlock Text="{DynamicResource MTDA_ConfigurationSummaryHelp}" Style="{StaticResource HintText}" Margin="0,0,0,16"/>
+                        <Border Style="{StaticResource PageIntroCard}">
+                            <TextBlock Text="{DynamicResource MTDA_ConfigurationSummaryHelp}"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.9"
+                                       Margin="0"/>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -317,33 +373,39 @@
                             <Border Grid.Row="0" Grid.ColumnSpan="3" Style="{StaticResource SummaryCard}"
                                     BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="16,13">
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
                                         <Border x:Name="ConfigurationProviderStatusBadge" Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="12,0,0,0">
                                             <TextBlock x:Name="ConfigurationProviderStatusText"/>
                                         </Border>
                                         <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource SummaryCardTitle}"/>
                                     </DockPanel>
+                                    </Border>
                                     <TextBlock x:Name="ConfigurationProviderSummaryText" Style="{StaticResource SummaryCardValue}"/>
-                                    <TextBlock x:Name="ConfigurationProviderEndpointText" Style="{StaticResource SummaryCardDetail}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="ConfigurationProviderEndpointText" Visibility="Collapsed"/>
                                 </StackPanel>
                             </Border>
 
                             <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SummaryCard}"
                                     BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="14,12">
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,0">
                                             <TextBlock x:Name="ConfigurationFieldsSummaryText"/>
                                         </Border>
                                         <TextBlock Text="{DynamicResource MTDA_TabFields}" Style="{StaticResource SummaryCardTitle}"/>
                                     </DockPanel>
+                                    </Border>
                                     <TextBlock x:Name="ConfigurationFieldsDetailText" Style="{StaticResource SummaryCardDetail}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SummaryCard}"
                                     BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="14,12">
-                                    <TextBlock Text="{DynamicResource MTDA_TabTemplates}" Style="{StaticResource SummaryCardTitle}"/>
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
+                                        <TextBlock Text="{DynamicResource MTDA_TabTemplates}" Style="{StaticResource SummaryCardTitle}"/>
+                                    </Border>
                                     <TextBlock x:Name="ConfigurationTemplateSummaryText" Style="{StaticResource SummaryCardValue}"/>
                                     <DockPanel Style="{StaticResource SummaryStatusRow}">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,0">
@@ -357,20 +419,24 @@
                             <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource SummaryCard}"
                                     BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="14,12">
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,0">
                                             <TextBlock x:Name="ConfigurationMediaSummaryText"/>
                                         </Border>
                                         <TextBlock Text="{DynamicResource MTDA_TabMedia}" Style="{StaticResource SummaryCardTitle}"/>
                                     </DockPanel>
+                                    </Border>
                                     <TextBlock x:Name="ConfigurationMediaDetailText" Style="{StaticResource SummaryCardDetail}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource SummaryCard}"
                                     BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="14,12">
-                                    <TextBlock Text="{DynamicResource MTDA_SummaryAutomation}" Style="{StaticResource SummaryCardTitle}"/>
-                                    <DockPanel Style="{StaticResource SummaryStatusRow}" Margin="0,8,0,0">
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
+                                        <TextBlock Text="{DynamicResource MTDA_SummaryAutomation}" Style="{StaticResource SummaryCardTitle}"/>
+                                    </Border>
+                                    <DockPanel Style="{StaticResource SummaryStatusRow}" Margin="0">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,0"><TextBlock x:Name="ConfigurationAutomationSummaryText"/></Border>
                                         <TextBlock Text="{DynamicResource MTDA_AutoImportNewGames}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </DockPanel>
@@ -388,8 +454,10 @@
                             <Border Grid.Row="3" Grid.ColumnSpan="3" Style="{StaticResource SummaryCard}" Margin="0"
                                     BorderBrush="{DynamicResource PositiveRatingBrush}" BorderThickness="4,1,1,1">
                                 <StackPanel Margin="16,13">
-                                    <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SummaryCardTitle}"/>
-                                    <DockPanel Style="{StaticResource SummaryStatusRow}" Margin="0,8,0,0">
+                                    <Border Style="{StaticResource SummaryTitleSeparator}">
+                                        <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SummaryCardTitle}"/>
+                                    </Border>
+                                    <DockPanel Style="{StaticResource SummaryStatusRow}" Margin="0">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,0"><TextBlock x:Name="ConfigurationOfficialContextStatusText"/></Border>
                                         <TextBlock Text="{DynamicResource MTDA_SummaryOfficialContext}" VerticalAlignment="Center"/>
                                     </DockPanel>
@@ -414,7 +482,9 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="8" HorizontalAlignment="Stretch">
 
-                        <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource FieldLabelText}"/>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                        <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource FieldLabelText}" FontWeight="SemiBold"/>
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
                             <ComboBox ItemsSource="{Binding Settings.ProviderPresetOptions}"
                                       DisplayMemberPath="DisplayName"
@@ -425,7 +495,13 @@
                                       Margin="0,0,8,0"/>
                             <Button Content="{DynamicResource MTDA_ApplyProvider}" MinWidth="140" Click="ApplyProvider_OnClick"/>
                         </StackPanel>
-                        <Border BorderBrush="{DynamicResource GlyphBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,10" Opacity="0.9">
+                        <Border BorderBrush="{DynamicResource GlyphBrush}"
+                                Background="{DynamicResource PopupBackgroundBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Padding="10"
+                                Margin="0,0,0,10"
+                                Opacity="0.9">
                             <StackPanel>
                                 <TextBlock Text="{Binding Settings.ProviderKeyHelp, Mode=OneWay}" Style="{StaticResource HintText}" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding Settings.ProviderBillingHelp, Mode=OneWay}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
@@ -438,7 +514,11 @@
                                 <Button Content="{DynamicResource MTDA_OpenProviderPage}" HorizontalAlignment="Left" MinWidth="170" Margin="0,8,0,0" Click="OpenProviderPage_OnClick"/>
                             </StackPanel>
                         </Border>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
                                     Margin="0,0,0,10">
                             <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>
@@ -465,7 +545,25 @@
                         <TextBlock Text="{DynamicResource MTDA_ApiKeyHelp}" Style="{StaticResource HintText}"/>
 
                         <TextBlock Text="{DynamicResource MTDA_Model}" Style="{StaticResource FieldLabelText}"/>
-                        <TextBox Text="{Binding Settings.Model, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,10"/>
+                        <Grid Margin="0,2,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="ProviderModelComboBox"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="True"
+                                      Text="{Binding Settings.Model, UpdateSourceTrigger=PropertyChanged}"
+                                      Margin="0,0,8,0"/>
+                            <Button x:Name="RefreshProviderModelsButton"
+                                    Grid.Column="1"
+                                    Content="{DynamicResource MTDA_RefreshModels}"
+                                    MinWidth="140"
+                                    Click="RefreshProviderModels_OnClick"/>
+                        </Grid>
+                        <TextBlock x:Name="ProviderModelsStatusText"
+                                   Style="{StaticResource HintText}"
+                                   Margin="0,0,0,10"/>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Button Content="{DynamicResource MTDA_TestProvider}" MinWidth="130" Click="TestProvider_OnClick"/>
@@ -489,6 +587,8 @@
                                                 Click="CancelProviderTest_OnClick"/>
                                     </StackPanel>
                                 </DockPanel>
+                            </StackPanel>
+                        </Border>
                             </StackPanel>
                         </Border>
 
@@ -521,44 +621,38 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="8" HorizontalAlignment="Stretch">
 
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_AiSectionOutput}" Style="{StaticResource SectionHeaderText}"/>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_AiSectionOutput}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_OutputLanguage}" Style="{StaticResource FieldLabelText}"/>
+                                <ComboBox ItemsSource="{Binding Settings.LanguageOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Code" SelectedValue="{Binding Settings.Language, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,10"/>
+                                <TextBlock Text="{DynamicResource MTDA_Tone}" Style="{StaticResource FieldLabelText}"/>
+                                <ComboBox ItemsSource="{Binding Settings.ToneOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Tone}" Margin="0,2,0,10"/>
+                                <TextBlock Text="{DynamicResource MTDA_Length}" Style="{StaticResource FieldLabelText}"/>
+                                <ComboBox ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Length}" Margin="0,2,0,10"/>
+                                <TextBlock Text="{DynamicResource MTDA_LengthHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
                         </Border>
 
-                        <TextBlock Text="{DynamicResource MTDA_OutputLanguage}" Style="{StaticResource FieldLabelText}"/>
-                        <ComboBox ItemsSource="{Binding Settings.LanguageOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="Code"
-                                  SelectedValue="{Binding Settings.Language, UpdateSourceTrigger=PropertyChanged}"
-                                  Margin="0,2,0,10"/>
-
-                        <TextBlock Text="{DynamicResource MTDA_Tone}" Style="{StaticResource FieldLabelText}"/>
-                        <ComboBox ItemsSource="{Binding Settings.ToneOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Tone}" Margin="0,2,0,10"/>
-
-                        <TextBlock Text="{DynamicResource MTDA_Length}" Style="{StaticResource FieldLabelText}"/>
-                        <ComboBox ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.Length}" Margin="0,2,0,10"/>
-                        <TextBlock Text="{DynamicResource MTDA_LengthHelp}" Style="{StaticResource HintText}"/>
-
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SectionHeaderText}"/>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}" Style="{StaticResource FieldLabelText}"/>
+                                <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ExistingMetadataMode}" Margin="0,2,0,10"/>
+                                <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" Style="{StaticResource HintText}"/>
+                                <CheckBox Content="{DynamicResource MTDA_OfficialStoreContext}" IsChecked="{Binding Settings.UseOfficialStoreContext}" Margin="0,0,0,6"/>
+                                <TextBlock Text="{DynamicResource MTDA_OfficialStoreContextHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+                                <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0"/>
+                            </StackPanel>
                         </Border>
-                        <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}" Style="{StaticResource FieldLabelText}"/>
-                        <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ExistingMetadataMode}" Margin="0,2,0,10"/>
-                        <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" Style="{StaticResource HintText}"/>
-                        <CheckBox Content="{DynamicResource MTDA_OfficialStoreContext}" 
-                                  IsChecked="{Binding Settings.UseOfficialStoreContext}"
-                                  Margin="0,0,0,6"/>
-                        <TextBlock Text="{DynamicResource MTDA_OfficialStoreContextHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,8"/>
-                        <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0,0,0,12"/>
 
-                        <Border Style="{StaticResource SectionHeaderBorder}"
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
                                 Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock Text="{DynamicResource MTDA_AiSectionAdvanced}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-
-                        <StackPanel Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
                             <Border Style="{StaticResource SectionHeaderBorder}">
                                 <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
@@ -613,13 +707,17 @@
                             <TextBlock Grid.Row="5" Text="{}{notes}" Margin="0,4,8,0"/>
                             <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.NotesLength}" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="5" Grid.Column="3" Text="{}{recommendedFor}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
+                             <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
                             </Grid>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
                             <Border Style="{StaticResource SectionHeaderBorder}">
                                 <TextBlock Text="{DynamicResource MTDA_FreeLocalFallback}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
-                            <Border BorderBrush="{DynamicResource GlyphBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12" Opacity="0.9">
                                 <StackPanel>
                                     <CheckBox Content="{DynamicResource MTDA_LocalFallbackCheckbox}" IsChecked="{Binding Settings.EnableLocalFallback}" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -634,8 +732,12 @@
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource MTDA_LocalFallbackHelp}" Style="{StaticResource HintText}" Margin="0"/>
                                 </StackPanel>
-                            </Border>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
                             <Border Style="{StaticResource SectionHeaderBorder}">
                                 <TextBlock Text="{DynamicResource MTDA_ExtraInstructions}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
@@ -645,37 +747,56 @@
                                      VerticalScrollBarVisibility="Auto"
                                      MinHeight="100"
                                      Margin="0,2,0,8"/>
-                            <TextBlock Text="{DynamicResource MTDA_ExtraInstructionsHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
-                        </StackPanel>
+                            <TextBlock Text="{DynamicResource MTDA_ExtraInstructionsHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="{DynamicResource MTDA_TabTemplates}">
                 <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="6*"/>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Border Grid.ColumnSpan="3" Style="{StaticResource SettingsCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource MTDA_TemplateProfiles}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ComboBox ItemsSource="{Binding Settings.Templates}"
                                   SelectedItem="{Binding SelectedTemplate}"
                                   DisplayMemberPath="DisplayName"
                                   MinWidth="220"
                                   Margin="0,0,8,0"/>
                         <Button Content="{DynamicResource MTDA_New}" MinWidth="80" Margin="0,0,8,0" Click="AddTemplate_OnClick"/>
-                        <Button Content="{DynamicResource MTDA_Delete}" MinWidth="80" Margin="0,0,8,0" Click="DeleteTemplate_OnClick"/>
-                        <Button Content="{DynamicResource MTDA_RestoreDefaults}" MinWidth="150" Click="RestoreTemplates_OnClick"/>
+                        <Button Content="{DynamicResource MTDA_Duplicate}" MinWidth="90" Margin="0,0,8,0" Click="DuplicateTemplate_OnClick"/>
+                        <Button Content="{DynamicResource MTDA_Delete}" MinWidth="80" IsEnabled="{Binding CanDeleteSelectedTemplate}" Click="DeleteTemplate_OnClick"/>
                     </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="{DynamicResource MTDA_RestoreAllTemplates}"
+                                MinWidth="150"
+                                Margin="24,0,0,0"
+                                Click="RestoreTemplates_OnClick"/>
+                    </Grid>
+                    </Border>
 
-                    <Grid Grid.Row="2">
+                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                    <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="200"/>
+                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
@@ -684,7 +805,12 @@
                         </Border>
 
                         <StackPanel Grid.Row="1">
-                            <TextBlock Text="{DynamicResource MTDA_TemplateName}"/>
+                            <DockPanel LastChildFill="True">
+                                <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="10,0,0,5">
+                                    <TextBlock Text="{Binding SelectedTemplateStatusText}" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_TemplateName}" VerticalAlignment="Center" Margin="0,0,0,5"/>
+                            </DockPanel>
                             <TextBox x:Name="TemplateNameBox"
                                      Text="{Binding SelectedTemplateNameText, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,2,0,10"/>
@@ -696,22 +822,41 @@
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  VerticalScrollBarVisibility="Auto"
+                                 MinHeight="240"
                                  Margin="0,0,0,4"/>
-                        <TextBlock Grid.Row="3"
-                                   Text="{DynamicResource MTDA_TemplateHtmlHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,2"/>
+                        <StackPanel Grid.Row="3">
+                            <TextBlock Text="{DynamicResource MTDA_TemplateHtmlHelp}"
+                                       Style="{StaticResource HintText}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="{DynamicResource MTDA_TemplateChangesSaveHelp}"
+                                       Style="{StaticResource HintText}"
+                                       Margin="0"/>
+                        </StackPanel>
                     </Grid>
+                    </Border>
 
-                    <StackPanel Grid.Row="3" Margin="0,4,0,0">
+                    <GridSplitter Grid.Row="1"
+                                  Grid.Column="1"
+                                  Width="6"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Stretch"
+                                  ResizeDirection="Columns"
+                                  ResizeBehavior="PreviousAndNext"
+                                  ShowsPreview="True"
+                                  Background="{DynamicResource GlyphBrush}"
+                                  Opacity="0.55"/>
+
+                    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsCard}">
+                    <Grid>
                         <Border BorderBrush="{DynamicResource GlyphBrush}"
                                 Background="{DynamicResource ControlIdleBackgroundBrush}"
                                 BorderThickness="1"
                                 Opacity="1">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" MinHeight="420" MaxHeight="560">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
                                 <Grid Margin="0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="170"/>
+                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -788,7 +933,8 @@
                                 </Grid>
                             </ScrollViewer>
                         </Border>
-                    </StackPanel>
+                    </Grid>
+                    </Border>
                 </Grid>
             </TabItem>
 
@@ -802,14 +948,23 @@
             <TabItem Header="{DynamicResource MTDA_NavMediaSources}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
-                        <TextBlock Text="{Binding Settings.SteamGridDbHelp, Mode=OneWay}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
+                        <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,10" TextWrapping="Wrap">
+                            <Run Text="NOTA: " FontWeight="SemiBold"/>
+                            <Run Text="{DynamicResource MTDA_MissingApiKeyHelp}"/>
+                        </TextBlock>
+                        <Border Style="{StaticResource PageIntroCard}">
+                            <TextBlock Text="{Binding Settings.SteamGridDbHelp, Mode=OneWay}"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.9"
+                                       Margin="0"/>
+                        </Border>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <StackPanel Margin="0,0,0,14">
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="{DynamicResource MTDA_OriginIntegrationsTab}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="OriginSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{DynamicResource MTDA_OriginIntegrationsTab}" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="OriginSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDescription}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox IsChecked="{Binding Settings.UseOriginIntegrationForMedia}"
@@ -842,7 +997,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="Steam" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Steam" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Steam usa recursos públicos oficiales cuando el juego se puede asociar a su ficha: portadas, heroes de biblioteca y capturas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Steam oficial para portadas y heroes"
@@ -856,7 +1011,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="SteamGridDB" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamGridDbSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="SteamGridDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamGridDbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="SteamGridDB suele ser la mejor fuente para portadas, iconos y fondos creados o curados por la comunidad." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar SteamGridDB para portadas, iconos y heroes"
@@ -878,7 +1033,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="PlayStation" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PsnSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="PlayStation" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PsnSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="PlayStation Store usa la tienda web pública para intentar obtener portadas, fondos y descripción oficial. No requiere API key, pero puede variar por región o por cambios de Sony." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar PlayStation Store como fuente de portadas y fondos"
@@ -888,7 +1043,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="Xbox" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="XboxSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Xbox" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="XboxSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Xbox Store usa el catálogo público de Microsoft Store para obtener box art, posters, super hero art, capturas y descripción oficial." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Xbox Store como fuente de portadas y fondos"
@@ -898,7 +1053,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="Epic" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="EpicSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Epic" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="EpicSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Epic Store se usa como fuente auxiliar si el juego ya tiene enlace de Epic o la tienda expone datos públicos. La web puede bloquear consultas automáticas, así que se omite si no responde limpiamente." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Epic Store como fuente auxiliar"
@@ -908,7 +1063,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="RAWG" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="RAWG" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="RAWG ayuda a encontrar capturas, fondos y metadatos generales cuando no hay buenos resultados en fuentes más directas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar RAWG como fuente de imagen principal y capturas"
@@ -924,7 +1079,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="MobyGames" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="MobyGamesSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="MobyGames" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="MobyGamesSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="MobyGames es útil como fuente histórica y de respaldo, especialmente en juegos antiguos o con fichas poco completas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar MobyGames como fuente de covers y capturas históricas"
@@ -940,7 +1095,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><StackPanel Orientation="Horizontal"><TextBlock Text="IGDB" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" Foreground="{DynamicResource TextBrush}"/></Border></StackPanel></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="IGDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="IGDB usa credenciales de Twitch y aporta imágenes y datos estructurados con buena cobertura para juegos modernos." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar IGDB como fuente de covers, artworks y screenshots"
@@ -980,19 +1135,21 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                        <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,10">
-                            <Run Text="NOTA: " FontWeight="SemiBold"/>
-                            <Run Text="{DynamicResource MTDA_MissingApiKeyHelp}"/>
-                        </TextBlock>
-
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="{DynamicResource MTDA_NavMediaDownload}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
-
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Grid>
+                            <Grid.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                            </Grid.Resources>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="115"/>
                                 <ColumnDefinition Width="65"/>
@@ -1011,17 +1168,22 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold"/>
+                            <Border Grid.Row="0" Style="{StaticResource FieldTableRow}" Opacity="0.75"/>
+                            <Border Grid.Row="1" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="2" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="3" Style="{StaticResource FieldTableRow}"/>
+
+                            <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="10,0,8,0"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Get}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Format}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_SourcePriorityShort}" FontWeight="SemiBold" Margin="8,0,0,0"/>
 
-                            <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Cover}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.DownloadCoverImage}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImageApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImagePreset}" Margin="0,4,0,0"/>
-                            <Grid Grid.Row="1" Grid.Column="4" Margin="8,4,0,0">
+                            <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Cover}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.DownloadCoverImage}"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImageApplyMode}" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.CoverImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CoverImagePreset}"/>
+                            <Grid Grid.Row="1" Grid.Column="4" Margin="8,0,0,0" VerticalAlignment="Center">
                                 <ComboBox SelectedIndex="0"
                                           IsHitTestVisible="False"
                                           Focusable="False"
@@ -1032,11 +1194,11 @@
                                         Click="ConfigureCoverSourcePriority_OnClick"/>
                             </Grid>
 
-                            <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Icon}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.DownloadIcon}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconPreset}" Margin="0,4,0,0"/>
-                            <Grid Grid.Row="2" Grid.Column="4" Margin="8,4,0,0">
+                            <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Icon}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.DownloadIcon}"/>
+                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconApplyMode}" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.IconPresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.IconPreset}"/>
+                            <Grid Grid.Row="2" Grid.Column="4" Margin="8,0,0,0" VerticalAlignment="Center">
                                 <ComboBox SelectedIndex="0"
                                           IsHitTestVisible="False"
                                           Focusable="False"
@@ -1047,11 +1209,11 @@
                                         Click="ConfigureIconSourcePriority_OnClick"/>
                             </Grid>
 
-                            <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Background}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.DownloadBackgroundImage}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}" Margin="0,4,0,0"/>
-                            <Grid Grid.Row="3" Grid.Column="4" Margin="8,4,0,0">
+                            <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Background}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.DownloadBackgroundImage}"/>
+                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImageApplyMode}" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.BackgroundImagePresetOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundImagePreset}"/>
+                            <Grid Grid.Row="3" Grid.Column="4" Margin="8,0,0,0" VerticalAlignment="Center">
                                 <ComboBox SelectedIndex="0"
                                           IsHitTestVisible="False"
                                           Focusable="False"
@@ -1066,6 +1228,23 @@
                                    Style="{StaticResource HintText}"
                                    TextWrapping="Wrap"
                                    Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogos}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <CheckBox Content="{DynamicResource MTDA_EnableExtraMetadataLogos}"
+                                          IsChecked="{Binding Settings.EnableExtraMetadataLoaderLogos}"
+                                          Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogosHelp}"
+                                           Style="{StaticResource HintText}"
+                                           TextWrapping="Wrap"
+                                           Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
                     </StackPanel>
                 </ScrollViewer>
@@ -1073,7 +1252,8 @@
             <TabItem Header="{DynamicResource MTDA_NavMediaQuality}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
-
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -1127,22 +1307,24 @@
                                    Style="{StaticResource HintText}"
                                    TextWrapping="Wrap"
                                    Margin="0,9,0,0"/>
-
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
+                            </StackPanel>
                         </Border>
-                        <ComboBox ItemsSource="{Binding Settings.BackgroundLogoPreferenceOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="Value"
-                                  SelectedValue="{Binding Settings.BackgroundLogoPreference}"
-                                  HorizontalAlignment="Left"
-                                  MinWidth="220"
-                                  Margin="0,2,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreferenceHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
 
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_SelectionCriteria}" Style="{StaticResource SectionHeaderText}"/>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreference}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <ComboBox ItemsSource="{Binding Settings.BackgroundLogoPreferenceOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackgroundLogoPreference}" HorizontalAlignment="Left" MinWidth="220" Margin="0,2,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_BackgroundLogoPreferenceHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
                         </Border>
+
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_SelectionCriteria}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
                         <CheckBox Content="{DynamicResource MTDA_AvoidNsfw}"
                                   IsChecked="{Binding Settings.MediaAvoidNsfw}"
                                   Margin="0,0,0,4"/>
@@ -1158,9 +1340,13 @@
                         <CheckBox Content="{DynamicResource MTDA_SquareIconPreferGrid}"
                                   IsChecked="{Binding Settings.IconSquarePreferGrid}"
                                   Margin="0,0,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_SquareIconPreferGridHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{DynamicResource MTDA_SquareIconPreferGridHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
                             <TextBlock Text="{DynamicResource MTDA_MaxMediaResults}"/>
                             <TextBox Text="{Binding Settings.MediaSearchMaxResults}" Width="80" HorizontalAlignment="Left" Margin="0,2,0,8"/>
                             <TextBlock Text="{DynamicResource MTDA_MaxMediaResultsHelp}" Style="{StaticResource HintText}"/>
@@ -1176,12 +1362,8 @@
                                 <StackPanel Grid.Column="4"><TextBlock Text="{DynamicResource MTDA_BackgroundMinimumWidth}"/><TextBox Text="{Binding Settings.MediaMinimumBackgroundWidth}" Margin="0,3,0,0"/></StackPanel>
                             </Grid>
                             <TextBlock Text="{DynamicResource MTDA_MediaQualityAndRepairHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
-                            <Border Style="{StaticResource SectionHeaderBorder}">
-                                <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogos}" Style="{StaticResource SectionHeaderText}"/>
-                            </Border>
-                            <CheckBox Content="{DynamicResource MTDA_EnableExtraMetadataLogos}" IsChecked="{Binding Settings.EnableExtraMetadataLoaderLogos}" Margin="0,0,0,8"/>
-                            <TextBlock Text="{DynamicResource MTDA_ExtraMetadataLogosHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
-                        </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -1196,6 +1378,8 @@
             <TabItem x:Name="ImportNavigationItem" Header="{DynamicResource MTDA_TabImport}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <CheckBox Content="{DynamicResource MTDA_AutoImportNewGames}"
                                   IsChecked="{Binding Settings.AutoImportNewGames}"
                                   Margin="0,0,0,6"/>
@@ -1211,8 +1395,15 @@
                                   Margin="0,0,0,6"/>
                         <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMediaHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
 
-                        <Border BorderBrush="{DynamicResource GlyphBrush}" BorderThickness="1" Padding="10" Opacity="0.9">
+                        <Border Background="{DynamicResource PopupBackgroundBrush}"
+                                BorderBrush="{DynamicResource GlyphBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Padding="10"
+                                Opacity="0.9">
                             <TextBlock Text="{DynamicResource MTDA_AutoImportPlayniteNote}" Style="{StaticResource HintText}" Margin="0"/>
+                        </Border>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
@@ -1221,8 +1412,20 @@
             <TabItem x:Name="FieldsNavigationItem" Header="{DynamicResource MTDA_TabFields}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
-                        <TextBlock Text="{DynamicResource MTDA_FieldBehaviorHelp}" Style="{StaticResource HintText}"/>
+                        <Border Style="{StaticResource PageIntroCard}">
+                            <TextBlock Text="{DynamicResource MTDA_FieldBehaviorHelp}"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.9"
+                                       Margin="0"/>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}" Padding="12">
                         <Grid>
+                            <Grid.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                            </Grid.Resources>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="300"/>
                                 <ColumnDefinition Width="72"/>
@@ -1247,87 +1450,100 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <Border Grid.Row="0" Style="{StaticResource FieldTableRow}" Opacity="0.75"/>
+                            <Border Grid.Row="1" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="2" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="3" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="4" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="5" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="6" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="7" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="8" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="9" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="10" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="11" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="12" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
+                            <Border Grid.Row="13" Style="{StaticResource FieldTableRow}"/>
 
-                            <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DescriptionApplyMode}" Margin="0,4,8,0"/>
+                            <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="10,0,8,0"/>
+                            <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0"/>
 
-                            <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Genres}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.GenerateGenres}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GenresApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Settings.MaxGenres}" Margin="0,4,8,0"/>
-                            <CheckBox Grid.Row="2" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingGenres}" Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DescriptionApplyMode}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Tags}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.GenerateTags}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.TagsApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Settings.MaxTags}" Margin="0,4,8,0"/>
-                            <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingTags}" Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Genres}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.GenerateGenres}"/>
+                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GenresApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Settings.MaxGenres}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="2" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingGenres}"/>
 
-                            <TextBlock Grid.Row="4" Text="{DynamicResource MTDA_Features}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.GenerateFeatures}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.FeaturesApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Settings.MaxFeatures}" Margin="0,4,8,0"/>
-                            <CheckBox Grid.Row="4" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingFeatures}" Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Tags}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.GenerateTags}"/>
+                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.TagsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Settings.MaxTags}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingTags}"/>
 
-                            <TextBlock Grid.Row="5" Text="{DynamicResource MTDA_Developers}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.GenerateDevelopers}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DevelopersApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Settings.MaxDevelopers}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="4" Text="{DynamicResource MTDA_Features}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.GenerateFeatures}"/>
+                            <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.FeaturesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Settings.MaxFeatures}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="4" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingFeatures}"/>
 
-                            <TextBlock Grid.Row="6" Text="{DynamicResource MTDA_Publishers}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.GeneratePublishers}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PublishersApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Settings.MaxPublishers}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="5" Text="{DynamicResource MTDA_Developers}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.GenerateDevelopers}"/>
+                            <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DevelopersApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Settings.MaxDevelopers}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="7" Text="{DynamicResource MTDA_Age}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.GenerateAgeRatings}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="7" Grid.Column="3" Text="{Binding Settings.MaxAgeRatings}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="6" Text="{DynamicResource MTDA_Publishers}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.GeneratePublishers}"/>
+                            <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PublishersApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Settings.MaxPublishers}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="8" Text="{DynamicResource MTDA_Region}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.GenerateRegions}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RegionsApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="8" Grid.Column="3" Text="{Binding Settings.MaxRegions}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="7" Text="{DynamicResource MTDA_Age}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.GenerateAgeRatings}"/>
+                            <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="7" Grid.Column="3" Text="{Binding Settings.MaxAgeRatings}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="9" Text="{DynamicResource MTDA_Categories}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.GenerateCategories}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CategoriesApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Settings.MaxCategories}" Margin="0,4,8,0"/>
-                            <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}" Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="8" Text="{DynamicResource MTDA_Region}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.GenerateRegions}"/>
+                            <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RegionsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="8" Grid.Column="3" Text="{Binding Settings.MaxRegions}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="10" Text="{DynamicResource MTDA_SortingName}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="10" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="9" Text="{DynamicResource MTDA_Categories}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.GenerateCategories}"/>
+                            <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CategoriesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Settings.MaxCategories}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}"/>
 
-                            <TextBlock Grid.Row="11" Text="{DynamicResource MTDA_Links}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="11" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="10" Text="{DynamicResource MTDA_SortingName}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}"/>
+                            <ComboBox Grid.Row="10" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="12" Text="{DynamicResource MTDA_ReleaseDate}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.GenerateReleaseDate}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ReleaseDateApplyMode}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="11" Text="{DynamicResource MTDA_Links}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}"/>
+                            <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="11" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,0,8,0"/>
 
-                            <TextBlock Grid.Row="13" Text="{DynamicResource MTDA_Series}" Margin="0,8,0,0"/>
-                            <CheckBox Grid.Row="13" Grid.Column="1" IsChecked="{Binding Settings.GenerateSeries}" Margin="0,8,0,0"/>
-                            <ComboBox Grid.Row="13" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SeriesApplyMode}" Margin="0,4,8,0"/>
-                            <TextBox Grid.Row="13" Grid.Column="3" Text="{Binding Settings.MaxSeries}" Margin="0,4,8,0"/>
+                            <TextBlock Grid.Row="12" Text="{DynamicResource MTDA_ReleaseDate}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.GenerateReleaseDate}"/>
+                            <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ReleaseDateApplyMode}" Margin="0,0,8,0"/>
+
+                            <TextBlock Grid.Row="13" Text="{DynamicResource MTDA_Series}" Margin="10,0,8,0"/>
+                            <CheckBox Grid.Row="13" Grid.Column="1" IsChecked="{Binding Settings.GenerateSeries}"/>
+                            <ComboBox Grid.Row="13" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SeriesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="13" Grid.Column="3" Text="{Binding Settings.MaxSeries}" Margin="0,0,8,0"/>
 
                         </Grid>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_FieldAccuracyNotesTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <Border BorderBrush="{DynamicResource GlyphBrush}"
-                                Background="{DynamicResource ControlBackgroundBrush}"
-                                BorderThickness="1"
-                                Padding="12">
+                        <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_FieldAccuracyNotesTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
                                 <TextBlock Text="{DynamicResource MTDA_DeveloperPublisherAccuracyNote}"
                                            Style="{StaticResource HintText}"
                                            Margin="0,0,0,8"/>
@@ -1339,6 +1555,8 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_PrefixesTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1347,8 +1565,12 @@
                         <TextBlock Text="{DynamicResource MTDA_TagPrefixHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
                         <TextBlock Text="{DynamicResource MTDA_CategoryPrefix}"/>
                         <TextBox Text="{Binding Settings.CategoryPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_CategoryPrefixHelp}" Style="{StaticResource HintText}"/>
+                        <TextBlock Text="{DynamicResource MTDA_CategoryPrefixHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_BlacklistTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1358,8 +1580,10 @@
                                  TextWrapping="Wrap"
                                  VerticalScrollBarVisibility="Auto"
                                  MinHeight="90"
-                                 Margin="0,2,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_BlacklistHelp}" Style="{StaticResource HintText}"/>
+                                  Margin="0,2,0,8"/>
+                        <TextBlock Text="{DynamicResource MTDA_BlacklistHelp}" Style="{StaticResource HintText}" Margin="0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -1374,15 +1598,29 @@
             <TabItem x:Name="MaintenanceNavigationItem" Header="{DynamicResource MTDA_TabMaintenance}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                    <Grid Margin="8" HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
                         <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupHelp}"
+                                   Style="{StaticResource HintText}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="{DynamicResource MTDA_SetupWizardSummaryHelp}"
                                    Style="{StaticResource HintText}"
                                    Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_OpenSetupWizard}"
                                 HorizontalAlignment="Left"
-                                MinWidth="220"
-                                Click="OpenSetupWizard_OnClick"/>
+                                 MinWidth="220"
+                                 Click="OpenSetupWizard_OnClick"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1403,7 +1641,11 @@
                                     MinWidth="180"
                                     Click="ImportSettingsBackup_OnClick"/>
                         </StackPanel>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1412,15 +1654,23 @@
                                    Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_CleanupObsoleteMedia}"
                                 HorizontalAlignment="Left"
-                                MinWidth="220"
-                                Click="CleanupObsoleteMedia_OnClick"/>
+                                 MinWidth="220"
+                                 Click="CleanupObsoleteMedia_OnClick"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_AuditTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <TextBlock Text="{DynamicResource MTDA_AuditMaintenanceHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_MenuAuditLibrary}" HorizontalAlignment="Left" MinWidth="220" Click="AuditLibrary_OnClick"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1429,9 +1679,13 @@
                                    Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_ExportDiagnostics}"
                                 HorizontalAlignment="Left"
-                                MinWidth="220"
-                                Click="ExportDiagnostics_OnClick"/>
+                                 MinWidth="220"
+                                 Click="ExportDiagnostics_OnClick"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1440,23 +1694,33 @@
                                    Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_OpenHistory}"
                                 HorizontalAlignment="Left"
-                                MinWidth="220"
-                                Click="OpenHistory_OnClick"/>
-                    </StackPanel>
+                                 MinWidth="220"
+                                 Click="OpenHistory_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem x:Name="RulesNavigationItem" Header="{DynamicResource MTDA_TabRules}"
                      Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                    <Grid Margin="8" HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.ColumnSpan="3" Style="{StaticResource AdvancedSettingsCard}">
+                            <StackPanel>
                         <CheckBox Content="{DynamicResource MTDA_EnableTemplateRules}"
                                   IsChecked="{Binding Settings.EnableTemplateRules}"
                                   Margin="0,0,0,4"/>
                         <TextBlock Text="{DynamicResource MTDA_EnableTemplateRulesHelp}"
                                    Style="{StaticResource HintText}"
-                                   Margin="0,0,0,14"/>
+                                   Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource AdvancedSettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_GenreTemplateRules}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1465,9 +1729,13 @@
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  MinHeight="120"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Margin="0,0,0,12"/>
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource AdvancedSettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_PlatformRules}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1476,9 +1744,13 @@
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  MinHeight="90"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Margin="0,0,0,12"/>
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="0"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource AdvancedSettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceRules}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1486,11 +1758,15 @@
                         <TextBox Text="{Binding Settings.SourceTemplateRules, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
-                                 MinHeight="90"
-                                 VerticalScrollBarVisibility="Auto"/>
+                                  MinHeight="90"
+                                  VerticalScrollBarVisibility="Auto"/>
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
-                            <Border Style="{StaticResource SectionHeaderBorder}" Margin="0,18,0,8">
+                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
+                            <Border Style="{StaticResource SectionHeaderBorder}">
                                 <TextBlock Text="{DynamicResource MTDA_VocabularyMemory}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
                             <TextBlock Text="{DynamicResource MTDA_VocabularyMemoryHelp}" Style="{StaticResource HintText}" Margin="0,2,0,4"/>
@@ -1499,8 +1775,9 @@
                                      TextWrapping="Wrap"
                                      MinHeight="140"
                                      VerticalScrollBarVisibility="Auto"/>
-                        </StackPanel>
-                    </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </ScrollViewer>
             </TabItem>
 
@@ -1512,12 +1789,18 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource PageIntroCard}">
+                            <StackPanel>
                         <TextBlock Text="{DynamicResource MTDA_AboutDescription}"
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,12"/>
                         <TextBlock Text="{Binding Settings.AboutVersionAuthor, Mode=OneWay}"
                                    FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_AboutLinksTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1531,10 +1814,14 @@
                                     Margin="0,0,8,0"
                                     Click="OpenWiki_OnClick"/>
                             <Button Content="{DynamicResource MTDA_AboutReportIssueButton}"
-                                    MinWidth="170"
-                                    Click="OpenReportIssue_OnClick"/>
+                                     MinWidth="170"
+                                     Click="OpenReportIssue_OnClick"/>
                         </StackPanel>
+                            </StackPanel>
+                        </Border>
 
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_AboutSupportTitle}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
@@ -1543,9 +1830,11 @@
                                    Margin="0,0,0,12"/>
                         <Button Content="{DynamicResource MTDA_AboutKoFiButton}"
                                 HorizontalAlignment="Left"
-                                MinWidth="180"
-                                Padding="18,8"
-                                Click="OpenKoFi_OnClick"/>
+                                 MinWidth="180"
+                                 Padding="18,8"
+                                 Click="OpenKoFi_OnClick"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

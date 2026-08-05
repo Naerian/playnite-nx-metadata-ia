@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">Nouveau</sys:String>
     <sys:String x:Key="MTDA_Delete">Supprimer</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Restaurer les valeurs par défaut</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">Dupliquer</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">Tout restaurer…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">Par défaut</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">Modifié</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">Personnalisé</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">Les modifications sont enregistrées lorsque vous validez les paramètres.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">Supprimer le modèle « {0} » ?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">Remplacer tous les modèles par les modèles par défaut ? Les modèles personnalisés seront supprimés.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">copie</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">Nouveau modèle</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">Modèles enregistrés</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">Contenu du modèle</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nom du modèle</sys:String>
@@ -754,4 +764,13 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">Actualiser les modèles</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">Chargement des modèles disponibles...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">{0} modèles compatibles disponibles. Vous pouvez aussi en saisir un manuellement.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">Le fournisseur n'a renvoyé aucun modèle texte compatible. Vous pouvez en saisir un manuellement.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">Impossible d'actualiser la liste des modèles : {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">Impossible d'obtenir la liste des modèles (HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configurez d'abord un endpoint fournisseur valide.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Saisissez la clé API du fournisseur pour charger ses modèles.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">La liste des modèles est indisponible. Vous pouvez saisir le modèle manuellement.</sys:String>
 </ResourceDictionary>

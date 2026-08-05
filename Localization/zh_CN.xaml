@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">新的</sys:String>
     <sys:String x:Key="MTDA_Delete">删除</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">恢复默认设置</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">复制</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">全部恢复…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">默认</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">已修改</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">自定义</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">确认设置时将保存更改。</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">删除模板“{0}”吗？</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">用默认模板替换所有模板吗？自定义模板将被删除。</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">副本</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">新模板</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">已保存模板</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">模板内容</sys:String>
     <sys:String x:Key="MTDA_TemplateName">模板名称</sys:String>
@@ -749,4 +759,13 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">刷新模型</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">正在加载可用模型...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">有 {0} 个兼容模型可用。也可以手动输入模型。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">提供商未返回兼容的文本模型。可以手动输入模型。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">无法更新模型列表：{0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">无法获取模型列表（HTTP {0}）。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">请先配置有效的提供商端点。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">请输入提供商 API 密钥以加载可用模型。</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">模型列表当前不可用。可以手动输入模型。</sys:String>
 </ResourceDictionary>

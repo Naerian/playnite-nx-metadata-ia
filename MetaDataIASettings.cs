@@ -1988,6 +1988,8 @@ namespace MetaDataIAPlugin
                 LoadSelectedTemplateText();
 
                 OnPropertyChanged();
+                OnPropertyChanged("SelectedTemplateStatusText");
+                OnPropertyChanged("CanDeleteSelectedTemplate");
             }
         }
 
@@ -2002,6 +2004,7 @@ namespace MetaDataIAPlugin
                     selectedTemplate.Name = selectedTemplateNameText ?? string.Empty;
                     Settings.ActiveTemplateName = selectedTemplate.Name;
                     OnPropertyChanged("SelectedTemplate");
+                    OnPropertyChanged("SelectedTemplateStatusText");
                 }
             }
         }
@@ -2016,8 +2019,36 @@ namespace MetaDataIAPlugin
                 {
                     selectedTemplate.Template = selectedTemplateBodyText ?? string.Empty;
                     Settings.DescriptionTemplate = selectedTemplate.Template;
+                    OnPropertyChanged("SelectedTemplateStatusText");
                 }
             }
+        }
+
+        public string SelectedTemplateStatusText
+        {
+            get
+            {
+                if (SelectedTemplate == null)
+                {
+                    return string.Empty;
+                }
+
+                var defaultTemplate = MetaDataIASettings.CreateDefaultTemplates()
+                    .FirstOrDefault(x => string.Equals(x.Name, SelectedTemplate.Name, StringComparison.OrdinalIgnoreCase));
+                if (defaultTemplate == null)
+                {
+                    return PluginLocalization.GetString("MTDA_TemplateCustomStatus", "Custom");
+                }
+
+                return string.Equals(defaultTemplate.Template, SelectedTemplate.Template, StringComparison.Ordinal)
+                    ? PluginLocalization.GetString("MTDA_TemplateDefaultStatus", "Default")
+                    : PluginLocalization.GetString("MTDA_TemplateModifiedStatus", "Modified");
+            }
+        }
+
+        public bool CanDeleteSelectedTemplate
+        {
+            get { return Settings != null && Settings.Templates != null && Settings.Templates.Count > 1 && SelectedTemplate != null; }
         }
 
         public MetaDataIASettingsViewModel(MetaDataIAPlugin plugin)
@@ -2120,17 +2151,29 @@ namespace MetaDataIAPlugin
         public void AddTemplate()
         {
             Settings.EnsureDefaults();
-            var index = 1;
-            var name = "Nueva plantilla";
-            while (Settings.Templates.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
-            {
-                index++;
-                name = "Nueva plantilla " + index;
-            }
-
+            var name = CreateUniqueTemplateName(PluginLocalization.GetString("MTDA_NewTemplateName", "New template"));
             var profile = new TemplateProfile(name, MetaDataIASettings.DefaultMediumTemplate);
             Settings.Templates.Add(profile);
             SelectedTemplate = profile;
+            OnPropertyChanged("CanDeleteSelectedTemplate");
+        }
+
+        public void DuplicateSelectedTemplate()
+        {
+            Settings.EnsureDefaults();
+            if (SelectedTemplate == null)
+            {
+                return;
+            }
+
+            SyncSelectedTemplate();
+            var suffix = PluginLocalization.GetString("MTDA_TemplateCopySuffix", "copy");
+            var baseName = (SelectedTemplate.Name ?? string.Empty).Trim();
+            var name = CreateUniqueTemplateName(string.IsNullOrWhiteSpace(baseName) ? suffix : baseName + " - " + suffix);
+            var profile = new TemplateProfile(name, SelectedTemplate.Template ?? string.Empty);
+            Settings.Templates.Add(profile);
+            SelectedTemplate = profile;
+            OnPropertyChanged("CanDeleteSelectedTemplate");
         }
 
         public void DeleteSelectedTemplate()
@@ -2144,12 +2187,30 @@ namespace MetaDataIAPlugin
             var index = Settings.Templates.IndexOf(SelectedTemplate);
             Settings.Templates.Remove(SelectedTemplate);
             SelectedTemplate = Settings.Templates[Math.Max(0, Math.Min(index, Settings.Templates.Count - 1))];
+            OnPropertyChanged("CanDeleteSelectedTemplate");
         }
 
         public void RestoreDefaultTemplates()
         {
             Settings.ResetTemplates();
             SelectedTemplate = Settings.GetActiveTemplate();
+            OnPropertyChanged("CanDeleteSelectedTemplate");
+        }
+
+        private string CreateUniqueTemplateName(string requestedName)
+        {
+            var baseName = string.IsNullOrWhiteSpace(requestedName)
+                ? PluginLocalization.GetString("MTDA_NewTemplateName", "New template")
+                : requestedName.Trim();
+            var name = baseName;
+            var index = 2;
+            while (Settings.Templates.Any(x => x != null && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                name = baseName + " " + index;
+                index++;
+            }
+
+            return name;
         }
 
         public void ReplaceSettingsFromBackup(MetaDataIASettings importedSettings)

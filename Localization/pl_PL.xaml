@@ -68,6 +68,16 @@
     <sys:String x:Key="MTDA_New">Nowy</sys:String>
     <sys:String x:Key="MTDA_Delete">Usun</sys:String>
     <sys:String x:Key="MTDA_RestoreDefaults">Przywroc domyslne</sys:String>
+    <sys:String x:Key="MTDA_Duplicate">Duplikuj</sys:String>
+    <sys:String x:Key="MTDA_RestoreAllTemplates">Przywróć wszystkie…</sys:String>
+    <sys:String x:Key="MTDA_TemplateDefaultStatus">Domyślna</sys:String>
+    <sys:String x:Key="MTDA_TemplateModifiedStatus">Zmieniona</sys:String>
+    <sys:String x:Key="MTDA_TemplateCustomStatus">Własna</sys:String>
+    <sys:String x:Key="MTDA_TemplateChangesSaveHelp">Zmiany zostaną zapisane po zatwierdzeniu ustawień.</sys:String>
+    <sys:String x:Key="MTDA_DeleteTemplateConfirm">Usunąć szablon „{0}”?</sys:String>
+    <sys:String x:Key="MTDA_RestoreTemplatesConfirm">Zastąpić wszystkie szablony domyślnymi? Własne szablony zostaną usunięte.</sys:String>
+    <sys:String x:Key="MTDA_TemplateCopySuffix">kopia</sys:String>
+    <sys:String x:Key="MTDA_NewTemplateName">Nowy szablon</sys:String>
     <sys:String x:Key="MTDA_TemplateProfiles">Zapisane szablony</sys:String>
     <sys:String x:Key="MTDA_TemplateContent">Zawartość szablonu</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nazwa szablonu</sys:String>
@@ -749,4 +759,13 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
     <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
+    <sys:String x:Key="MTDA_RefreshModels">Odśwież modele</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoading">Ładowanie dostępnych modeli...</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsLoaded">Dostępne zgodne modele: {0}. Możesz też wpisać model ręcznie.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsEmpty">Dostawca nie zwrócił zgodnych modeli tekstowych. Możesz wpisać model ręcznie.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailed">Nie udało się odświeżyć listy modeli: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsRefreshFailedHttp">Nie udało się pobrać listy modeli (HTTP {0}).</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Najpierw skonfiguruj prawidłowy endpoint dostawcy.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Wprowadź klucz API dostawcy, aby załadować dostępne modele.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsUnavailable">Lista modeli jest teraz niedostępna. Możesz wpisać model ręcznie.</sys:String>
 </ResourceDictionary>
