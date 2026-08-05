@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">AI</sys:String>
+    <sys:String x:Key="MTDA_AiGeneration">생성</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">템플릿</sys:String>
     <sys:String x:Key="MTDA_TabMedia">메디아</sys:String>
     <sys:String x:Key="MTDA_TabImport">가져오기</sys:String>
@@ -707,4 +708,38 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_MediaRankUsablePixels">사용 가능한 픽셀 {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">검증</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">진단 보고서를 내보낼 수 없습니다.</sys:String>
+    <sys:String x:Key="MTDA_MediaSourcesTab">소스</sys:String>
+    <sys:String x:Key="MTDA_MediaDownloadTab">다운로드</sys:String>
+    <sys:String x:Key="MTDA_MediaQualityTab">처리 및 품질</sys:String>
+    <sys:String x:Key="MTDA_CopyTechnicalDetails">기술 세부 정보 복사</sys:String>
+    <sys:String x:Key="MTDA_NotConfigured">설정되지 않음</sys:String>
+    <sys:String x:Key="MTDA_NoModel">모델 없음</sys:String>
+    <sys:String x:Key="MTDA_StatusReady">준비됨</sys:String>
+    <sys:String x:Key="MTDA_StatusNeedsConfiguration">설정 필요</sys:String>
+    <sys:String x:Key="MTDA_FieldsEnabledSummary">{0}개 활성화</sys:String>
+    <sys:String x:Key="MTDA_MediaEnabledSummary">미디어 유형 {0}개 · 소스 {1}개</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusInactive">비활성</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusActive">활성</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusNeedsKey">인증 정보 필요</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusTested">테스트됨</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusError">오류</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">이전 오류 후 일괄 작업이 중지되어 처리되지 않았습니다.</sys:String>
+    <sys:String x:Key="MTDA_Game">게임</sys:String>
+    <sys:String x:Key="MTDA_BatchFailureReason">원인</sys:String>
+    <sys:String x:Key="MTDA_RetryPending">대기 항목 다시 시도</sys:String>
+    <sys:String x:Key="MTDA_CopyList">목록 복사</sys:String>
+    <sys:String x:Key="MTDA_ExportList">목록 내보내기</sys:String>
+    <sys:String x:Key="MTDA_ExportPendingGames">업데이트되지 않은 게임 내보내기</sys:String>
+    <sys:String x:Key="MTDA_SettingsNavigationHelp">섹션 선택</sys:String>
+    <sys:String x:Key="MTDA_TabOverview">요약</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummary">설정 요약</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummaryHelp">활성 공급자, 활성화된 메타데이터 필드 및 미디어 설정을 한눈에 확인합니다.</sys:String>
+    <sys:String x:Key="MTDA_NavMediaSources">소스</sys:String>
+    <sys:String x:Key="MTDA_NavMediaDownload">다운로드</sys:String>
+    <sys:String x:Key="MTDA_NavMediaQuality">품질</sys:String>
+    <sys:String x:Key="MTDA_SummaryTemplateRules">게임별 규칙</sys:String>
+    <sys:String x:Key="MTDA_SummaryAutomation">자동화</sys:String>
+    <sys:String x:Key="MTDA_SummaryOfficialContext">공식 컨텍스트</sys:String>
+    <sys:String x:Key="MTDA_SummaryStrictFacts">엄격한 사실 데이터</sys:String>
+    <sys:String x:Key="MTDA_SummaryLocalFallback">로컬 대체</sys:String>
 </ResourceDictionary>

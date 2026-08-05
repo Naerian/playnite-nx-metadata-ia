@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">AI</sys:String>
+    <sys:String x:Key="MTDA_AiGeneration">生成</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">模板</sys:String>
     <sys:String x:Key="MTDA_TabMedia">媒体</sys:String>
     <sys:String x:Key="MTDA_TabImport">导入</sys:String>
@@ -707,4 +708,38 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_MediaRankUsablePixels">可用像素 {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">验证</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">无法导出诊断报告。</sys:String>
+    <sys:String x:Key="MTDA_MediaSourcesTab">来源</sys:String>
+    <sys:String x:Key="MTDA_MediaDownloadTab">下载</sys:String>
+    <sys:String x:Key="MTDA_MediaQualityTab">处理与质量</sys:String>
+    <sys:String x:Key="MTDA_CopyTechnicalDetails">复制技术详情</sys:String>
+    <sys:String x:Key="MTDA_NotConfigured">未配置</sys:String>
+    <sys:String x:Key="MTDA_NoModel">未选择模型</sys:String>
+    <sys:String x:Key="MTDA_StatusReady">就绪</sys:String>
+    <sys:String x:Key="MTDA_StatusNeedsConfiguration">需要配置</sys:String>
+    <sys:String x:Key="MTDA_FieldsEnabledSummary">已启用 {0} 项</sys:String>
+    <sys:String x:Key="MTDA_MediaEnabledSummary">{0} 种媒体 · {1} 个来源</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusInactive">未启用</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusActive">已启用</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusNeedsKey">需要凭据</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusTested">已测试</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusError">错误</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">由于批处理在上一个错误后停止，因此未处理。</sys:String>
+    <sys:String x:Key="MTDA_Game">游戏</sys:String>
+    <sys:String x:Key="MTDA_BatchFailureReason">原因</sys:String>
+    <sys:String x:Key="MTDA_RetryPending">重试待处理项</sys:String>
+    <sys:String x:Key="MTDA_CopyList">复制列表</sys:String>
+    <sys:String x:Key="MTDA_ExportList">导出列表</sys:String>
+    <sys:String x:Key="MTDA_ExportPendingGames">导出未更新的游戏</sys:String>
+    <sys:String x:Key="MTDA_SettingsNavigationHelp">选择一个部分</sys:String>
+    <sys:String x:Key="MTDA_TabOverview">概览</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummary">配置概览</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummaryHelp">快速查看当前提供商、已启用的元数据字段和媒体配置。</sys:String>
+    <sys:String x:Key="MTDA_NavMediaSources">来源</sys:String>
+    <sys:String x:Key="MTDA_NavMediaDownload">下载</sys:String>
+    <sys:String x:Key="MTDA_NavMediaQuality">质量</sys:String>
+    <sys:String x:Key="MTDA_SummaryTemplateRules">按游戏规则</sys:String>
+    <sys:String x:Key="MTDA_SummaryAutomation">自动化</sys:String>
+    <sys:String x:Key="MTDA_SummaryOfficialContext">官方上下文</sys:String>
+    <sys:String x:Key="MTDA_SummaryStrictFacts">严格事实数据</sys:String>
+    <sys:String x:Key="MTDA_SummaryLocalFallback">本地备用</sys:String>
 </ResourceDictionary>

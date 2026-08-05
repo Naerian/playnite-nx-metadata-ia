@@ -65,7 +65,9 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateSortingName && settings.SortingNameApplyMode != MetaDataIASettings.ApplySkip)
             {
-                var sortingName = SortingNameService.Generate(api, game);
+                var sortingName = string.IsNullOrWhiteSpace(result.SortingName)
+                    ? SortingNameService.Generate(api, game)
+                    : result.SortingName;
                 if (!string.IsNullOrWhiteSpace(sortingName) && ShouldApplyScalar(settings.SortingNameApplyMode, game.SortingName))
                 {
                     game.SortingName = sortingName;

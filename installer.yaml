@@ -1,9 +1,9 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
-  - Version: 1.2.6
+  - Version: 1.2.7
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-04
-    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.6/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_6.pext
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.2.7/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_7.pext
     Changelog:
       - Improved media integration labels and wrapping in settings.
       - Added stricter automatic media candidate validation before applying images.

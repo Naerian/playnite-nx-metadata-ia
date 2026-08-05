@@ -6,13 +6,16 @@ using Playnite.SDK.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Microsoft.Win32;
 
 namespace MetaDataIAPlugin
 {
@@ -22,6 +25,13 @@ namespace MetaDataIAPlugin
         private readonly MetaDataIASettingsViewModel settings;
         private readonly MetadataHistoryService history;
         private readonly MetadataMaintenanceStateService maintenanceState;
+
+        private sealed class BatchFailedGame
+        {
+            public Game Game { get; set; }
+            public string GameName { get { return Game == null || string.IsNullOrWhiteSpace(Game.Name) ? string.Empty : Game.Name; } }
+            public string Reason { get; set; }
+        }
 
         public override Guid Id
         {
@@ -416,6 +426,7 @@ namespace MetaDataIAPlugin
                 var cancelled = false;
                 var errors = new List<string>();
                 var updatedGameIds = new HashSet<Guid>();
+                var failureReasons = new Dictionary<Guid, string>();
                 var historyOperation = history.BeginOperation(silent
                     ? Loc("MTDA_HistoryAutoImportMetadata", "Automatic metadata import")
                     : Loc("MTDA_HistoryApplyMetadata", "Apply AI metadata"));
@@ -454,7 +465,9 @@ namespace MetaDataIAPlugin
                         catch (Exception ex)
                         {
                             logger.Error(ex, "Failed to process AI metadata for " + game.Name);
-                            errors.Add(game.Name + ": " + UserError(ex));
+                            var reason = UserError(ex);
+                            errors.Add(game.Name + ": " + reason);
+                            failureReasons[game.Id] = reason;
 
                             var providerException = ex as AiProviderException;
                             if (providerException != null && providerException.StopBatch)
@@ -477,8 +490,13 @@ namespace MetaDataIAPlugin
                     }
                     else
                     {
-                        var notUpdatedGames = games.Where(x => x != null && !updatedGameIds.Contains(x.Id)).ToList();
-                        ShowBatchErrors(processed, errors, 0, notUpdatedGames);
+                        var failedGames = BuildBatchFailures(games, updatedGameIds, failureReasons);
+                        ShowBatchErrors(
+                            processed,
+                            errors,
+                            0,
+                            failedGames,
+                            () => GenerateAndApply(failedGames.Select(x => x.Game).Where(x => x != null).ToList(), activeSettings));
                     }
                 }
                 else if (cancelled && !silent)
@@ -571,6 +589,8 @@ namespace MetaDataIAPlugin
                 var qualitySkipped = 0;
                 var cancelled = false;
                 var errors = new List<string>();
+                var updatedGameIds = new HashSet<Guid>();
+                var failureReasons = new Dictionary<Guid, string>();
                 var historyOperation = history.BeginOperation(silent
                     ? Loc("MTDA_HistoryAutoImportMedia", "Automatic media import")
                     : Loc("MTDA_HistoryApplyMedia", "Apply media"));
@@ -600,6 +620,7 @@ namespace MetaDataIAPlugin
                             }));
                             appliedMedia += appliedForGame;
                             processed++;
+                            updatedGameIds.Add(game.Id);
                         }
                         catch (OperationCanceledException)
                         {
@@ -609,7 +630,9 @@ namespace MetaDataIAPlugin
                         catch (Exception ex)
                         {
                             logger.Error(ex, "Failed to process media for " + game.Name);
-                            errors.Add(game.Name + ": " + UserError(ex));
+                            var reason = UserError(ex);
+                            errors.Add(game.Name + ": " + reason);
+                            failureReasons[game.Id] = reason;
                         }
 
                         progress.CurrentProgressValue = processed + errors.Count;
@@ -628,7 +651,13 @@ namespace MetaDataIAPlugin
                     }
                     else
                     {
-                        ShowBatchErrors(processed, errors, qualitySkipped);
+                        var failedGames = BuildBatchFailures(games, updatedGameIds, failureReasons);
+                        ShowBatchErrors(
+                            processed,
+                            errors,
+                            qualitySkipped,
+                            failedGames,
+                            () => ApplyMedia(failedGames.Select(x => x.Game).Where(x => x != null).ToList(), activeSettings));
                     }
                 }
                 else if (cancelled && !silent)
@@ -1850,7 +1879,7 @@ namespace MetaDataIAPlugin
                         Source = "Metadata AI local rule",
                         Method = "deterministic",
                         Confidence = "high",
-                        Detail = "Generated locally from the library title and detected series order."
+                        Detail = "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence."
                     }
                 });
                 processed++;
@@ -2008,28 +2037,49 @@ namespace MetaDataIAPlugin
             return MetadataGenerationService.SanitizeForUser(ex.Message);
         }
 
-        private void ShowBatchErrors(int processed, List<string> errors, int qualitySkipped = 0, IEnumerable<Game> notUpdatedGames = null)
+        private List<BatchFailedGame> BuildBatchFailures(
+            IEnumerable<Game> games,
+            ISet<Guid> updatedGameIds,
+            IDictionary<Guid, string> failureReasons)
         {
-            var separator = "\n\n" + new string('-', 90) + "\n\n";
-            var message = string.Format(Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"), processed, errors.Count) + "\n\n" +
-                          string.Join(separator, errors);
+            return (games ?? Enumerable.Empty<Game>())
+                .Where(x => x != null && (updatedGameIds == null || !updatedGameIds.Contains(x.Id)))
+                .Select(x => new BatchFailedGame
+                {
+                    Game = x,
+                    Reason = failureReasons != null && failureReasons.ContainsKey(x.Id)
+                        ? failureReasons[x.Id]
+                        : Loc("MTDA_BatchNotProcessedAfterStop", "Not processed because the batch stopped after the previous error.")
+                })
+                .ToList();
+        }
+
+        private void ShowBatchErrors(
+            int processed,
+            List<string> errors,
+            int qualitySkipped = 0,
+            IEnumerable<BatchFailedGame> notUpdatedGames = null,
+            Action retryAction = null)
+        {
+            var failedGames = (notUpdatedGames ?? Enumerable.Empty<BatchFailedGame>()).ToList();
+            var message = string.Format(
+                Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"),
+                processed,
+                errors == null ? 0 : errors.Count);
             message = AppendQualitySkipSummary(message, qualitySkipped);
 
-            var notUpdatedNames = (notUpdatedGames ?? Enumerable.Empty<Game>())
-                .Where(x => x != null)
-                .Select(x => string.IsNullOrWhiteSpace(x.Name) ? x.Id.ToString() : x.Name)
-                .ToList();
-            if (notUpdatedNames.Count > 0)
+            var exportText = new StringBuilder();
+            exportText.AppendLine(message);
+            exportText.AppendLine();
+            exportText.AppendLine(string.Format(Loc("MTDA_MessageGamesNotUpdated", "Games not updated ({0}):"), failedGames.Count));
+            foreach (var failedGame in failedGames)
             {
-                message += separator +
-                           string.Format(Loc("MTDA_MessageGamesNotUpdated", "Games not updated ({0}):"), notUpdatedNames.Count) +
-                           Environment.NewLine + Environment.NewLine +
-                           string.Join(Environment.NewLine, notUpdatedNames.Select(x => "• " + x));
+                exportText.AppendLine(failedGame.GameName + "\t" + failedGame.Reason);
             }
 
             if (IsFullscreenMode)
             {
-                PlayniteApi.Dialogs.ShowMessage(message, PluginTitle);
+                PlayniteApi.Dialogs.ShowMessage(exportText.ToString().Trim(), PluginTitle);
                 return;
             }
 
@@ -2058,49 +2108,102 @@ namespace MetaDataIAPlugin
 
             var root = new Grid { Margin = new Thickness(16) };
             ApplyDynamicResource(root, Panel.BackgroundProperty, "StandardWindowBackgroundBrush");
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            var text = new TextBlock
+            var summaryText = new TextBlock
             {
-                Text = message,
+                Text = message + Environment.NewLine + string.Format(
+                    Loc("MTDA_MessageGamesNotUpdated", "Games not updated ({0}):"),
+                    failedGames.Count),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(10),
+                Margin = new Thickness(0, 0, 0, 12),
                 FontSize = 14
             };
-            ApplyDynamicResource(text, TextBlock.ForegroundProperty, "TextBrush");
+            ApplyDynamicResource(summaryText, TextBlock.ForegroundProperty, "TextBrush");
+            Grid.SetRow(summaryText, 0);
+            root.Children.Add(summaryText);
 
-            var scroll = new ScrollViewer
+            var list = new ListView
             {
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                Content = text
+                ItemsSource = failedGames,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
+            };
+            list.View = new GridView
+            {
+                Columns =
+                {
+                    new GridViewColumn
+                    {
+                        Header = Loc("MTDA_Game", "Game"),
+                        DisplayMemberBinding = new System.Windows.Data.Binding("GameName"),
+                        Width = 260
+                    },
+                    new GridViewColumn
+                    {
+                        Header = Loc("MTDA_BatchFailureReason", "Reason"),
+                        DisplayMemberBinding = new System.Windows.Data.Binding("Reason"),
+                        Width = 620
+                    }
+                }
+            };
+            Grid.SetRow(list, 1);
+            root.Children.Add(list);
+
+            var retryRequested = false;
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 12, 0, 0)
             };
 
-            var border = new Border
+            if (retryAction != null && failedGames.Count > 0)
             {
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Child = scroll
+                var retryButton = new Button { Content = Loc("MTDA_RetryPending", "Retry pending"), MinWidth = 130, Margin = new Thickness(0, 0, 8, 0) };
+                retryButton.Click += (sender, args) => { retryRequested = true; window.Close(); };
+                buttons.Children.Add(retryButton);
+            }
+
+            var copyButton = new Button { Content = Loc("MTDA_CopyList", "Copy list"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            copyButton.Click += (sender, args) => Clipboard.SetText(exportText.ToString().Trim());
+            buttons.Children.Add(copyButton);
+
+            var exportButton = new Button { Content = Loc("MTDA_ExportList", "Export list"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            exportButton.Click += (sender, args) =>
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Title = Loc("MTDA_ExportPendingGames", "Export games not updated"),
+                    Filter = "Text (*.txt)|*.txt",
+                    FileName = "metadata-ai-pending-games.txt",
+                    AddExtension = true
+                };
+                if (dialog.ShowDialog(window) == true)
+                {
+                    File.WriteAllText(dialog.FileName, exportText.ToString(), Encoding.UTF8);
+                }
             };
-            ApplyDynamicResource(border, Border.BackgroundProperty, "ControlIdleBackgroundBrush");
-            ApplyDynamicResource(border, Border.BorderBrushProperty, "GlyphBrush");
-            Grid.SetRow(border, 0);
-            root.Children.Add(border);
+            buttons.Children.Add(exportButton);
 
             var okButton = new Button
             {
-                Content = "OK",
+                Content = Loc("MTDA_Close", "Close"),
                 MinWidth = 100,
-                Margin = new Thickness(0, 12, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Right
             };
             okButton.Click += (sender, args) => window.Close();
-            Grid.SetRow(okButton, 1);
-            root.Children.Add(okButton);
+            buttons.Children.Add(okButton);
+            Grid.SetRow(buttons, 2);
+            root.Children.Add(buttons);
 
             window.Content = root;
             window.ShowDialog();
+            if (retryRequested)
+            {
+                retryAction();
+            }
         }
 
         private string AppendQualitySkipSummary(string message, int qualitySkipped)
@@ -2680,7 +2783,7 @@ namespace MetaDataIAPlugin
                     Source = "Metadata AI local rule",
                     Method = "deterministic",
                     Confidence = "high",
-                    Detail = "Generated locally from the library title and detected series order."
+                    Detail = "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence."
                 }
             };
             history.AddGame(operation, game, before, after, provenance);

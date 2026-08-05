@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">ИИ</sys:String>
+    <sys:String x:Key="MTDA_AiGeneration">Генерация</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">Шаблоны</sys:String>
     <sys:String x:Key="MTDA_TabMedia">СМИ</sys:String>
     <sys:String x:Key="MTDA_TabImport">Импорт</sys:String>
@@ -707,4 +708,38 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MediaRankUsablePixels">полезных пикселей {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">Проверка</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">Не удалось экспортировать диагностический отчёт.</sys:String>
+    <sys:String x:Key="MTDA_MediaSourcesTab">Источники</sys:String>
+    <sys:String x:Key="MTDA_MediaDownloadTab">Загрузка</sys:String>
+    <sys:String x:Key="MTDA_MediaQualityTab">Обработка и качество</sys:String>
+    <sys:String x:Key="MTDA_CopyTechnicalDetails">Копировать технические сведения</sys:String>
+    <sys:String x:Key="MTDA_NotConfigured">Не настроено</sys:String>
+    <sys:String x:Key="MTDA_NoModel">Модель не выбрана</sys:String>
+    <sys:String x:Key="MTDA_StatusReady">Готово</sys:String>
+    <sys:String x:Key="MTDA_StatusNeedsConfiguration">Требуется настройка</sys:String>
+    <sys:String x:Key="MTDA_FieldsEnabledSummary">Включено: {0}</sys:String>
+    <sys:String x:Key="MTDA_MediaEnabledSummary">Типов медиа: {0} · источников: {1}</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusInactive">Неактивен</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusActive">Активен</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusNeedsKey">Требуются учётные данные</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusTested">Проверен</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusError">Ошибка</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">Не обработано, поскольку пакет остановился после предыдущей ошибки.</sys:String>
+    <sys:String x:Key="MTDA_Game">Игра</sys:String>
+    <sys:String x:Key="MTDA_BatchFailureReason">Причина</sys:String>
+    <sys:String x:Key="MTDA_RetryPending">Повторить ожидающие</sys:String>
+    <sys:String x:Key="MTDA_CopyList">Копировать список</sys:String>
+    <sys:String x:Key="MTDA_ExportList">Экспортировать список</sys:String>
+    <sys:String x:Key="MTDA_ExportPendingGames">Экспортировать необновлённые игры</sys:String>
+    <sys:String x:Key="MTDA_SettingsNavigationHelp">Выберите раздел</sys:String>
+    <sys:String x:Key="MTDA_TabOverview">Обзор</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummary">Обзор конфигурации</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Быстро проверьте активного поставщика, включённые поля и настройки медиа.</sys:String>
+    <sys:String x:Key="MTDA_NavMediaSources">Источники</sys:String>
+    <sys:String x:Key="MTDA_NavMediaDownload">Загрузка</sys:String>
+    <sys:String x:Key="MTDA_NavMediaQuality">Качество</sys:String>
+    <sys:String x:Key="MTDA_SummaryTemplateRules">Правила для игр</sys:String>
+    <sys:String x:Key="MTDA_SummaryAutomation">Автоматизация</sys:String>
+    <sys:String x:Key="MTDA_SummaryOfficialContext">Официальный контекст</sys:String>
+    <sys:String x:Key="MTDA_SummaryStrictFacts">Строгие фактические данные</sys:String>
+    <sys:String x:Key="MTDA_SummaryLocalFallback">Локальный резерв</sys:String>
 </ResourceDictionary>

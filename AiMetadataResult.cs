@@ -51,6 +51,7 @@ namespace MetaDataIAPlugin
         public List<AiMetadataLink> Links { get; set; }
         public string ReleaseDate { get; set; }
         public List<string> Series { get; set; }
+        public string SortingName { get; set; }
         public string Description { get; set; }
 
         public AiMetadataResult()

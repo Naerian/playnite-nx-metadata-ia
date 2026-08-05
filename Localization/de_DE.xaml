@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">KI</sys:String>
+    <sys:String x:Key="MTDA_AiGeneration">Generierung</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">Vorlagen</sys:String>
     <sys:String x:Key="MTDA_TabMedia">Medien</sys:String>
     <sys:String x:Key="MTDA_TabImport">Importieren</sys:String>
@@ -717,4 +718,38 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaRankUsablePixels">nutzbare Pixel {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">Validierung</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">Diagnosebericht konnte nicht exportiert werden.</sys:String>
+    <sys:String x:Key="MTDA_MediaSourcesTab">Quellen</sys:String>
+    <sys:String x:Key="MTDA_MediaDownloadTab">Download</sys:String>
+    <sys:String x:Key="MTDA_MediaQualityTab">Verarbeitung und Qualität</sys:String>
+    <sys:String x:Key="MTDA_CopyTechnicalDetails">Technische Details kopieren</sys:String>
+    <sys:String x:Key="MTDA_NotConfigured">Nicht konfiguriert</sys:String>
+    <sys:String x:Key="MTDA_NoModel">Kein Modell</sys:String>
+    <sys:String x:Key="MTDA_StatusReady">Bereit</sys:String>
+    <sys:String x:Key="MTDA_StatusNeedsConfiguration">Konfiguration erforderlich</sys:String>
+    <sys:String x:Key="MTDA_FieldsEnabledSummary">{0} aktiviert</sys:String>
+    <sys:String x:Key="MTDA_MediaEnabledSummary">{0} Medientypen · {1} Quellen</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusInactive">Inaktiv</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusActive">Aktiv</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusNeedsKey">Zugangsdaten erforderlich</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusTested">Getestet</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusError">Fehler</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">Nicht verarbeitet, da der Stapel nach dem vorherigen Fehler beendet wurde.</sys:String>
+    <sys:String x:Key="MTDA_Game">Spiel</sys:String>
+    <sys:String x:Key="MTDA_BatchFailureReason">Grund</sys:String>
+    <sys:String x:Key="MTDA_RetryPending">Ausstehende erneut versuchen</sys:String>
+    <sys:String x:Key="MTDA_CopyList">Liste kopieren</sys:String>
+    <sys:String x:Key="MTDA_ExportList">Liste exportieren</sys:String>
+    <sys:String x:Key="MTDA_ExportPendingGames">Nicht aktualisierte Spiele exportieren</sys:String>
+    <sys:String x:Key="MTDA_SettingsNavigationHelp">Bereich auswählen</sys:String>
+    <sys:String x:Key="MTDA_TabOverview">Übersicht</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummary">Konfigurationsübersicht</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Aktiven Anbieter, aktivierte Metadatenfelder und Medienkonfiguration auf einen Blick prüfen.</sys:String>
+    <sys:String x:Key="MTDA_NavMediaSources">Quellen</sys:String>
+    <sys:String x:Key="MTDA_NavMediaDownload">Download</sys:String>
+    <sys:String x:Key="MTDA_NavMediaQuality">Qualität</sys:String>
+    <sys:String x:Key="MTDA_SummaryTemplateRules">Regeln pro Spiel</sys:String>
+    <sys:String x:Key="MTDA_SummaryAutomation">Automatisierung</sys:String>
+    <sys:String x:Key="MTDA_SummaryOfficialContext">Offizieller Kontext</sys:String>
+    <sys:String x:Key="MTDA_SummaryStrictFacts">Strenge Fakten</sys:String>
+    <sys:String x:Key="MTDA_SummaryLocalFallback">Lokaler Ersatz</sys:String>
 </ResourceDictionary>

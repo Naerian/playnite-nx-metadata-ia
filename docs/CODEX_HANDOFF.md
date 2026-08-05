@@ -18,15 +18,15 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.2.6`
-- Latest release tag: `v1.2.6`
-- Latest release commit: see tag `v1.2.6`
+- Latest released version: `1.2.7`
+- Latest release tag: `v1.2.7`
+- Latest release commit: see tag `v1.2.7`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_6.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_7.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.2.6
-- Public package SHA-256 verified for v1.2.6:
-  `5B3DAE70CCDFAE53B74D70025F27248215DFBD09E4C2668A65EB07893A575A73`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.2.7
+- Public package SHA-256 verified for v1.2.7:
+  `D9AFA282D5A1D89386CF3ACB3FF3EFD935F82F09F3ED33EE721A482F6B884DDF`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.

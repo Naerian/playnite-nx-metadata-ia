@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
@@ -31,6 +32,10 @@ namespace MetaDataIAPlugin
         private TestOperationState mediaTestOperation;
         private CancellationTokenSource providerUsageRefreshCancellation;
         private bool providerUsageRefreshActive;
+        private MetaDataIASettings observedSettings;
+        private string lastProviderTestDetails;
+        private string lastMediaTestDetails;
+        private bool? providerTestSucceeded;
 
         private sealed class TestOperationState
         {
@@ -42,31 +47,50 @@ namespace MetaDataIAPlugin
             public TextBlock StatusText { get; set; }
             public TextBlock ElapsedText { get; set; }
             public Button CancelButton { get; set; }
+            public Button CopyButton { get; set; }
             public Button TriggerButton { get; set; }
             public object OriginalButtonContent { get; set; }
             public string TargetName { get; set; }
             public bool TimedOut { get; set; }
             public bool CancelledByUser { get; set; }
+            public string TechnicalDetails { get; set; }
         }
 
         public MetaDataIASettingsView()
         {
             InitializeComponent();
+            MoveNavigationItem(LibrarySectionNavigation, FieldsNavigationItem, 0);
+            LibrarySectionNavigation.SelectedItem = FieldsNavigationItem;
             Unloaded += MetaDataIASettingsView_OnUnloaded;
             DataContextChanged += (s, e) =>
             {
+                ObserveSettings(null);
                 var viewModel = DataContext as MetaDataIASettingsViewModel;
                 if (viewModel != null)
                 {
+                    ObserveSettings(viewModel.Settings);
                     viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
+                    RefreshConfigurationSummary();
                     Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
                 }
             };
         }
 
+        private static void MoveNavigationItem(TabControl navigation, TabItem item, int targetIndex)
+        {
+            if (item == null || navigation == null || targetIndex < 0)
+            {
+                return;
+            }
+
+            navigation.Items.Remove(item);
+            navigation.Items.Insert(Math.Min(targetIndex, navigation.Items.Count), item);
+        }
+
         private void MetaDataIASettingsView_OnUnloaded(object sender, RoutedEventArgs e)
         {
+            ObserveSettings(null);
             CancelTestOperation(providerTestOperation, false);
             CancelTestOperation(mediaTestOperation, false);
             if (providerUsageRefreshCancellation != null)
@@ -75,6 +99,197 @@ namespace MetaDataIAPlugin
                 providerUsageRefreshCancellation.Dispose();
                 providerUsageRefreshCancellation = null;
             }
+        }
+
+        private void ObserveSettings(MetaDataIASettings settings)
+        {
+            if (observedSettings != null)
+            {
+                observedSettings.PropertyChanged -= ObservedSettings_OnPropertyChanged;
+            }
+
+            observedSettings = settings;
+            if (observedSettings != null)
+            {
+                observedSettings.PropertyChanged += ObservedSettings_OnPropertyChanged;
+            }
+        }
+
+        private void ObservedSettings_OnPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e != null && (e.PropertyName == "ProviderPreset" || e.PropertyName == "Endpoint" ||
+                              e.PropertyName == "Model" || e.PropertyName == "ApiKey"))
+            {
+                providerTestSucceeded = null;
+            }
+            if (e != null && e.PropertyName == "ShowAdvancedOptions" && observedSettings != null &&
+                !observedSettings.ShowAdvancedOptions && ReferenceEquals(AdvancedSectionNavigation.SelectedItem, RulesNavigationItem))
+            {
+                AdvancedSectionNavigation.SelectedItem = MaintenanceNavigationItem;
+            }
+            RefreshConfigurationSummary();
+        }
+
+        private void RefreshConfigurationSummary()
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var settings = viewModel == null ? null : viewModel.Settings;
+            if (settings == null || ConfigurationProviderSummaryText == null)
+            {
+                return;
+            }
+
+            var localEndpoint = !string.IsNullOrWhiteSpace(settings.Endpoint) &&
+                                (settings.Endpoint.IndexOf("localhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                 settings.Endpoint.IndexOf("127.0.0.1", StringComparison.OrdinalIgnoreCase) >= 0);
+            var providerReady = !string.IsNullOrWhiteSpace(settings.Endpoint) &&
+                                !string.IsNullOrWhiteSpace(settings.Model) &&
+                                (settings.ProviderPreset == MetaDataIASettings.ProviderLmStudio ||
+                                 settings.ProviderPreset == MetaDataIASettings.ProviderOllama ||
+                                 localEndpoint ||
+                                 !string.IsNullOrWhiteSpace(settings.ApiKey));
+            var providerStatus = providerReady ? Loc("MTDA_StatusReady", "Ready") : Loc("MTDA_StatusNeedsConfiguration", "Needs configuration");
+            if (providerTestSucceeded.HasValue)
+            {
+                providerStatus += " · " + (providerTestSucceeded.Value
+                    ? Loc("MTDA_SourceStatusTested", "Tested")
+                    : Loc("MTDA_SourceStatusError", "Error"));
+            }
+            ConfigurationProviderSummaryText.Text = string.Format(
+                "• {0}: {1}\n• {2}: {3}",
+                Loc("MTDA_Provider", "Provider"),
+                string.IsNullOrWhiteSpace(settings.ProviderPreset) ? Loc("MTDA_NotConfigured", "Not configured") : settings.ProviderPreset,
+                Loc("MTDA_Model", "Model"),
+                string.IsNullOrWhiteSpace(settings.Model) ? Loc("MTDA_NoModel", "No model") : settings.Model);
+            ConfigurationProviderEndpointText.Text = "• " + Loc("MTDA_Endpoint", "Endpoint") + ": " +
+                (string.IsNullOrWhiteSpace(settings.Endpoint) ? Loc("MTDA_NotConfigured", "Not configured") : settings.Endpoint);
+            ConfigurationProviderStatusText.Text = providerStatus;
+            var providerStatusBrush = providerReady && providerTestSucceeded != false ? "PositiveRatingBrush" : "WarningBrush";
+            ConfigurationProviderStatusText.SetResourceReference(TextBlock.ForegroundProperty, providerStatusBrush);
+            ConfigurationProviderStatusBadge.SetResourceReference(Border.BorderBrushProperty, providerStatusBrush);
+
+            var enabledFields = new[]
+            {
+                settings.GenerateDescription, settings.GenerateGenres, settings.GenerateTags,
+                settings.GenerateFeatures, settings.GenerateDevelopers, settings.GeneratePublishers,
+                settings.GenerateAgeRatings, settings.GenerateRegions, settings.GenerateCategories,
+                settings.GenerateSortingName, settings.GenerateLinks, settings.GenerateReleaseDate,
+                settings.GenerateSeries
+            }.Count(x => x);
+            ConfigurationFieldsSummaryText.Text = string.Format(Loc("MTDA_FieldsEnabledSummary", "{0} enabled"), enabledFields);
+            var enabledFieldNames = new[]
+            {
+                settings.GenerateDescription ? Loc("MTDA_Description", "Description") : null,
+                settings.GenerateGenres ? Loc("MTDA_Genres", "Genres") : null,
+                settings.GenerateTags ? Loc("MTDA_Tags", "Tags") : null,
+                settings.GenerateFeatures ? Loc("MTDA_Features", "Features") : null,
+                settings.GenerateDevelopers ? Loc("MTDA_Developers", "Developers") : null,
+                settings.GeneratePublishers ? Loc("MTDA_Publishers", "Publishers") : null,
+                settings.GenerateAgeRatings ? Loc("MTDA_Age", "Age ratings") : null,
+                settings.GenerateRegions ? Loc("MTDA_Region", "Regions") : null,
+                settings.GenerateCategories ? Loc("MTDA_Categories", "Categories") : null,
+                settings.GenerateSortingName ? Loc("MTDA_SortingName", "Sorting name") : null,
+                settings.GenerateLinks ? Loc("MTDA_Links", "Links") : null,
+                settings.GenerateReleaseDate ? Loc("MTDA_ReleaseDate", "Release date") : null,
+                settings.GenerateSeries ? Loc("MTDA_Series", "Series") : null
+            }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            ConfigurationFieldsDetailText.Text = enabledFieldNames.Length == 0
+                ? Loc("MTDA_None", "None")
+                : "• " + string.Join("\n• ", enabledFieldNames);
+
+            var enabledMediaKinds = new[]
+            {
+                settings.DownloadCoverImage, settings.DownloadIcon, settings.DownloadBackgroundImage
+            }.Count(x => x);
+            var enabledSources = new[]
+            {
+                settings.UseOriginIntegrationForMedia, settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots,
+                settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, settings.MediaUsePsnStore, settings.MediaUseXboxStore,
+                settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseMobyGames,
+                settings.MediaUseIgdb
+            }.Count(x => x);
+            ConfigurationMediaSummaryText.Text = string.Format(
+                Loc("MTDA_MediaEnabledSummary", "{0} media types · {1} sources"),
+                enabledMediaKinds,
+                enabledSources);
+            var enabledMediaNames = new[]
+            {
+                settings.DownloadCoverImage ? Loc("MTDA_Cover", "Cover") : null,
+                settings.DownloadIcon ? Loc("MTDA_Icon", "Icon") : null,
+                settings.DownloadBackgroundImage ? Loc("MTDA_Background", "Background") : null
+            }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            ConfigurationMediaDetailText.Text = enabledMediaNames.Length == 0
+                ? Loc("MTDA_None", "None")
+                : "• " + string.Join("\n• ", enabledMediaNames);
+
+            // Do not call GetActiveTemplate here: it runs EnsureDefaults, which raises
+            // PropertyChanged and would recursively refresh this summary.
+            var active = settings.Templates == null
+                ? null
+                : settings.Templates.FirstOrDefault(x => x != null && string.Equals(x.Name, settings.ActiveTemplateName, StringComparison.OrdinalIgnoreCase))
+                  ?? settings.Templates.FirstOrDefault();
+            ConfigurationTemplateSummaryText.Text = active == null ? settings.ActiveTemplateName : active.DisplayName;
+            SetSummaryStatus(ConfigurationTemplateDetailText, settings.EnableTemplateRules);
+            SetSummaryStatus(ConfigurationAutomationSummaryText, settings.AutoImportNewGames);
+            SetSummaryStatus(ConfigurationAutomationAiStatusText, settings.AutoImportGenerateMetadata);
+            SetSummaryStatus(ConfigurationAutomationMediaStatusText, settings.AutoImportGenerateMedia);
+            SetSummaryStatus(ConfigurationOfficialContextStatusText, settings.UseOfficialStoreContext || settings.UseOriginIntegrationAsAiContext);
+            SetSummaryStatus(ConfigurationStrictFactsStatusText, settings.StrictCompanyAgeRegion);
+            SetSummaryStatus(ConfigurationLocalFallbackStatusText, settings.EnableLocalFallback);
+
+            RefreshMediaSourceStatuses(settings);
+        }
+
+        private static string StatusText(bool enabled)
+        {
+            return enabled
+                ? Loc("MTDA_SourceStatusActive", "Active")
+                : Loc("MTDA_SourceStatusInactive", "Inactive");
+        }
+
+        private static void SetSummaryStatus(TextBlock textBlock, bool enabled)
+        {
+            if (textBlock == null)
+            {
+                return;
+            }
+
+            textBlock.Text = StatusText(enabled);
+            textBlock.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                enabled ? "PositiveRatingBrush" : "WarningBrush");
+        }
+
+        private void RefreshMediaSourceStatuses(MetaDataIASettings settings)
+        {
+            SetSourceStatus(OriginSourceStatusText, settings.UseOriginIntegrationForMedia, true);
+            SetSourceStatus(SteamSourceStatusText, settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots, true);
+            SetSourceStatus(SteamGridDbSourceStatusText, settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey));
+            SetSourceStatus(PsnSourceStatusText, settings.MediaUsePsnStore, true);
+            SetSourceStatus(XboxSourceStatusText, settings.MediaUseXboxStore, true);
+            SetSourceStatus(EpicSourceStatusText, settings.MediaUseEpicStore, true);
+            SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
+            SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
+            SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
+                !string.IsNullOrWhiteSpace(settings.IgdbClientId) && !string.IsNullOrWhiteSpace(settings.IgdbClientSecret));
+        }
+
+        private static void SetSourceStatus(TextBlock target, bool enabled, bool configured)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.Text = !enabled
+                ? Loc("MTDA_SourceStatusInactive", "Inactive")
+                : !configured
+                    ? Loc("MTDA_SourceStatusNeedsKey", "Needs credentials")
+                    : Loc("MTDA_SourceStatusActive", "Active");
+            target.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                enabled && configured ? "PositiveRatingBrush" : enabled ? "WarningBrush" : "TextBrush");
+            target.Opacity = enabled ? 1.0 : 0.65;
         }
 
         private void OpenSetupWizard_OnClick(object sender, RoutedEventArgs e)
@@ -865,7 +1080,8 @@ namespace MetaDataIAPlugin
             ProgressBar progress,
             TextBlock statusText,
             TextBlock elapsedText,
-            Button cancelButton)
+            Button cancelButton,
+            Button copyButton)
         {
             var operation = new TestOperationState
             {
@@ -876,6 +1092,7 @@ namespace MetaDataIAPlugin
                 StatusText = statusText,
                 ElapsedText = elapsedText,
                 CancelButton = cancelButton,
+                CopyButton = copyButton,
                 TriggerButton = triggerButton,
                 OriginalButtonContent = triggerButton == null ? null : triggerButton.Content,
                 TargetName = targetName
@@ -892,6 +1109,10 @@ namespace MetaDataIAPlugin
             progress.IsIndeterminate = true;
             cancelButton.Visibility = Visibility.Visible;
             cancelButton.IsEnabled = true;
+            if (copyButton != null)
+            {
+                copyButton.Visibility = Visibility.Collapsed;
+            }
             statusText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             statusText.Text = string.Format(Loc("MTDA_TestSending", "Sending a test request to {0}..."), targetName);
             elapsedText.Text = FormatTestElapsed(operation.Stopwatch.Elapsed);
@@ -929,7 +1150,7 @@ namespace MetaDataIAPlugin
             return string.Format(Loc("MTDA_TestElapsed", "Elapsed: {0} s"), Math.Max(0, (int)elapsed.TotalSeconds));
         }
 
-        private static void FinishTestOperation(TestOperationState operation, string message, bool success)
+        private static void FinishTestOperation(TestOperationState operation, string message, bool success, string technicalDetails = null)
         {
             if (operation == null)
             {
@@ -944,6 +1165,13 @@ namespace MetaDataIAPlugin
             operation.StatusText.SetResourceReference(TextBlock.ForegroundProperty, success ? "PositiveRatingBrush" : "WarningBrush");
             operation.StatusText.Text = message;
             operation.ElapsedText.Text = FormatTestElapsed(operation.Stopwatch.Elapsed);
+            operation.TechnicalDetails = technicalDetails;
+            if (operation.CopyButton != null)
+            {
+                operation.CopyButton.Visibility = string.IsNullOrWhiteSpace(technicalDetails)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            }
 
             if (operation.TriggerButton != null)
             {
@@ -981,6 +1209,38 @@ namespace MetaDataIAPlugin
             CancelTestOperation(mediaTestOperation, true);
         }
 
+        private void CopyProviderTestDetails_OnClick(object sender, RoutedEventArgs e)
+        {
+            CopyTestDetails(lastProviderTestDetails);
+        }
+
+        private void CopyMediaTestDetails_OnClick(object sender, RoutedEventArgs e)
+        {
+            CopyTestDetails(lastMediaTestDetails);
+        }
+
+        private static void CopyTestDetails(string details)
+        {
+            if (!string.IsNullOrWhiteSpace(details))
+            {
+                Clipboard.SetText(details);
+            }
+        }
+
+        private static string BuildTechnicalDetails(System.Exception ex)
+        {
+            var providerException = ex as AiProviderException;
+            var builder = new StringBuilder();
+            builder.AppendLine(ex.GetType().FullName);
+            builder.AppendLine(ex.Message);
+            if (providerException != null && !string.IsNullOrWhiteSpace(providerException.TechnicalDetails))
+            {
+                builder.AppendLine();
+                builder.AppendLine(providerException.TechnicalDetails);
+            }
+            return builder.ToString().Trim();
+        }
+
         private async void TestMediaSource(Button button, string sourceName, System.Action<MetaDataIASettings> configure)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
@@ -989,6 +1249,8 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            MoveMediaTestPanelToSource(button);
+
             var operation = BeginTestOperation(
                 button,
                 sourceName,
@@ -996,8 +1258,10 @@ namespace MetaDataIAPlugin
                 MediaTestProgress,
                 MediaTestStatusText,
                 MediaTestElapsedText,
-                MediaTestCancelButton);
+                MediaTestCancelButton,
+                MediaTestCopyButton);
             mediaTestOperation = operation;
+            lastMediaTestDetails = null;
 
             try
             {
@@ -1037,6 +1301,7 @@ namespace MetaDataIAPlugin
                 {
                     FinishTestOperation(operation, BuildNoMediaCandidatesMessage(sourceName, testGame.Name), false);
                 }
+                RefreshConfigurationSummary();
             }
             catch (OperationCanceledException)
             {
@@ -1050,8 +1315,9 @@ namespace MetaDataIAPlugin
             catch (System.Exception ex)
             {
                 var message = MetadataGenerationService.SanitizeForUser(ex.Message);
-                FinishTestOperation(operation, message, false);
-                MessageBox.Show(message, PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                lastMediaTestDetails = BuildTechnicalDetails(ex);
+                FinishTestOperation(operation, message, false, lastMediaTestDetails);
+                RefreshConfigurationSummary();
             }
             finally
             {
@@ -1060,6 +1326,38 @@ namespace MetaDataIAPlugin
                     mediaTestOperation = null;
                 }
             }
+        }
+
+        private void MoveMediaTestPanelToSource(Button triggerButton)
+        {
+            var expander = FindVisualAncestor<Expander>(triggerButton);
+            var targetPanel = expander == null ? null : expander.Content as Panel;
+            if (targetPanel == null || targetPanel.Children.Contains(MediaTestStatusPanel))
+            {
+                return;
+            }
+
+            var currentParent = VisualTreeHelper.GetParent(MediaTestStatusPanel) as Panel;
+            if (currentParent != null)
+            {
+                currentParent.Children.Remove(MediaTestStatusPanel);
+            }
+            targetPanel.Children.Add(MediaTestStatusPanel);
+        }
+
+        private static T FindVisualAncestor<T>(DependencyObject element) where T : DependencyObject
+        {
+            var current = element;
+            while (current != null)
+            {
+                var match = current as T;
+                if (match != null)
+                {
+                    return match;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
         }
 
         private static Game CreateMediaTestGame(string sourceName)
@@ -1168,8 +1466,10 @@ namespace MetaDataIAPlugin
                 ProviderTestProgress,
                 ProviderTestStatusText,
                 ProviderTestElapsedText,
-                ProviderTestCancelButton);
+                ProviderTestCancelButton,
+                ProviderTestCopyButton);
             providerTestOperation = operation;
+            lastProviderTestDetails = null;
 
             try
             {
@@ -1178,7 +1478,9 @@ namespace MetaDataIAPlugin
                 var game = new Game { Name = "Pong" };
                 await new MetadataGenerationService(testSettings, viewModel.Plugin.Api).GenerateAsync(game, operation.Cancellation.Token);
                 operation.Cancellation.Token.ThrowIfCancellationRequested();
+                providerTestSucceeded = true;
                 FinishTestOperation(operation, Loc("MTDA_TestProviderSuccess", "The provider is responding correctly."), true);
+                RefreshConfigurationSummary();
                 RefreshProviderUsageDisplay(null);
             }
             catch (OperationCanceledException)
@@ -1192,10 +1494,12 @@ namespace MetaDataIAPlugin
             }
             catch (System.Exception ex)
             {
+                providerTestSucceeded = false;
                 var message = MetadataGenerationService.SanitizeForUser(ex.Message);
-                FinishTestOperation(operation, message, false);
+                lastProviderTestDetails = BuildTechnicalDetails(ex);
+                FinishTestOperation(operation, message, false, lastProviderTestDetails);
+                RefreshConfigurationSummary();
                 RefreshProviderUsageDisplay(null);
-                MessageBox.Show(message, PluginTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {

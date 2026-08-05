@@ -3,6 +3,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
     <sys:String x:Key="MTDA_TabAI">AI</sys:String>
+    <sys:String x:Key="MTDA_AiGeneration">生成</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">テンプレート</sys:String>
     <sys:String x:Key="MTDA_TabMedia">メディア</sys:String>
     <sys:String x:Key="MTDA_TabImport">インポート</sys:String>
@@ -707,4 +708,38 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MediaRankUsablePixels">有効ピクセル {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">検証</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">診断レポートをエクスポートできませんでした。</sys:String>
+    <sys:String x:Key="MTDA_MediaSourcesTab">ソース</sys:String>
+    <sys:String x:Key="MTDA_MediaDownloadTab">ダウンロード</sys:String>
+    <sys:String x:Key="MTDA_MediaQualityTab">処理と品質</sys:String>
+    <sys:String x:Key="MTDA_CopyTechnicalDetails">技術情報をコピー</sys:String>
+    <sys:String x:Key="MTDA_NotConfigured">未設定</sys:String>
+    <sys:String x:Key="MTDA_NoModel">モデルなし</sys:String>
+    <sys:String x:Key="MTDA_StatusReady">準備完了</sys:String>
+    <sys:String x:Key="MTDA_StatusNeedsConfiguration">設定が必要</sys:String>
+    <sys:String x:Key="MTDA_FieldsEnabledSummary">{0} 件有効</sys:String>
+    <sys:String x:Key="MTDA_MediaEnabledSummary">メディア {0} 種類 · ソース {1} 件</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusInactive">無効</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusActive">有効</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusNeedsKey">認証情報が必要</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusTested">テスト済み</sys:String>
+    <sys:String x:Key="MTDA_SourceStatusError">エラー</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">直前のエラーでバッチが停止したため処理されませんでした。</sys:String>
+    <sys:String x:Key="MTDA_Game">ゲーム</sys:String>
+    <sys:String x:Key="MTDA_BatchFailureReason">理由</sys:String>
+    <sys:String x:Key="MTDA_RetryPending">未処理を再試行</sys:String>
+    <sys:String x:Key="MTDA_CopyList">一覧をコピー</sys:String>
+    <sys:String x:Key="MTDA_ExportList">一覧をエクスポート</sys:String>
+    <sys:String x:Key="MTDA_ExportPendingGames">未更新ゲームをエクスポート</sys:String>
+    <sys:String x:Key="MTDA_SettingsNavigationHelp">セクションを選択</sys:String>
+    <sys:String x:Key="MTDA_TabOverview">概要</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummary">設定の概要</sys:String>
+    <sys:String x:Key="MTDA_ConfigurationSummaryHelp">有効なプロバイダー、メタデータ項目、メディア設定をひと目で確認できます。</sys:String>
+    <sys:String x:Key="MTDA_NavMediaSources">ソース</sys:String>
+    <sys:String x:Key="MTDA_NavMediaDownload">ダウンロード</sys:String>
+    <sys:String x:Key="MTDA_NavMediaQuality">品質</sys:String>
+    <sys:String x:Key="MTDA_SummaryTemplateRules">ゲーム別ルール</sys:String>
+    <sys:String x:Key="MTDA_SummaryAutomation">自動化</sys:String>
+    <sys:String x:Key="MTDA_SummaryOfficialContext">公式コンテキスト</sys:String>
+    <sys:String x:Key="MTDA_SummaryStrictFacts">厳密な事実データ</sys:String>
+    <sys:String x:Key="MTDA_SummaryLocalFallback">ローカル代替</sys:String>
 </ResourceDictionary>

@@ -20,6 +20,11 @@ namespace MetaDataIAPlugin
 
         public static string Generate(IPlayniteAPI api, Game game)
         {
+            return Generate(api, game, null);
+        }
+
+        public static string Generate(IPlayniteAPI api, Game game, SeriesOrderLookupResult verifiedOrder)
+        {
             if (game == null || string.IsNullOrWhiteSpace(game.Name))
             {
                 return string.Empty;
@@ -27,6 +32,15 @@ namespace MetaDataIAPlugin
 
             var current = Analyze(game.Name);
             var assignedSeries = GetAssignedSeriesName(api, game);
+            if (verifiedOrder != null && verifiedOrder.Order > 0)
+            {
+                var verifiedSeries = string.IsNullOrWhiteSpace(verifiedOrder.SeriesName) ? assignedSeries : verifiedOrder.SeriesName;
+                if (!string.IsNullOrWhiteSpace(verifiedSeries))
+                {
+                    return Format(verifiedSeries, verifiedOrder.Order);
+                }
+            }
+
             if (current.Number > 0)
             {
                 return Format(string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number);
@@ -34,7 +48,9 @@ namespace MetaDataIAPlugin
 
             if (!string.IsNullOrWhiteSpace(assignedSeries))
             {
-                return Format(assignedSeries, GetSeriesOrder(api, game));
+                // A series assignment proves membership, but not the ordinal. Numbering only
+                // the games present in the library compresses gaps (for example 2 and 5 into 1 and 2).
+                return string.Empty;
             }
 
             var allGames = api == null ? new List<Game>() : api.Database.Games.GetClone().ToList();
@@ -126,25 +142,6 @@ namespace MetaDataIAPlugin
 
             var series = api.Database.Series.Get(game.SeriesIds[0]);
             return series == null || string.IsNullOrWhiteSpace(series.Name) ? string.Empty : series.Name.Trim();
-        }
-
-        private static int GetSeriesOrder(IPlayniteAPI api, Game game)
-        {
-            if (api == null || game == null || game.SeriesIds == null || game.SeriesIds.Count == 0)
-            {
-                return 1;
-            }
-
-            var seriesIds = new HashSet<Guid>(game.SeriesIds);
-            var related = api.Database.Games.GetClone()
-                .Where(x => x != null && x.SeriesIds != null && x.SeriesIds.Any(seriesIds.Contains))
-                .OrderBy(x => x.ReleaseDate.HasValue ? x.ReleaseDate.Value.Year : int.MaxValue)
-                .ThenBy(x => x.ReleaseDate.HasValue && x.ReleaseDate.Value.Month.HasValue ? x.ReleaseDate.Value.Month.Value : 13)
-                .ThenBy(x => x.ReleaseDate.HasValue && x.ReleaseDate.Value.Day.HasValue ? x.ReleaseDate.Value.Day.Value : 32)
-                .ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase)
-                .ToList();
-            var index = related.FindIndex(x => x.Id == game.Id);
-            return index < 0 ? 1 : index + 1;
         }
 
         private static string Format(string baseName, int number)

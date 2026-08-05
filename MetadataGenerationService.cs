@@ -129,18 +129,15 @@ namespace MetaDataIAPlugin
 
             if (RequiresGeneratedDescription() && !HasRequestedDescriptionContent(result, game))
             {
-                if (IsOpenRouterFreeModel())
-                {
-                    var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
-                    var retryPrompt = userPrompt +
-                        "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
-                        "Return useful text for at least one of these requested description tokens when the supplied context supports it: " +
-                        string.Join(", ", requestedTokens) + ". " +
-                        "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
+                var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+                var retryPrompt = userPrompt +
+                    "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
+                    "Return useful text for at least one of these requested description tokens when the supplied context supports it: " +
+                    string.Join(", ", requestedTokens) + ". " +
+                    "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
 
-                    result = await SendOpenAICompatibleRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false);
-                    PrepareResult(result, game);
-                }
+                result = await SendOpenAICompatibleRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false);
+                PrepareResult(result, game);
 
                 if (!HasRequestedDescriptionContent(result, game))
                 {
@@ -151,6 +148,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
             return result;
         }
 
@@ -216,13 +214,13 @@ namespace MetaDataIAPlugin
         private void PrepareResult(AiMetadataResult result, Game game)
         {
             ApplyStrictFactualGuard(result, game);
-            ApplyTrustedFactualFields(result);
+            ApplyTrustedFactualFields(result, game);
             result.Normalize(settings, game);
             ApplyStrictFactualGuard(result, game);
             AttachProvenance(result, game);
         }
 
-        private void ApplyTrustedFactualFields(AiMetadataResult result)
+        private void ApplyTrustedFactualFields(AiMetadataResult result, Game game)
         {
             if (result == null)
             {
@@ -248,7 +246,7 @@ namespace MetaDataIAPlugin
             {
                 result.ReleaseDate = dates[0].Value;
             }
-            else
+            else if (!settings.GenerateReleaseDate)
             {
                 result.ReleaseDate = string.Empty;
             }
@@ -259,9 +257,16 @@ namespace MetaDataIAPlugin
                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
                 .ToList();
             AddConflictIfNeeded(result, "series", series);
-            result.Series = settings.GenerateSeries && series.Count > 0
-                ? series[0].Value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Take(settings.MaxSeries).ToList()
-                : new List<string>();
+            if (!settings.GenerateSeries)
+            {
+                result.Series = new List<string>();
+            }
+            else if (series.Count > 0)
+            {
+                result.Series = series[0].Value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Take(settings.MaxSeries).ToList();
+            }
+
+            result.Series = ResolveKnownSeries(result.Series, game, settings.MaxSeries);
         }
 
         private static void DetectListConflict(AiMetadataResult result, string field, IEnumerable<OfficialStoreMetadata> sources, Func<OfficialStoreMetadata, List<string>> selector)
@@ -324,7 +329,7 @@ namespace MetaDataIAPlugin
                     Source = "Metadata AI local rule",
                     Method = "deterministic",
                     Confidence = "high",
-                    Detail = "Generated locally from the library title and detected series order."
+                    Detail = "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence."
                 });
             }
         }
@@ -523,7 +528,58 @@ namespace MetaDataIAPlugin
                 var content = ExtractAnthropicContent(responseText);
                 var result = ParseResult(content);
                 PrepareResult(result, game);
+                await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
                 return result;
+            }
+        }
+
+        private async Task ApplyVerifiedSeriesOrderAsync(AiMetadataResult result, Game game, CancellationToken cancellationToken)
+        {
+            if (result == null || game == null || (!settings.GenerateSortingName && !settings.GenerateSeries))
+            {
+                return;
+            }
+
+            var verified = await new SeriesOrderLookupService(settings).ResolveAsync(game, cancellationToken).ConfigureAwait(false);
+            if (settings.GenerateSortingName)
+            {
+                result.SortingName = SortingNameService.Generate(playniteApi, game, verified);
+            }
+
+            if (verified == null)
+            {
+                return;
+            }
+
+            if (settings.GenerateSeries && !string.IsNullOrWhiteSpace(verified.SeriesName))
+            {
+                result.Series = ResolveKnownSeries(new[] { verified.SeriesName }, game, settings.MaxSeries);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.SortingName))
+            {
+                result.Provenance.RemoveAll(x => string.Equals(x.Field, "sortingName", StringComparison.OrdinalIgnoreCase));
+                result.Provenance.Add(new MetadataFieldProvenance
+                {
+                    Field = "sortingName",
+                    Source = verified.Source,
+                    Method = "catalog lookup",
+                    Confidence = "high",
+                    Detail = "Verified against the complete IGDB collection instead of inferring the order from the local library."
+                });
+            }
+
+            if (settings.GenerateSeries && result.Series.Count > 0)
+            {
+                result.Provenance.RemoveAll(x => string.Equals(x.Field, "series", StringComparison.OrdinalIgnoreCase));
+                result.Provenance.Add(new MetadataFieldProvenance
+                {
+                    Field = "series",
+                    Source = verified.Source,
+                    Method = "catalog lookup",
+                    Confidence = "high",
+                    Detail = "Matched against the game's IGDB collection and normalized to the existing Playnite series name when available."
+                });
             }
         }
 
@@ -556,6 +612,7 @@ namespace MetaDataIAPlugin
             context["maxPublishers"] = settings.MaxPublishers;
             context["companyPolicy"] = "developers must contain only the main credited developer studio for the base game. publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty.";
             context["canonicalTerms"] = BuildCanonicalTerms();
+            context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
             context["localVocabulary"] = settings.GetVocabularyTerms(settings.Language);
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
@@ -655,9 +712,10 @@ namespace MetaDataIAPlugin
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
-                   "features, genres, tags, developers, publishers, ageRatings, regions and categories must be arrays of strings. links must be an array of objects with name and url. " +
+                   "features, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
+                   "If fieldsToGenerate.series is true, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
                    "Respond with this exact JSON object shape: " +
-                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"links\":[]} " +
+                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[]} " +
                    "Context: " + JsonConvert.SerializeObject(context);
         }
 
@@ -692,7 +750,79 @@ namespace MetaDataIAPlugin
             fields["regions"] = settings.GenerateRegions;
             fields["categories"] = settings.GenerateCategories;
             fields["links"] = settings.GenerateLinks;
+            fields["releaseDate"] = settings.GenerateReleaseDate;
+            fields["series"] = settings.GenerateSeries;
             return fields;
+        }
+
+        private List<string> BuildKnownSeriesCandidates(Game game)
+        {
+            var result = ExistingNames(game == null ? null : game.Series);
+            if (playniteApi == null || game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return result;
+            }
+
+            var gameKey = TitleMatchingService.NormalizeTitle(game.Name);
+            foreach (var series in playniteApi.Database.Series)
+            {
+                if (series == null || string.IsNullOrWhiteSpace(series.Name))
+                {
+                    continue;
+                }
+
+                var seriesKey = TitleMatchingService.NormalizeTitle(series.Name);
+                if (seriesKey.Length >= 4 &&
+                    (string.Equals(gameKey, seriesKey, StringComparison.OrdinalIgnoreCase) ||
+                     gameKey.StartsWith(seriesKey + " ", StringComparison.OrdinalIgnoreCase)))
+                {
+                    result.Add(series.Name.Trim());
+                }
+            }
+
+            return result.Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+        }
+
+        private List<string> ResolveKnownSeries(IEnumerable<string> generated, Game game, int maxItems)
+        {
+            var requested = ExistingNames(game == null ? null : game.Series)
+                .Concat(generated ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (requested.Count == 0)
+            {
+                var inferred = SortingNameService.GenerateSeriesName(playniteApi, game);
+                if (!string.IsNullOrWhiteSpace(inferred))
+                {
+                    requested.Add(inferred);
+                }
+            }
+
+            var knownCandidates = BuildKnownSeriesCandidates(game);
+            if (requested.Count == 0 && knownCandidates.Count == 1)
+            {
+                requested.Add(knownCandidates[0]);
+            }
+
+            if (playniteApi == null)
+            {
+                return requested.Take(Math.Max(1, maxItems)).ToList();
+            }
+
+            var known = playniteApi.Database.Series
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name))
+                .Select(x => x.Name.Trim())
+                .ToList();
+            return requested
+                .Select(value => known.FirstOrDefault(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase))
+                              ?? known.FirstOrDefault(x => string.Equals(TitleMatchingService.NormalizeTitle(x), TitleMatchingService.NormalizeTitle(value), StringComparison.OrdinalIgnoreCase))
+                              ?? value)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(Math.Max(1, maxItems))
+                .ToList();
         }
 
         private static List<string> ExtractTemplateTokens(string template)
@@ -979,6 +1109,8 @@ namespace MetaDataIAPlugin
                 AgeRatings = List(json, "ageRatings", "ageRating"),
                 Regions = List(json, "regions", "region"),
                 Categories = List(json, "categories"),
+                ReleaseDate = Text(json, "releaseDate"),
+                Series = List(json, "series", "franchise"),
                 Links = Links(json, "links")
             };
         }
@@ -997,7 +1129,9 @@ namespace MetaDataIAPlugin
                    result.Features.Count > 0 ||
                    result.Genres.Count > 0 ||
                    result.Tags.Count > 0 ||
-                   result.Categories.Count > 0;
+                   result.Categories.Count > 0 ||
+                   result.Series.Count > 0 ||
+                   !string.IsNullOrWhiteSpace(result.ReleaseDate);
         }
 
         private static AiMetadataResult ParseLooseResult(string content)
@@ -1024,6 +1158,8 @@ namespace MetaDataIAPlugin
                 AgeRatings = LooseList(content, "ageRatings", "ageRating"),
                 Regions = LooseList(content, "regions", "region"),
                 Categories = LooseList(content, "categories"),
+                ReleaseDate = LooseText(content, "releaseDate"),
+                Series = LooseList(content, "series", "franchise"),
                 Links = new List<AiMetadataLink>()
             };
         }
@@ -1032,7 +1168,8 @@ namespace MetaDataIAPlugin
         {
             "short", "synopsis", "premise", "gameplay", "tone", "setting", "perspective", "playModes",
             "estimatedLength", "similarGames", "notes", "features", "recommendedFor", "genres", "tags",
-            "developers", "publishers", "ageRatings", "ageRating", "regions", "region", "categories", "links"
+            "developers", "publishers", "ageRatings", "ageRating", "regions", "region", "categories",
+            "releaseDate", "series", "franchise", "links"
         };
 
         private static string LooseText(string content, params string[] names)
@@ -1391,7 +1528,10 @@ namespace MetaDataIAPlugin
                 providerMessage = responseText;
             }
 
-            if (string.Equals(providerCode, "insufficient_quota", StringComparison.OrdinalIgnoreCase))
+            if (statusCode == 402 ||
+                string.Equals(providerCode, "insufficient_quota", StringComparison.OrdinalIgnoreCase) ||
+                providerMessage.IndexOf("credits", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                providerMessage.IndexOf("insufficient", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
                     Loc("MTDA_ErrorProviderQuota", "Your AI provider rejected the request because the account has no available quota.\n\nWith OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.\n\nFree options:\n- Use a local OpenAI-compatible provider such as LM Studio or Ollama and change the endpoint in the plugin settings.\n- Process fewer games and fewer generated fields, although this will not help if the quota is zero.\n- Use a small local model for metadata and keep cloud AI only for occasional cases.\n\nLocal endpoint examples:\nLM Studio: http://localhost:1234/v1/chat/completions\nOllama: http://localhost:11434/v1/chat/completions\n\nFor local providers, the API key can be empty."),
