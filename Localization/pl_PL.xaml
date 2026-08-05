@@ -742,4 +742,11 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_SummaryOfficialContext">Oficjalny kontekst</sys:String>
     <sys:String x:Key="MTDA_SummaryStrictFacts">Ścisłe dane faktyczne</sys:String>
     <sys:String x:Key="MTDA_SummaryLocalFallback">Lokalna alternatywa</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoTitle">The game has no title to identify it.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNotConfigured">IGDB is not configured. Add its Client ID and access token or client secret in Media &gt; Sources.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoMatch">IGDB could not identify the game reliably from its title, year and alternative names.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupError">IGDB returned an error while checking the series and its release order.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB found the title but did not return a usable game identifier.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB identified the game, but it is not assigned to a collection or franchise.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB found the series, but the game could not be placed safely among its base releases.</sys:String>
 </ResourceDictionary>

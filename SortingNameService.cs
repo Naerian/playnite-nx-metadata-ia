@@ -37,13 +37,13 @@ namespace MetaDataIAPlugin
                 var verifiedSeries = string.IsNullOrWhiteSpace(verifiedOrder.SeriesName) ? assignedSeries : verifiedOrder.SeriesName;
                 if (!string.IsNullOrWhiteSpace(verifiedSeries))
                 {
-                    return Format(verifiedSeries, verifiedOrder.Order);
+                    return Format(verifiedSeries, verifiedOrder.Order, game.Name);
                 }
             }
 
             if (current.Number > 0)
             {
-                return Format(string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number);
+                return Format(string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number, game.Name);
             }
 
             if (!string.IsNullOrWhiteSpace(assignedSeries))
@@ -59,7 +59,7 @@ namespace MetaDataIAPlugin
                 .Select(x => Analyze(x.Name))
                 .Any(x => x.Number > 1 && SameBase(x.BaseName, current.BaseName));
 
-            return hasSequels ? Format(current.BaseName, 1) : string.Empty;
+            return hasSequels ? Format(current.BaseName, 1, game.Name) : string.Empty;
         }
 
         public static string GenerateSeriesName(IPlayniteAPI api, Game game)
@@ -144,9 +144,10 @@ namespace MetaDataIAPlugin
             return series == null || string.IsNullOrWhiteSpace(series.Name) ? string.Empty : series.Name.Trim();
         }
 
-        private static string Format(string baseName, int number)
+        private static string Format(string baseName, int number, string gameName)
         {
-            return (baseName ?? string.Empty).Trim() + " " + number.ToString("00", CultureInfo.InvariantCulture);
+            var prefix = (baseName ?? string.Empty).Trim() + " " + number.ToString("000", CultureInfo.InvariantCulture);
+            return string.IsNullOrWhiteSpace(gameName) ? prefix : prefix + " - " + gameName.Trim();
         }
 
         private static bool SameBase(string left, string right)

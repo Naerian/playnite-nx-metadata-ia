@@ -543,7 +543,7 @@ namespace MetaDataIAPlugin
             var verified = await new SeriesOrderLookupService(settings).ResolveAsync(game, cancellationToken).ConfigureAwait(false);
             if (settings.GenerateSortingName)
             {
-                result.SortingName = SortingNameService.Generate(playniteApi, game, verified);
+                result.SortingName = SortingNameService.Generate(playniteApi, game, verified != null && verified.HasOrder ? verified : null);
             }
 
             if (verified == null)
@@ -551,12 +551,13 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            if (settings.GenerateSeries && !string.IsNullOrWhiteSpace(verified.SeriesName))
+            if (settings.GenerateSeries && verified.HasSeries)
             {
                 result.Series = ResolveKnownSeries(new[] { verified.SeriesName }, game, settings.MaxSeries);
+                result.Conflicts.RemoveAll(x => string.Equals(x.Field, "series", StringComparison.OrdinalIgnoreCase));
             }
 
-            if (!string.IsNullOrWhiteSpace(result.SortingName))
+            if (verified.HasOrder && !string.IsNullOrWhiteSpace(result.SortingName))
             {
                 result.Provenance.RemoveAll(x => string.Equals(x.Field, "sortingName", StringComparison.OrdinalIgnoreCase));
                 result.Provenance.Add(new MetadataFieldProvenance
@@ -565,11 +566,11 @@ namespace MetaDataIAPlugin
                     Source = verified.Source,
                     Method = "catalog lookup",
                     Confidence = "high",
-                    Detail = "Verified against the complete IGDB collection instead of inferring the order from the local library."
+                    Detail = verified.Detail
                 });
             }
 
-            if (settings.GenerateSeries && result.Series.Count > 0)
+            if (settings.GenerateSeries && verified.HasSeries && result.Series.Count > 0)
             {
                 result.Provenance.RemoveAll(x => string.Equals(x.Field, "series", StringComparison.OrdinalIgnoreCase));
                 result.Provenance.Add(new MetadataFieldProvenance
@@ -578,7 +579,7 @@ namespace MetaDataIAPlugin
                     Source = verified.Source,
                     Method = "catalog lookup",
                     Confidence = "high",
-                    Detail = "Matched against the game's IGDB collection and normalized to the existing Playnite series name when available."
+                    Detail = verified.Detail
                 });
             }
         }

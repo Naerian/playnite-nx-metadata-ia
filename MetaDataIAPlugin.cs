@@ -1858,38 +1858,65 @@ namespace MetaDataIAPlugin
             }
 
             var processed = 0;
+            var updatedGameIds = new HashSet<Guid>();
+            var failureReasons = new Dictionary<Guid, string>();
             var historyOperation = history.BeginOperation(Loc("MTDA_HistorySortingNames", "Apply sorting names"));
-            foreach (var game in games)
+            PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
             {
-                var sortingName = SortingNameService.Generate(PlayniteApi, game);
-                if (string.IsNullOrWhiteSpace(sortingName))
+                var lookup = new SeriesOrderLookupService(settings.Settings);
+                progress.ProgressMaxValue = games.Count;
+                foreach (var game in games)
                 {
-                    continue;
-                }
-
-                var before = history.Capture(game, historyOperation, false);
-                game.SortingName = sortingName;
-                PlayniteApi.Database.Games.Update(game);
-                var after = history.Capture(game, historyOperation, false);
-                history.AddGame(historyOperation, game, before, after, new[]
-                {
-                    new MetadataFieldProvenance
+                    if (progress.CancelToken.IsCancellationRequested)
                     {
-                        Field = "sortingName",
-                        Source = "Metadata AI local rule",
-                        Method = "deterministic",
-                        Confidence = "high",
-                        Detail = "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence."
+                        failureReasons[game.Id] = Loc("MTDA_BatchCancelledBeforeGame", "Not processed because the operation was cancelled.");
+                        continue;
                     }
-                });
-                processed++;
-            }
+
+                    progress.Text = Loc("MTDA_MenuSetSortingName", "Set sorting name") + ": " + game.Name;
+                    var verified = lookup.ResolveAsync(game, progress.CancelToken).GetAwaiter().GetResult();
+                    var sortingName = SortingNameService.Generate(PlayniteApi, game, verified != null && verified.HasOrder ? verified : null);
+                    if (string.IsNullOrWhiteSpace(sortingName))
+                    {
+                        failureReasons[game.Id] = verified == null || string.IsNullOrWhiteSpace(verified.FailureReason)
+                            ? Loc("MTDA_MessageSortingNameNotDetermined", "No reliable series order could be determined.")
+                            : verified.FailureReason;
+                        progress.CurrentProgressValue++;
+                        continue;
+                    }
+
+                    var before = history.Capture(game, historyOperation, false);
+                    game.SortingName = sortingName;
+                    PlayniteApi.Database.Games.Update(game);
+                    var after = history.Capture(game, historyOperation, false);
+                    history.AddGame(historyOperation, game, before, after, new[]
+                    {
+                        new MetadataFieldProvenance
+                        {
+                            Field = "sortingName",
+                            Source = verified != null && verified.HasOrder ? verified.Source : "Metadata AI local rule",
+                            Method = verified != null && verified.HasOrder ? "catalog lookup" : "deterministic",
+                            Confidence = "high",
+                            Detail = verified != null && verified.HasOrder ? verified.Detail : "Generated locally from an explicit ordinal in the game title."
+                        }
+                    });
+                    updatedGameIds.Add(game.Id);
+                    processed++;
+                    progress.CurrentProgressValue++;
+                }
+            }, new GlobalProgressOptions(PluginTitle, true) { IsIndeterminate = false });
 
             history.SaveOperation(historyOperation);
 
-            if (processed == 0)
+            var failedGames = BuildBatchFailures(games, updatedGameIds, failureReasons);
+            if (failedGames.Count > 0)
             {
-                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageSortingNameNotDetermined", "No sorting name was applied. Metadata AI only creates one when it can identify a numbered title or a Playnite series with a reliable order."), PluginTitle);
+                ShowBatchErrors(
+                    processed,
+                    failedGames.Select(x => x.Reason).ToList(),
+                    0,
+                    failedGames,
+                    () => ApplySortingNames(failedGames.Select(x => x.Game).Where(x => x != null).ToList()));
             }
             else
             {
@@ -2130,6 +2157,14 @@ namespace MetaDataIAPlugin
                 ItemsSource = failedGames,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch
             };
+            var reasonText = new FrameworkElementFactory(typeof(TextBlock));
+            reasonText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Reason"));
+            reasonText.SetBinding(FrameworkElement.ToolTipProperty, new System.Windows.Data.Binding("Reason"));
+            reasonText.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            reasonText.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 4, 6, 4));
+            reasonText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            var reasonTemplate = new DataTemplate { VisualTree = reasonText };
+
             list.View = new GridView
             {
                 Columns =
@@ -2143,7 +2178,7 @@ namespace MetaDataIAPlugin
                     new GridViewColumn
                     {
                         Header = Loc("MTDA_BatchFailureReason", "Reason"),
-                        DisplayMemberBinding = new System.Windows.Data.Binding("Reason"),
+                        CellTemplate = reasonTemplate,
                         Width = 620
                     }
                 }
@@ -2767,7 +2802,11 @@ namespace MetaDataIAPlugin
         private bool ApplyAuditSortingName(Game game)
         {
             if (game == null) return false;
-            var sortingName = SortingNameService.Generate(PlayniteApi, game);
+            var verified = new SeriesOrderLookupService(settings.Settings)
+                .ResolveAsync(game, System.Threading.CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            var sortingName = SortingNameService.Generate(PlayniteApi, game, verified != null && verified.HasOrder ? verified : null);
             if (string.IsNullOrWhiteSpace(sortingName)) return false;
 
             var operation = history.BeginOperation(Loc("MTDA_HistorySortingNames", "Apply sorting names"));
@@ -2780,10 +2819,10 @@ namespace MetaDataIAPlugin
                 new MetadataFieldProvenance
                 {
                     Field = "sortingName",
-                    Source = "Metadata AI local rule",
-                    Method = "deterministic",
+                    Source = verified != null && verified.HasOrder ? verified.Source : "Metadata AI local rule",
+                    Method = verified != null && verified.HasOrder ? "catalog lookup" : "deterministic",
                     Confidence = "high",
-                    Detail = "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence."
+                    Detail = verified != null && verified.HasOrder ? verified.Detail : "Generated locally from an explicit ordinal in the game title."
                 }
             };
             history.AddGame(operation, game, before, after, provenance);

@@ -42,9 +42,40 @@ namespace MetaDataIAPlugin
             var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
             AddAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
             AddAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-            AddSeriesNumberAliases(result, title);
-
+            AddAlias(result, Regex.Replace(
+                title,
+                @"\s*\b(?:hd|remastered|remaster|remake|definitive|enhanced|anniversary|director'?s cut)\b.*$",
+                string.Empty,
+                RegexOptions.IgnoreCase));
             return result;
+        }
+
+        public static bool IsOrdinalVariant(string expected, string candidate)
+        {
+            var left = Tokens(expected);
+            var right = Tokens(candidate);
+            if (left.Count == 0 || right.Count == 0 || Math.Abs(left.Count - right.Count) != 1)
+            {
+                return false;
+            }
+
+            var shorter = left.Count < right.Count ? left : right;
+            var longer = left.Count < right.Count ? right : left;
+            for (var index = 0; index < longer.Count; index++)
+            {
+                if (!IsOrdinalToken(longer[index]))
+                {
+                    continue;
+                }
+
+                var withoutOrdinal = longer.Where((value, itemIndex) => itemIndex != index).ToList();
+                if (withoutOrdinal.SequenceEqual(shorter, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static string NormalizeTitle(string value)
@@ -54,7 +85,11 @@ namespace MetaDataIAPlugin
                 return string.Empty;
             }
 
-            var chars = value
+            // Imports differ on apostrophes (Assassin's/Assassins, Clancy's/Clancys).
+            // Removing an apostrophe between letters maps those spellings to one key.
+            var comparable = Regex.Replace(value, @"(?<=\p{L})['’`´](?=\p{L})", string.Empty);
+            comparable = Regex.Replace(comparable, @"[®™©]", string.Empty);
+            var chars = comparable
                 .ToLowerInvariant()
                 .Select(ch => char.IsLetterOrDigit(ch) ? ch : ' ')
                 .ToArray();
@@ -103,54 +138,23 @@ namespace MetaDataIAPlugin
                 .All(x => allowed.Contains(x));
         }
 
-        private static void AddSeriesNumberAliases(List<string> result, string title)
+        private static List<string> Tokens(string value)
         {
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return;
-            }
-
-            var words = title.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length < 3 || words.Any(IsNumberToken))
-            {
-                return;
-            }
-
-            var suffix = words[words.Length - 1];
-            if (suffix.Length < 4 || IsGenericTrailingToken(suffix))
-            {
-                return;
-            }
-
-            var prefix = string.Join(" ", words.Take(words.Length - 1));
-            foreach (var roman in new[] { "II", "III", "IV", "V" })
-            {
-                AddAlias(result, prefix + " " + roman + " " + suffix);
-            }
-
-            AddAlias(result, title + " HD");
+            return NormalizeTitle(value).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 
-        private static bool IsNumberToken(string value)
+        private static bool IsOrdinalToken(string value)
         {
-            var normalized = NormalizeTitle(value);
-            if (string.IsNullOrWhiteSpace(normalized))
+            int number;
+            if (int.TryParse(value, out number))
             {
-                return false;
+                return number > 0;
             }
 
-            return Regex.IsMatch(normalized, "^\\d+$") ||
-                   Regex.IsMatch(normalized, "^(?:i|ii|iii|iv|v|vi|vii|viii|ix|x)$", RegexOptions.IgnoreCase);
-        }
-
-        private static bool IsGenericTrailingToken(string value)
-        {
-            var normalized = NormalizeTitle(value);
-            return string.Equals(normalized, "edition", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "collection", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "bundle", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "pack", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "game", StringComparison.OrdinalIgnoreCase);
+            return !string.IsNullOrWhiteSpace(value) && Regex.IsMatch(
+                value,
+                @"^m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$",
+                RegexOptions.IgnoreCase) && Regex.IsMatch(value, @"[ivxlcdm]", RegexOptions.IgnoreCase);
         }
 
         private static void AddAlias(List<string> result, string value)

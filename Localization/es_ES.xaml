@@ -745,4 +745,11 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SummaryOfficialContext">Contexto oficial</sys:String>
     <sys:String x:Key="MTDA_SummaryStrictFacts">Datos factuales estrictos</sys:String>
     <sys:String x:Key="MTDA_SummaryLocalFallback">Respaldo local</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoTitle">El juego no tiene un título con el que identificarlo.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNotConfigured">IGDB no está configurado. Añade su Client ID y el token de acceso o secreto de cliente en Medios &gt; Fuentes.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoMatch">IGDB no ha podido identificar el juego de forma fiable mediante su título, año y nombres alternativos.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupError">IGDB ha devuelto un error al consultar la serie y su orden de lanzamiento.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoId">IGDB ha encontrado el título, pero no ha devuelto un identificador de juego válido.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoGroup">IGDB ha identificado el juego, pero no está asignado a ninguna colección o franquicia.</sys:String>
+    <sys:String x:Key="MTDA_SeriesLookupNoOrder">IGDB ha encontrado la serie, pero no ha sido posible situar el juego con seguridad entre sus lanzamientos principales.</sys:String>
 </ResourceDictionary>
