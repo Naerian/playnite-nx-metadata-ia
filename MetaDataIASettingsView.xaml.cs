@@ -241,7 +241,8 @@ namespace MetaDataIAPlugin
             {
                 settings.UseOriginIntegrationForMedia, settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots,
                 settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, settings.MediaUsePsnStore, settings.MediaUseXboxStore,
-                settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseMobyGames,
+                settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseWallhaven, settings.MediaUseScreenScraper,
+                settings.MediaUseGiantBomb, settings.MediaUseMobyGames,
                 settings.MediaUseIgdb
             }.Count(x => x);
             ConfigurationMediaSummaryText.Text = string.Format(
@@ -312,6 +313,11 @@ namespace MetaDataIAPlugin
             SetSourceStatus(XboxSourceStatusText, settings.MediaUseXboxStore, true);
             SetSourceStatus(EpicSourceStatusText, settings.MediaUseEpicStore, true);
             SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
+            SetSourceStatus(WallhavenSourceStatusText, settings.MediaUseWallhaven, true);
+            SetSourceStatus(ScreenScraperSourceStatusText, settings.MediaUseScreenScraper,
+                !string.IsNullOrWhiteSpace(settings.ScreenScraperUserName) && !string.IsNullOrWhiteSpace(settings.ScreenScraperPassword) &&
+                !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) && !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword));
+            SetSourceStatus(GiantBombSourceStatusText, settings.MediaUseGiantBomb, !string.IsNullOrWhiteSpace(settings.GiantBombApiKey));
             SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
             SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
                 !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
@@ -378,6 +384,9 @@ namespace MetaDataIAPlugin
             SetPassword(ApiKeyBox, settings.ApiKey);
             SetPassword(SteamGridDbApiKeyBox, settings.SteamGridDbApiKey);
             SetPassword(RawgApiKeyBox, settings.RawgApiKey);
+            SetPassword(ScreenScraperPasswordBox, settings.ScreenScraperPassword);
+            SetPassword(ScreenScraperDeveloperPasswordBox, settings.ScreenScraperDeveloperPassword);
+            SetPassword(GiantBombApiKeyBox, settings.GiantBombApiKey);
             SetPassword(MobyGamesApiKeyBox, settings.MobyGamesApiKey);
             SetPassword(IgdbClientIdBox, settings.IgdbClientId);
             SetPassword(IgdbClientSecretBox, settings.IgdbClientSecret);
@@ -416,6 +425,24 @@ namespace MetaDataIAPlugin
             {
                 viewModel.Settings.RawgApiKey = RawgApiKeyBox.Password;
             }
+        }
+
+        private void ScreenScraperPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Settings.ScreenScraperPassword = ScreenScraperPasswordBox.Password;
+        }
+
+        private void ScreenScraperDeveloperPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Settings.ScreenScraperDeveloperPassword = ScreenScraperDeveloperPasswordBox.Password;
+        }
+
+        private void GiantBombApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Settings.GiantBombApiKey = GiantBombApiKeyBox.Password;
         }
 
         private void MobyGamesApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
@@ -742,6 +769,9 @@ namespace MetaDataIAPlugin
             builder.AppendLine("- Steam screenshots: " + settings.MediaUseSteamScreenshots);
             builder.AppendLine("- SteamGridDB: " + settings.MediaUseSteamGridDb + " / key set " + HasValue(settings.SteamGridDbApiKey));
             builder.AppendLine("- RAWG: " + settings.MediaUseRawg + " / key set " + HasValue(settings.RawgApiKey));
+            builder.AppendLine("- Wallhaven: " + settings.MediaUseWallhaven + " / SFW backgrounds only");
+            builder.AppendLine("- ScreenScraper: " + settings.MediaUseScreenScraper + " / account set " + HasValue(settings.ScreenScraperUserName) + " / developer credentials set " + (!string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) && !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword) ? "yes" : "no"));
+            builder.AppendLine("- Giant Bomb: " + settings.MediaUseGiantBomb + " / key set " + HasValue(settings.GiantBombApiKey));
             builder.AppendLine("- MobyGames: " + settings.MediaUseMobyGames + " / key set " + HasValue(settings.MobyGamesApiKey));
             builder.AppendLine("- IGDB: " + settings.MediaUseIgdb + " / client id set " + HasValue(settings.IgdbClientId) + " / secret set " + HasValue(settings.IgdbClientSecret) + " / access token set " + HasValue(settings.IgdbAccessToken));
             builder.AppendLine("- PS Store: " + settings.MediaUsePsnStore);
@@ -1278,6 +1308,33 @@ namespace MetaDataIAPlugin
             });
         }
 
+        private void TestWallhavenMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "Wallhaven", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseWallhaven = true;
+            });
+        }
+
+        private void TestScreenScraperMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "ScreenScraper", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseScreenScraper = true;
+            });
+        }
+
+        private void TestGiantBombMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "Giant Bomb", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseGiantBomb = true;
+            });
+        }
+
         private void TestMobyGamesMedia_OnClick(object sender, RoutedEventArgs e)
         {
             TestMediaSource(sender as Button, "MobyGames", s =>
@@ -1607,6 +1664,21 @@ namespace MetaDataIAPlugin
                 };
             }
 
+            if (string.Equals(sourceName, "Wallhaven", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game { Name = "L.A. Noire" };
+            }
+
+            if (string.Equals(sourceName, "ScreenScraper", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game { Name = "Sonic the Hedgehog" };
+            }
+
+            if (string.Equals(sourceName, "Giant Bomb", StringComparison.OrdinalIgnoreCase))
+            {
+                return new Game { Name = "L.A. Noire" };
+            }
+
             return new Game { Name = "Hades" };
         }
 
@@ -1644,6 +1716,9 @@ namespace MetaDataIAPlugin
             settings.MediaUseSteamGridDb = false;
             settings.MediaUseSteamGridDbBackgroundGrids = false;
             settings.MediaUseRawg = false;
+            settings.MediaUseWallhaven = false;
+            settings.MediaUseScreenScraper = false;
+            settings.MediaUseGiantBomb = false;
             settings.MediaUseMobyGames = false;
             settings.MediaUseIgdb = false;
         }
@@ -2053,6 +2128,21 @@ namespace MetaDataIAPlugin
                 return settings.MediaUseRawg;
             }
 
+            if (string.Equals(source, "Wallhaven", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseWallhaven;
+            }
+
+            if (string.Equals(source, "ScreenScraper", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseScreenScraper;
+            }
+
+            if (string.Equals(source, "Giant Bomb", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseGiantBomb;
+            }
+
             if (string.Equals(source, "MobyGames", System.StringComparison.OrdinalIgnoreCase))
             {
                 return settings.MediaUseMobyGames;
@@ -2077,7 +2167,8 @@ namespace MetaDataIAPlugin
                     Source("Steam oficial"),
                     Source("PlayStation Store"),
                     Source("Xbox Store"),
-                    Source("Epic Store")
+                    Source("Epic Store"),
+                    Source("ScreenScraper")
                 };
             }
 
@@ -2092,8 +2183,11 @@ namespace MetaDataIAPlugin
                     Source("Xbox Store"),
                     Source("Epic Store"),
                     Source("SteamGridDB"),
+                    Source("ScreenScraper"),
                     Source("RAWG"),
+                    Source("Wallhaven"),
                     Source("IGDB"),
+                    Source("Giant Bomb"),
                     Source("MobyGames")
                 };
             }
@@ -2107,7 +2201,9 @@ namespace MetaDataIAPlugin
                 Source("Epic Store"),
                 Source("SteamGridDB"),
                 Source("IGDB"),
+                Source("ScreenScraper"),
                 Source("RAWG"),
+                Source("Giant Bomb"),
                 Source("MobyGames")
             };
         }

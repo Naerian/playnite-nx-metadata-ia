@@ -997,7 +997,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Steam" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Steam CDN oficial" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Steam usa recursos públicos oficiales cuando el juego se puede asociar a su ficha: portadas, heroes de biblioteca y capturas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Steam oficial para portadas y heroes"
@@ -1063,7 +1063,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="RAWG" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="RAWG.io" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="RAWG ayuda a encontrar capturas, fondos y metadatos generales cuando no hay buenos resultados en fuentes más directas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar RAWG como fuente de imagen principal y capturas"
@@ -1076,6 +1076,42 @@
                                                  Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_RawgHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
                                     <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Click="TestRawgMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Wallhaven" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WallhavenSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_WallhavenHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableWallhaven}"
+                                              IsChecked="{Binding Settings.MediaUseWallhaven}"
+                                              Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestWallhaven}" HorizontalAlignment="Left" MinWidth="140" Click="TestWallhavenMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="ScreenScraper" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="ScreenScraperSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_ScreenScraperHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableScreenScraper}" IsChecked="{Binding Settings.MediaUseScreenScraper}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="ScreenScraper username"/>
+                                    <TextBox Text="{Binding Settings.ScreenScraperUserName, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                                    <TextBlock Text="ScreenScraper password"/>
+                                    <PasswordBox x:Name="ScreenScraperPasswordBox" PasswordChanged="ScreenScraperPasswordBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0,2,0,8"/>
+                                    <TextBlock Text="ScreenScraper developer ID"/>
+                                    <TextBox Text="{Binding Settings.ScreenScraperDeveloperId, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                                    <TextBlock Text="ScreenScraper developer password"/>
+                                    <PasswordBox x:Name="ScreenScraperDeveloperPasswordBox" PasswordChanged="ScreenScraperDeveloperPasswordBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0,2,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestScreenScraper}" HorizontalAlignment="Left" MinWidth="160" Click="TestScreenScraperMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Giant Bomb" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="GiantBombSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_GiantBombHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableGiantBomb}" IsChecked="{Binding Settings.MediaUseGiantBomb}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Giant Bomb API Key"/>
+                                    <PasswordBox x:Name="GiantBombApiKeyBox" PasswordChanged="GiantBombApiKeyBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0,2,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestGiantBomb}" HorizontalAlignment="Left" MinWidth="150" Click="TestGiantBombMedia_OnClick"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
@@ -1228,6 +1264,47 @@
                                    Style="{StaticResource HintText}"
                                    TextWrapping="Wrap"
                                    Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_MediaExcludedSearchTerms}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_MediaExcludedSearchTermsHelp}"
+                                           Style="{StaticResource HintText}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="18"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{DynamicResource MTDA_Cover}"/>
+                                    <TextBox Grid.Row="1"
+                                             Text="{Binding Settings.MediaCoverExcludedSearchTerms, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,3,0,10"/>
+                                    <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Icon}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="2"
+                                             Text="{Binding Settings.MediaIconExcludedSearchTerms, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,3,0,10"/>
+                                    <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Background}"/>
+                                    <TextBox Grid.Row="3"
+                                             Text="{Binding Settings.MediaBackgroundExcludedSearchTerms, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,3,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{DynamicResource MTDA_Logo}"/>
+                                    <TextBox Grid.Row="3" Grid.Column="2"
+                                             Text="{Binding Settings.MediaLogoExcludedSearchTerms, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,3,0,0"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 

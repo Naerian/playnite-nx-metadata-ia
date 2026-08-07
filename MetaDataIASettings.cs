@@ -240,6 +240,10 @@ namespace MetaDataIAPlugin
         private string iconPreset = IconPresetOriginal;
         private string backgroundImagePreset = BackgroundPresetSteamHero;
         private string backgroundLogoPreference = BackgroundLogoAny;
+        private string mediaCoverExcludedSearchTerms = string.Empty;
+        private string mediaIconExcludedSearchTerms = string.Empty;
+        private string mediaBackgroundExcludedSearchTerms = string.Empty;
+        private string mediaLogoExcludedSearchTerms = string.Empty;
         private int mediaSearchMaxResults = 50;
         private bool mediaAvoidNsfw = true;
         private bool mediaAvoidBlurred = true;
@@ -260,6 +264,14 @@ namespace MetaDataIAPlugin
         private bool mediaUseSteamGridDbBackgroundGrids = true;
         private bool mediaUseRawg = false;
         private string rawgApiKey = string.Empty;
+        private bool mediaUseWallhaven = false;
+        private bool mediaUseScreenScraper = false;
+        private string screenScraperUserName = string.Empty;
+        private string screenScraperPassword = string.Empty;
+        private string screenScraperDeveloperId = string.Empty;
+        private string screenScraperDeveloperPassword = string.Empty;
+        private bool mediaUseGiantBomb = false;
+        private string giantBombApiKey = string.Empty;
         private bool mediaUseMobyGames = false;
         private string mobyGamesApiKey = string.Empty;
         private bool mediaUseIgdb = false;
@@ -325,9 +337,9 @@ namespace MetaDataIAPlugin
         public const string ImageQualityHigh = "Alta";
         public const string ImageQualityMaximum = "Maxima";
         public const string SourceOriginIntegration = "Integracion de origen";
-        public const string DefaultCoverSourcePriority = "Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, RAWG, MobyGames";
-        public const string DefaultIconSourcePriority = "SteamGridDB, Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
-        public const string DefaultBackgroundSourcePriority = "Integracion de origen, Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, IGDB, MobyGames";
+        public const string DefaultCoverSourcePriority = "Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, ScreenScraper, RAWG, Giant Bomb, MobyGames";
+        public const string DefaultIconSourcePriority = "SteamGridDB, ScreenScraper, Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
+        public const string DefaultBackgroundSourcePriority = "Integracion de origen, Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, ScreenScraper, RAWG, Wallhaven, IGDB, Giant Bomb, MobyGames";
 
         public string ProviderPreset
         {
@@ -476,6 +488,10 @@ namespace MetaDataIAPlugin
         public string IconPreset { get { return iconPreset; } set { SetValue(ref iconPreset, value); } }
         public string BackgroundImagePreset { get { return backgroundImagePreset; } set { SetValue(ref backgroundImagePreset, value); } }
         public string BackgroundLogoPreference { get { return backgroundLogoPreference; } set { SetValue(ref backgroundLogoPreference, value); } }
+        public string MediaCoverExcludedSearchTerms { get { return mediaCoverExcludedSearchTerms; } set { SetValue(ref mediaCoverExcludedSearchTerms, value); } }
+        public string MediaIconExcludedSearchTerms { get { return mediaIconExcludedSearchTerms; } set { SetValue(ref mediaIconExcludedSearchTerms, value); } }
+        public string MediaBackgroundExcludedSearchTerms { get { return mediaBackgroundExcludedSearchTerms; } set { SetValue(ref mediaBackgroundExcludedSearchTerms, value); } }
+        public string MediaLogoExcludedSearchTerms { get { return mediaLogoExcludedSearchTerms; } set { SetValue(ref mediaLogoExcludedSearchTerms, value); } }
         public int MediaSearchMaxResults { get { return mediaSearchMaxResults; } set { SetValue(ref mediaSearchMaxResults, Math.Max(1, Math.Min(100, value))); } }
         public bool MediaAvoidNsfw { get { return mediaAvoidNsfw; } set { SetValue(ref mediaAvoidNsfw, value); } }
         public bool MediaAvoidBlurred { get { return mediaAvoidBlurred; } set { SetValue(ref mediaAvoidBlurred, value); } }
@@ -496,6 +512,50 @@ namespace MetaDataIAPlugin
         public bool MediaUseSteamGridDbBackgroundGrids { get { return mediaUseSteamGridDbBackgroundGrids; } set { SetValue(ref mediaUseSteamGridDbBackgroundGrids, value); } }
         public bool MediaUseRawg { get { return mediaUseRawg; } set { SetValue(ref mediaUseRawg, value); } }
         public string RawgApiKey { get { return rawgApiKey; } set { SetValue(ref rawgApiKey, value); } }
+        public bool MediaUseWallhaven
+        {
+            get { return mediaUseWallhaven; }
+            set
+            {
+                SetValue(ref mediaUseWallhaven, value);
+                if (value)
+                {
+                    MediaBackgroundSourcePriority = AppendSourcePriority(MediaBackgroundSourcePriority, "Wallhaven");
+                }
+            }
+        }
+        public bool MediaUseScreenScraper
+        {
+            get { return mediaUseScreenScraper; }
+            set
+            {
+                SetValue(ref mediaUseScreenScraper, value);
+                if (value)
+                {
+                    MediaCoverSourcePriority = AppendSourcePriority(MediaCoverSourcePriority, "ScreenScraper");
+                    MediaIconSourcePriority = AppendSourcePriority(MediaIconSourcePriority, "ScreenScraper");
+                    MediaBackgroundSourcePriority = AppendSourcePriority(MediaBackgroundSourcePriority, "ScreenScraper");
+                }
+            }
+        }
+        public string ScreenScraperUserName { get { return screenScraperUserName; } set { SetValue(ref screenScraperUserName, value); } }
+        public string ScreenScraperPassword { get { return screenScraperPassword; } set { SetValue(ref screenScraperPassword, value); } }
+        public string ScreenScraperDeveloperId { get { return screenScraperDeveloperId; } set { SetValue(ref screenScraperDeveloperId, value); } }
+        public string ScreenScraperDeveloperPassword { get { return screenScraperDeveloperPassword; } set { SetValue(ref screenScraperDeveloperPassword, value); } }
+        public bool MediaUseGiantBomb
+        {
+            get { return mediaUseGiantBomb; }
+            set
+            {
+                SetValue(ref mediaUseGiantBomb, value);
+                if (value)
+                {
+                    MediaCoverSourcePriority = AppendSourcePriority(MediaCoverSourcePriority, "Giant Bomb");
+                    MediaBackgroundSourcePriority = AppendSourcePriority(MediaBackgroundSourcePriority, "Giant Bomb");
+                }
+            }
+        }
+        public string GiantBombApiKey { get { return giantBombApiKey; } set { SetValue(ref giantBombApiKey, value); } }
         public bool MediaUseMobyGames { get { return mediaUseMobyGames; } set { SetValue(ref mediaUseMobyGames, value); } }
         public string MobyGamesApiKey { get { return mobyGamesApiKey; } set { SetValue(ref mobyGamesApiKey, value); } }
         public bool MediaUseIgdb { get { return mediaUseIgdb; } set { SetValue(ref mediaUseIgdb, value); } }
@@ -508,6 +568,11 @@ namespace MetaDataIAPlugin
             ApiKey = SecretProtectionService.Protect(ApiKey);
             SteamGridDbApiKey = SecretProtectionService.Protect(SteamGridDbApiKey);
             RawgApiKey = SecretProtectionService.Protect(RawgApiKey);
+            ScreenScraperUserName = SecretProtectionService.Protect(ScreenScraperUserName);
+            ScreenScraperPassword = SecretProtectionService.Protect(ScreenScraperPassword);
+            ScreenScraperDeveloperId = SecretProtectionService.Protect(ScreenScraperDeveloperId);
+            ScreenScraperDeveloperPassword = SecretProtectionService.Protect(ScreenScraperDeveloperPassword);
+            GiantBombApiKey = SecretProtectionService.Protect(GiantBombApiKey);
             MobyGamesApiKey = SecretProtectionService.Protect(MobyGamesApiKey);
             IgdbClientId = SecretProtectionService.Protect(IgdbClientId);
             IgdbClientSecret = SecretProtectionService.Protect(IgdbClientSecret);
@@ -525,6 +590,16 @@ namespace MetaDataIAPlugin
             SteamGridDbApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(RawgApiKey, out plainText) && succeeded;
             RawgApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(ScreenScraperUserName, out plainText) && succeeded;
+            ScreenScraperUserName = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(ScreenScraperPassword, out plainText) && succeeded;
+            ScreenScraperPassword = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(ScreenScraperDeveloperId, out plainText) && succeeded;
+            ScreenScraperDeveloperId = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(ScreenScraperDeveloperPassword, out plainText) && succeeded;
+            ScreenScraperDeveloperPassword = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(GiantBombApiKey, out plainText) && succeeded;
+            GiantBombApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(MobyGamesApiKey, out plainText) && succeeded;
             MobyGamesApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(IgdbClientId, out plainText) && succeeded;
@@ -1258,6 +1333,26 @@ namespace MetaDataIAPlugin
             return SplitTerms(Blacklist);
         }
 
+        public List<string> GetMediaExcludedSearchTerms(MediaKind kind)
+        {
+            if (kind == MediaKind.Cover)
+            {
+                return SplitTerms(MediaCoverExcludedSearchTerms);
+            }
+
+            if (kind == MediaKind.Icon)
+            {
+                return SplitTerms(MediaIconExcludedSearchTerms);
+            }
+
+            if (kind == MediaKind.Logo)
+            {
+                return SplitTerms(MediaLogoExcludedSearchTerms);
+            }
+
+            return SplitTerms(MediaBackgroundExcludedSearchTerms);
+        }
+
         public void ApplyProviderPreset()
         {
             if (ProviderPreset == ProviderOpenAI)
@@ -1874,7 +1969,7 @@ namespace MetaDataIAPlugin
         [DontSerialize]
         public string SteamGridDbHelp
         {
-            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG, MobyGames and IGDB when enabled. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
+            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG.io, Wallhaven, MobyGames and IGDB when enabled. Wallhaven is limited to SFW 16:9 backgrounds. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
         }
 
         private static LocalizedOption Option(string value, string key, string fallback)

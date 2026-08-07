@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,12 +150,17 @@ namespace MetaDataIAPlugin
 
         public async Task<List<MediaPreviewOption>> GetPreviewOptionsAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))
         {
+            return await GetPreviewOptionsAsync(game, kind, null, cancelToken).ConfigureAwait(false);
+        }
+
+        public async Task<List<MediaPreviewOption>> GetPreviewOptionsAsync(Game game, MediaKind kind, string searchText, CancellationToken cancelToken = default(CancellationToken))
+        {
             if (game == null)
             {
                 throw new ArgumentNullException("game");
             }
 
-            var candidates = await GetCandidates(game, kind, cancelToken).ConfigureAwait(false);
+            var candidates = await GetCandidates(game, kind, searchText, cancelToken).ConfigureAwait(false);
             var maximum = Math.Max(1, settings.MediaSearchMaxResults);
             var validated = await ValidatePreviewCandidatesAsync(OrderCandidates(candidates, kind).ToList(), maximum, cancelToken).ConfigureAwait(false);
 
@@ -217,7 +223,12 @@ namespace MetaDataIAPlugin
 
         public string GetLastDiagnostics(Game game, MediaKind kind)
         {
-            var cacheKey = BuildCandidateCacheKey(game, kind);
+            return GetLastDiagnostics(game, kind, null);
+        }
+
+        public string GetLastDiagnostics(Game game, MediaKind kind, string searchText)
+        {
+            var cacheKey = BuildCandidateCacheKey(game, kind, searchText);
             lock (CandidateCacheLock)
             {
                 List<string> diagnostics;
@@ -228,6 +239,33 @@ namespace MetaDataIAPlugin
             }
 
             return string.Empty;
+        }
+
+        public string GetDefaultSearchText(Game game, MediaKind kind)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return string.Empty;
+            }
+
+            var result = game.Name;
+            foreach (var term in settings.GetMediaExcludedSearchTerms(kind))
+            {
+                var pieces = Regex.Split(term.Trim(), @"\s+")
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(Regex.Escape)
+                    .ToArray();
+                if (pieces.Length == 0)
+                {
+                    continue;
+                }
+
+                var pattern = @"(?<![\p{L}\p{N}])" + string.Join(@"\s+", pieces) + @"(?![\p{L}\p{N}])";
+                result = Regex.Replace(result, pattern, " ", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
+
+            result = Regex.Replace(result, @"\s+", " ").Trim(' ', ',', ';', ':', '-', '_', '(', ')', '[', ']');
+            return string.IsNullOrWhiteSpace(result) ? game.Name.Trim() : result;
         }
 
         public async Task<GeneratedMediaFile> GenerateFromOptionAsync(Game game, MediaPreviewOption option, CancellationToken cancelToken = default(CancellationToken))
@@ -459,7 +497,16 @@ namespace MetaDataIAPlugin
 
         private async Task<List<MediaCandidate>> GetCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
         {
-            var cacheKey = BuildCandidateCacheKey(game, kind);
+            return await GetCandidates(game, kind, null, cancelToken).ConfigureAwait(false);
+        }
+
+        private async Task<List<MediaCandidate>> GetCandidates(Game game, MediaKind kind, string searchText, CancellationToken cancelToken)
+        {
+            var manualSearch = searchText != null;
+            var effectiveSearchText = string.IsNullOrWhiteSpace(searchText)
+                ? GetDefaultSearchText(game, kind)
+                : searchText.Trim();
+            var cacheKey = BuildCandidateCacheKey(game, kind, searchText);
             lock (CandidateCacheLock)
             {
                 List<MediaCandidate> cached;
@@ -471,7 +518,7 @@ namespace MetaDataIAPlugin
 
             var candidates = new List<MediaCandidate>();
             var diagnostics = new List<string>();
-            if (kind != MediaKind.Logo && settings.UseOriginIntegrationForMedia && playniteApi != null)
+            if (!manualSearch && kind != MediaKind.Logo && settings.UseOriginIntegrationForMedia && playniteApi != null)
             {
                 try
                 {
@@ -506,7 +553,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            var steamId = await ResolveSteamAppId(game, cancelToken).ConfigureAwait(false);
+            var steamId = await ResolveSteamAppId(game, effectiveSearchText, manualSearch, cancelToken).ConfigureAwait(false);
 
             if (kind != MediaKind.Logo && (settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots))
             {
@@ -531,21 +578,22 @@ namespace MetaDataIAPlugin
             }
 
             var officialStores = new OfficialStoreDataService(settings);
+            var storeSearchGame = manualSearch ? new Game { Name = effectiveSearchText } : game;
             if (kind != MediaKind.Logo && settings.MediaUsePsnStore)
             {
-                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(storeSearchGame, kind, OfficialStoreDataService.SourcePsnStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourcePsnStore, sourceCandidates);
             }
 
             if (kind != MediaKind.Logo && settings.MediaUseXboxStore)
             {
-                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(storeSearchGame, kind, OfficialStoreDataService.SourceXboxStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceXboxStore, sourceCandidates);
             }
 
             if (kind != MediaKind.Logo && settings.MediaUseEpicStore)
             {
-                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(game, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
+                var sourceCandidates = (await officialStores.GetMediaCandidatesAsync(storeSearchGame, kind, OfficialStoreDataService.SourceEpicStore, cancelToken).ConfigureAwait(false)).Select(CreateOfficialStoreCandidate).ToList();
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceEpicStore, sourceCandidates);
             }
 
@@ -559,7 +607,7 @@ namespace MetaDataIAPlugin
                 {
                     try
                     {
-                        var gameId = await ResolveSteamGridDbGameId(game, cancelToken).ConfigureAwait(false);
+                        var gameId = await ResolveSteamGridDbGameId(game, effectiveSearchText, manualSearch, cancelToken).ConfigureAwait(false);
                         if (gameId > 0)
                         {
                             var sourceCandidates = await GetCandidates(gameId, kind, cancelToken).ConfigureAwait(false);
@@ -606,7 +654,7 @@ namespace MetaDataIAPlugin
                 {
                     try
                     {
-                        var sourceCandidates = await GetRawgCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        var sourceCandidates = await GetRawgCandidates(game, kind, effectiveSearchText, cancelToken).ConfigureAwait(false);
                         AddSourceCandidates(candidates, diagnostics, "RAWG", sourceCandidates);
                     }
                     catch (OperationCanceledException)
@@ -616,6 +664,71 @@ namespace MetaDataIAPlugin
                     catch
                     {
                         AddDiagnostic(diagnostics, "RAWG", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
+                }
+            }
+
+            if (kind == MediaKind.Background && settings.MediaUseWallhaven)
+            {
+                try
+                {
+                    var sourceCandidates = await GetWallhavenCandidates(effectiveSearchText, cancelToken).ConfigureAwait(false);
+                    AddSourceCandidates(candidates, diagnostics, "Wallhaven", sourceCandidates);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    AddDiagnostic(diagnostics, "Wallhaven", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                }
+            }
+
+            if (settings.MediaUseScreenScraper)
+            {
+                if (!IsScreenScraperConfigured())
+                {
+                    AddDiagnostic(diagnostics, "ScreenScraper", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
+                }
+                else
+                {
+                    try
+                    {
+                        var sourceCandidates = await GetScreenScraperCandidates(effectiveSearchText, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "ScreenScraper", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "ScreenScraper", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
+                }
+            }
+
+            if (kind != MediaKind.Logo && settings.MediaUseGiantBomb)
+            {
+                if (string.IsNullOrWhiteSpace(settings.GiantBombApiKey))
+                {
+                    AddDiagnostic(diagnostics, "Giant Bomb", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
+                }
+                else
+                {
+                    try
+                    {
+                        var sourceCandidates = await GetGiantBombCandidates(effectiveSearchText, kind, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "Giant Bomb", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "Giant Bomb", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
                     }
                 }
             }
@@ -630,7 +743,7 @@ namespace MetaDataIAPlugin
                 {
                     try
                     {
-                        var sourceCandidates = await GetMobyGamesCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        var sourceCandidates = await GetMobyGamesCandidates(game, kind, effectiveSearchText, cancelToken).ConfigureAwait(false);
                         AddSourceCandidates(candidates, diagnostics, "MobyGames", sourceCandidates);
                     }
                     catch (OperationCanceledException)
@@ -655,7 +768,7 @@ namespace MetaDataIAPlugin
                 {
                     try
                     {
-                        var sourceCandidates = await GetIgdbCandidates(game, kind, cancelToken).ConfigureAwait(false);
+                        var sourceCandidates = await GetIgdbCandidates(game, kind, effectiveSearchText, cancelToken).ConfigureAwait(false);
                         AddSourceCandidates(candidates, diagnostics, "IGDB", sourceCandidates);
                     }
                     catch (OperationCanceledException)
@@ -698,6 +811,12 @@ namespace MetaDataIAPlugin
 
         private string BuildCandidateCacheKey(Game game, MediaKind kind)
         {
+            return BuildCandidateCacheKey(game, kind, null);
+        }
+
+        private string BuildCandidateCacheKey(Game game, MediaKind kind, string searchText)
+        {
+            var effectiveSearchText = string.IsNullOrWhiteSpace(searchText) ? GetDefaultSearchText(game, kind) : searchText.Trim();
             var parts = new[]
             {
                 (game == null ? string.Empty : game.Id.ToString()),
@@ -706,6 +825,9 @@ namespace MetaDataIAPlugin
                 (game == null ? string.Empty : game.PluginId.ToString()),
                 (game == null || game.Source == null ? string.Empty : game.Source.Name),
                 kind.ToString(),
+                searchText == null ? "automatic" : "manual",
+                effectiveSearchText,
+                string.Join(",", settings.GetMediaExcludedSearchTerms(kind)),
                 settings.CoverImagePreset,
                 settings.IconPreset,
                 settings.BackgroundImagePreset,
@@ -725,6 +847,9 @@ namespace MetaDataIAPlugin
                 settings.MediaUseSteamGridDb.ToString(),
                 settings.MediaUseSteamGridDbBackgroundGrids.ToString(),
                 settings.MediaUseRawg.ToString(),
+                settings.MediaUseWallhaven.ToString(),
+                settings.MediaUseScreenScraper.ToString(),
+                settings.MediaUseGiantBomb.ToString(),
                 settings.MediaUseMobyGames.ToString(),
                 settings.MediaUseIgdb.ToString(),
                 GetPlayniteCoverRatioCacheKey(),
@@ -757,22 +882,22 @@ namespace MetaDataIAPlugin
                 };
         }
 
-        private async Task<string> ResolveSteamAppId(Game game, CancellationToken cancelToken)
+        private async Task<string> ResolveSteamAppId(Game game, string searchTitle, bool forceTitleSearch, CancellationToken cancelToken)
         {
-            var direct = GetSteamAppId(game);
+            var direct = forceTitleSearch ? null : GetSteamAppId(game);
             if (!string.IsNullOrWhiteSpace(direct))
             {
                 return direct;
             }
 
-            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            if (string.IsNullOrWhiteSpace(searchTitle))
             {
                 return null;
             }
 
             try
             {
-                foreach (var title in BuildTitleAliases(game.Name))
+                foreach (var title in BuildTitleAliases(searchTitle))
                 {
                     var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) + "&cc=us&l=en";
                     var json = await GetPublicJson(url, cancelToken).ConfigureAwait(false);
@@ -922,9 +1047,9 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private async Task<int> ResolveSteamGridDbGameId(Game game, CancellationToken cancelToken)
+        private async Task<int> ResolveSteamGridDbGameId(Game game, string searchTitle, bool forceTitleSearch, CancellationToken cancelToken)
         {
-            var steamId = GetSteamAppId(game);
+            var steamId = forceTitleSearch ? null : GetSteamAppId(game);
             if (!string.IsNullOrWhiteSpace(steamId))
             {
                 var bySteam = await GetJson(ApiBase + "/games/steam/" + Uri.EscapeDataString(steamId), cancelToken).ConfigureAwait(false);
@@ -935,7 +1060,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            foreach (var title in BuildTitleAliases(game.Name))
+            foreach (var title in BuildTitleAliases(searchTitle))
             {
                 var search = await GetJson(ApiBase + "/search/autocomplete/" + Uri.EscapeDataString(title), cancelToken).ConfigureAwait(false);
                 var data = search["data"] as JArray;
@@ -1085,15 +1210,15 @@ namespace MetaDataIAPlugin
             };
         }
 
-        private async Task<List<MediaCandidate>> GetRawgCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
+        private async Task<List<MediaCandidate>> GetRawgCandidates(Game game, MediaKind kind, string searchTitle, CancellationToken cancelToken)
         {
-            if (game == null || string.IsNullOrWhiteSpace(game.Name) || string.IsNullOrWhiteSpace(settings.RawgApiKey))
+            if (game == null || string.IsNullOrWhiteSpace(searchTitle) || string.IsNullOrWhiteSpace(settings.RawgApiKey))
             {
                 return new List<MediaCandidate>();
             }
 
             JObject selected = null;
-            foreach (var title in BuildTitleAliases(game.Name))
+            foreach (var title in BuildTitleAliases(searchTitle))
             {
                 var searchUrl = "https://api.rawg.io/api/games?key=" + Uri.EscapeDataString(settings.RawgApiKey) +
                                 "&search=" + Uri.EscapeDataString(title) + "&page_size=5";
@@ -1140,15 +1265,217 @@ namespace MetaDataIAPlugin
             return result;
         }
 
-        private async Task<List<MediaCandidate>> GetMobyGamesCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
+        private async Task<List<MediaCandidate>> GetWallhavenCandidates(string searchTitle, CancellationToken cancelToken)
         {
-            if (game == null || string.IsNullOrWhiteSpace(game.Name) || string.IsNullOrWhiteSpace(settings.MobyGamesApiKey))
+            if (string.IsNullOrWhiteSpace(searchTitle))
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var baseQuery = "https://wallhaven.cc/api/v1/search?q=" + Uri.EscapeDataString(searchTitle) +
+                            "&categories=100&purity=100&sorting=relevance&ratios=16x9";
+            var target = GetTargetSize(MediaKind.Background);
+            var query = baseQuery;
+            if (target.Width > 0 && target.Height > 0)
+            {
+                query += "&atleast=" + target.Width + "x" + target.Height;
+            }
+
+            var json = await GetPublicJson(query, cancelToken).ConfigureAwait(false);
+            var data = json["data"] as JArray;
+            if ((data == null || data.Count == 0) && !string.Equals(query, baseQuery, StringComparison.Ordinal))
+            {
+                json = await GetPublicJson(baseQuery, cancelToken).ConfigureAwait(false);
+                data = json["data"] as JArray;
+            }
+
+            if (data == null)
+            {
+                return new List<MediaCandidate>();
+            }
+
+            return data
+                .OfType<JObject>()
+                .Select(x => new
+                {
+                    Url = (string)x["path"],
+                    Width = (int?)x["dimension_x"] ?? 0,
+                    Height = (int?)x["dimension_y"] ?? 0,
+                    Purity = (string)x["purity"] ?? string.Empty,
+                    Category = (string)x["category"] ?? string.Empty
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Url) &&
+                            string.Equals(x.Purity, "sfw", StringComparison.OrdinalIgnoreCase) &&
+                            x.Width > x.Height)
+                .Select(x => CreateExternalCandidate(
+                    x.Url,
+                    MediaKind.Background,
+                    x.Width,
+                    x.Height,
+                    string.IsNullOrWhiteSpace(x.Category) ? "wallpaper 16:9" : "wallpaper 16:9 - " + x.Category,
+                    60,
+                    "Wallhaven",
+                    46,
+                    false))
+                .Take(Math.Max(1, Math.Min(24, settings.MediaSearchMaxResults)))
+                .ToList();
+        }
+
+        private bool IsScreenScraperConfigured()
+        {
+            return !string.IsNullOrWhiteSpace(settings.ScreenScraperUserName) &&
+                   !string.IsNullOrWhiteSpace(settings.ScreenScraperPassword) &&
+                   !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) &&
+                   !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword);
+        }
+
+        private async Task<List<MediaCandidate>> GetScreenScraperCandidates(string searchTitle, MediaKind kind, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(searchTitle) || !IsScreenScraperConfigured())
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var query = "https://api.screenscraper.fr/api2/jeuInfos.php?devid=" + Uri.EscapeDataString(settings.ScreenScraperDeveloperId) +
+                        "&devpassword=" + Uri.EscapeDataString(settings.ScreenScraperDeveloperPassword) +
+                        "&softname=MetadataAI&ssid=" + Uri.EscapeDataString(settings.ScreenScraperUserName) +
+                        "&sspassword=" + Uri.EscapeDataString(settings.ScreenScraperPassword) +
+                        "&romnom=" + Uri.EscapeDataString(searchTitle) + "&output=json";
+            var json = await GetPublicJson(query, cancelToken).ConfigureAwait(false);
+            var game = (json["response"] == null ? null : json["response"]["jeu"]) ?? json["jeu"];
+            var mediaToken = game == null ? null : game["medias"];
+            var mediaItems = mediaToken as JArray ?? (mediaToken == null ? null : mediaToken["media"] as JArray) ?? new JArray();
+
+            return mediaItems
+                .OfType<JObject>()
+                .Select(x => new
+                {
+                    Type = ((string)x["type"] ?? string.Empty).ToLowerInvariant(),
+                    Url = (string)x["url"],
+                    Format = (string)x["format"] ?? string.Empty
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Url) && IsScreenScraperMediaTypeForKind(x.Type, kind))
+                .Select(x => CreateExternalCandidate(
+                    x.Url,
+                    kind,
+                    0,
+                    0,
+                    ScreenScraperStyle(x.Type),
+                    ScreenScraperScore(x.Type, kind),
+                    "ScreenScraper",
+                    48,
+                    false))
+                .Take(Math.Max(1, Math.Min(20, settings.MediaSearchMaxResults)))
+                .ToList();
+        }
+
+        private static bool IsScreenScraperMediaTypeForKind(string type, MediaKind kind)
+        {
+            if (kind == MediaKind.Cover)
+            {
+                return type.StartsWith("box-2d", StringComparison.OrdinalIgnoreCase) || type.StartsWith("box-3d", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (kind == MediaKind.Icon)
+            {
+                return type.StartsWith("wheel", StringComparison.OrdinalIgnoreCase) || type == "logo";
+            }
+
+            if (kind == MediaKind.Background)
+            {
+                return type == "fanart" || type == "ss" || type == "sstitle" || type == "screenmarquee";
+            }
+
+            return false;
+        }
+
+        private static string ScreenScraperStyle(string type)
+        {
+            if (type == "fanart") return "fanart";
+            if (type == "ss" || type == "sstitle") return "screenshot";
+            if (type.StartsWith("box", StringComparison.OrdinalIgnoreCase)) return "box art";
+            if (type.StartsWith("wheel", StringComparison.OrdinalIgnoreCase)) return "wheel logo";
+            return string.IsNullOrWhiteSpace(type) ? "emulator media" : type;
+        }
+
+        private static int ScreenScraperScore(string type, MediaKind kind)
+        {
+            if (kind == MediaKind.Background)
+            {
+                return type == "fanart" ? 68 : type == "ss" ? 58 : 48;
+            }
+
+            return kind == MediaKind.Cover ? 64 : 52;
+        }
+
+        private async Task<List<MediaCandidate>> GetGiantBombCandidates(string searchTitle, MediaKind kind, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(searchTitle) || string.IsNullOrWhiteSpace(settings.GiantBombApiKey))
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var searchUrl = "https://www.giantbomb.com/api/search/?api_key=" + Uri.EscapeDataString(settings.GiantBombApiKey) +
+                            "&format=json&resources=game&limit=10&query=" + Uri.EscapeDataString(searchTitle);
+            var search = await GetPublicJson(searchUrl, cancelToken).ConfigureAwait(false);
+            var match = (search["results"] as JArray ?? new JArray())
+                .OfType<JObject>()
+                .FirstOrDefault(x => IsGoodSteamTitleMatch(searchTitle, (string)x["name"]));
+            if (match == null)
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var guid = (string)match["guid"];
+            if (string.IsNullOrWhiteSpace(guid))
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var detailsUrl = "https://www.giantbomb.com/api/game/" + Uri.EscapeDataString(guid) + "/?api_key=" +
+                             Uri.EscapeDataString(settings.GiantBombApiKey) + "&format=json&field_list=image,images";
+            var details = await GetPublicJson(detailsUrl, cancelToken).ConfigureAwait(false);
+            var result = details["results"] as JObject ?? match;
+            var images = new List<JObject>();
+            var primary = result["image"] as JObject;
+            if (primary != null) images.Add(primary);
+            images.AddRange((result["images"] as JArray ?? new JArray()).OfType<JObject>());
+
+            var urls = images
+                .Select(x => new
+                {
+                    Url = (string)x["original_url"] ?? (string)x["super_url"] ?? (string)x["medium_url"],
+                    Width = (int?)x["original_width"] ?? (int?)x["width"] ?? 0,
+                    Height = (int?)x["original_height"] ?? (int?)x["height"] ?? 0
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Url))
+                .GroupBy(x => x.Url, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First());
+
+            if (kind == MediaKind.Cover)
+            {
+                urls = urls.Where(x => x.Height >= x.Width || (x.Width == 0 && x.Height == 0));
+            }
+            else if (kind == MediaKind.Background)
+            {
+                urls = urls.Where(x => x.Width >= x.Height || (x.Width == 0 && x.Height == 0));
+            }
+
+            return urls
+                .Select(x => CreateExternalCandidate(x.Url, kind, x.Width, x.Height, kind == MediaKind.Background ? "promotional artwork" : "game artwork", kind == MediaKind.Background ? 62 : 58, "Giant Bomb", 43, false))
+                .Take(Math.Max(1, Math.Min(20, settings.MediaSearchMaxResults)))
+                .ToList();
+        }
+
+        private async Task<List<MediaCandidate>> GetMobyGamesCandidates(Game game, MediaKind kind, string searchTitle, CancellationToken cancelToken)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(searchTitle) || string.IsNullOrWhiteSpace(settings.MobyGamesApiKey))
             {
                 return new List<MediaCandidate>();
             }
 
             JObject selected = null;
-            foreach (var title in BuildTitleAliases(game.Name))
+            foreach (var title in BuildTitleAliases(searchTitle))
             {
                 var url = "https://api.mobygames.com/v1/games?api_key=" + Uri.EscapeDataString(settings.MobyGamesApiKey) +
                           "&title=" + Uri.EscapeDataString(title) + "&format=normal&limit=5";
@@ -1211,9 +1538,9 @@ namespace MetaDataIAPlugin
             return result;
         }
 
-        private async Task<List<MediaCandidate>> GetIgdbCandidates(Game game, MediaKind kind, CancellationToken cancelToken)
+        private async Task<List<MediaCandidate>> GetIgdbCandidates(Game game, MediaKind kind, string searchTitle, CancellationToken cancelToken)
         {
-            if (game == null || string.IsNullOrWhiteSpace(game.Name) ||
+            if (game == null || string.IsNullOrWhiteSpace(searchTitle) ||
                 string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
                 (string.IsNullOrWhiteSpace(settings.IgdbAccessToken) && string.IsNullOrWhiteSpace(settings.IgdbClientSecret)))
             {
@@ -1221,7 +1548,7 @@ namespace MetaDataIAPlugin
             }
 
             JObject selected = null;
-            foreach (var title in BuildTitleAliases(game.Name))
+            foreach (var title in BuildTitleAliases(searchTitle))
             {
                 var gameQuery = "search \"" + EscapeIgdbString(title) + "\"; fields id,name,cover,screenshots,artworks; limit 5;";
                 var games = await PostIgdb("games", gameQuery, cancelToken).ConfigureAwait(false);
@@ -1619,6 +1946,16 @@ namespace MetaDataIAPlugin
             if (normalized.Contains("rawg"))
             {
                 return "rawg";
+            }
+
+            if (normalized.Contains("screenscraper"))
+            {
+                return "screenscraper";
+            }
+
+            if (normalized.Contains("giant bomb"))
+            {
+                return "giant bomb";
             }
 
             if (normalized.Contains("moby"))

@@ -1108,6 +1108,7 @@ namespace MetaDataIAPlugin
             var optionsByKind = new Dictionary<MediaKind, List<MediaPreviewOption>>();
             var diagnosticsByKind = new Dictionary<MediaKind, string>();
             var service = new MediaGenerationService(activeSettings, PlayniteApi);
+            var searchTextByKind = kinds.ToDictionary(kind => kind, kind => service.GetDefaultSearchText(game, kind));
             Exception loadError = null;
             var cancelled = false;
             PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
@@ -1205,7 +1206,23 @@ namespace MetaDataIAPlugin
             var tabs = new TabControl();
             foreach (var kind in kinds)
             {
-                tabs.Items.Add(CreateTab(MediaKindName(kind), CreateMediaOptionsPanel(optionsByKind[kind], option =>
+                var localKind = kind;
+                tabs.Items.Add(CreateTab(MediaKindName(localKind), CreateMediaSearchTabContent(
+                    game,
+                    localKind,
+                    optionsByKind[localKind],
+                    searchTextByKind[localKind],
+                    pickerSettings,
+                    diagnosticsByKind,
+                    () =>
+                    {
+                        selectedOptions.Remove(localKind);
+                        if (applyChangesButton != null)
+                        {
+                            applyChangesButton.IsEnabled = selectedOptions.Count > 0;
+                        }
+                    },
+                    option =>
                 {
                     selectedOptions[option.Kind] = option;
                     if (applyChangesButton != null)
@@ -1432,6 +1449,236 @@ namespace MetaDataIAPlugin
             ApplyDynamicResource(hintText, TextBlock.ForegroundProperty, "TextBrush");
             panel.Children.Add(hintText);
             return panel;
+        }
+
+        private static IEnumerable<LocalizedOption> GetMediaPickerFormatOptions(MetaDataIASettings settings, MediaKind kind)
+        {
+            if (settings == null || kind == MediaKind.Logo)
+            {
+                return Enumerable.Empty<LocalizedOption>();
+            }
+
+            if (kind == MediaKind.Cover)
+            {
+                return settings.CoverImagePresetOptions;
+            }
+
+            if (kind == MediaKind.Icon)
+            {
+                return settings.IconPresetOptions;
+            }
+
+            return settings.BackgroundImagePresetOptions;
+        }
+
+        private static string GetMediaPickerFormatValue(MetaDataIASettings settings, MediaKind kind)
+        {
+            if (kind == MediaKind.Cover)
+            {
+                return settings.CoverImagePreset;
+            }
+
+            if (kind == MediaKind.Icon)
+            {
+                return settings.IconPreset;
+            }
+
+            return settings.BackgroundImagePreset;
+        }
+
+        private static void SetMediaPickerFormatValue(MetaDataIASettings settings, MediaKind kind, string value)
+        {
+            if (kind == MediaKind.Cover)
+            {
+                settings.CoverImagePreset = value;
+            }
+            else if (kind == MediaKind.Icon)
+            {
+                settings.IconPreset = value;
+            }
+            else if (kind == MediaKind.Background)
+            {
+                settings.BackgroundImagePreset = value;
+            }
+        }
+
+        private UIElement CreateMediaSearchTabContent(
+            Game game,
+            MediaKind kind,
+            List<MediaPreviewOption> initialOptions,
+            string initialSearchText,
+            MetaDataIASettings pickerSettings,
+            Dictionary<MediaKind, string> diagnosticsByKind,
+            Action clearSelection,
+            Action<MediaPreviewOption> selectAction)
+        {
+            var root = new Grid();
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var searchPanel = new Grid { Margin = new Thickness(8, 8, 8, 10) };
+            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
+            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
+
+            var queryPanel = new StackPanel();
+            var searchLabel = new TextBlock
+            {
+                Text = Loc("MTDA_MediaSearchTerms", "Search terms"),
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            ApplyDynamicResource(searchLabel, TextBlock.ForegroundProperty, "TextBrush");
+            queryPanel.Children.Add(searchLabel);
+
+            var searchBox = new TextBox
+            {
+                Text = initialSearchText ?? string.Empty,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                MinWidth = 240
+            };
+            queryPanel.Children.Add(searchBox);
+            searchPanel.Children.Add(queryPanel);
+
+            var searchButton = new Button
+            {
+                Content = Loc("MTDA_Search", "Search"),
+                MinWidth = 100,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+            Grid.SetColumn(searchButton, 1);
+            searchPanel.Children.Add(searchButton);
+
+            var formatOptions = GetMediaPickerFormatOptions(pickerSettings, kind).ToList();
+            if (formatOptions.Count > 0)
+            {
+                var formatPanel = new StackPanel();
+                var formatLabel = new TextBlock
+                {
+                    Text = Loc("MTDA_MediaSearchFormat", "Format / resolution"),
+                    Margin = new Thickness(0, 0, 0, 4)
+                };
+                ApplyDynamicResource(formatLabel, TextBlock.ForegroundProperty, "TextBrush");
+                formatPanel.Children.Add(formatLabel);
+
+                var formatCombo = new ComboBox
+                {
+                    ItemsSource = formatOptions,
+                    DisplayMemberPath = "DisplayName",
+                    SelectedValuePath = "Value",
+                    SelectedValue = GetMediaPickerFormatValue(pickerSettings, kind),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    ToolTip = Loc("MTDA_MediaSearchFormatHelp", "Choose a format or resolution and press Search to refresh the candidates.")
+                };
+                formatCombo.SelectionChanged += (sender, args) =>
+                {
+                    var value = formatCombo.SelectedValue as string;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        SetMediaPickerFormatValue(pickerSettings, kind, value);
+                    }
+                };
+                formatPanel.Children.Add(formatCombo);
+                Grid.SetColumn(formatPanel, 3);
+                searchPanel.Children.Add(formatPanel);
+            }
+            root.Children.Add(searchPanel);
+
+            var resultsHost = new ContentControl
+            {
+                Content = CreateMediaOptionsPanel(initialOptions, selectAction)
+            };
+            Grid.SetRow(resultsHost, 1);
+            root.Children.Add(resultsHost);
+
+            Action runSearch = () =>
+            {
+                var query = (searchBox.Text ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MediaSearchTermsRequired", "Enter at least one search term."), PluginTitle);
+                    return;
+                }
+
+                List<MediaPreviewOption> refreshed = null;
+                Exception searchError = null;
+                var cancelled = false;
+                searchButton.IsEnabled = false;
+                try
+                {
+                    PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
+                    {
+                        using (progress.CancelToken.Register(() => cancelled = true))
+                        {
+                            progress.Text = string.Format(
+                                Loc("MTDA_ProgressSearchingMediaQuery", "Searching for {0} using ‘{1}’..."),
+                                MediaKindName(kind).ToLowerInvariant(),
+                                query);
+                            try
+                            {
+                                var searchService = new MediaGenerationService(pickerSettings, PlayniteApi);
+                                refreshed = searchService.GetPreviewOptionsAsync(game, kind, query, progress.CancelToken).GetAwaiter().GetResult();
+                                diagnosticsByKind[kind] = searchService.GetLastDiagnostics(game, kind, query);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                cancelled = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                searchError = ex;
+                                logger.Error(ex, "Failed to refresh media options.");
+                            }
+                        }
+                    }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_TabMedia", "Media"), true) { IsIndeterminate = true });
+                }
+                finally
+                {
+                    searchButton.IsEnabled = true;
+                }
+
+                if (cancelled)
+                {
+                    return;
+                }
+
+                if (searchError != null)
+                {
+                    PlayniteApi.Dialogs.ShowErrorMessage(UserError(searchError), PluginTitle);
+                    return;
+                }
+
+                if (clearSelection != null)
+                {
+                    clearSelection();
+                }
+
+                resultsHost.Content = CreateMediaOptionsPanel(refreshed, selectAction);
+                if (refreshed == null || refreshed.Count == 0)
+                {
+                    var diagnostics = diagnosticsByKind.ContainsKey(kind) ? diagnosticsByKind[kind] : string.Empty;
+                    if (!string.IsNullOrWhiteSpace(diagnostics))
+                    {
+                        PlayniteApi.Dialogs.ShowMessage(
+                            Loc("MTDA_MessageNoCandidatesForMediaType", "There are no candidates for this media type.") +
+                            Environment.NewLine + Environment.NewLine + diagnostics,
+                            PluginTitle);
+                    }
+                }
+            };
+
+            searchButton.Click += (sender, args) => runSearch();
+            searchBox.KeyDown += (sender, args) =>
+            {
+                if (args.Key == System.Windows.Input.Key.Enter)
+                {
+                    args.Handled = true;
+                    runSearch();
+                }
+            };
+
+            return root;
         }
 
         private UIElement CreateMediaOptionsPanel(List<MediaPreviewOption> options, Action<MediaPreviewOption> selectAction)

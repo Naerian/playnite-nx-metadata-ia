@@ -22,7 +22,7 @@ It is useful when your library has mixed description styles, missing metadata, d
 
 It is not meant to replace validated metadata sources when those already provide exactly what you need. Instead, it complements them by normalizing, translating, restructuring and filling gaps according to your own templates and rules.
 
-The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam public assets, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, MobyGames and IGDB.
+The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, ScreenScraper, Giant Bomb, MobyGames and IGDB.
 
 ## Features
 
@@ -135,11 +135,14 @@ Metadata AI can fetch covers, icons, and backgrounds from:
 - Xbox Store
 - Epic Store
 - SteamGridDB
-- RAWG
+- RAWG.io
+- Wallhaven (optional SFW, 16:9 background fallback)
+- ScreenScraper (particularly useful for emulated and retro games)
+- Giant Bomb (covers and backgrounds for hard-to-find games)
 - MobyGames
 - IGDB
 
-Steam public assets, PlayStation Store, Xbox Store, and Epic Store do not require an API key. SteamGridDB, RAWG, MobyGames, and IGDB require their own API credentials.
+Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, and Wallhaven do not require an API key. SteamGridDB, RAWG.io, Giant Bomb, MobyGames, and IGDB require their own API credentials. ScreenScraper requires both a ScreenScraper account and developer credentials issued for its API.
 
 For IGDB, the extension uses Twitch `Client ID` and `Client Secret` and automatically obtains the access token internally, so users do not need to copy temporary access tokens manually.
 
@@ -194,7 +197,9 @@ The selected format and resolution describe the final stored file. Automatic pri
 
 When Metadata AI replaces a Playnite cover, icon, or background, it removes the previous internal file after the game reference has been updated and only when no other game still references it. The Maintenance tab can also scan existing game storage for unreferenced image files and shows the file count and recoverable space before asking for confirmation.
 
-In manual single-game workflows, the media picker shows candidates grouped by media type. Click a candidate tile to select it, or open the image in your browser before applying the final selection.
+In manual single-game workflows, the media picker shows candidates grouped by media type. Each tab lets you refine the search terms and temporarily change its format or resolution without changing the global setting. Click a candidate tile to select it, or open the image in your browser before applying the final selection.
+
+Wallhaven is available as an optional background-only fallback. It requests SFW, 16:9 wallpapers and first filters by the selected resolution; if there are no exact candidates, it retries without a minimum resolution so lower-resolution fullscreen artwork remains available for review.
 
 ## Logos and trailers
 
