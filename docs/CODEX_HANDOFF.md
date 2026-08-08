@@ -25,7 +25,8 @@ important decisions for the Playnite extension.
   `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_3_1.pext`
 - Release page:
   https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.3.1
-- Public package SHA-256 verified for v1.3.1: pending release verification.
+- Public package SHA-256 verified for v1.3.1:
+  `A0EFDA8329E8FCD8B2F592A47E6050ED6DEF2E9C738DA04B4BB6CD3B62809B14`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
