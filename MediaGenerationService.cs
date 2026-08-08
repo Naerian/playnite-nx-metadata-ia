@@ -182,7 +182,15 @@ namespace MetaDataIAPlugin
 
             var candidates = await GetCandidates(game, kind, searchText, cancelToken).ConfigureAwait(false);
             var maximum = Math.Max(1, settings.MediaSearchMaxResults);
-            var validated = await ValidatePreviewCandidatesAsync(OrderCandidates(candidates, kind).ToList(), maximum, cancelToken).ConfigureAwait(false);
+            var orderedCandidates = OrderCandidates(candidates, kind).ToList();
+            // A resolution filter must be complete: the first candidates ranked by
+            // source can be non-matching, while an exact match can be later.
+            // Source adapters cap their own result sets, so validating this list is
+            // bounded and lets the picker report all valid exact-resolution media.
+            var validationLimit = GetTargetSize(kind).Width > 0 && GetTargetSize(kind).Height > 0
+                ? orderedCandidates.Count
+                : maximum;
+            var validated = await ValidatePreviewCandidatesAsync(orderedCandidates, validationLimit, cancelToken).ConfigureAwait(false);
             var matchingTarget = FilterPreviewCandidatesByTarget(validated, kind).ToList();
             var fallback = matchingTarget.Count > 0
                 ? matchingTarget
@@ -297,6 +305,32 @@ namespace MetaDataIAPlugin
                 Loc("MTDA_ManualMediaStyle", "manual image"),
                 100,
                 Loc("MTDA_SourceManualUrl", "Manual URL"),
+                0,
+                false);
+            if (!await ProbeMediaCandidateAsync(candidate, cancelToken).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return ToPreviewOption(candidate, kind);
+        }
+
+        public async Task<MediaPreviewOption> GetManualLocalFilePreviewOptionAsync(MediaKind kind, string path, CancellationToken cancelToken = default(CancellationToken))
+        {
+            var fullPath = string.IsNullOrWhiteSpace(path) ? string.Empty : Path.GetFullPath(path);
+            if (string.IsNullOrWhiteSpace(fullPath) || !File.Exists(fullPath))
+            {
+                throw new ArgumentException(Loc("MTDA_ErrorManualMediaFile", "Choose an existing image file."), "path");
+            }
+
+            var candidate = CreateExternalCandidate(
+                new Uri(fullPath).AbsoluteUri,
+                kind,
+                0,
+                0,
+                Loc("MTDA_ManualMediaStyle", "manual image"),
+                100,
+                Loc("MTDA_SourceLocalFile", "Local file"),
                 0,
                 false);
             if (!await ProbeMediaCandidateAsync(candidate, cancelToken).ConfigureAwait(false))
@@ -3168,6 +3202,11 @@ namespace MetaDataIAPlugin
             if (settings.BackgroundImagePreset == MetaDataIASettings.BackgroundPresetSteamHeroSmall)
             {
                 return new Size(1920, 620);
+            }
+
+            if (settings.BackgroundImagePreset == MetaDataIASettings.BackgroundPresetHd)
+            {
+                return new Size(1280, 720);
             }
 
             if (settings.BackgroundImagePreset == MetaDataIASettings.BackgroundPresetFullHd)

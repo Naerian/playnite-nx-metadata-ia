@@ -294,9 +294,19 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MediaSearchTerms">Search terms</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Format / resolution</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Choose a format or resolution and press Search to refresh the candidates.</sys:String>
+    <sys:String x:Key="MTDA_MediaSearchAllResolutions">All resolutions</sys:String>
     <sys:String x:Key="MTDA_Search">Search</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTermsRequired">Enter at least one search term.</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaQuery">Searching for {0} using ‘{1}’...</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFile">Choose image from device</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFileHelp">Choose a local image to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaLocalFile">Or choose an image from this device</sys:String>
+    <sys:String x:Key="MTDA_RestoreMediaCandidates">Restore candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
+    <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTermsHelp">Enter words or phrases separated by commas, semicolons, or line breaks. They are removed from the game title only when searching for that media type. Example: GOTY, Enhanced, Deluxe Edition.</sys:String>
     <sys:String x:Key="MTDA_WallhavenHelp">Wallhaven is an optional background-only fallback. Metadata AI requests SFW, 16:9 wallpapers and prefers the selected resolution; no API key is required.</sys:String>
@@ -330,6 +340,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_OptionApplyOverwrite">Перезаписать</sys:String>
     <sys:String x:Key="MTDA_OptionApplySkip">Не трогай</sys:String>
     <sys:String x:Key="MTDA_OptionBackground4K">Полноэкранный режим 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundHd">Fullscreen HD (1280x720)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundFullHd">Полноэкранный Full HD (1920x1080)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoAny">Любой</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">Предпочитаю без логотипа</sys:String>
@@ -342,7 +353,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite вертикальный (600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">Игровой квадрат (600х600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">Круг 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">Оригинальный/прозрачный</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">Оригинал</sys:String>
     <sys:String x:Key="MTDA_OptionIconRounded">Округлено 256</sys:String>
     <sys:String x:Key="MTDA_OptionIconSquare">Площадь 256</sys:String>
     <sys:String x:Key="MTDA_OptionLengthExtraLong">Очень длинный</sys:String>
@@ -543,6 +554,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MenuSimulateChanges">Просмотр и выбор изменений Metadata AI</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">Просмотр и выбор изменений метаданных для выбранных игр или текущего списка</sys:String>
     <sys:String x:Key="MTDA_MenuHistory">Просмотр истории изменений</sys:String>
+    <sys:String x:Key="MTDA_MenuSettings">Настройки</sys:String>
     <sys:String x:Key="MTDA_MenuViewProvenance">Просмотреть последнюю информацию о происхождении Metadata AI</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Симуляция Metadata AI</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">Изменения не сохранены. Применение повторно использует эти результаты без вызова AI. Для одной игры можно выбрать обложку, иконку и фон перед применением.</sys:String>

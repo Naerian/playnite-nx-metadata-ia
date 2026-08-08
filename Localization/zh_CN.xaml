@@ -294,9 +294,19 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_MediaSearchTerms">Search terms</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Format / resolution</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Choose a format or resolution and press Search to refresh the candidates.</sys:String>
+    <sys:String x:Key="MTDA_MediaSearchAllResolutions">All resolutions</sys:String>
     <sys:String x:Key="MTDA_Search">Search</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTermsRequired">Enter at least one search term.</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaQuery">Searching for {0} using ‘{1}’...</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFile">Choose image from device</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFileHelp">Choose a local image to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaLocalFile">Or choose an image from this device</sys:String>
+    <sys:String x:Key="MTDA_RestoreMediaCandidates">Restore candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
+    <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTermsHelp">Enter words or phrases separated by commas, semicolons, or line breaks. They are removed from the game title only when searching for that media type. Example: GOTY, Enhanced, Deluxe Edition.</sys:String>
     <sys:String x:Key="MTDA_WallhavenHelp">Wallhaven is an optional background-only fallback. Metadata AI requests SFW, 16:9 wallpapers and prefers the selected resolution; no API key is required.</sys:String>
@@ -330,6 +340,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_OptionApplyOverwrite">覆盖</sys:String>
     <sys:String x:Key="MTDA_OptionApplySkip">不修改</sys:String>
     <sys:String x:Key="MTDA_OptionBackground4K">全屏 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundHd">Fullscreen HD (1280x720)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundFullHd">全屏全高清 (1920x1080)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoAny">任意</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">优先无标志</sys:String>
@@ -342,7 +353,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite竖版 (600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">Playnite方形 (600x600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">圆形 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">原始/透明</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">原始</sys:String>
     <sys:String x:Key="MTDA_OptionIconRounded">圆角 256</sys:String>
     <sys:String x:Key="MTDA_OptionIconSquare">方形 256</sys:String>
     <sys:String x:Key="MTDA_OptionLengthExtraLong">超长</sys:String>
@@ -543,6 +554,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_MenuSimulateChanges">预览并选择 Metadata AI 变更</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">预览并选择所选游戏或当前列表的元数据变更</sys:String>
     <sys:String x:Key="MTDA_MenuHistory">查看更改历史</sys:String>
+    <sys:String x:Key="MTDA_MenuSettings">设置</sys:String>
     <sys:String x:Key="MTDA_MenuViewProvenance">查看最近的 Metadata AI 来源</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Metadata AI 模拟</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">未写入任何更改。应用时将重用这些生成结果，而不会再次调用 AI 提供者。单个游戏时，还可在应用前选择封面、图标和背景候选项。</sys:String>

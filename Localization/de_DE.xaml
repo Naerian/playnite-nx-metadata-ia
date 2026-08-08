@@ -294,9 +294,19 @@ Was Sie ohne Bezahlung tun können:
     <sys:String x:Key="MTDA_MediaSearchTerms">Search terms</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Format / resolution</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Choose a format or resolution and press Search to refresh the candidates.</sys:String>
+    <sys:String x:Key="MTDA_MediaSearchAllResolutions">All resolutions</sys:String>
     <sys:String x:Key="MTDA_Search">Search</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTermsRequired">Enter at least one search term.</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaQuery">Searching for {0} using ‘{1}’...</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFile">Choose image from device</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFileHelp">Choose a local image to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaLocalFile">Or choose an image from this device</sys:String>
+    <sys:String x:Key="MTDA_RestoreMediaCandidates">Restore candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
+    <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTermsHelp">Enter words or phrases separated by commas, semicolons, or line breaks. They are removed from the game title only when searching for that media type. Example: GOTY, Enhanced, Deluxe Edition.</sys:String>
     <sys:String x:Key="MTDA_WallhavenHelp">Wallhaven is an optional background-only fallback. Metadata AI requests SFW, 16:9 wallpapers and prefers the selected resolution; no API key is required.</sys:String>
@@ -330,6 +340,7 @@ Was Sie ohne Bezahlung tun können:
     <sys:String x:Key="MTDA_OptionApplyOverwrite">Überschreiben</sys:String>
     <sys:String x:Key="MTDA_OptionApplySkip">Nicht berühren</sys:String>
     <sys:String x:Key="MTDA_OptionBackground4K">Vollbild 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundHd">Fullscreen HD (1280x720)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundFullHd">Vollbild Full HD (1920x1080)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoAny">Beliebig</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">Lieber ohne Logo</sys:String>
@@ -342,7 +353,7 @@ Was Sie ohne Bezahlung tun können:
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite vertikal (600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">Playnite-Quadrat (600x600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">Kreis 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">Original/transparent</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">Original</sys:String>
     <sys:String x:Key="MTDA_OptionIconRounded">Gerundet 256</sys:String>
     <sys:String x:Key="MTDA_OptionIconSquare">Quadrat 256</sys:String>
     <sys:String x:Key="MTDA_OptionLengthExtraLong">Extra lang</sys:String>
@@ -553,6 +564,7 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateChanges">Metadata AI-Änderungen ansehen und auswählen</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">Metadata-Änderungen für ausgewählte Spiele oder aktuelle Liste ansehen und auswählen</sys:String>
     <sys:String x:Key="MTDA_MenuHistory">Änderungsverlauf anzeigen</sys:String>
+    <sys:String x:Key="MTDA_MenuSettings">Einstellungen</sys:String>
     <sys:String x:Key="MTDA_MenuViewProvenance">Letzte Metadata AI-Herkunft anzeigen</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Metadata AI-Simulation</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">Es wurden keine Änderungen gespeichert. Beim Anwenden werden diese generierten Ergebnisse wiederverwendet, ohne den AI-Anbieter erneut zu kontaktieren. Bei einem Spiel können Sie vor dem Anwenden auch Cover-, Icon- und Hintergrund-Kandidaten auswählen.</sys:String>

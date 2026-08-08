@@ -294,9 +294,19 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_MediaSearchTerms">Search terms</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Format / resolution</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Choose a format or resolution and press Search to refresh the candidates.</sys:String>
+    <sys:String x:Key="MTDA_MediaSearchAllResolutions">All resolutions</sys:String>
     <sys:String x:Key="MTDA_Search">Search</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTermsRequired">Enter at least one search term.</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaQuery">Searching for {0} using ‘{1}’...</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFile">Choose image from device</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFileHelp">Choose a local image to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaLocalFile">Or choose an image from this device</sys:String>
+    <sys:String x:Key="MTDA_RestoreMediaCandidates">Restore candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
+    <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTermsHelp">Enter words or phrases separated by commas, semicolons, or line breaks. They are removed from the game title only when searching for that media type. Example: GOTY, Enhanced, Deluxe Edition.</sys:String>
     <sys:String x:Key="MTDA_WallhavenHelp">Wallhaven is an optional background-only fallback. Metadata AI requests SFW, 16:9 wallpapers and prefers the selected resolution; no API key is required.</sys:String>
@@ -330,6 +340,7 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_OptionApplyOverwrite">덮어쓰기</sys:String>
     <sys:String x:Key="MTDA_OptionApplySkip">만지지 마세요</sys:String>
     <sys:String x:Key="MTDA_OptionBackground4K">전체 화면 4K(3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundHd">Fullscreen HD (1280x720)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundFullHd">전체 화면 풀 HD(1920x1080)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoAny">어느</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">로고가 없는 것을 선호함</sys:String>
@@ -342,7 +353,7 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite 세로형(600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">플레이나이트 스퀘어(600x600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">서클 256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">원본/투명</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">원래의</sys:String>
     <sys:String x:Key="MTDA_OptionIconRounded">반올림된 256</sys:String>
     <sys:String x:Key="MTDA_OptionIconSquare">스퀘어 256</sys:String>
     <sys:String x:Key="MTDA_OptionLengthExtraLong">아주 길다</sys:String>
@@ -543,6 +554,7 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_MenuSimulateChanges">Metadata AI 변경 미리보기 및 선택</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">선택한 게임 또는 현재 목록의 메타데이터 변경 미리보기 및 선택</sys:String>
     <sys:String x:Key="MTDA_MenuHistory">변경 기록 보기</sys:String>
+    <sys:String x:Key="MTDA_MenuSettings">설정</sys:String>
     <sys:String x:Key="MTDA_MenuViewProvenance">최근 Metadata AI 출처 보기</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Metadata AI 시뮬레이션</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">변경 사항이 저장되지 않았습니다. 적용 시 AI 제공자를 다시 호출하지 않고 생성된 결과를 재사용합니다. 한 게임의 경우 적용 전에 커버, 아이콘, 배경 후보를 선택할 수 있습니다.</sys:String>

@@ -294,9 +294,19 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MediaSearchTerms">Search terms</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Format / resolution</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Choose a format or resolution and press Search to refresh the candidates.</sys:String>
+    <sys:String x:Key="MTDA_MediaSearchAllResolutions">All resolutions</sys:String>
     <sys:String x:Key="MTDA_Search">Search</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTermsRequired">Enter at least one search term.</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaQuery">Searching for {0} using ‘{1}’...</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFile">Choose image from device</sys:String>
+    <sys:String x:Key="MTDA_ChooseManualMediaFileHelp">Choose a local image to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaLocalFile">Or choose an image from this device</sys:String>
+    <sys:String x:Key="MTDA_RestoreMediaCandidates">Restore candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
+    <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
+    <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTermsHelp">Enter words or phrases separated by commas, semicolons, or line breaks. They are removed from the game title only when searching for that media type. Example: GOTY, Enhanced, Deluxe Edition.</sys:String>
     <sys:String x:Key="MTDA_WallhavenHelp">Wallhaven is an optional background-only fallback. Metadata AI requests SFW, 16:9 wallpapers and prefers the selected resolution; no API key is required.</sys:String>
@@ -330,6 +340,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_OptionApplyOverwrite">上書き</sys:String>
     <sys:String x:Key="MTDA_OptionApplySkip">触れないでください</sys:String>
     <sys:String x:Key="MTDA_OptionBackground4K">フルスクリーン 4K (3840x2160)</sys:String>
+    <sys:String x:Key="MTDA_OptionBackgroundHd">Fullscreen HD (1280x720)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundFullHd">フルスクリーン フル HD (1920x1080)</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoAny">どれでも</sys:String>
     <sys:String x:Key="MTDA_OptionBackgroundLogoNoLogo">ロゴなしを好む</sys:String>
@@ -342,7 +353,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_OptionCoverPlayniteVertical">Playnite 縦型 (600x900)</sys:String>
     <sys:String x:Key="MTDA_OptionCoverSquare">プレイナイトスクエア(600x600)</sys:String>
     <sys:String x:Key="MTDA_OptionIconCircle">サークル256</sys:String>
-    <sys:String x:Key="MTDA_OptionIconOriginal">オリジナル/透明</sys:String>
+    <sys:String x:Key="MTDA_OptionIconOriginal">オリジナル</sys:String>
     <sys:String x:Key="MTDA_OptionIconRounded">四捨五入256</sys:String>
     <sys:String x:Key="MTDA_OptionIconSquare">スクエア256</sys:String>
     <sys:String x:Key="MTDA_OptionLengthExtraLong">エクストラロング</sys:String>
@@ -543,6 +554,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MenuSimulateChanges">Metadata AIの変更をプレビューして選択</sys:String>
     <sys:String x:Key="MTDA_MenuSimulateSelectedOrList">選択中のゲームまたは現在のリストのメタデータ変更をプレビューして選択</sys:String>
     <sys:String x:Key="MTDA_MenuHistory">変更履歴を見る</sys:String>
+    <sys:String x:Key="MTDA_MenuSettings">設定</sys:String>
     <sys:String x:Key="MTDA_MenuViewProvenance">最新のMetadata AIの出所を表示</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Metadata AIシミュレーション</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">変更はまだ保存されていません。適用するとAIプロバイダーを再呼び出しせずに生成結果を再利用します。1つのゲームの場合、適用前にカバー、アイコン、背景の候補を選べます。</sys:String>

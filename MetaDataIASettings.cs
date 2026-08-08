@@ -265,6 +265,7 @@ namespace MetaDataIAPlugin
         private bool mediaUseRawg = false;
         private string rawgApiKey = string.Empty;
         private bool mediaUseWallhaven = false;
+        private string mediaPickerViewMode = MediaPickerViewGrid;
         private bool mediaUseScreenScraper = false;
         private string screenScraperUserName = string.Empty;
         private string screenScraperPassword = string.Empty;
@@ -313,9 +314,12 @@ namespace MetaDataIAPlugin
         public const string BackgroundPresetOriginal = "Original";
         public const string BackgroundPresetSteamHero = "Hero Steam (3840x1240)";
         public const string BackgroundPresetSteamHeroSmall = "Hero Steam ligero (1920x620)";
+        public const string BackgroundPresetHd = "Pantalla completa HD (1280x720)";
         public const string BackgroundPresetFullHd = "Pantalla completa Full HD (1920x1080)";
         public const string BackgroundPresetQhd = "Pantalla completa QHD (2560x1440)";
         public const string BackgroundPreset4K = "Pantalla completa 4K (3840x2160)";
+        public const string MediaPickerViewGrid = "Grid";
+        public const string MediaPickerViewList = "List";
         public const string BackgroundLogoAny = "Cualquiera";
         public const string BackgroundLogoPreferNoLogo = "Preferir sin logo";
         public const string BackgroundLogoPreferLogo = "Preferir con logo";
@@ -524,6 +528,7 @@ namespace MetaDataIAPlugin
                 }
             }
         }
+        public string MediaPickerViewMode { get { return mediaPickerViewMode; } set { SetValue(ref mediaPickerViewMode, value); } }
         public bool MediaUseScreenScraper
         {
             get { return mediaUseScreenScraper; }
@@ -732,6 +737,9 @@ namespace MetaDataIAPlugin
             CoverImagePreset = EnsureOption(CoverImagePreset, CoverPresetPlayniteDefined);
             IconPreset = EnsureOption(IconPreset, IconPresetOriginal);
             BackgroundImagePreset = EnsureOption(BackgroundImagePreset, BackgroundPresetSteamHero);
+            MediaPickerViewMode = string.Equals(MediaPickerViewMode, MediaPickerViewList, StringComparison.OrdinalIgnoreCase)
+                ? MediaPickerViewList
+                : MediaPickerViewGrid;
             BackgroundLogoPreference = EnsureOption(BackgroundLogoPreference, BackgroundLogoAny);
             MediaAutomaticPriority = EnsureOption(MediaAutomaticPriority, MediaPriorityBalanced);
             CoverCropAnchor = EnsureOption(CoverCropAnchor, CropAnchorCenter);
@@ -1877,7 +1885,7 @@ namespace MetaDataIAPlugin
             {
                 return new List<LocalizedOption>
                 {
-                    Option(IconPresetOriginal, "MTDA_OptionIconOriginal", "Original/transparent"),
+                    Option(IconPresetOriginal, "MTDA_OptionIconOriginal", "Original"),
                     Option(IconPresetSquare, "MTDA_OptionIconSquare", "Square 256"),
                     Option(IconPresetRounded, "MTDA_OptionIconRounded", "Rounded 256"),
                     Option(IconPresetCircle, "MTDA_OptionIconCircle", "Circle 256")
@@ -1894,6 +1902,7 @@ namespace MetaDataIAPlugin
                 {
                     Option(BackgroundPresetSteamHero, "MTDA_OptionBackgroundSteamHero", "Steam hero (3840x1240)"),
                     Option(BackgroundPresetSteamHeroSmall, "MTDA_OptionBackgroundSteamHeroSmall", "Light Steam hero (1920x620)"),
+                    Option(BackgroundPresetHd, "MTDA_OptionBackgroundHd", "Fullscreen HD (1280x720)"),
                     Option(BackgroundPresetFullHd, "MTDA_OptionBackgroundFullHd", "Fullscreen Full HD (1920x1080)"),
                     Option(BackgroundPresetQhd, "MTDA_OptionBackgroundQhd", "Fullscreen QHD (2560x1440)"),
                     Option(BackgroundPreset4K, "MTDA_OptionBackground4K", "Fullscreen 4K (3840x2160)"),
