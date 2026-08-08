@@ -474,7 +474,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AutomaticMediaPriority">Automatic selection priority</sys:String>
     <sys:String x:Key="MTDA_ProcessedImageQuality">Processed image quality</sys:String>
     <sys:String x:Key="MTDA_CoverCropAnchor">Cover crop origin</sys:String>
-    <sys:String x:Key="MTDA_BackgroundCropAnchor">Background crop origin</sys:String>
+    <sys:String x:Key="MTDA_BackgroundCropAnchor">Background crop area</sys:String>
     <sys:String x:Key="MTDA_CropPickerTitle">Crop positioning</sys:String>
     <sys:String x:Key="MTDA_CropAnchorPickerHelp">Choose which area of the image should be preserved when it is cropped to the final aspect ratio.</sys:String>
     <sys:String x:Key="MTDA_ImageProcessingHelp">Priority controls automatic and batch selection. Strict quality skips images that would require upscaling after cropping. Quality changes JPEG compression, not output resolution; PNG icons remain lossless.</sys:String>
@@ -812,4 +812,17 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configure a valid provider endpoint first.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Enter the provider API key to load its available models.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsUnavailable">The model list is not available right now. You can enter the model manually.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrl">External image URL</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlHelp">Paste a direct HTTP or HTTPS image URL to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_PreviewManualMediaUrl">Preview URL</sys:String>
+    <sys:String x:Key="MTDA_ClearManualMediaUrl">Clear</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlPrompt">Preview the image URL to use it instead of the candidates from the configured sources.</sys:String>
+    <sys:String x:Key="MTDA_ProgressPreviewingManualMedia">Validating image URL...</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaUrl">Enter a valid HTTP or HTTPS image URL.</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaNotImage">The URL could not be loaded as a valid image.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaStyle">manual image</sys:String>
+    <sys:String x:Key="MTDA_SourceManualUrl">Manual URL</sys:String>
+    <sys:String x:Key="MTDA_NoCandidatesAtRequestedResolution">The sources returned candidates, but none matched the requested resolution after validation.</sys:String>
+    <sys:String x:Key="MTDA_MediaResolutionFallback">No {0} candidates were available at {1}. The filter was changed to the closest available resolution: {2}.</sys:String>
+    <sys:String x:Key="MTDA_BackgroundCropAnchorPickerHelp">This crop is used when the selected image is larger than, or has a different aspect ratio from, the global output. Final background output: {0}.</sys:String>
 </ResourceDictionary>

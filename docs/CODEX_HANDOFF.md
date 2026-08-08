@@ -18,15 +18,14 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.2.9`
-- Latest release tag: `v1.2.9`
-- Latest release commit: see tag `v1.2.9`
+- Latest released version: `1.3.0`
+- Latest release tag: `v1.3.0`
+- Latest release commit: see tag `v1.3.0`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_2_9.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_3_0.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.2.9
-- Public package SHA-256 verified for v1.2.9:
-  `4E65040CDAC550CBAF7650C955FFDA5D274FDE0CF1969DB1DF03ED59467029D0`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.3.0
+- Public package SHA-256 verified for v1.3.0: pending release verification.
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -60,7 +59,8 @@ Main capabilities currently implemented:
 - Automatic media selection with source priority, quality/resolution preferences,
   crop/output settings and fallback behavior.
 - Manual media picker with candidate selection, preview, browser links, editable
-  search terms and a temporary per-media format/resolution selector.
+  search terms, a temporary per-media format/resolution selector, and validated
+  direct HTTP/HTTPS image URLs that reuse the normal crop and processing pipeline.
 - First-run setup assistant.
 - Settings export/import under Maintenance.
 - Dry-run/preview window for metadata changes.

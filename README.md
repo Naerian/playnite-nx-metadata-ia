@@ -197,7 +197,7 @@ The selected format and resolution describe the final stored file. Automatic pri
 
 When Metadata AI replaces a Playnite cover, icon, or background, it removes the previous internal file after the game reference has been updated and only when no other game still references it. The Maintenance tab can also scan existing game storage for unreferenced image files and shows the file count and recoverable space before asking for confirmation.
 
-In manual single-game workflows, the media picker shows candidates grouped by media type. Each tab lets you refine the search terms and temporarily change its format or resolution without changing the global setting. Click a candidate tile to select it, or open the image in your browser before applying the final selection.
+In manual single-game workflows, the media picker shows candidates grouped by media type. Each tab lets you refine the search terms and temporarily change its format or resolution without changing the global setting. You can also paste a direct HTTP or HTTPS image URL, preview and validate it, then apply it with the same crop, resizing and output processing as source candidates. While a manual URL is active, it temporarily replaces the source candidates; clearing it restores the previously loaded list. Click a candidate tile to select it, or open the image in your browser before applying the final selection.
 
 Wallhaven is available as an optional background-only fallback. It requests SFW, 16:9 wallpapers and first filters by the selected resolution; if there are no exact candidates, it retries without a minimum resolution so lower-resolution fullscreen artwork remains available for review.
 

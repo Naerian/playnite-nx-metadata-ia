@@ -450,7 +450,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_AutomaticMediaPriority">Prioridad de selección automática</sys:String>
     <sys:String x:Key="MTDA_ProcessedImageQuality">Calidad de imagen procesada</sys:String>
     <sys:String x:Key="MTDA_CoverCropAnchor">Origen de recorte de portadas</sys:String>
-    <sys:String x:Key="MTDA_BackgroundCropAnchor">Origen de recorte de fondos</sys:String>
+    <sys:String x:Key="MTDA_BackgroundCropAnchor">Zona de recorte de fondo</sys:String>
     <sys:String x:Key="MTDA_CropPickerTitle">Posicion del recorte</sys:String>
     <sys:String x:Key="MTDA_CropAnchorPickerHelp">Elige que zona de la imagen debe conservarse cuando se recorte para adaptarla a la proporcion final.</sys:String>
     <sys:String x:Key="MTDA_ImageProcessingHelp">La prioridad controla la selección automática y por lotes. Calidad estricta omite imágenes que necesitarían ampliarse después del recorte. La calidad cambia la compresión JPEG, no la resolución final; los iconos PNG siguen sin pérdida.</sys:String>
@@ -788,4 +788,17 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configura primero un endpoint válido para el proveedor.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Introduce la clave API del proveedor para consultar sus modelos disponibles.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsUnavailable">La lista de modelos no está disponible ahora mismo. Puedes introducir el modelo manualmente.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrl">URL de imagen externa</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlHelp">Pega una URL HTTP o HTTPS directa a una imagen para aplicarle las mismas reglas de recorte y procesado.</sys:String>
+    <sys:String x:Key="MTDA_PreviewManualMediaUrl">Previsualizar URL</sys:String>
+    <sys:String x:Key="MTDA_ClearManualMediaUrl">Borrar</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlPrompt">Previsualiza la URL de la imagen para usarla en lugar de los candidatos de las fuentes configuradas.</sys:String>
+    <sys:String x:Key="MTDA_ProgressPreviewingManualMedia">Validando URL de imagen...</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaUrl">Introduce una URL HTTP o HTTPS válida de una imagen.</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaNotImage">No se ha podido cargar la URL como una imagen válida.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaStyle">imagen manual</sys:String>
+    <sys:String x:Key="MTDA_SourceManualUrl">URL manual</sys:String>
+    <sys:String x:Key="MTDA_NoCandidatesAtRequestedResolution">Las fuentes han devuelto candidatos, pero ninguno coincide con la resolución solicitada tras validarlo.</sys:String>
+    <sys:String x:Key="MTDA_MediaResolutionFallback">No hay candidatos de {0} disponibles en {1}. El filtro se ha cambiado a la resolución disponible más cercana: {2}.</sys:String>
+    <sys:String x:Key="MTDA_BackgroundCropAnchorPickerHelp">Este recorte se aplica cuando la imagen seleccionada es mayor que la salida global o tiene una proporción distinta. Salida final del fondo: {0}.</sys:String>
 </ResourceDictionary>

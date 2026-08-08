@@ -60,6 +60,20 @@ namespace MetaDataIAPlugin
         }
     }
 
+    public class MediaPreviewSearchResult
+    {
+        public MediaPreviewSearchResult()
+        {
+            Options = new List<MediaPreviewOption>();
+        }
+
+        public List<MediaPreviewOption> Options { get; set; }
+        public bool UsedResolutionFallback { get; set; }
+        public bool HadCandidatesOutsideRequestedResolution { get; set; }
+        public int ResolvedWidth { get; set; }
+        public int ResolvedHeight { get; set; }
+    }
+
     public class MediaGenerationService
     {
         private const string ApiBase = "https://www.steamgriddb.com/api/v2";
@@ -155,6 +169,12 @@ namespace MetaDataIAPlugin
 
         public async Task<List<MediaPreviewOption>> GetPreviewOptionsAsync(Game game, MediaKind kind, string searchText, CancellationToken cancelToken = default(CancellationToken))
         {
+            var result = await GetPreviewOptionsWithResolutionFallbackAsync(game, kind, searchText, cancelToken).ConfigureAwait(false);
+            return result.Options;
+        }
+
+        public async Task<MediaPreviewSearchResult> GetPreviewOptionsWithResolutionFallbackAsync(Game game, MediaKind kind, string searchText = null, CancellationToken cancelToken = default(CancellationToken))
+        {
             if (game == null)
             {
                 throw new ArgumentNullException("game");
@@ -163,11 +183,59 @@ namespace MetaDataIAPlugin
             var candidates = await GetCandidates(game, kind, searchText, cancelToken).ConfigureAwait(false);
             var maximum = Math.Max(1, settings.MediaSearchMaxResults);
             var validated = await ValidatePreviewCandidatesAsync(OrderCandidates(candidates, kind).ToList(), maximum, cancelToken).ConfigureAwait(false);
+            var matchingTarget = FilterPreviewCandidatesByTarget(validated, kind).ToList();
+            var fallback = matchingTarget.Count > 0
+                ? matchingTarget
+                : GetPreviewResolutionFallback(validated, kind).ToList();
 
-            return OrderCandidates(validated, kind)
+            var selected = OrderCandidates(fallback, kind)
                 .Take(maximum)
-                .Select(x => ToPreviewOption(x, kind))
                 .ToList();
+            var resolution = selected.FirstOrDefault();
+            return new MediaPreviewSearchResult
+            {
+                Options = selected.Select(x => ToPreviewOption(x, kind)).ToList(),
+                UsedResolutionFallback = matchingTarget.Count == 0 && selected.Count > 0 && GetTargetSize(kind).Width > 0 && GetTargetSize(kind).Height > 0,
+                HadCandidatesOutsideRequestedResolution = matchingTarget.Count == 0 && validated.Count > 0 && GetTargetSize(kind).Width > 0 && GetTargetSize(kind).Height > 0,
+                ResolvedWidth = resolution == null ? 0 : resolution.Width,
+                ResolvedHeight = resolution == null ? 0 : resolution.Height
+            };
+        }
+
+        private IEnumerable<MediaCandidate> FilterPreviewCandidatesByTarget(IEnumerable<MediaCandidate> candidates, MediaKind kind)
+        {
+            var target = GetTargetSize(kind);
+            if (target.Width <= 0 || target.Height <= 0)
+            {
+                return candidates ?? Enumerable.Empty<MediaCandidate>();
+            }
+
+            return (candidates ?? Enumerable.Empty<MediaCandidate>())
+                .Where(x => x != null && x.Width == target.Width && x.Height == target.Height)
+                .ToList();
+        }
+
+        private IEnumerable<MediaCandidate> GetPreviewResolutionFallback(IEnumerable<MediaCandidate> candidates, MediaKind kind)
+        {
+            var available = (candidates ?? Enumerable.Empty<MediaCandidate>())
+                .Where(x => x != null && x.Width > 0 && x.Height > 0)
+                .ToList();
+            var target = GetTargetSize(kind);
+            if (available.Count == 0 || target.Width <= 0 || target.Height <= 0)
+            {
+                return available;
+            }
+
+            var targetRatio = (double)target.Width / target.Height;
+            var targetPixels = (long)target.Width * target.Height;
+            var bestResolution = available
+                .GroupBy(x => new { x.Width, x.Height })
+                .OrderBy(x => Math.Abs(((double)x.Key.Width / x.Key.Height) - targetRatio))
+                .ThenBy(x => Math.Abs(((long)x.Key.Width * x.Key.Height) - targetPixels))
+                .ThenByDescending(x => (long)x.Key.Width * x.Key.Height)
+                .Select(x => x.Key)
+                .First();
+            return available.Where(x => x.Width == bestResolution.Width && x.Height == bestResolution.Height).ToList();
         }
 
         public async Task<MediaPreviewOption> GetRecommendedPreviewOptionAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))
@@ -208,6 +276,35 @@ namespace MetaDataIAPlugin
                 IsOfficial = candidate.IsOfficial,
                 RankingDetails = BuildRankingDetails(candidate, kind)
             };
+        }
+
+        public async Task<MediaPreviewOption> GetManualPreviewOptionAsync(MediaKind kind, string url, CancellationToken cancelToken = default(CancellationToken))
+        {
+            var trimmedUrl = (url ?? string.Empty).Trim();
+            Uri uri;
+            if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out uri) ||
+                (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
+                 !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new ArgumentException(Loc("MTDA_ErrorManualMediaUrl", "Enter a valid HTTP or HTTPS image URL."), "url");
+            }
+
+            var candidate = CreateExternalCandidate(
+                uri.AbsoluteUri,
+                kind,
+                0,
+                0,
+                Loc("MTDA_ManualMediaStyle", "manual image"),
+                100,
+                Loc("MTDA_SourceManualUrl", "Manual URL"),
+                0,
+                false);
+            if (!await ProbeMediaCandidateAsync(candidate, cancelToken).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return ToPreviewOption(candidate, kind);
         }
 
         public async Task<int> CountPreviewOptionsAsync(Game game, MediaKind kind, CancellationToken cancelToken = default(CancellationToken))

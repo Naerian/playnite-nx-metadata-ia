@@ -795,4 +795,14 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Konfiguriere zuerst einen gültigen Anbieter-Endpunkt.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Gib den API-Schlüssel ein, um die verfügbaren Modelle zu laden.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsUnavailable">Die Modellliste ist derzeit nicht verfügbar. Das Modell kann manuell eingegeben werden.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrl">External image URL</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlHelp">Paste a direct HTTP or HTTPS image URL to use the same crop and processing rules.</sys:String>
+    <sys:String x:Key="MTDA_PreviewManualMediaUrl">Preview URL</sys:String>
+    <sys:String x:Key="MTDA_ClearManualMediaUrl">Clear</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaUrlPrompt">Preview the image URL to use it instead of the candidates from the configured sources.</sys:String>
+    <sys:String x:Key="MTDA_ProgressPreviewingManualMedia">Validating image URL...</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaUrl">Enter a valid HTTP or HTTPS image URL.</sys:String>
+    <sys:String x:Key="MTDA_ErrorManualMediaNotImage">The URL could not be loaded as a valid image.</sys:String>
+    <sys:String x:Key="MTDA_ManualMediaStyle">manual image</sys:String>
+    <sys:String x:Key="MTDA_SourceManualUrl">Manual URL</sys:String>
 </ResourceDictionary>
