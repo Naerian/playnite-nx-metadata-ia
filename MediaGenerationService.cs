@@ -46,6 +46,7 @@ namespace MetaDataIAPlugin
         public string Extension { get; set; }
         public string SourceName { get; set; }
         public bool IsOfficial { get; set; }
+        public bool IsAnimated { get; set; }
         public string RankingDetails { get; set; }
 
         public string DisplayText
@@ -282,6 +283,7 @@ namespace MetaDataIAPlugin
                 Extension = candidate.Extension,
                 SourceName = candidate.SourceName,
                 IsOfficial = candidate.IsOfficial,
+                IsAnimated = candidate.IsAnimated,
                 RankingDetails = BuildRankingDetails(candidate, kind)
             };
         }
@@ -427,7 +429,9 @@ namespace MetaDataIAPlugin
                     ex);
             }
 
-            var processed = ProcessImage(bytes, option.Kind, option.Extension);
+            var processed = IsAnimatedImage(bytes)
+                ? new ProcessedImage { Content = bytes, Extension = DetectImageExtension(bytes, option.Extension) }
+                : ProcessImage(bytes, option.Kind, option.Extension);
             if (option.Kind != MediaKind.Logo && IsMostlyBlankBytes(bytes, option.Kind))
             {
                 throw new InvalidOperationException(Loc("MTDA_ErrorBlankMedia", "This candidate is almost entirely black or transparent. Choose another image."));
@@ -1271,7 +1275,7 @@ namespace MetaDataIAPlugin
         {
             try
             {
-                var query = "?types=static";
+                var query = "?types=static,animated";
                 if (settings.MediaAvoidNsfw)
                 {
                     query += "&nsfw=false";
@@ -1337,7 +1341,8 @@ namespace MetaDataIAPlugin
                 Extension = ExtensionFromUrl(url, mime),
                 SourceName = "SteamGridDB",
                 SourcePriority = 70,
-                IsOfficial = (((string)item["style"] ?? string.Empty).IndexOf("official", StringComparison.OrdinalIgnoreCase) >= 0)
+                IsOfficial = (((string)item["style"] ?? string.Empty).IndexOf("official", StringComparison.OrdinalIgnoreCase) >= 0),
+                IsAnimated = (bool?)item["animated"] ?? false
             };
         }
 
@@ -2898,6 +2903,34 @@ namespace MetaDataIAPlugin
             return fallback.StartsWith(".", StringComparison.Ordinal) ? fallback : "." + fallback;
         }
 
+        private static bool IsAnimatedImage(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length < 12)
+            {
+                return false;
+            }
+
+            if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38)
+            {
+                var frames = 0;
+                for (var index = 13; index < bytes.Length; index++)
+                {
+                    if (bytes[index] == 0x2C && ++frames > 1) return true;
+                }
+            }
+
+            if (bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+                bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
+            {
+                for (var index = 12; index + 3 < bytes.Length; index++)
+                {
+                    if (bytes[index] == 0x41 && bytes[index + 1] == 0x4E && bytes[index + 2] == 0x49 && bytes[index + 3] == 0x4D) return true;
+                }
+            }
+
+            return false;
+        }
+
         private long GetJpegQuality()
         {
             if (settings.ProcessedImageQuality == MetaDataIASettings.ImageQualitySpaceSaving)
@@ -3007,7 +3040,7 @@ namespace MetaDataIAPlugin
 
         private string BuildAssetQuery(MediaKind kind, bool includeStyleFilters, bool includeDimensionFilters)
         {
-            var parts = new List<string> { "types=static" };
+            var parts = new List<string> { "types=static,animated" };
             if (settings.MediaAvoidNsfw)
             {
                 parts.Add("nsfw=false");
@@ -3694,6 +3727,7 @@ namespace MetaDataIAPlugin
             public string SourceName { get; set; }
             public int SourcePriority { get; set; }
             public bool IsOfficial { get; set; }
+            public bool IsAnimated { get; set; }
         }
 
         private static string Loc(string key, string fallback)

@@ -36,6 +36,25 @@ namespace MetaDataIAPlugin
             public string Reason { get; set; }
         }
 
+        private sealed class MediaPickerCandidateFilter
+        {
+            public bool OfficialOnly { get; set; }
+            public bool HideScreenshots { get; set; }
+            public string Aspect { get; set; }
+            public HashSet<string> Styles { get; private set; }
+
+            public MediaPickerCandidateFilter()
+            {
+                Aspect = "all";
+                Styles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            public int ActiveCount
+            {
+                get { return (OfficialOnly ? 1 : 0) + (HideScreenshots ? 1 : 0) + (string.Equals(Aspect, "all", StringComparison.OrdinalIgnoreCase) ? 0 : 1) + Styles.Count; }
+            }
+        }
+
         // The global Playnite progress dialog cannot be safely nested inside this
         // modal picker: its application-wide backdrop can remain active afterwards.
         // Keep the feedback local to the picker while preserving theme resources.
@@ -312,6 +331,22 @@ namespace MetaDataIAPlugin
             }
             yield return CreateGameSubmenuSeparator("MTDA_TabMedia", "Media");
             yield return CreateGameMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
+            if (!IsFullscreenMode && !multipleGames)
+            {
+                yield return CreateGameSubmenuSeparator("MTDA_TabMedia", "Media");
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_OpenGameMediaFolder", "Open game media folder"),
+                    MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
+                    Action = actionArgs => OpenGameMediaFolder(actionArgs.Games.FirstOrDefault())
+                };
+                yield return new GameMenuItem
+                {
+                    Description = Loc("MTDA_ClearGameMedia", "Remove all game media"),
+                    MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
+                    Action = actionArgs => ClearGameMedia(actionArgs.Games.FirstOrDefault())
+                };
+            }
             yield return CreateGameRootSeparator();
 
             if (!IsFullscreenMode && !multipleGames)
@@ -1705,6 +1740,132 @@ namespace MetaDataIAPlugin
             return MetaDataIASettings.BackgroundPresetOriginal;
         }
 
+        private static IEnumerable<string> GetPickerSourceNames(MetaDataIASettings source, MediaKind kind)
+        {
+            if (source == null) return Enumerable.Empty<string>();
+            var names = new List<string>();
+            if (source.UseOriginIntegrationForMedia && kind != MediaKind.Logo) names.Add(MetaDataIASettings.SourceOriginIntegration);
+            if (source.MediaUseSteamOfficial && kind != MediaKind.Logo) names.Add("Steam official");
+            if (source.MediaUseSteamScreenshots && kind == MediaKind.Background) names.Add("Steam screenshots");
+            if (source.MediaUsePsnStore && kind != MediaKind.Logo) names.Add(OfficialStoreDataService.SourcePsnStore);
+            if (source.MediaUseXboxStore && kind != MediaKind.Logo) names.Add(OfficialStoreDataService.SourceXboxStore);
+            if (source.MediaUseEpicStore && kind != MediaKind.Logo) names.Add(OfficialStoreDataService.SourceEpicStore);
+            if (source.MediaUseSteamGridDb) names.Add("SteamGridDB");
+            if (source.MediaUseRawg && kind != MediaKind.Logo) names.Add("RAWG");
+            if (source.MediaUseWallhaven && kind == MediaKind.Background) names.Add("Wallhaven");
+            if (source.MediaUseScreenScraper) names.Add("ScreenScraper");
+            if (source.MediaUseGiantBomb && kind != MediaKind.Logo) names.Add("Giant Bomb");
+            if (source.MediaUseMobyGames && kind != MediaKind.Logo) names.Add("MobyGames");
+            if (source.MediaUseIgdb && kind != MediaKind.Logo) names.Add("IGDB");
+            return names;
+        }
+
+        private static MetaDataIASettings CreatePickerSourceFilteredSettings(MetaDataIASettings source, ISet<string> enabledSources)
+        {
+            var value = Serialization.GetClone(source);
+            var enabled = enabledSources ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            value.UseOriginIntegrationForMedia &= enabled.Contains(MetaDataIASettings.SourceOriginIntegration);
+            value.MediaUseSteamOfficial &= enabled.Contains("Steam official");
+            value.MediaUseSteamScreenshots &= enabled.Contains("Steam screenshots");
+            value.MediaUsePsnStore &= enabled.Contains(OfficialStoreDataService.SourcePsnStore);
+            value.MediaUseXboxStore &= enabled.Contains(OfficialStoreDataService.SourceXboxStore);
+            value.MediaUseEpicStore &= enabled.Contains(OfficialStoreDataService.SourceEpicStore);
+            value.MediaUseSteamGridDb &= enabled.Contains("SteamGridDB");
+            value.MediaUseRawg &= enabled.Contains("RAWG");
+            value.MediaUseWallhaven &= enabled.Contains("Wallhaven");
+            value.MediaUseScreenScraper &= enabled.Contains("ScreenScraper");
+            value.MediaUseGiantBomb &= enabled.Contains("Giant Bomb");
+            value.MediaUseMobyGames &= enabled.Contains("MobyGames");
+            value.MediaUseIgdb &= enabled.Contains("IGDB");
+            return value;
+        }
+
+        private string BuildPickerSourceFilterLabel(int selected, int total)
+        {
+            return string.Format(Loc("MTDA_MediaSourceFilter", "Sources ({0}/{1})"), selected, total);
+        }
+
+        private string BuildPickerFilterLabel(int selectedSources, int totalSources, MediaPickerCandidateFilter filter)
+        {
+            var activeFilters = filter == null ? 0 : filter.ActiveCount;
+            return string.Format(
+                GetLocalizedOrFallback("MTDA_MediaFilters", "Filters ({0}/{1}, {2})"),
+                selectedSources,
+                totalSources,
+                activeFilters);
+        }
+
+        private static List<MediaPreviewOption> ApplyPickerCandidateFilters(
+            IEnumerable<MediaPreviewOption> options,
+            MediaPickerCandidateFilter filter)
+        {
+            var result = options == null ? Enumerable.Empty<MediaPreviewOption>() : options.Where(x => x != null);
+            if (filter == null)
+            {
+                return result.ToList();
+            }
+
+            if (filter.OfficialOnly)
+            {
+                result = result.Where(x => x.IsOfficial);
+            }
+
+            if (filter.HideScreenshots)
+            {
+                result = result.Where(x => string.IsNullOrWhiteSpace(x.Style) ||
+                    x.Style.IndexOf("screenshot", StringComparison.OrdinalIgnoreCase) < 0);
+            }
+
+            if (string.Equals(filter.Aspect, "landscape", StringComparison.OrdinalIgnoreCase))
+            {
+                result = result.Where(x => x.Width > x.Height);
+            }
+            else if (string.Equals(filter.Aspect, "portrait", StringComparison.OrdinalIgnoreCase))
+            {
+                result = result.Where(x => x.Height > x.Width);
+            }
+            else if (string.Equals(filter.Aspect, "square", StringComparison.OrdinalIgnoreCase))
+            {
+                result = result.Where(x => x.Width > 0 && x.Height > 0 && Math.Abs(x.Width - x.Height) <= Math.Max(x.Width, x.Height) * 0.08);
+            }
+
+            if (filter.Styles != null && filter.Styles.Count > 0)
+            {
+                result = result.Where(x => !string.IsNullOrWhiteSpace(x.Style) && filter.Styles.Contains(x.Style));
+            }
+
+            return result.ToList();
+        }
+
+        private string GetMediaStyleLabel(string style)
+        {
+            var value = (style ?? string.Empty).Trim().ToLowerInvariant();
+            if (value.IndexOf("screenshot", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return value.IndexOf("no_logo", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? GetLocalizedOrFallback("MTDA_MediaStyleOfficialScreenshotNoLogo", "Official screenshot (no logo)")
+                    : GetLocalizedOrFallback("MTDA_MediaStyleOfficialScreenshot", "Official screenshot");
+            }
+            if (value.IndexOf("game hub", StringComparison.OrdinalIgnoreCase) >= 0 || value.IndexOf("background", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return value.IndexOf("no_logo", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? GetLocalizedOrFallback("MTDA_MediaStyleOfficialBackgroundNoLogo", "Official background (no logo)")
+                    : GetLocalizedOrFallback("MTDA_MediaStyleOfficialBackground", "Official background");
+            }
+            if (value == "alternate") return GetLocalizedOrFallback("MTDA_MediaStyleAlternate", "Alternate artwork");
+            if (value == "material") return GetLocalizedOrFallback("MTDA_MediaStyleMaterial", "Promotional artwork");
+            if (value == "no_logo") return GetLocalizedOrFallback("MTDA_MediaStyleNoLogo", "Without logo");
+            if (value == "white_logo") return GetLocalizedOrFallback("MTDA_MediaStyleWhiteLogo", "White logo");
+            if (value == "blurred") return GetLocalizedOrFallback("MTDA_MediaStyleBlurred", "Blurred");
+            return string.IsNullOrWhiteSpace(style) ? GetLocalizedOrFallback("MTDA_MediaStyleUnknown", "Unspecified") : style;
+        }
+
+        private string GetLocalizedOrFallback(string key, string fallback)
+        {
+            var value = Loc(key, fallback);
+            return string.IsNullOrWhiteSpace(value) || value.StartsWith("<!", StringComparison.Ordinal) ? fallback : value;
+        }
+
         private string BuildMediaResolutionFallbackMessage(MediaKind kind, string requestedValue, string fallbackValue, MetaDataIASettings pickerSettings)
         {
             var requested = GetMediaPickerFormatOptions(pickerSettings, kind).FirstOrDefault(x => string.Equals(x.Value, requestedValue, StringComparison.OrdinalIgnoreCase));
@@ -1879,34 +2040,237 @@ namespace MetaDataIAPlugin
             manualUrlPanel.Children.Add(manualFileActions);
             root.Children.Add(searchPanel);
 
-            var resultsHost = new ContentControl
+            var candidatesArea = new Grid();
+            candidatesArea.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            candidatesArea.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(candidatesArea, 1);
+            root.Children.Add(candidatesArea);
+            var filterSidebar = new Border
             {
-                Content = null
+                Width = 270,
+                Margin = new Thickness(0, 0, 12, 0),
+                Padding = new Thickness(12),
+                Visibility = Visibility.Collapsed,
+                VerticalAlignment = VerticalAlignment.Stretch
             };
-            Grid.SetRow(resultsHost, 1);
-            root.Children.Add(resultsHost);
+            ApplyDynamicResource(filterSidebar, Border.BackgroundProperty, "ControlBackgroundBrush");
+            ApplyDynamicResource(filterSidebar, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+            filterSidebar.BorderThickness = new Thickness(0, 0, 1, 0);
+            candidatesArea.Children.Add(filterSidebar);
+            var resultsHost = new ContentControl { Content = null };
+            Grid.SetColumn(resultsHost, 1);
+            candidatesArea.Children.Add(resultsHost);
 
             var availableOptions = initialOptions ?? new List<MediaPreviewOption>();
             var hasManualLocalFile = false;
+            var pickerSourceNames = GetPickerSourceNames(pickerSettings, kind).ToList();
+            var selectedPickerSources = new HashSet<string>(pickerSourceNames, StringComparer.OrdinalIgnoreCase);
+            var pickerCandidateFilter = new MediaPickerCandidateFilter();
             MediaPreviewOption displayedManualOption = null;
             Action rebuildOptions = null;
             Action restoreAvailableOptions = null;
+            Action<FrameworkElement> showPickerFilters = null;
             rebuildOptions = () =>
             {
                 var shown = displayedManualOption == null
-                    ? availableOptions
+                    ? ApplyPickerCandidateFilters(availableOptions, pickerCandidateFilter)
                     : new List<MediaPreviewOption> { displayedManualOption };
                 resultsHost.Content = CreateMediaOptionsPanel(
                     shown,
                     selectAction,
                     displayedManualOption,
                     pickerSettings,
-                    rebuildOptions);
+                    rebuildOptions,
+                    showPickerFilters,
+                    BuildPickerFilterLabel(selectedPickerSources.Count, pickerSourceNames.Count, pickerCandidateFilter));
             };
             restoreAvailableOptions = () =>
             {
                 displayedManualOption = null;
                 rebuildOptions();
+            };
+            rebuildOptions();
+            showPickerFilters = placementTarget =>
+            {
+                var menu = new ContextMenu { StaysOpen = true };
+                var sourcesMenu = new MenuItem { Header = Loc("MTDA_MediaFilterSources", "Sources") };
+                foreach (var sourceName in pickerSourceNames)
+                {
+                    var localSourceName = sourceName;
+                    var item = new MenuItem
+                    {
+                        Header = localSourceName,
+                        IsCheckable = true,
+                        IsChecked = selectedPickerSources.Contains(localSourceName),
+                        StaysOpenOnClick = true
+                    };
+                    item.Click += (sender, args) =>
+                    {
+                        if (item.IsChecked) selectedPickerSources.Add(localSourceName);
+                        else selectedPickerSources.Remove(localSourceName);
+                    };
+                    sourcesMenu.Items.Add(item);
+                }
+                if (pickerSourceNames.Count > 0)
+                {
+                    sourcesMenu.Items.Add(new Separator());
+                }
+                var updateItem = new MenuItem { Header = Loc("MTDA_UpdateMediaSourceFilter", "Update candidates") };
+                updateItem.Click += (sender, args) =>
+                {
+                    menu.IsOpen = false;
+                    if (runSearch != null) runSearch();
+                };
+                sourcesMenu.Items.Add(updateItem);
+                menu.Items.Add(sourcesMenu);
+                menu.Items.Add(new Separator());
+
+                var officialItem = new MenuItem
+                {
+                    Header = Loc("MTDA_MediaFilterOfficialOnly", "Official candidates only"),
+                    IsCheckable = true,
+                    IsChecked = pickerCandidateFilter.OfficialOnly,
+                    StaysOpenOnClick = true
+                };
+                officialItem.Click += (sender, args) =>
+                {
+                    pickerCandidateFilter.OfficialOnly = officialItem.IsChecked;
+                    rebuildOptions();
+                };
+                menu.Items.Add(officialItem);
+                var screenshotsItem = new MenuItem
+                {
+                    Header = Loc("MTDA_MediaFilterHideScreenshots", "Hide screenshots"),
+                    IsCheckable = true,
+                    IsChecked = pickerCandidateFilter.HideScreenshots,
+                    StaysOpenOnClick = true
+                };
+                screenshotsItem.Click += (sender, args) =>
+                {
+                    pickerCandidateFilter.HideScreenshots = screenshotsItem.IsChecked;
+                    rebuildOptions();
+                };
+                menu.Items.Add(screenshotsItem);
+
+                var aspectMenu = new MenuItem { Header = Loc("MTDA_MediaFilterAspect", "Shape") };
+                foreach (var aspect in new[]
+                {
+                    new { Value = "all", Label = Loc("MTDA_MediaFilterAllShapes", "Any shape") },
+                    new { Value = "landscape", Label = Loc("MTDA_MediaFilterLandscape", "Landscape") },
+                    new { Value = "portrait", Label = Loc("MTDA_MediaFilterPortrait", "Portrait") },
+                    new { Value = "square", Label = Loc("MTDA_MediaFilterSquare", "Square") }
+                })
+                {
+                    var localAspect = aspect;
+                    var aspectItem = new MenuItem
+                    {
+                        Header = localAspect.Label,
+                        IsCheckable = true,
+                        IsChecked = string.Equals(pickerCandidateFilter.Aspect, localAspect.Value, StringComparison.OrdinalIgnoreCase),
+                        StaysOpenOnClick = true
+                    };
+                    aspectItem.Click += (sender, args) =>
+                    {
+                        pickerCandidateFilter.Aspect = localAspect.Value;
+                        menu.IsOpen = false;
+                        rebuildOptions();
+                    };
+                    aspectMenu.Items.Add(aspectItem);
+                }
+                menu.Items.Add(aspectMenu);
+
+                var styles = availableOptions
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Style))
+                    .Select(x => x.Style)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (styles.Count > 0)
+                {
+                    var stylesMenu = new MenuItem { Header = Loc("MTDA_MediaFilterStyles", "Style") };
+                    foreach (var style in styles)
+                    {
+                        var localStyle = style;
+                        var styleItem = new MenuItem
+                        {
+                            Header = GetMediaStyleLabel(localStyle),
+                            IsCheckable = true,
+                            IsChecked = pickerCandidateFilter.Styles.Contains(localStyle),
+                            StaysOpenOnClick = true
+                        };
+                        styleItem.Click += (sender, args) =>
+                        {
+                            if (styleItem.IsChecked) pickerCandidateFilter.Styles.Add(localStyle);
+                            else pickerCandidateFilter.Styles.Remove(localStyle);
+                            rebuildOptions();
+                        };
+                        stylesMenu.Items.Add(styleItem);
+                    }
+                    menu.Items.Add(stylesMenu);
+                }
+
+                if (pickerCandidateFilter.ActiveCount > 0 || selectedPickerSources.Count != pickerSourceNames.Count)
+                {
+                    menu.Items.Add(new Separator());
+                    var resetItem = new MenuItem { Header = Loc("MTDA_ResetMediaFilters", "Reset filters") };
+                    resetItem.Click += (sender, args) =>
+                    {
+                        pickerCandidateFilter.OfficialOnly = false;
+                        pickerCandidateFilter.HideScreenshots = false;
+                        pickerCandidateFilter.Aspect = "all";
+                        pickerCandidateFilter.Styles.Clear();
+                        selectedPickerSources.Clear();
+                        foreach (var source in pickerSourceNames) selectedPickerSources.Add(source);
+                        menu.IsOpen = false;
+                        rebuildOptions();
+                    };
+                    menu.Items.Add(resetItem);
+                }
+                menu.PlacementTarget = placementTarget ?? resultsHost;
+                menu.Placement = PlacementMode.Bottom;
+                menu.IsOpen = true;
+            };
+            showPickerFilters = placementTarget =>
+            {
+                filterSidebar.Visibility = filterSidebar.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+                if (filterSidebar.Visibility != Visibility.Visible) return;
+                var panel = new StackPanel();
+                panel.Children.Add(new TextBlock { Text = BuildPickerFilterLabel(selectedPickerSources.Count, pickerSourceNames.Count, pickerCandidateFilter), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
+                panel.Children.Add(new TextBlock { Text = Loc("MTDA_MediaFilterSources", "Sources"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) });
+                foreach (var sourceName in pickerSourceNames)
+                {
+                    var name = sourceName;
+                    var check = new CheckBox { Content = name, IsChecked = selectedPickerSources.Contains(name), Margin = new Thickness(0, 2, 0, 2) };
+                    check.Checked += (s, e) => selectedPickerSources.Add(name);
+                    check.Unchecked += (s, e) => selectedPickerSources.Remove(name);
+                    panel.Children.Add(check);
+                }
+                panel.Children.Add(new Separator { Margin = new Thickness(0, 8, 0, 8) });
+                var official = new CheckBox { Content = Loc("MTDA_MediaFilterOfficialOnly", "Official candidates only"), IsChecked = pickerCandidateFilter.OfficialOnly, Margin = new Thickness(0, 2, 0, 2) };
+                var screenshots = new CheckBox { Content = Loc("MTDA_MediaFilterHideScreenshots", "Hide screenshots"), IsChecked = pickerCandidateFilter.HideScreenshots, Margin = new Thickness(0, 2, 0, 8) };
+                panel.Children.Add(official); panel.Children.Add(screenshots);
+                panel.Children.Add(new TextBlock { Text = Loc("MTDA_MediaFilterAspect", "Shape"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) });
+                var aspectOptions = new[]
+                {
+                    new LocalizedOption("all", GetLocalizedOrFallback("MTDA_MediaFilterAllShapes", "Any shape")),
+                    new LocalizedOption("landscape", GetLocalizedOrFallback("MTDA_MediaFilterLandscape", "Landscape")),
+                    new LocalizedOption("portrait", GetLocalizedOrFallback("MTDA_MediaFilterPortrait", "Portrait")),
+                    new LocalizedOption("square", GetLocalizedOrFallback("MTDA_MediaFilterSquare", "Square"))
+                };
+                var aspect = new ComboBox { ItemsSource = aspectOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Value", SelectedValue = pickerCandidateFilter.Aspect };
+                panel.Children.Add(aspect);
+                var apply = new Button { Content = Loc("MTDA_ApplyMediaFilters", "Apply filters"), Margin = new Thickness(0, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Stretch };
+                apply.Click += (s, e) =>
+                {
+                    pickerCandidateFilter.OfficialOnly = official.IsChecked == true;
+                    pickerCandidateFilter.HideScreenshots = screenshots.IsChecked == true;
+                    pickerCandidateFilter.Aspect = aspect.SelectedValue as string ?? "all";
+                    filterSidebar.Visibility = Visibility.Collapsed;
+                    rebuildOptions();
+                    if (runSearch != null) runSearch();
+                };
+                panel.Children.Add(apply);
+                filterSidebar.Child = panel;
             };
             rebuildOptions();
             Action<MediaPreviewSearchResult> applyResolutionFallback = result =>
@@ -2139,7 +2503,8 @@ namespace MetaDataIAPlugin
                     {
                         try
                         {
-                            var searchService = new MediaGenerationService(pickerSettings, PlayniteApi);
+                            var sourceFilteredSettings = CreatePickerSourceFilteredSettings(pickerSettings, selectedPickerSources);
+                            var searchService = new MediaGenerationService(sourceFilteredSettings, PlayniteApi);
                             refreshed = await busy.RunAsync(token =>
                                 searchService.GetPreviewOptionsWithResolutionFallbackAsync(game, kind, query, token).GetAwaiter().GetResult());
                             diagnosticsByKind[kind] = searchService.GetLastDiagnostics(game, kind, query);
@@ -2214,7 +2579,9 @@ namespace MetaDataIAPlugin
             Action<MediaPreviewOption> selectAction,
             MediaPreviewOption initiallySelected = null,
             MetaDataIASettings pickerSettings = null,
-            Action refreshView = null)
+            Action refreshView = null,
+            Action<FrameworkElement> showPickerFilters = null,
+            string pickerFiltersLabel = null)
         {
             if (options == null || options.Count == 0)
             {
@@ -2240,7 +2607,10 @@ namespace MetaDataIAPlugin
             var listMode = pickerSettings != null && string.Equals(pickerSettings.MediaPickerViewMode, MetaDataIASettings.MediaPickerViewList, StringComparison.OrdinalIgnoreCase);
             if (pickerSettings != null)
             {
-                var toolbar = new DockPanel { Margin = new Thickness(0, 0, 0, 5) };
+                var toolbar = new Grid { Margin = new Thickness(0, 0, 0, 5) };
+                toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 var count = new TextBlock
                 {
                     Text = string.Format(Loc("MTDA_MediaCandidateCount", "{0} candidates"), options.Count),
@@ -2248,11 +2618,26 @@ namespace MetaDataIAPlugin
                     Opacity = 0.75
                 };
                 ApplyDynamicResource(count, TextBlock.ForegroundProperty, "TextBrush");
+                count.HorizontalAlignment = HorizontalAlignment.Center;
+                Grid.SetColumn(count, 1);
                 toolbar.Children.Add(count);
                 var viewButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-                DockPanel.SetDock(viewButtons, Dock.Right);
-                var gridButton = new Button { Content = Loc("MTDA_MediaViewGrid", "Grid"), MinWidth = 68, IsEnabled = listMode };
-                var listButton = new Button { Content = Loc("MTDA_MediaViewList", "List"), MinWidth = 68, Margin = new Thickness(6, 0, 0, 0), IsEnabled = !listMode };
+                Grid.SetColumn(viewButtons, 2);
+                if (showPickerFilters != null)
+                {
+                    var filtersButton = new Button
+                    {
+                        Content = CreateMediaPickerIcon("filter"),
+                        ToolTip = pickerFiltersLabel ?? Loc("MTDA_MediaFilters", "Filters"),
+                        Width = 36,
+                        Height = 36
+                    };
+                    filtersButton.Click += (sender, args) => showPickerFilters(filtersButton);
+                    Grid.SetColumn(filtersButton, 0);
+                    toolbar.Children.Add(filtersButton);
+                }
+                var gridButton = new Button { Content = CreateMediaPickerIcon("grid"), ToolTip = Loc("MTDA_MediaViewGrid", "Grid"), Width = 36, Height = 36, IsEnabled = listMode };
+                var listButton = new Button { Content = CreateMediaPickerIcon("list"), ToolTip = Loc("MTDA_MediaViewList", "List"), Width = 36, Height = 36, Margin = new Thickness(6, 0, 0, 0), IsEnabled = !listMode };
                 gridButton.Click += (sender, args) =>
                 {
                     pickerSettings.MediaPickerViewMode = MetaDataIASettings.MediaPickerViewGrid;
@@ -2385,6 +2770,42 @@ namespace MetaDataIAPlugin
             };
         }
 
+        private static UIElement CreateMediaPickerIcon(string kind)
+        {
+            var canvas = new Canvas { Width = 16, Height = 16, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, ClipToBounds = false };
+            if (kind == "grid" || kind == "list")
+            {
+                var points = kind == "grid"
+                    ? new[] { new Point(3, 3), new Point(8, 3), new Point(13, 3), new Point(3, 8), new Point(8, 8), new Point(13, 8), new Point(3, 13), new Point(8, 13), new Point(13, 13) }
+                    : new[] { new Point(3, 3), new Point(3, 8), new Point(3, 13) };
+                foreach (var point in points)
+                {
+                    var dot = new Ellipse { Width = 2.6, Height = 2.6 };
+                    ApplyDynamicResource(dot, Shape.FillProperty, "TextBrush");
+                    Canvas.SetLeft(dot, point.X - 1.3); Canvas.SetTop(dot, point.Y - 1.3); canvas.Children.Add(dot);
+                }
+                if (kind == "list")
+                {
+                    foreach (var y in new[] { 3d, 8d, 13d })
+                    {
+                        var line = new Rectangle { Width = 9, Height = 1.7, RadiusX = 0.8, RadiusY = 0.8 };
+                        ApplyDynamicResource(line, Shape.FillProperty, "TextBrush");
+                        Canvas.SetLeft(line, 6); Canvas.SetTop(line, y - 0.85); canvas.Children.Add(line);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in new[] { new { X = 1d, Y = 3d, W = 14d }, new { X = 3d, Y = 8d, W = 9d }, new { X = 6d, Y = 13d, W = 4d } })
+                {
+                    var line = new Rectangle { Width = item.W, Height = 1.7, RadiusX = 0.8, RadiusY = 0.8 };
+                    ApplyDynamicResource(line, Shape.FillProperty, "TextBrush");
+                    Canvas.SetLeft(line, item.X); Canvas.SetTop(line, item.Y - 0.85); canvas.Children.Add(line);
+                }
+            }
+            return canvas;
+        }
+
         private UIElement CreateMediaOptionTile(MediaPreviewOption option, Action<MediaPreviewOption, Border> selectAction, out Border optionBorder, out TextBlock selectionMarker, bool listMode)
         {
             var tileRoot = new Grid { MinWidth = listMode ? 0 : option.Kind == MediaKind.Background ? 300 : 210, Margin = new Thickness(0, 6, 6, 6), Cursor = System.Windows.Input.Cursors.Hand, VerticalAlignment = VerticalAlignment.Top };
@@ -2430,7 +2851,12 @@ namespace MetaDataIAPlugin
             sourceBadge.Child = sourceText;
             infoPanel.Children.Add(sourceBadge);
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoSize", "Size"), option.Width > 0 && option.Height > 0 ? option.Width + " x " + option.Height : Loc("MTDA_Unknown", "Unknown")));
-            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoStyle", "Style"), string.IsNullOrWhiteSpace(option.Style) ? Loc("MTDA_NotSpecified", "Not specified") : option.Style));
+            infoPanel.Children.Add(CreateMediaInfoLine(GetLocalizedOrFallback("MTDA_MediaInfoFormat", "Format"), string.IsNullOrWhiteSpace(option.Extension) ? Loc("MTDA_Unknown", "Unknown") : option.Extension.TrimStart('.').ToUpperInvariant()));
+            infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoStyle", "Style"), GetMediaStyleLabel(option.Style)));
+            if (option.IsAnimated)
+            {
+                infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoAnimation", "Animation"), Loc("MTDA_MediaAnimated", "Animated — kept in original format")));
+            }
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoOfficial", "Official"), option.IsOfficial ? Loc("MTDA_Yes", "Yes") : Loc("MTDA_NoCommunity", "No / community")));
             content.Children.Add(infoPanel);
             var openButton = new Button { Content = Loc("MTDA_OpenInBrowser", "Open"), HorizontalAlignment = listMode ? HorizontalAlignment.Left : HorizontalAlignment.Stretch, MinWidth = listMode ? 150 : 0, Margin = new Thickness(0) };
@@ -2498,6 +2924,18 @@ namespace MetaDataIAPlugin
                 if (options == null || options.Count == 0)
                 {
                     return;
+                }
+
+                if (options.Any(x => x != null && x.IsAnimated))
+                {
+                    var confirmAnimated = PlayniteApi.Dialogs.ShowMessage(
+                        Loc("MTDA_AnimatedMediaConfirm", "This animated GIF/WebP will be saved in its original form. Crop, resize and image-quality settings will not be applied so the animation is preserved."),
+                        PluginTitle,
+                        MessageBoxButton.YesNo);
+                    if (confirmAnimated != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
                 }
 
                 Exception applyError = null;
@@ -3433,6 +3871,88 @@ namespace MetaDataIAPlugin
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
                 Action = actionArgs => ApplyMediaForCurrentMode(actionArgs.Games, settingsFactory(settings.Settings))
             };
+        }
+
+        private void OpenGameMediaFolder(Game game)
+        {
+            if (game == null || PlayniteApi == null || PlayniteApi.Database == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var references = new[] { game.CoverImage, game.Icon, game.BackgroundImage }
+                    .Where(x => !string.IsNullOrWhiteSpace(x));
+                string folder = null;
+                foreach (var reference in references)
+                {
+                    try
+                    {
+                        var fullPath = PlayniteApi.Database.GetFullFilePath(reference);
+                        if (!string.IsNullOrWhiteSpace(fullPath))
+                        {
+                            folder = System.IO.Path.GetDirectoryName(fullPath);
+                            if (!string.IsNullOrWhiteSpace(folder)) break;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(folder))
+                {
+                    folder = System.IO.Path.Combine(PlayniteApi.Database.DatabasePath, "files", game.Id.ToString());
+                }
+
+                Directory.CreateDirectory(folder);
+                Process.Start("explorer.exe", folder);
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "Could not open the game media folder.");
+                PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_OpenGameMediaFolderFailed", "The game media folder could not be opened."), PluginTitle);
+            }
+        }
+
+        private void ClearGameMedia(Game game)
+        {
+            if (game == null || PlayniteApi == null || PlayniteApi.Database == null)
+            {
+                return;
+            }
+
+            var media = new[] { game.CoverImage, game.Icon, game.BackgroundImage }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (media.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_ClearGameMediaEmpty", "This game has no cover, icon or background to remove."), PluginTitle);
+                return;
+            }
+
+            var confirm = PlayniteApi.Dialogs.ShowMessage(
+                string.Format(Loc("MTDA_ClearGameMediaConfirm", "Remove the cover, icon and background assigned to ‘{0}’? Files managed by Playnite will also be removed when they are no longer used by another game."), game.Name),
+                PluginTitle,
+                MessageBoxButton.YesNo);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            var oldMedia = media.ToList();
+            game.CoverImage = null;
+            game.Icon = null;
+            game.BackgroundImage = null;
+            PlayniteApi.Database.Games.Update(game);
+            foreach (var reference in oldMedia)
+            {
+                MediaStorageCleanupService.TryRemoveUnreferencedMedia(PlayniteApi, reference);
+            }
+
+            PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_ClearGameMediaDone", "The game media was removed."), PluginTitle);
         }
 
         private bool IsFullscreenMode

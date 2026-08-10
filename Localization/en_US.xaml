@@ -325,6 +325,8 @@ What you can do without paying:
     <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
     <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
     <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_MediaSourceFilter">Sources ({0}/{1})</sys:String>
+    <sys:String x:Key="MTDA_UpdateMediaSourceFilter">Update candidates</sys:String>
     <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
     <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
@@ -837,4 +839,26 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_NoCandidatesAtRequestedResolution">The sources returned candidates, but none matched the requested resolution after validation.</sys:String>
     <sys:String x:Key="MTDA_MediaResolutionFallback">No {0} candidates were available at {1}. The filter was changed to the closest available resolution: {2}.</sys:String>
     <sys:String x:Key="MTDA_BackgroundCropAnchorPickerHelp">This crop is used when the selected image is larger than, or has a different aspect ratio from, the global output. Final background output: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MediaFilters">Filters ({0}/{1}, {2})</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterSources">Sources</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterOfficialOnly">Official candidates only</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterHideScreenshots">Hide screenshots</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterAspect">Shape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterAllShapes">Any shape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterLandscape">Landscape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterPortrait">Portrait</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterSquare">Square</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterStyles">Style</sys:String>
+    <sys:String x:Key="MTDA_ResetMediaFilters">Reset filters</sys:String>
+    <sys:String x:Key="MTDA_OpenGameMediaFolder">Open game media folder</sys:String>
+    <sys:String x:Key="MTDA_OpenGameMediaFolderFailed">The game media folder could not be opened.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMedia">Remove all game media</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaEmpty">This game has no cover, icon or background to remove.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaConfirm">Remove the cover, icon and background assigned to ‘{0}’? Files managed by Playnite will also be removed when they are no longer used by another game.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaDone">The game media was removed.</sys:String>
+    <sys:String x:Key="MTDA_AnimatedMediaConfirm">This animated GIF/WebP will be saved in its original form. Crop, resize and image-quality settings will not be applied so the animation is preserved.</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoAnimation">Animation</sys:String>
+    <sys:String x:Key="MTDA_MediaAnimated">Animated — kept in original format</sys:String>
+    <sys:String x:Key="MTDA_ApplyMediaFilters">Apply filters</sys:String>
+    <sys:String x:Key="MTDA_MediaInfoFormat">Format</sys:String>
 </ResourceDictionary>

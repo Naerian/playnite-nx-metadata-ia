@@ -305,6 +305,8 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_MediaCandidateCount">{0} candidates</sys:String>
     <sys:String x:Key="MTDA_MediaViewGrid">Grid</sys:String>
     <sys:String x:Key="MTDA_MediaViewList">List</sys:String>
+    <sys:String x:Key="MTDA_MediaSourceFilter">Sources ({0}/{1})</sys:String>
+    <sys:String x:Key="MTDA_UpdateMediaSourceFilter">Update candidates</sys:String>
     <sys:String x:Key="MTDA_SourceLocalFile">Local file</sys:String>
     <sys:String x:Key="MTDA_ErrorManualMediaFile">Choose an existing image file.</sys:String>
     <sys:String x:Key="MTDA_MediaExcludedSearchTerms">Terms excluded from media searches</sys:String>
@@ -807,4 +809,21 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_ErrorManualMediaNotImage">The URL could not be loaded as a valid image.</sys:String>
     <sys:String x:Key="MTDA_ManualMediaStyle">manual image</sys:String>
     <sys:String x:Key="MTDA_SourceManualUrl">Manual URL</sys:String>
+    <sys:String x:Key="MTDA_MediaFilters">Filters ({0}/{1}, {2})</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterSources">Sources</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterOfficialOnly">Official candidates only</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterHideScreenshots">Hide screenshots</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterAspect">Shape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterAllShapes">Any shape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterLandscape">Landscape</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterPortrait">Portrait</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterSquare">Square</sys:String>
+    <sys:String x:Key="MTDA_MediaFilterStyles">Style</sys:String>
+    <sys:String x:Key="MTDA_ResetMediaFilters">Reset filters</sys:String>
+    <sys:String x:Key="MTDA_OpenGameMediaFolder">Open game media folder</sys:String>
+    <sys:String x:Key="MTDA_OpenGameMediaFolderFailed">The game media folder could not be opened.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMedia">Remove all game media</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaEmpty">This game has no cover, icon or background to remove.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaConfirm">Remove the cover, icon and background assigned to ‘{0}’? Files managed by Playnite will also be removed when they are no longer used by another game.</sys:String>
+    <sys:String x:Key="MTDA_ClearGameMediaDone">The game media was removed.</sys:String>
 </ResourceDictionary>
