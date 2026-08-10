@@ -520,6 +520,39 @@ namespace MetaDataIAPlugin
             return new MetadataFile(file.FileName, file.Content);
         }
 
+        // Used by the manual web-search source before candidates are displayed.
+        // Search engines often return stale thumbnails, HTML pages or hotlink
+        // placeholders instead of an image. Probe the actual asset so callers
+        // can both reject those entries and show its real dimensions.
+        public static async Task<bool> ValidatePreviewOptionAsync(MediaPreviewOption option, CancellationToken cancelToken)
+        {
+            if (option == null || string.IsNullOrWhiteSpace(option.Url))
+            {
+                return false;
+            }
+
+            try
+            {
+                var result = await ProbeImageAsync(option.Url, cancelToken).ConfigureAwait(false);
+                if (result == null || !result.IsValid || result.Width <= 0 || result.Height <= 0)
+                {
+                    return false;
+                }
+
+                option.Width = result.Width;
+                option.Height = result.Height;
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static void ApplyMediaFile(IPlayniteAPI api, Game game, GeneratedMediaFile file)
         {
             if (api == null || game == null || file == null || file.Content == null || file.Content.Length == 0)
@@ -2554,7 +2587,33 @@ namespace MetaDataIAPlugin
                 bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
                 bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
             {
-                return true;
+                // VP8X carries a 24-bit canvas size. VP8 and VP8L use their
+                // respective frame headers; handling all three covers static
+                // and animated WebP returned by web image search.
+                if (count >= 30 && bytes[12] == 0x56 && bytes[13] == 0x50 && bytes[14] == 0x38 && bytes[15] == 0x58)
+                {
+                    width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
+                    height = 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16);
+                    return width > 0 && height > 0;
+                }
+
+                if (count >= 25 && bytes[12] == 0x56 && bytes[13] == 0x50 && bytes[14] == 0x38 && bytes[15] == 0x4C)
+                {
+                    var bits = bytes[21] | (bytes[22] << 8) | (bytes[23] << 16) | (bytes[24] << 24);
+                    width = (bits & 0x3FFF) + 1;
+                    height = ((bits >> 14) & 0x3FFF) + 1;
+                    return width > 0 && height > 0;
+                }
+
+                if (count >= 30 && bytes[12] == 0x56 && bytes[13] == 0x50 && bytes[14] == 0x38 && bytes[15] == 0x20 &&
+                    bytes[23] == 0x9D && bytes[24] == 0x01 && bytes[25] == 0x2A)
+                {
+                    width = (bytes[26] | (bytes[27] << 8)) & 0x3FFF;
+                    height = (bytes[28] | (bytes[29] << 8)) & 0x3FFF;
+                    return width > 0 && height > 0;
+                }
+
+                return false;
             }
 
             if (count >= 8 && bytes[0] == 0 && bytes[1] == 0 && bytes[2] == 1 && bytes[3] == 0)

@@ -265,6 +265,7 @@ namespace MetaDataIAPlugin
         private bool mediaUseRawg = false;
         private string rawgApiKey = string.Empty;
         private bool mediaUseWallhaven = false;
+        private bool mediaUseWebSearch = true;
         private string mediaPickerViewMode = MediaPickerViewGrid;
         private bool mediaUseScreenScraper = false;
         private string screenScraperUserName = string.Empty;
@@ -528,6 +529,7 @@ namespace MetaDataIAPlugin
                 }
             }
         }
+        public bool MediaUseWebSearch { get { return mediaUseWebSearch; } set { SetValue(ref mediaUseWebSearch, value); } }
         public string MediaPickerViewMode { get { return mediaPickerViewMode; } set { SetValue(ref mediaPickerViewMode, value); } }
         public bool MediaUseScreenScraper
         {

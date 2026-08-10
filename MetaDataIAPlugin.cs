@@ -3,12 +3,15 @@ using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 using Playnite.SDK.Data;
+using Playnite.SDK.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,9 +22,54 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 
 namespace MetaDataIAPlugin
 {
+    internal sealed class MetadataAiTopPanelControl : PluginUserControl
+    {
+        public MetadataAiTopPanelControl(string tooltip)
+        {
+            Focusable = false;
+            ToolTip = tooltip;
+            HorizontalContentAlignment = HorizontalAlignment.Center;
+            VerticalContentAlignment = VerticalAlignment.Center;
+
+            var canvas = new Canvas { Width = 24, Height = 24 };
+            foreach (var geometry in new[]
+            {
+                // Complete paths from Icons/settings-ai.svg (the empty SVG canvas path is omitted).
+                "M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065",
+                "M9 14v-2.5a1.5 1.5 0 0 1 3 0v2.5",
+                "M9 13h3",
+                "M15 10v4"
+            })
+            {
+                var path = new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse(geometry),
+                    StrokeThickness = 2,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    StrokeEndLineCap = PenLineCap.Round,
+                    StrokeLineJoin = PenLineJoin.Round,
+                    Fill = Brushes.Transparent
+                };
+                path.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new Binding("Foreground") { Source = this });
+                canvas.Children.Add(path);
+            }
+
+            Content = new Viewbox
+            {
+                Width = 22,
+                Height = 22,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = canvas
+            };
+        }
+    }
+
     public class MetaDataIAPlugin : MetadataPlugin
     {
         private static readonly ILogger logger = LogManager.GetLogger();
@@ -256,6 +304,18 @@ namespace MetaDataIAPlugin
             return new MetaDataIASettingsView();
         }
 
+        public override IEnumerable<TopPanelItem> GetTopPanelItems()
+        {
+            var tooltip = GetLocalizedOrFallback("MTDA_TopPanelSettings", "Open Metadata AI settings");
+            yield return new TopPanelItem
+            {
+                Title = tooltip,
+                Icon = new MetadataAiTopPanelControl(tooltip),
+                Visible = !IsFullscreenMode,
+                Activated = () => OpenSettingsView()
+            };
+        }
+
         public override IEnumerable<GameMenuItem> GetGameMenuItems(GetGameMenuItemsArgs args)
         {
             if (args == null || args.Games == null || args.Games.Count == 0)
@@ -330,7 +390,7 @@ namespace MetaDataIAPlugin
                 };
             }
             yield return CreateGameSubmenuSeparator("MTDA_TabMedia", "Media");
-            yield return CreateGameMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
+            yield return CreateGameMediaMenuItem("Establecer media completa", activeSettings => activeSettings, true);
             if (!IsFullscreenMode && !multipleGames)
             {
                 yield return CreateGameSubmenuSeparator("MTDA_TabMedia", "Media");
@@ -461,7 +521,7 @@ namespace MetaDataIAPlugin
             yield return CreateMainMediaMenuItem("Establecer iconos", activeSettings => CreateFocusedMediaSettings("icon"));
             yield return CreateMainMediaMenuItem("Establecer fondos", activeSettings => CreateFocusedMediaSettings("background"));
             yield return CreateMainSubmenuSeparator("MTDA_TabMedia", "Media");
-            yield return CreateMainMediaMenuItem("Establecer media completa", activeSettings => activeSettings);
+            yield return CreateMainMediaMenuItem("Establecer media completa", activeSettings => activeSettings, true);
 
             if (!IsFullscreenMode)
             {
@@ -1183,7 +1243,7 @@ namespace MetaDataIAPlugin
             SaveSettingsSecurely(settings.Settings);
         }
 
-        private void ApplyMediaInteractive(List<Game> games, MetaDataIASettings activeSettings)
+        private void ApplyMediaInteractive(List<Game> games, MetaDataIASettings activeSettings, bool includeLogo = false)
         {
             if (games == null || games.Count == 0)
             {
@@ -1193,7 +1253,7 @@ namespace MetaDataIAPlugin
 
             if (games.Count == 1)
             {
-                ShowMediaChooser(games[0], activeSettings);
+                ShowMediaChooser(games[0], activeSettings, includeLogo: includeLogo);
                 return;
             }
 
@@ -1204,7 +1264,8 @@ namespace MetaDataIAPlugin
             Game game,
             MetaDataIASettings activeSettings,
             Action<MetaDataIASettings, List<MediaPreviewOption>> selectionHandler = null,
-            Window dialogOwner = null)
+            Window dialogOwner = null,
+            bool includeLogo = false)
         {
             if (game == null)
             {
@@ -1218,7 +1279,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            var kinds = GetEnabledMediaKinds(activeSettings).Where(x => !maintenanceState.IsLocked(game.Id, x)).ToList();
+            var kinds = GetEnabledMediaKinds(activeSettings, includeLogo).Where(x => !maintenanceState.IsLocked(game.Id, x)).ToList();
             if (kinds.Count == 0)
             {
                 PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoMediaTypesEnabledOrUnlocked", "No media type is enabled and unlocked for this game."), PluginTitle);
@@ -1248,9 +1309,28 @@ namespace MetaDataIAPlugin
                         try
                         {
                             var previewResult = service.GetPreviewOptionsWithResolutionFallbackAsync(game, kind, null, progress.CancelToken).GetAwaiter().GetResult();
+                            if (activeSettings.MediaUseWebSearch && kind != MediaKind.Logo)
+                            {
+                                var webCandidates = SearchWebImageCandidates(searchTextByKind[kind], kind, activeSettings);
+                                if (previewResult.Options == null)
+                                {
+                                    previewResult.Options = new List<MediaPreviewOption>();
+                                }
+                                previewResult.Options.AddRange(webCandidates);
+                                var webDiagnostic = string.Format(
+                                    Loc("MTDA_WebSearchDiagnostics", "- Web search: {0} candidate(s) found"),
+                                    webCandidates.Count);
+                                var sourceDiagnostics = service.GetLastDiagnostics(game, kind);
+                                diagnosticsByKind[kind] = string.IsNullOrWhiteSpace(sourceDiagnostics)
+                                    ? webDiagnostic
+                                    : sourceDiagnostics + Environment.NewLine + webDiagnostic;
+                            }
                             previewResultsByKind[kind] = previewResult;
                             optionsByKind[kind] = previewResult.Options;
-                            diagnosticsByKind[kind] = service.GetLastDiagnostics(game, kind);
+                            if (!diagnosticsByKind.ContainsKey(kind))
+                            {
+                                diagnosticsByKind[kind] = service.GetLastDiagnostics(game, kind);
+                            }
                             if (progress.CancelToken.IsCancellationRequested)
                             {
                                 cancelled = true;
@@ -1757,6 +1837,7 @@ namespace MetaDataIAPlugin
             if (source.MediaUseGiantBomb && kind != MediaKind.Logo) names.Add("Giant Bomb");
             if (source.MediaUseMobyGames && kind != MediaKind.Logo) names.Add("MobyGames");
             if (source.MediaUseIgdb && kind != MediaKind.Logo) names.Add("IGDB");
+            if (source.MediaUseWebSearch && kind != MediaKind.Logo) names.Add("Web search");
             return names;
         }
 
@@ -1788,11 +1869,23 @@ namespace MetaDataIAPlugin
         private string BuildPickerFilterLabel(int selectedSources, int totalSources, MediaPickerCandidateFilter filter)
         {
             var activeFilters = filter == null ? 0 : filter.ActiveCount;
-            return string.Format(
-                GetLocalizedOrFallback("MTDA_MediaFilters", "Filters ({0}/{1}, {2})"),
+            var sourceSummary = string.Format(
+                GetLocalizedOrFallback("MTDA_MediaFiltersSourceSummary", "Sources: {0} of {1}"),
                 selectedSources,
-                totalSources,
-                activeFilters);
+                totalSources);
+            var filterSummary = activeFilters == 0
+                ? GetLocalizedOrFallback("MTDA_MediaFiltersNoActive", "no candidate filters active")
+                : string.Format(
+                    GetLocalizedOrFallback("MTDA_MediaFiltersActiveSummary", "{0} candidate filters active"),
+                    activeFilters);
+            return sourceSummary + " \u00b7 " + filterSummary;
+        }
+
+        private string GetPickerSourceDisplayName(string sourceName)
+        {
+            return string.Equals(sourceName, "Web search", StringComparison.OrdinalIgnoreCase)
+                ? GetLocalizedOrFallback("MTDA_SourceWebSearch", "Web search")
+                : sourceName;
         }
 
         private static List<MediaPreviewOption> ApplyPickerCandidateFilters(
@@ -1840,6 +1933,18 @@ namespace MetaDataIAPlugin
         private string GetMediaStyleLabel(string style)
         {
             var value = (style ?? string.Empty).Trim().ToLowerInvariant();
+            if (value == "custom") return GetLocalizedOrFallback("MTDA_MediaStyleCustom", "Custom");
+            if (value == "official") return GetLocalizedOrFallback("MTDA_MediaStyleOfficial", "Official");
+            if (value.IndexOf("official portrait banner", StringComparison.OrdinalIgnoreCase) >= 0)
+                return GetLocalizedOrFallback("MTDA_MediaStyleOfficialPortraitBanner", "Official portrait banner");
+            if (value.IndexOf("official banner", StringComparison.OrdinalIgnoreCase) >= 0)
+                return GetLocalizedOrFallback("MTDA_MediaStyleOfficialBanner", "Official banner");
+            if (value.IndexOf("official cover", StringComparison.OrdinalIgnoreCase) >= 0)
+                return GetLocalizedOrFallback("MTDA_MediaStyleOfficialCover", "Official cover");
+            if ((value.IndexOf("official", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 value.IndexOf("oficial", StringComparison.OrdinalIgnoreCase) >= 0) &&
+                value.IndexOf("logo", StringComparison.OrdinalIgnoreCase) >= 0)
+                return GetLocalizedOrFallback("MTDA_MediaStyleOfficialLogo", "Official logo");
             if (value.IndexOf("screenshot", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return value.IndexOf("no_logo", StringComparison.OrdinalIgnoreCase) >= 0
@@ -1864,6 +1969,309 @@ namespace MetaDataIAPlugin
         {
             var value = Loc(key, fallback);
             return string.IsNullOrWhiteSpace(value) || value.StartsWith("<!", StringComparison.Ordinal) ? fallback : value;
+        }
+
+        private List<MediaPreviewOption> SearchWebImageCandidates(
+            string query,
+            MediaKind kind,
+            MetaDataIASettings pickerSettings = null,
+            MediaPickerCandidateFilter candidateFilter = null)
+        {
+            var bingResults = SearchBingImageCandidates(query, kind, pickerSettings, candidateFilter);
+            if (bingResults.Count > 0)
+            {
+                return bingResults;
+            }
+
+            var results = new List<MediaPreviewOption>();
+            if (PlayniteApi == null || PlayniteApi.WebViews == null || string.IsNullOrWhiteSpace(query)) return results;
+            try
+            {
+                var searchQuery = BuildWebImageSearchQuery(query, kind, pickerSettings, candidateFilter);
+                using (var view = PlayniteApi.WebViews.CreateOffscreenView())
+                {
+                    view.NavigateAndWait("https://www.google.com/search?tbm=isch&safe=on&q=" + Uri.EscapeDataString(searchQuery));
+                    if ((view.GetCurrentAddress() ?? string.Empty).StartsWith("https://consent.google.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        view.EvaluateScriptAsync("document.getElementsByTagName('form')[0].submit();").Wait();
+                        Thread.Sleep(3000);
+                        view.NavigateAndWait("https://www.google.com/search?tbm=isch&safe=on&q=" + Uri.EscapeDataString(searchQuery));
+                    }
+                    var source = Regex.Replace(view.GetPageSource() ?? string.Empty, @"\r\n?|\n", string.Empty);
+                    var pattern = new Regex(@"\[\""(https:\/\/encrypted-[^,]+?)\"",\d+,\d+\],\[\""(http.+?)\"",(\d+),(\d+)\]", RegexOptions.Compiled);
+                    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (Match match in pattern.Matches(source))
+                    {
+                        try
+                        {
+                            var data = JsonConvert.DeserializeObject<List<List<object>>>("[" + match.Value + "]");
+                            if (data == null || data.Count < 2 || data[1].Count < 3) continue;
+                            var url = Convert.ToString(data[1][0]);
+                            var height = Convert.ToInt32(data[1][1]);
+                            var width = Convert.ToInt32(data[1][2]);
+                            if (string.IsNullOrWhiteSpace(url) || width <= 0 || height <= 0 || !seen.Add(url)) continue;
+                            results.Add(new MediaPreviewOption { Kind = kind, Url = url, Width = width, Height = height, Extension = System.IO.Path.GetExtension(new Uri(url).AbsolutePath), SourceName = GetLocalizedOrFallback("MTDA_SourceWebSearch", "Web search"), Style = GetLocalizedOrFallback("MTDA_MediaStyleWeb", "Web result") });
+                        }
+                        catch
+                        {
+                            // A malformed result must not discard the rest of the page.
+                        }
+                        if (results.Count >= 40) break;
+                    }
+                }
+            }
+            catch (Exception ex) { logger.Warn(ex, "Web image search failed."); }
+            return ValidateWebImageCandidates(results);
+        }
+
+        private static List<MediaPreviewOption> ValidateWebImageCandidates(IEnumerable<MediaPreviewOption> candidates)
+        {
+            var valid = new List<MediaPreviewOption>();
+            var pending = (candidates ?? Enumerable.Empty<MediaPreviewOption>()).Where(x => x != null).Take(30).ToList();
+            const int batchSize = 5;
+            for (var offset = 0; offset < pending.Count; offset += batchSize)
+            {
+                var batch = pending.Skip(offset).Take(batchSize).ToList();
+                using (var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(8)))
+                {
+                    var probes = batch.Select(option => MediaGenerationService.ValidatePreviewOptionAsync(option, cancellation.Token)).ToArray();
+                    bool[] results;
+                    try
+                    {
+                        results = Task.WhenAll(probes).GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    for (var index = 0; index < batch.Count; index++)
+                    {
+                        if (results[index])
+                        {
+                            valid.Add(batch[index]);
+                        }
+                    }
+                }
+            }
+
+            return valid;
+        }
+
+        private List<MediaPreviewOption> SearchBingImageCandidates(
+            string query,
+            MediaKind kind,
+            MetaDataIASettings pickerSettings,
+            MediaPickerCandidateFilter candidateFilter)
+        {
+            var results = new List<MediaPreviewOption>();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return results;
+            }
+
+            try
+            {
+                var searchQuery = BuildWebImageSearchQuery(query, kind, pickerSettings, candidateFilter);
+                var relevanceTerms = GetWebSearchTerms(query);
+                var address = "https://www.bing.com/images/search?form=HDRSC3&adlt=strict&setlang=en&q=" + Uri.EscapeDataString(searchQuery);
+                string source;
+                using (var client = new WebClient())
+                {
+                    client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36";
+                    client.Headers[HttpRequestHeader.AcceptLanguage] = "en-US,en;q=0.9";
+                    source = client.DownloadString(address);
+                }
+
+                var pattern = new Regex(
+                    @"<a\b(?=[^>]*\bclass=\""[^\""\r\n]*\biusc\b[^\""\r\n]*\"")(?=[^>]*\bm=\""(?<data>[^\""\r\n]+)\"")[^>]*>",
+                    RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (Match match in pattern.Matches(source ?? string.Empty))
+                {
+                    try
+                    {
+                        var payload = JsonConvert.DeserializeObject<Dictionary<string, object>>(WebUtility.HtmlDecode(match.Groups["data"].Value));
+                        object rawUrl;
+                        if (payload == null || !payload.TryGetValue("murl", out rawUrl))
+                        {
+                            continue;
+                        }
+
+                        var url = Convert.ToString(rawUrl);
+                        object rawTitle;
+                        object rawPageUrl;
+                        payload.TryGetValue("t", out rawTitle);
+                        payload.TryGetValue("purl", out rawPageUrl);
+                        var searchableText = string.Join(" ", new[]
+                        {
+                            Convert.ToString(rawTitle),
+                            Convert.ToString(rawPageUrl),
+                            url
+                        });
+                        if (!IsWebSearchResultRelevant(searchableText, relevanceTerms))
+                        {
+                            continue;
+                        }
+
+                        Uri uri;
+                        if (!Uri.TryCreate(url, UriKind.Absolute, out uri) ||
+                            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+                            !seen.Add(url))
+                        {
+                            continue;
+                        }
+
+                        results.Add(new MediaPreviewOption
+                        {
+                            Kind = kind,
+                            Url = url,
+                            // Bing's public search markup does not consistently expose
+                            // the original size. The normal download pipeline validates it
+                            // before applying the selected candidate.
+                            Width = 0,
+                            Height = 0,
+                            Extension = System.IO.Path.GetExtension(uri.AbsolutePath),
+                            SourceName = GetLocalizedOrFallback("MTDA_SourceWebSearch", "Web search"),
+                            Style = GetLocalizedOrFallback("MTDA_MediaStyleWeb", "Web result")
+                        });
+                    }
+                    catch
+                    {
+                        // Skip malformed results without discarding the remaining page.
+                    }
+
+                    if (results.Count >= 40)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "Bing image search failed.");
+            }
+
+            return ValidateWebImageCandidates(results);
+        }
+
+        private static string BuildWebImageSearchQuery(
+            string query,
+            MediaKind kind,
+            MetaDataIASettings pickerSettings,
+            MediaPickerCandidateFilter candidateFilter)
+        {
+            var terms = new List<string> { "game" };
+            if (kind == MediaKind.Cover)
+            {
+                terms.Add("cover art");
+            }
+            else if (kind == MediaKind.Icon)
+            {
+                terms.Add("icon");
+            }
+            else
+            {
+                terms.Add("wallpaper");
+            }
+
+            var filterAspect = candidateFilter == null ? null : candidateFilter.Aspect;
+            if (string.Equals(filterAspect, "portrait", StringComparison.OrdinalIgnoreCase))
+            {
+                terms.Add("portrait vertical");
+            }
+            else if (string.Equals(filterAspect, "landscape", StringComparison.OrdinalIgnoreCase))
+            {
+                terms.Add("landscape");
+            }
+            else if (string.Equals(filterAspect, "square", StringComparison.OrdinalIgnoreCase))
+            {
+                terms.Add("square");
+            }
+            else
+            {
+                AddWebSearchTermsForResolution(terms, pickerSettings, kind);
+            }
+
+            return (query ?? string.Empty).Trim() + " " + string.Join(" ", terms);
+        }
+
+        private static void AddWebSearchTermsForResolution(List<string> terms, MetaDataIASettings pickerSettings, MediaKind kind)
+        {
+            if (terms == null || pickerSettings == null)
+            {
+                return;
+            }
+
+            var preset = GetMediaPickerFormatValue(pickerSettings, kind);
+            if (kind == MediaKind.Cover)
+            {
+                if (string.Equals(preset, MetaDataIASettings.CoverPresetPlayniteVertical, StringComparison.OrdinalIgnoreCase))
+                {
+                    terms.Add("portrait vertical 600x900");
+                }
+                else if (string.Equals(preset, MetaDataIASettings.CoverPresetSquare, StringComparison.OrdinalIgnoreCase))
+                {
+                    terms.Add("square 600x600");
+                }
+                else if (string.Equals(preset, MetaDataIASettings.CoverPresetHorizontal, StringComparison.OrdinalIgnoreCase))
+                {
+                    terms.Add("horizontal 920x430");
+                }
+                return;
+            }
+
+            if (kind == MediaKind.Icon)
+            {
+                if (!string.Equals(preset, MetaDataIASettings.IconPresetOriginal, StringComparison.OrdinalIgnoreCase))
+                {
+                    terms.Add("square 256 transparent png");
+                }
+                return;
+            }
+
+            if (kind != MediaKind.Background)
+            {
+                return;
+            }
+
+            if (string.Equals(preset, MetaDataIASettings.BackgroundPresetSteamHero, StringComparison.OrdinalIgnoreCase)) terms.Add("3840x1240 ultrawide");
+            else if (string.Equals(preset, MetaDataIASettings.BackgroundPresetSteamHeroSmall, StringComparison.OrdinalIgnoreCase)) terms.Add("1920x620 ultrawide");
+            else if (string.Equals(preset, MetaDataIASettings.BackgroundPresetHd, StringComparison.OrdinalIgnoreCase)) terms.Add("1280x720 16:9");
+            else if (string.Equals(preset, MetaDataIASettings.BackgroundPresetFullHd, StringComparison.OrdinalIgnoreCase)) terms.Add("1920x1080 16:9");
+            else if (string.Equals(preset, MetaDataIASettings.BackgroundPresetQhd, StringComparison.OrdinalIgnoreCase)) terms.Add("2560x1440 16:9");
+            else if (string.Equals(preset, MetaDataIASettings.BackgroundPreset4K, StringComparison.OrdinalIgnoreCase)) terms.Add("3840x2160 16:9");
+        }
+
+        private static List<string> GetWebSearchTerms(string query)
+        {
+            var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "game", "videojuego", "pc", "steam", "cover", "art", "wallpaper", "background", "fondo",
+                "icon", "logo", "goty", "edition", "edicion", "complete", "definitive", "deluxe", "ultimate",
+                "enhanced", "remastered", "remake", "director", "cut", "the", "and", "of", "for", "de", "la", "el"
+            };
+            return Regex.Matches(query ?? string.Empty, @"[\p{L}\p{N}]{3,}")
+                .Cast<Match>()
+                .Select(x => x.Value.ToLowerInvariant())
+                .Where(x => !ignored.Contains(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static bool IsWebSearchResultRelevant(string searchableText, List<string> terms)
+        {
+            if (terms == null || terms.Count == 0)
+            {
+                return true;
+            }
+
+            var text = (searchableText ?? string.Empty).ToLowerInvariant();
+            var matches = terms.Count(term => text.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0);
+            // A one-word title such as Palworld must match exactly. For longer
+            // titles, two matching significant words reject unrelated pages while
+            // still allowing editions and subtitles to differ between sources.
+            return matches >= (terms.Count == 1 ? 1 : 2);
         }
 
         private string BuildMediaResolutionFallbackMessage(MediaKind kind, string requestedValue, string fallbackValue, MetaDataIASettings pickerSettings)
@@ -1895,8 +2303,6 @@ namespace MetaDataIAPlugin
             var searchPanel = new Grid { Margin = new Thickness(0, 8, 0, 10) };
             searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
-            searchPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
 
             var queryPanel = new StackPanel();
             var searchLabel = new TextBlock
@@ -1929,48 +2335,7 @@ namespace MetaDataIAPlugin
 
             Action runSearch = null;
             ComboBox formatCombo = null;
-            var applyingResolutionFallback = false;
             var formatOptions = GetMediaPickerFormatOptions(pickerSettings, kind).ToList();
-            if (formatOptions.Count > 0)
-            {
-                var searchDivider = new Border { Width = 1, Margin = new Thickness(8, 4, 8, 4) };
-                ApplyDynamicResource(searchDivider, Border.BackgroundProperty, "DetailsViewBannerPanelBorderBrush");
-                Grid.SetColumn(searchDivider, 2);
-                searchPanel.Children.Add(searchDivider);
-                var formatPanel = new StackPanel();
-                var formatLabel = new TextBlock
-                {
-                    Text = Loc("MTDA_MediaSearchFormat", "Candidate resolution"),
-                    Margin = new Thickness(0, 0, 0, 4)
-                };
-                ApplyDynamicResource(formatLabel, TextBlock.ForegroundProperty, "TextBrush");
-                formatPanel.Children.Add(formatLabel);
-
-                formatCombo = new ComboBox
-                {
-                    ItemsSource = formatOptions,
-                    DisplayMemberPath = "DisplayName",
-                    SelectedValuePath = "Value",
-                    SelectedValue = GetMediaPickerFormatValue(pickerSettings, kind),
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    ToolTip = Loc("MTDA_MediaSearchFormatHelp", "Choose which candidate resolution to show. This does not change the saved global output format.")
-                };
-                formatCombo.SelectionChanged += (sender, args) =>
-                {
-                    var value = formatCombo.SelectedValue as string;
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        SetMediaPickerFormatValue(pickerSettings, kind, value);
-                        if (!applyingResolutionFallback && runSearch != null)
-                        {
-                            runSearch();
-                        }
-                    }
-                };
-                formatPanel.Children.Add(formatCombo);
-                Grid.SetColumn(formatPanel, 3);
-                searchPanel.Children.Add(formatPanel);
-            }
 
             var manualUrlPanel = new StackPanel();
             var manualUrlLabel = new TextBlock
@@ -2235,12 +2600,11 @@ namespace MetaDataIAPlugin
                 filterSidebar.Visibility = filterSidebar.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
                 if (filterSidebar.Visibility != Visibility.Visible) return;
                 var panel = new StackPanel();
-                panel.Children.Add(new TextBlock { Text = BuildPickerFilterLabel(selectedPickerSources.Count, pickerSourceNames.Count, pickerCandidateFilter), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
                 panel.Children.Add(new TextBlock { Text = Loc("MTDA_MediaFilterSources", "Sources"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) });
                 foreach (var sourceName in pickerSourceNames)
                 {
                     var name = sourceName;
-                    var check = new CheckBox { Content = name, IsChecked = selectedPickerSources.Contains(name), Margin = new Thickness(0, 2, 0, 2) };
+                    var check = new CheckBox { Content = GetPickerSourceDisplayName(name), IsChecked = selectedPickerSources.Contains(name), Margin = new Thickness(0, 2, 0, 2) };
                     check.Checked += (s, e) => selectedPickerSources.Add(name);
                     check.Unchecked += (s, e) => selectedPickerSources.Remove(name);
                     panel.Children.Add(check);
@@ -2259,18 +2623,57 @@ namespace MetaDataIAPlugin
                 };
                 var aspect = new ComboBox { ItemsSource = aspectOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Value", SelectedValue = pickerCandidateFilter.Aspect };
                 panel.Children.Add(aspect);
+
+                if (formatOptions.Count > 0)
+                {
+                    panel.Children.Add(new TextBlock { Text = GetLocalizedOrFallback("MTDA_MediaSearchFormat", "Candidate resolution"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 4) });
+                    formatCombo = new ComboBox
+                    {
+                        ItemsSource = formatOptions,
+                        DisplayMemberPath = "DisplayName",
+                        SelectedValuePath = "Value",
+                        SelectedValue = GetMediaPickerFormatValue(pickerSettings, kind),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        ToolTip = GetLocalizedOrFallback("MTDA_MediaSearchFormatHelp", "Choose which candidate resolution to show. This does not change the saved global output format.")
+                    };
+                    panel.Children.Add(formatCombo);
+                }
+
+                var styles = availableOptions
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Style))
+                    .Select(x => x.Style)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (styles.Count > 0)
+                {
+                    panel.Children.Add(new TextBlock { Text = GetLocalizedOrFallback("MTDA_MediaFilterStyles", "Style"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 4) });
+                    foreach (var style in styles)
+                    {
+                        var localStyle = style;
+                        var styleCheck = new CheckBox { Content = GetMediaStyleLabel(localStyle), IsChecked = pickerCandidateFilter.Styles.Contains(localStyle), Margin = new Thickness(0, 2, 0, 2) };
+                        styleCheck.Checked += (s, e) => pickerCandidateFilter.Styles.Add(localStyle);
+                        styleCheck.Unchecked += (s, e) => pickerCandidateFilter.Styles.Remove(localStyle);
+                        panel.Children.Add(styleCheck);
+                    }
+                }
                 var apply = new Button { Content = Loc("MTDA_ApplyMediaFilters", "Apply filters"), Margin = new Thickness(0, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Stretch };
                 apply.Click += (s, e) =>
                 {
                     pickerCandidateFilter.OfficialOnly = official.IsChecked == true;
                     pickerCandidateFilter.HideScreenshots = screenshots.IsChecked == true;
                     pickerCandidateFilter.Aspect = aspect.SelectedValue as string ?? "all";
+                    var resolutionValue = formatCombo == null ? null : formatCombo.SelectedValue as string;
+                    if (!string.IsNullOrWhiteSpace(resolutionValue))
+                    {
+                        SetMediaPickerFormatValue(pickerSettings, kind, resolutionValue);
+                    }
                     filterSidebar.Visibility = Visibility.Collapsed;
                     rebuildOptions();
                     if (runSearch != null) runSearch();
                 };
                 panel.Children.Add(apply);
-                filterSidebar.Child = panel;
+                filterSidebar.Child = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
             };
             rebuildOptions();
             Action<MediaPreviewSearchResult> applyResolutionFallback = result =>
@@ -2295,9 +2698,7 @@ namespace MetaDataIAPlugin
                 SetMediaPickerFormatValue(pickerSettings, kind, fallbackValue);
                 if (formatCombo != null)
                 {
-                    applyingResolutionFallback = true;
                     formatCombo.SelectedValue = fallbackValue;
-                    applyingResolutionFallback = false;
                 }
 
                 PlayniteApi.Dialogs.ShowMessage(BuildMediaResolutionFallbackMessage(kind, requestedValue, fallbackValue, pickerSettings), PluginTitle);
@@ -2507,7 +2908,27 @@ namespace MetaDataIAPlugin
                             var searchService = new MediaGenerationService(sourceFilteredSettings, PlayniteApi);
                             refreshed = await busy.RunAsync(token =>
                                 searchService.GetPreviewOptionsWithResolutionFallbackAsync(game, kind, query, token).GetAwaiter().GetResult());
-                            diagnosticsByKind[kind] = searchService.GetLastDiagnostics(game, kind, query);
+                            if (selectedPickerSources.Contains("Web search"))
+                            {
+                                if (refreshed == null) refreshed = new MediaPreviewSearchResult();
+                                var webCandidates = await busy.RunAsync(token => SearchWebImageCandidates(
+                                    query,
+                                    kind,
+                                    pickerSettings,
+                                    pickerCandidateFilter));
+                                refreshed.Options.AddRange(webCandidates);
+                                var webDiagnostic = string.Format(
+                                    Loc("MTDA_WebSearchDiagnostics", "- Web search: {0} candidate(s) found"),
+                                    webCandidates.Count);
+                                var sourceDiagnostics = searchService.GetLastDiagnostics(game, kind, query);
+                                diagnosticsByKind[kind] = string.IsNullOrWhiteSpace(sourceDiagnostics)
+                                    ? webDiagnostic
+                                    : sourceDiagnostics + Environment.NewLine + webDiagnostic;
+                            }
+                            else
+                            {
+                                diagnosticsByKind[kind] = searchService.GetLastDiagnostics(game, kind, query);
+                            }
                         }
                         catch (OperationCanceledException)
                         {
@@ -2831,7 +3252,14 @@ namespace MetaDataIAPlugin
             var image = new Image { Height = listMode ? 92 : option.Kind == MediaKind.Cover ? 190 : option.Kind == MediaKind.Background ? 96 : 190, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Stretch };
             try
             {
-                var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(option.Url, UriKind.Absolute); bitmap.DecodePixelWidth = option.Kind == MediaKind.Background ? 360 : 240; bitmap.CacheOption = BitmapCacheOption.OnDemand; bitmap.EndInit(); image.Source = bitmap;
+                if (option.IsAnimated && string.Equals(option.Extension, ".gif", StringComparison.OrdinalIgnoreCase))
+                {
+                    XamlAnimatedGif.AnimationBehavior.SetSourceUri(image, new Uri(option.Url, UriKind.Absolute));
+                }
+                else
+                {
+                    var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(option.Url, UriKind.Absolute); bitmap.DecodePixelWidth = option.Kind == MediaKind.Background ? 360 : 240; bitmap.CacheOption = BitmapCacheOption.OnDemand; bitmap.EndInit(); image.Source = bitmap;
+                }
             }
             catch { }
             if (listMode) { Grid.SetColumn(image, 0); listContent.Children.Add(image); content.Margin = new Thickness(12, 0, 0, 0); Grid.SetColumn(content, 1); listContent.Children.Add(content); }
@@ -2839,6 +3267,7 @@ namespace MetaDataIAPlugin
 
             var infoPanel = new StackPanel { Margin = new Thickness(0, listMode ? 0 : 8, 0, 8) };
             var sourceBadge = new Border { BorderThickness = new Thickness(1), Padding = new Thickness(7, 2, 7, 2), CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 5) };
+            if (listMode) sourceBadge.HorizontalAlignment = HorizontalAlignment.Right;
             ApplyDynamicResource(sourceBadge, Border.BackgroundProperty, "ControlBackgroundBrush");
             ApplyDynamicResource(sourceBadge, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
             var sourceText = new TextBlock
@@ -2859,7 +3288,7 @@ namespace MetaDataIAPlugin
             }
             infoPanel.Children.Add(CreateMediaInfoLine(Loc("MTDA_MediaInfoOfficial", "Official"), option.IsOfficial ? Loc("MTDA_Yes", "Yes") : Loc("MTDA_NoCommunity", "No / community")));
             content.Children.Add(infoPanel);
-            var openButton = new Button { Content = Loc("MTDA_OpenInBrowser", "Open"), HorizontalAlignment = listMode ? HorizontalAlignment.Left : HorizontalAlignment.Stretch, MinWidth = listMode ? 150 : 0, Margin = new Thickness(0) };
+            var openButton = new Button { Content = Loc("MTDA_OpenInBrowser", "Open"), HorizontalAlignment = listMode ? HorizontalAlignment.Right : HorizontalAlignment.Stretch, MinWidth = listMode ? 150 : 0, Margin = new Thickness(0) };
             openButton.Click += (sender, args) => { args.Handled = true; OpenUrl(option.Url); };
             content.Children.Add(openButton);
 
@@ -2926,6 +3355,14 @@ namespace MetaDataIAPlugin
                     return;
                 }
 
+                if (options.Any(x => x != null && x.Kind == MediaKind.Logo) && !ExtraMetadataLogoService.IsInstalled(PlayniteApi))
+                {
+                    PlayniteApi.Dialogs.ShowMessage(
+                        Loc("MTDA_LogoNeedsEml", "Install Extra Metadata Loader before using logo integration."),
+                        PluginTitle);
+                    return;
+                }
+
                 if (options.Any(x => x != null && x.IsAnimated))
                 {
                     var confirmAnimated = PlayniteApi.Dialogs.ShowMessage(
@@ -2965,7 +3402,14 @@ namespace MetaDataIAPlugin
                             var media = service.GenerateFromOptionAsync(game, option, progress.CancelToken).GetAwaiter().GetResult();
                             progress.MainDispatcher.Invoke(new Action(() =>
                             {
-                                MediaGenerationService.ApplyMediaFile(PlayniteApi, game, media);
+                                if (option.Kind == MediaKind.Logo)
+                                {
+                                    ExtraMetadataLogoService.Apply(PlayniteApi, game, media);
+                                }
+                                else
+                                {
+                                    MediaGenerationService.ApplyMediaFile(PlayniteApi, game, media);
+                                }
                             }));
                             appliedOptions.Add(option);
                             appliedCount++;
@@ -2993,7 +3437,7 @@ namespace MetaDataIAPlugin
                 var after = history.Capture(game, historyOperation, false);
                 var mediaProvenance = appliedOptions.Select(x => new MetadataFieldProvenance
                 {
-                    Field = x.Kind == MediaKind.Cover ? "cover" : x.Kind == MediaKind.Icon ? "icon" : "background",
+                    Field = x.Kind == MediaKind.Cover ? "cover" : x.Kind == MediaKind.Icon ? "icon" : x.Kind == MediaKind.Logo ? "logo" : "background",
                     Source = string.IsNullOrWhiteSpace(x.SourceName) ? Loc("MTDA_UnknownSource", "Unknown source") : x.SourceName,
                     Method = "downloaded-media",
                     Confidence = x.IsOfficial ? "high" : "medium",
@@ -3011,7 +3455,7 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private IEnumerable<MediaKind> GetEnabledMediaKinds(MetaDataIASettings activeSettings)
+        private IEnumerable<MediaKind> GetEnabledMediaKinds(MetaDataIASettings activeSettings, bool includeLogo)
         {
             var service = new MediaGenerationService(activeSettings, PlayniteApi);
             foreach (var kind in new[] { MediaKind.Cover, MediaKind.Icon, MediaKind.Background })
@@ -3020,6 +3464,14 @@ namespace MetaDataIAPlugin
                 {
                     yield return kind;
                 }
+            }
+
+            // Logos are an opt-in Extra Metadata Loader integration.  Including
+            // them here makes the bulk manual picker a single place to curate
+            // every enabled media type, while keeping automatic media runs unchanged.
+            if (includeLogo && activeSettings.EnableExtraMetadataLoaderLogos)
+            {
+                yield return MediaKind.Logo;
             }
         }
 
@@ -3805,13 +4257,19 @@ namespace MetaDataIAPlugin
             };
         }
 
-        private MainMenuItem CreateMainMediaMenuItem(string description, Func<MetaDataIASettings, MetaDataIASettings> settingsFactory)
+        private MainMenuItem CreateMainMediaMenuItem(
+            string description,
+            Func<MetaDataIASettings, MetaDataIASettings> settingsFactory,
+            bool includeLogo = false)
         {
             return new MainMenuItem
             {
                 Description = Loc(MenuKey(description), description),
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
-                Action = actionArgs => ApplyMediaForCurrentMode(GetSelectedOrFilteredGames(), settingsFactory(settings.Settings))
+                Action = actionArgs => ApplyMediaForCurrentMode(
+                    GetSelectedOrFilteredGames(),
+                    settingsFactory(settings.Settings),
+                    includeLogo)
             };
         }
 
@@ -3863,13 +4321,19 @@ namespace MetaDataIAPlugin
             return new GameMenuItem { Description = "-", MenuSection = MenuRoot };
         }
 
-        private GameMenuItem CreateGameMediaMenuItem(string description, Func<MetaDataIASettings, MetaDataIASettings> settingsFactory)
+        private GameMenuItem CreateGameMediaMenuItem(
+            string description,
+            Func<MetaDataIASettings, MetaDataIASettings> settingsFactory,
+            bool includeLogo = false)
         {
             return new GameMenuItem
             {
                 Description = Loc(MenuKey(description), description),
                 MenuSection = MenuRoot + "|" + Loc("MTDA_TabMedia", "Media"),
-                Action = actionArgs => ApplyMediaForCurrentMode(actionArgs.Games, settingsFactory(settings.Settings))
+                Action = actionArgs => ApplyMediaForCurrentMode(
+                    actionArgs.Games,
+                    settingsFactory(settings.Settings),
+                    includeLogo)
             };
         }
 
@@ -4307,7 +4771,10 @@ namespace MetaDataIAPlugin
             PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_LogoApplied", "The logo was saved for Extra Metadata Loader."), PluginTitle);
         }
 
-        private void ApplyMediaForCurrentMode(List<Game> games, MetaDataIASettings activeSettings)
+        private void ApplyMediaForCurrentMode(
+            List<Game> games,
+            MetaDataIASettings activeSettings,
+            bool includeLogo = false)
         {
             if (IsFullscreenMode)
             {
@@ -4315,7 +4782,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            ApplyMediaInteractive(games, activeSettings);
+            ApplyMediaInteractive(games, activeSettings, includeLogo);
         }
 
         private static string MenuKey(string description)

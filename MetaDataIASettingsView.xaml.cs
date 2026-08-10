@@ -243,7 +243,7 @@ namespace MetaDataIAPlugin
                 settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, settings.MediaUsePsnStore, settings.MediaUseXboxStore,
                 settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseWallhaven, settings.MediaUseScreenScraper,
                 settings.MediaUseGiantBomb, settings.MediaUseMobyGames,
-                settings.MediaUseIgdb
+                settings.MediaUseIgdb, settings.MediaUseWebSearch
             }.Count(x => x);
             ConfigurationMediaSummaryText.Text = string.Format(
                 Loc("MTDA_MediaEnabledSummary", "{0} media types · {1} sources"),
@@ -314,6 +314,7 @@ namespace MetaDataIAPlugin
             SetSourceStatus(EpicSourceStatusText, settings.MediaUseEpicStore, true);
             SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
             SetSourceStatus(WallhavenSourceStatusText, settings.MediaUseWallhaven, true);
+            SetSourceStatus(WebSearchSourceStatusText, settings.MediaUseWebSearch, true);
             SetSourceStatus(ScreenScraperSourceStatusText, settings.MediaUseScreenScraper,
                 !string.IsNullOrWhiteSpace(settings.ScreenScraperUserName) && !string.IsNullOrWhiteSpace(settings.ScreenScraperPassword) &&
                 !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) && !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword));

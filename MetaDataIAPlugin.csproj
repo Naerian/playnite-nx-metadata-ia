@@ -39,6 +39,10 @@
       <HintPath>C:\Playnite\Playnite.SDK.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="XamlAnimatedGif">
+      <HintPath>lib\XamlAnimatedGif.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -95,6 +99,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="media\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Icons\settings-ai.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

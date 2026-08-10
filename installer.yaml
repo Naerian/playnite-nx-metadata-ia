@@ -1,5 +1,14 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.3.2
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-10
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.3.2/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_3_2.pext
+    Changelog:
+      - Added a configurable web-search source to the manual media picker, with game-aware queries, result relevance checks and candidate validation.
+      - Added real size detection for validated web candidates, including WebP, and discarded unreachable or non-image results before display.
+      - Added source, shape, resolution and style controls to the media picker filters, plus polished Grid and List candidate views.
+      - Added animated GIF and WebP candidate support, optional Extra Metadata Loader logo selection from the all-media picker, and a direct settings shortcut in Playnite.
   - Version: 1.3.1
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-08
