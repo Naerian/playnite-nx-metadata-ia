@@ -26,7 +26,7 @@ important decisions for the Playnite extension.
 - Release page:
   https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.1
 - Public package SHA-256 verified for v1.4.1:
-  `20D8A6197E3D9E16142D85B8C460B0E752A68C27F8D0597273B2432852AB6D5D`
+  `D1056DDEE7CA34D1E004E6AF06CECDE04FDD5A7B021E24D4436C76B0E45B30AA`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
