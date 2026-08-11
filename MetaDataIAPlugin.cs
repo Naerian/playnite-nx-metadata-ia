@@ -466,9 +466,9 @@ namespace MetaDataIAPlugin
 
                 yield return new MainMenuItem
                 {
-                    Description = Loc("MTDA_MenuAuditLibrary", "Audit current library"),
+                    Description = Loc("MTDA_MenuAuditSelectedOrList", "Audit selected games or current list"),
                     MenuSection = MenuRoot,
-                    Action = actionArgs => ShowLibraryAudit(GetFilteredGames())
+                    Action = actionArgs => ShowLibraryAudit(GetSelectedOrFilteredGames())
                 };
 
                 yield return new MainMenuItem
@@ -4438,12 +4438,35 @@ namespace MetaDataIAPlugin
             }
 
             List<LibraryAuditIssue> issues = null;
+            var cancelled = false;
+            var target = (games ?? PlayniteApi.Database.Games).Where(x => x != null).ToList();
             PlayniteApi.Dialogs.ActivateGlobalProgress(progress =>
             {
-                progress.Text = Loc("MTDA_AuditScanning", "Scanning metadata and media files...");
-                var target = (games ?? PlayniteApi.Database.Games).ToList();
-                issues = new LibraryAuditService(PlayniteApi, settings.Settings, maintenanceState).Scan(target);
-            }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_AuditTitle", "Library audit"), false) { IsIndeterminate = true });
+                progress.ProgressMaxValue = target.Count;
+                try
+                {
+                    issues = new LibraryAuditService(PlayniteApi, settings.Settings, maintenanceState).Scan(
+                        target,
+                        progress.CancelToken,
+                        (current, total, game) =>
+                        {
+                            progress.CurrentProgressValue = current;
+                            progress.Text = string.Format(
+                                Loc("MTDA_AuditScanningGame", "Scanning {0} of {1}: {2}"),
+                                Math.Min(current + 1, total), total, game == null ? string.Empty : game.Name);
+                        });
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelled = true;
+                }
+            }, new GlobalProgressOptions(PluginTitle + " - " + Loc("MTDA_AuditTitle", "Library audit"), true));
+
+            if (cancelled)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_AuditCancelled", "The library audit was cancelled. No changes were made."), PluginTitle);
+                return;
+            }
 
             var window = new LibraryAuditWindow(
                 this,

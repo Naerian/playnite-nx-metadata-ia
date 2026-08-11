@@ -1,5 +1,12 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.1
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-11
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.1/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_1.pext
+    Changelog:
+      - Library Audit now prioritizes the games selected in Playnite, falling back to the current filtered list only when no selection exists.
+      - Added per-game audit progress and safe cancellation, so large libraries can be stopped without opening partial results or changing games.
   - Version: 1.4.0
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-12

@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -239,11 +240,18 @@ namespace MetaDataIAPlugin
             this.api = api; this.settings = settings; this.state = state;
         }
 
-        public List<LibraryAuditIssue> Scan(IEnumerable<Game> games)
+        public List<LibraryAuditIssue> Scan(
+            IEnumerable<Game> games,
+            CancellationToken cancellationToken = default(CancellationToken),
+            Action<int, int, Game> progressChanged = null)
         {
             var issues = new List<LibraryAuditIssue>();
-            foreach (var game in (games ?? Enumerable.Empty<Game>()).Where(x => x != null).GroupBy(x => x.Id).Select(x => x.First()))
+            var targets = (games ?? Enumerable.Empty<Game>()).Where(x => x != null).GroupBy(x => x.Id).Select(x => x.First()).ToList();
+            for (var index = 0; index < targets.Count; index++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var game = targets[index];
+                if (progressChanged != null) progressChanged(index, targets.Count, game);
                 AddMissing(issues, game, "Description", settings.GenerateDescription, string.IsNullOrWhiteSpace(game.Description));
                 AddMissing(issues, game, "Genres", settings.GenerateGenres, game.GenreIds == null || game.GenreIds.Count == 0);
                 AddMissing(issues, game, "Tags", settings.GenerateTags, game.TagIds == null || game.TagIds.Count == 0);
@@ -299,7 +307,9 @@ namespace MetaDataIAPlugin
                         Height = quality.Height
                     });
                 }
+                if (progressChanged != null) progressChanged(index + 1, targets.Count, game);
             }
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var issue in issues) issue.SourceName = GetSourceName(issue.Game);
             return issues
                 .GroupBy(x => x.Game.Id + "|" + x.Area + "|" + x.Field + "|" + x.Problem, StringComparer.OrdinalIgnoreCase)

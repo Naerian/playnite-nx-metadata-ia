@@ -689,6 +689,9 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_AuditTitle">Auditoría de biblioteca</sys:String>
     <sys:String x:Key="MTDA_AuditMaintenanceHelp">Analiza campos activos y archivos multimedia para detectar valores ausentes, referencias rotas, imágenes ilegibles, casi vacías o de baja resolución.</sys:String>
     <sys:String x:Key="MTDA_MenuAuditLibrary">Auditar biblioteca actual</sys:String>
+    <sys:String x:Key="MTDA_MenuAuditSelectedOrList">Auditar juegos seleccionados o lista actual</sys:String>
+    <sys:String x:Key="MTDA_AuditScanningGame">Analizando {0} de {1}: {2}</sys:String>
+    <sys:String x:Key="MTDA_AuditCancelled">La auditoría de biblioteca se ha cancelado. No se ha realizado ningún cambio.</sys:String>
     <sys:String x:Key="MTDA_MenuAuditGame">Auditar este juego</sys:String>
     <sys:String x:Key="MTDA_AuditNoReliableValue">No se ha podido determinar un valor fiable para este campo. El problema permanecerá en la auditoría.</sys:String>
     <sys:String x:Key="MTDA_AuditHeading">Estado de la biblioteca y reparación selectiva</sys:String>

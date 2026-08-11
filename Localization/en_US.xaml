@@ -713,6 +713,9 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AuditTitle">Library audit</sys:String>
     <sys:String x:Key="MTDA_AuditMaintenanceHelp">Scan enabled metadata fields and media files for missing values, broken references, unreadable images, nearly blank assets and low resolution.</sys:String>
     <sys:String x:Key="MTDA_MenuAuditLibrary">Audit current library</sys:String>
+    <sys:String x:Key="MTDA_MenuAuditSelectedOrList">Audit selected games or current list</sys:String>
+    <sys:String x:Key="MTDA_AuditScanningGame">Scanning {0} of {1}: {2}</sys:String>
+    <sys:String x:Key="MTDA_AuditCancelled">The library audit was cancelled. No changes were made.</sys:String>
     <sys:String x:Key="MTDA_MenuAuditGame">Audit this game</sys:String>
     <sys:String x:Key="MTDA_AuditNoReliableValue">No reliable value could be determined for this field. The issue will remain in the audit.</sys:String>
     <sys:String x:Key="MTDA_AuditHeading">Library health and selective repair</sys:String>
