@@ -1734,125 +1734,124 @@
             <TabItem Header="{DynamicResource LOCAdvanced}">
                 <Grid Margin="8">
                     <TabControl x:Name="AdvancedSectionNavigation" Style="{StaticResource SettingsNavigationTabControl}">
-            <TabItem x:Name="MaintenanceNavigationItem" Header="{DynamicResource MTDA_TabMaintenance}">
+            <TabItem Header="{DynamicResource MTDA_TabSetup}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <Grid Margin="8" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,8"/>
-                        <TextBlock Text="{DynamicResource MTDA_SetupWizardSummaryHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"/>
-                        <Button Content="{DynamicResource MTDA_OpenSetupWizard}"
-                                HorizontalAlignment="Left"
-                                 MinWidth="220"
-                                 Click="OpenSetupWizard_OnClick"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"/>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupPrivateHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"
-                                   Opacity="0.85"/>
-
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="{DynamicResource MTDA_ExportSettingsBackup}"
-                                    MinWidth="180"
-                                    Margin="0,0,8,0"
-                                    Click="ExportSettingsBackup_OnClick"/>
-                            <Button Content="{DynamicResource MTDA_ImportSettingsBackup}"
-                                    MinWidth="180"
-                                    Click="ImportSettingsBackup_OnClick"/>
-                        </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"/>
-                        <Button Content="{DynamicResource MTDA_CleanupObsoleteMedia}"
-                                HorizontalAlignment="Left"
-                                 MinWidth="220"
-                                 Click="CleanupObsoleteMedia_OnClick"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_AuditTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_AuditMaintenanceHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
-                        <Button Content="{DynamicResource MTDA_MenuAuditLibrary}" HorizontalAlignment="Left" MinWidth="220" Click="AuditLibrary_OnClick"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"/>
-                        <Button Content="{DynamicResource MTDA_ExportDiagnostics}"
-                                HorizontalAlignment="Left"
-                                 MinWidth="220"
-                                 Click="ExportDiagnostics_OnClick"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource SettingsCard}">
-                            <StackPanel>
-                        <Border Style="{StaticResource SectionHeaderBorder}">
-                            <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>
-                        </Border>
-                        <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryHelp}"
-                                   Style="{StaticResource HintText}"
-                                   Margin="0,0,0,12"/>
-                        <Button Content="{DynamicResource MTDA_OpenHistory}"
-                                HorizontalAlignment="Left"
-                                 MinWidth="220"
-                                Click="OpenHistory_OnClick"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="3" Grid.Column="0" Style="{StaticResource AdvancedSettingsCard}">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                                 <Border Style="{StaticResource SectionHeaderBorder}">
-                                    <TextBlock Text="{DynamicResource MTDA_MaintenanceResetTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                    <TextBlock Text="{DynamicResource MTDA_MaintenanceSetupTitle}" Style="{StaticResource SectionHeaderText}"/>
                                 </Border>
-                                <TextBlock Text="{DynamicResource MTDA_MaintenanceResetHelp}"
-                                           Style="{StaticResource HintText}"
-                                           Margin="0,0,0,12"/>
-                                <Button Content="{DynamicResource MTDA_ResetAllSettings}"
-                                        HorizontalAlignment="Left"
-                                        MinWidth="220"
-                                        Click="ResetAllSettings_OnClick"/>
+                                <TextBlock Text="{DynamicResource MTDA_SetupPageHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_SetupWizardSummaryHelp}" Style="{StaticResource HintText}" Margin="0,0,0,16"/>
+                                <Button Content="{DynamicResource MTDA_OpenSetupWizard}" HorizontalAlignment="Left" MinWidth="260" Click="OpenSetupWizard_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource MTDA_TabBackup}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource PageIntroCard}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                <TextBlock Text="{DynamicResource MTDA_BackupPageHelp}" Style="{StaticResource HintText}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_ExportSettingsBackup}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_BackupExportHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_ExportSettingsBackup}" HorizontalAlignment="Left" MinWidth="250" Click="ExportSettingsBackup_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_ImportSettingsBackup}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_BackupImportHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceBackupPrivateHelp}" Style="{StaticResource HintText}" Opacity="0.85" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_ImportSettingsBackup}" HorizontalAlignment="Left" MinWidth="250" Click="ImportSettingsBackup_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="MaintenanceNavigationItem" Header="{DynamicResource MTDA_TabMaintenance}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid Margin="8" HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupTitle}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceMediaCleanupHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_CleanupObsoleteMedia}" HorizontalAlignment="Left" MinWidth="260" Click="CleanupObsoleteMedia_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceHistoryHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_OpenHistory}" HorizontalAlignment="Left" MinWidth="240" Click="OpenHistory_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsTitle}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_ExportDiagnostics}" HorizontalAlignment="Left" MinWidth="240" Click="ExportDiagnostics_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource AdvancedSettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_MaintenanceResetTitle}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_MaintenanceResetHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_ResetAllSettings}" HorizontalAlignment="Left" MinWidth="240" Click="ResetAllSettings_OnClick"/>
                             </StackPanel>
                         </Border>
                     </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource MTDA_TabAudit}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_AuditTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_AuditMaintenanceHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_AuditExchangeHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_MenuAuditLibrary}" HorizontalAlignment="Left" MinWidth="240" Click="AuditLibrary_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_LibraryExportTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_LibraryExportHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="{DynamicResource MTDA_ExportLibrarySnapshot}" MinWidth="245" Margin="0,0,8,0" Click="ExportLibrarySnapshot_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_ExportLibraryCsv}" MinWidth="245" Click="ExportLibraryCsv_OnClick"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_LibraryImportTitle}" Style="{StaticResource SectionHeaderText}"/></Border>
+                                <TextBlock Text="{DynamicResource MTDA_LibraryImportHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
+                                <Button Content="{DynamicResource MTDA_ImportLibrarySnapshot}" MinWidth="230" HorizontalAlignment="Left" Click="ImportLibrarySnapshot_OnClick"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
@@ -1917,21 +1916,27 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource AdvancedSettingsCard}"
-                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource MTDA_TabLocalData}" Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                        <Border Style="{StaticResource AdvancedSettingsCard}">
                             <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderBorder}">
-                                <TextBlock Text="{DynamicResource MTDA_VocabularyMemory}" Style="{StaticResource SectionHeaderText}"/>
-                            </Border>
-                            <TextBlock Text="{DynamicResource MTDA_VocabularyMemoryHelp}" Style="{StaticResource HintText}" Margin="0,2,0,4"/>
-                            <TextBox Text="{Binding Settings.VocabularyMemory, UpdateSourceTrigger=PropertyChanged}"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     MinHeight="140"
-                                     VerticalScrollBarVisibility="Auto"/>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_VocabularyMemory}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_VocabularyMemoryHelp}" Style="{StaticResource HintText}" Margin="0,2,0,8"/>
+                                <TextBox Text="{Binding Settings.VocabularyMemory, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="180"
+                                         VerticalScrollBarVisibility="Auto"/>
                             </StackPanel>
                         </Border>
-                    </Grid>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 

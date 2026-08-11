@@ -18,8 +18,8 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.3.3`
-- Latest release tag: `v1.3.3`
+- Latest released version: `1.4.0`
+- Latest release tag: `v1.4.0`
 - Latest release commit: see tag `v1.3.3`
 - Current package name:
   `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_3_3.pext`

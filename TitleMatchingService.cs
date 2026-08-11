@@ -33,6 +33,11 @@ namespace MetaDataIAPlugin
                 return result;
             }
 
+            // Library imports often preserve machine-readable separators (for example
+            // Watch_Dogs). IGDB search treats those less consistently than spaces even
+            // though both spellings normalize to the same title locally.
+            AddAlias(result, Regex.Replace(title, "[_\\-]+", " "));
+
             AddAlias(result, Regex.Replace(
                 title,
                 "\\s*[\\(\\[](?:\\d{4}|classic|original|legacy|[^\\)\\]]*(?:edition|deluxe|standard|ultimate|goty|game of the year|complete|collector|collectors|premium|gold|digital)[^\\)\\]]*)[\\)\\]]\\s*$",

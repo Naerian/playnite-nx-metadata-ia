@@ -6,9 +6,13 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace MetaDataIAPlugin
 {
@@ -203,6 +207,25 @@ namespace MetaDataIAPlugin
         public int Width { get; set; }
         public int Height { get; set; }
         public string SourceName { get; set; }
+        [JsonIgnore]
+        public bool SelectedForAction { get; set; }
+    }
+
+    public sealed class LibraryAuditDecision
+    {
+        public Guid GameId { get; set; }
+        public string Game { get; set; }
+        public string Area { get; set; }
+        public string Field { get; set; }
+        public string Problem { get; set; }
+        public string Action { get; set; }
+    }
+
+    public sealed class LibrarySnapshot
+    {
+        public int SchemaVersion { get; set; }
+        public DateTime ExportedAt { get; set; }
+        public List<Game> Games { get; set; }
     }
 
     public sealed class LibraryAuditService
@@ -323,10 +346,12 @@ namespace MetaDataIAPlugin
         private readonly Func<Game, IList<LibraryAuditIssue>> rescan;
         private readonly ListBox issues = new ListBox();
         private readonly CheckBox showHidden = new CheckBox();
+        private readonly CheckBox selectAll = new CheckBox();
         private readonly TextBlock summary = new TextBlock();
         private readonly TextBlock detailTitle = new TextBlock();
         private readonly TextBlock detailBody = new TextBlock();
         private readonly Button repairButton = new Button();
+        private readonly Button applySelectedButton = new Button();
 
         public LibraryAuditIssue SelectedIssue
         {
@@ -356,7 +381,24 @@ namespace MetaDataIAPlugin
             showHidden.Checked += (s, e) => RefreshIssues();
             showHidden.Unchecked += (s, e) => RefreshIssues();
             DockPanel.SetDock(showHidden, Dock.Top); root.Children.Add(showHidden);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
+            selectAll.Content = plugin.Loc("MTDA_AuditSelectAll", "Select all repairable issues");
+            selectAll.Margin = new Thickness(0, 0, 0, 14);
+            selectAll.Checked += (s, e) => SetAllVisibleSelections(true);
+            selectAll.Unchecked += (s, e) => SetAllVisibleSelections(false);
+            DockPanel.SetDock(selectAll, Dock.Top); root.Children.Add(selectAll);
+            var buttons = new DockPanel { Margin = new Thickness(0, 14, 0, 0), LastChildFill = false };
+            var transferButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
+            var exportCsv = new Button { Content = plugin.Loc("MTDA_AuditExportCsv", "Export CSV"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            exportCsv.Click += (s, e) => ExportDecisions(false);
+            var exportJson = new Button { Content = plugin.Loc("MTDA_AuditExportJson", "Export JSON"), MinWidth = 115, Margin = new Thickness(0, 0, 8, 0) };
+            exportJson.Click += (s, e) => ExportDecisions(true);
+            var import = new Button { Content = plugin.Loc("MTDA_AuditImportDecisions", "Import decisions"), MinWidth = 145 };
+            import.Click += (s, e) => ImportDecisions();
+            transferButtons.Children.Add(exportCsv); transferButtons.Children.Add(exportJson); transferButtons.Children.Add(import);
+            DockPanel.SetDock(transferButtons, Dock.Left); buttons.Children.Add(transferButtons);
+            var actionButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            applySelectedButton.Content = plugin.Loc("MTDA_AuditApplySelected", "Apply selected"); applySelectedButton.MinWidth = 145; applySelectedButton.Margin = new Thickness(0, 0, 8, 0);
+            applySelectedButton.Click += (s, e) => ApplySelected();
             repairButton.Content = plugin.Loc("MTDA_AuditRepairSelected", "Repair selected issue"); repairButton.MinWidth = 180; repairButton.Margin = new Thickness(0, 0, 8, 0); repairButton.IsEnabled = false;
             repairButton.Click += (s, e) =>
             {
@@ -365,7 +407,8 @@ namespace MetaDataIAPlugin
                 if (repair(selected)) RescanIssue(selected);
             };
             var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 120 }; close.Click += (s, e) => Close();
-            buttons.Children.Add(repairButton); buttons.Children.Add(close); DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
+            actionButtons.Children.Add(applySelectedButton); actionButtons.Children.Add(repairButton); actionButtons.Children.Add(close);
+            DockPanel.SetDock(actionButtons, Dock.Right); buttons.Children.Add(actionButtons); DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
 
             var content = new Grid();
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
@@ -394,6 +437,7 @@ namespace MetaDataIAPlugin
             issues.Items.Clear();
             foreach (var issue in visible) issues.Items.Add(CreateRow(issue));
             if (issues.Items.Count > 0) issues.SelectedIndex = 0; else RefreshDetails();
+            RefreshActionState();
         }
 
         private void RescanIssue(LibraryAuditIssue selected)
@@ -424,7 +468,12 @@ namespace MetaDataIAPlugin
         private ListBoxItem CreateRow(LibraryAuditIssue issue)
         {
             var grid = new Grid { Margin = new Thickness(10, 8, 10, 8) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var select = new CheckBox { IsChecked = issue.SelectedForAction, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            select.Checked += (s, e) => { issue.SelectedForAction = true; RefreshActionState(); };
+            select.Unchecked += (s, e) => { issue.SelectedForAction = false; RefreshActionState(); };
+            grid.Children.Add(select);
             var text = new StackPanel();
             var title = MetadataTrustUi.Text(issue.Game.Name); title.FontWeight = FontWeights.SemiBold; title.FontSize = 15;
             text.Children.Add(title);
@@ -437,7 +486,7 @@ namespace MetaDataIAPlugin
                 var source = MetadataTrustUi.Text(string.Format(plugin.Loc("MTDA_AuditSource", "Source: {0}"), issue.SourceName)); source.Margin = new Thickness(0, 3, 0, 0); source.Opacity = 0.62; source.FontSize = 11;
                 text.Children.Add(source);
             }
-            grid.Children.Add(text);
+            Grid.SetColumn(text, 1); grid.Children.Add(text);
             var border = new Border
             {
                 Child = grid,
@@ -488,6 +537,120 @@ namespace MetaDataIAPlugin
             detailTitle.Text = issue.Game.Name + " - " + FieldName(issue);
             detailBody.Text = ProblemExplanation(issue) + Environment.NewLine + Environment.NewLine + RecommendedAction(issue);
             repairButton.IsEnabled = issue.IsRepairable && !issue.IsLocked;
+            RefreshActionState();
+        }
+
+        private void RefreshActionState()
+        {
+            if (applySelectedButton != null)
+            {
+                applySelectedButton.IsEnabled = allIssues.Any(x => x.SelectedForAction && x.IsRepairable && !x.IsLocked);
+            }
+        }
+
+        private void SetAllVisibleSelections(bool selected)
+        {
+            foreach (var issue in allIssues.Where(x => x.Game != null && (showHidden.IsChecked == true || !x.Game.Hidden)))
+            {
+                if (issue.IsRepairable && !issue.IsLocked) issue.SelectedForAction = selected;
+            }
+            RefreshIssues();
+        }
+
+        private void ApplySelected()
+        {
+            var selected = allIssues.Where(x => x.SelectedForAction && x.IsRepairable && !x.IsLocked).ToList();
+            if (selected.Count == 0) return;
+            foreach (var issue in selected)
+            {
+                if (repair(issue)) RescanIssue(issue);
+            }
+            RefreshActionState();
+        }
+
+        private List<LibraryAuditDecision> Decisions()
+        {
+            return allIssues.Where(x => x != null && x.Game != null).Select(x => new LibraryAuditDecision
+            {
+                GameId = x.Game.Id, Game = x.Game.Name, Area = x.Area, Field = x.Field, Problem = x.Problem,
+                Action = x.SelectedForAction ? "Apply" : "Skip"
+            }).ToList();
+        }
+
+        private void ExportDecisions(bool json)
+        {
+            if (plugin.Api.Dialogs.ShowMessage(plugin.Loc("MTDA_AuditDecisionExportHelp", "This export lists the issues found by the audit. Edit only the Action column: Apply selects an issue for repair and Skip leaves it unchanged. It does not edit game metadata directly."), plugin.Loc("MTDA_AuditTitle", "Metadata AI library audit"), MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+            {
+                return;
+            }
+            var dialog = new SaveFileDialog
+            {
+                Filter = json ? "JSON (*.json)|*.json" : "CSV (*.csv)|*.csv",
+                FileName = "metadata-ai-audit-" + DateTime.Now.ToString("yyyyMMdd-HHmm") + (json ? ".json" : ".csv")
+            };
+            if (dialog.ShowDialog(this) != true) return;
+            var decisions = Decisions();
+            if (json)
+            {
+                File.WriteAllText(dialog.FileName, JsonConvert.SerializeObject(decisions, Formatting.Indented), Encoding.UTF8);
+            }
+            else
+            {
+                var lines = new List<string> { "GameId,Game,Area,Field,Problem,Action" };
+                lines.AddRange(decisions.Select(x => string.Join(",", Csv(x.GameId.ToString()), Csv(x.Game), Csv(x.Area), Csv(x.Field), Csv(x.Problem), Csv(x.Action))));
+                File.WriteAllLines(dialog.FileName, lines, Encoding.UTF8);
+            }
+        }
+
+        private void ImportDecisions()
+        {
+            var dialog = new OpenFileDialog { Filter = "Audit decisions (*.json;*.csv)|*.json;*.csv|JSON (*.json)|*.json|CSV (*.csv)|*.csv" };
+            if (dialog.ShowDialog(this) != true) return;
+            List<LibraryAuditDecision> decisions;
+            try
+            {
+                decisions = string.Equals(Path.GetExtension(dialog.FileName), ".json", StringComparison.OrdinalIgnoreCase)
+                    ? JsonConvert.DeserializeObject<List<LibraryAuditDecision>>(File.ReadAllText(dialog.FileName))
+                    : ReadCsvDecisions(File.ReadAllLines(dialog.FileName));
+            }
+            catch
+            {
+                plugin.Api.Dialogs.ShowMessage(plugin.Loc("MTDA_AuditImportInvalid", "The audit file could not be read."), plugin.Loc("MTDA_AuditTitle", "Metadata AI library audit"));
+                return;
+            }
+            foreach (var decision in decisions ?? new List<LibraryAuditDecision>())
+            {
+                var issue = allIssues.FirstOrDefault(x => x.Game != null && x.Game.Id == decision.GameId &&
+                    string.Equals(x.Area, decision.Area, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(x.Field, decision.Field, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(x.Problem, decision.Problem, StringComparison.OrdinalIgnoreCase));
+                if (issue != null) issue.SelectedForAction = string.Equals(decision.Action, "Apply", StringComparison.OrdinalIgnoreCase);
+            }
+            RefreshIssues();
+        }
+
+        private static List<LibraryAuditDecision> ReadCsvDecisions(IEnumerable<string> lines)
+        {
+            var values = (lines ?? Enumerable.Empty<string>()).Skip(1).Select(ParseCsv).Where(x => x.Count >= 6).ToList();
+            return values.Select(x => new LibraryAuditDecision
+            {
+                GameId = Guid.Parse(x[0]), Game = x[1], Area = x[2], Field = x[3], Problem = x[4], Action = x[5]
+            }).ToList();
+        }
+
+        private static string Csv(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\""; }
+
+        private static List<string> ParseCsv(string value)
+        {
+            var result = new List<string>(); var builder = new StringBuilder(); var quoted = false;
+            foreach (var character in value ?? string.Empty)
+            {
+                if (character == '"') { quoted = !quoted; continue; }
+                if (character == ',' && !quoted) { result.Add(builder.ToString()); builder.Clear(); continue; }
+                builder.Append(character);
+            }
+            result.Add(builder.ToString());
+            return result;
         }
 
         private string FieldName(LibraryAuditIssue issue)
@@ -552,6 +715,76 @@ namespace MetaDataIAPlugin
             return plugin.Loc("MTDA_AuditActionReview", "Review this field in Playnite's game editor or run a Metadata AI simulation before applying changes.");
         }
 
+    }
+
+    public sealed class LibraryTransferSelectionWindow : Window
+    {
+        private readonly List<Game> allGames;
+        private readonly IPlayniteAPI api;
+        private readonly ListBox list = new ListBox();
+        private readonly CheckBox selectAll = new CheckBox();
+        private readonly HashSet<Guid> selectedIds = new HashSet<Guid>();
+        public List<Game> Result { get; private set; }
+
+        public LibraryTransferSelectionWindow(MetaDataIAPlugin plugin, IEnumerable<Game> allGames)
+        {
+            this.allGames = (allGames ?? Enumerable.Empty<Game>()).Where(x => x != null).ToList();
+            api = plugin.Api;
+            Title = plugin.Loc("MTDA_LibraryExportScopeTitle", "Choose games to export"); Width = 720; Height = 620; MinWidth = 560; MinHeight = 420; ShowInTaskbar = false;
+            MetadataTrustUi.ApplyWindowTheme(this); var owner = plugin.Api.Dialogs.GetCurrentAppWindow(); if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            var root = new DockPanel { Margin = new Thickness(18) };
+            var heading = MetadataTrustUi.Text(plugin.Loc("MTDA_LibraryExportScopeHelp", "Choose whether to export your complete library or only the games currently selected in Playnite.")); heading.TextWrapping = TextWrapping.Wrap; heading.Margin = new Thickness(0, 0, 0, 12); DockPanel.SetDock(heading, Dock.Top); root.Children.Add(heading);
+            selectAll.Content = plugin.Loc("MTDA_LibrarySelectAll", "Select all"); selectAll.Margin = new Thickness(0, 0, 0, 12); selectAll.Checked += (s, e) => { foreach (var game in this.allGames) selectedIds.Add(game.Id); Refresh(); }; selectAll.Unchecked += (s, e) => { selectedIds.Clear(); Refresh(); }; DockPanel.SetDock(selectAll, Dock.Top); root.Children.Add(selectAll);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; var confirm = new Button { Content = plugin.Loc("MTDA_Continue", "Continue"), MinWidth = 120, Margin = new Thickness(0, 0, 8, 0) }; confirm.Click += (s, e) => { Result = this.allGames.Where(x => selectedIds.Contains(x.Id)).ToList(); DialogResult = true; }; var cancel = new Button { Content = plugin.Loc("MTDA_Cancel", "Cancel"), MinWidth = 120 }; cancel.Click += (s, e) => DialogResult = false; buttons.Children.Add(confirm); buttons.Children.Add(cancel); DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
+            list.BorderThickness = new Thickness(0); root.Children.Add(list); Content = root; Refresh();
+        }
+
+        private void Refresh()
+        {
+            list.Items.Clear();
+            foreach (var game in allGames.Take(250))
+            {
+                var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(3), Cursor = Cursors.Hand };
+                var check = new CheckBox { IsChecked = selectedIds.Contains(game.Id), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; check.Checked += (s, e) => selectedIds.Add(game.Id); check.Unchecked += (s, e) => selectedIds.Remove(game.Id); panel.Children.Add(check);
+                panel.MouseLeftButtonUp += (s, e) => { if (e.OriginalSource is CheckBox) return; check.IsChecked = check.IsChecked != true; };
+                var image = new System.Windows.Controls.Image { Width = 34, Height = 34, Stretch = Stretch.UniformToFill, Margin = new Thickness(0, 0, 8, 0) }; var hasImage = TrySetImage(image, game); panel.Children.Add(hasImage ? (UIElement)image : DefaultIcon());
+                var text = MetadataTrustUi.Text(game.Name); text.VerticalAlignment = VerticalAlignment.Center; text.TextWrapping = TextWrapping.Wrap; panel.Children.Add(text); list.Items.Add(panel);
+            }
+        }
+
+        private bool TrySetImage(System.Windows.Controls.Image image, Game game)
+        {
+            var path = ResolveMediaPath(game == null ? null : game.CoverImage) ?? ResolveMediaPath(game == null ? null : game.Icon); if (path == null) return false;
+            try { image.Source = new BitmapImage(new Uri(path, UriKind.Absolute)); return true; } catch { return false; }
+        }
+
+        private string ResolveMediaPath(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null; if (Path.IsPathRooted(value) && File.Exists(value)) return value;
+            try { var path = api.Database.GetFullFilePath(value); if (File.Exists(path)) return path; } catch { }
+            return null;
+        }
+
+        private static UIElement DefaultIcon()
+        {
+            var fallback = MetadataTrustUi.Text("🎮"); fallback.Width = 34; fallback.Height = 34; fallback.FontSize = 18; fallback.TextAlignment = TextAlignment.Center; fallback.VerticalAlignment = VerticalAlignment.Center; fallback.Margin = new Thickness(0, 0, 8, 0); return fallback;
+        }
+    }
+
+    public sealed class LibraryTransferPreviewWindow : Window
+    {
+        public bool Confirmed { get; private set; }
+        public List<string> SelectedEntries { get; private set; }
+        public LibraryTransferPreviewWindow(MetaDataIAPlugin plugin, string summary, IEnumerable<string> entries)
+        {
+            Title = plugin.Loc("MTDA_LibraryImportPreviewTitle", "Review library import"); Width = 720; Height = 560; MinWidth = 520; MinHeight = 380; ShowInTaskbar = false;
+            MetadataTrustUi.ApplyWindowTheme(this); var owner = plugin.Api.Dialogs.GetCurrentAppWindow(); if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            var values = (entries ?? Enumerable.Empty<string>()).Take(250).ToList(); var selected = new HashSet<string>(values);
+            var root = new DockPanel { Margin = new Thickness(18) }; var heading = MetadataTrustUi.Text(summary); heading.TextWrapping = TextWrapping.Wrap; heading.Margin = new Thickness(0, 0, 0, 12); DockPanel.SetDock(heading, Dock.Top); root.Children.Add(heading);
+            var all = new CheckBox { Content = plugin.Loc("MTDA_LibrarySelectAll", "Select all"), IsChecked = true, Margin = new Thickness(0, 0, 0, 12) }; all.Checked += (s, e) => { selected.Clear(); foreach (var value in values) selected.Add(value); }; all.Unchecked += (s, e) => selected.Clear(); DockPanel.SetDock(all, Dock.Top); root.Children.Add(all);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; var confirm = new Button { Content = plugin.Loc("MTDA_ImportLibrarySnapshot", "Import library"), MinWidth = 140, Margin = new Thickness(0, 0, 8, 0) }; confirm.Click += (s, e) => { SelectedEntries = selected.ToList(); Confirmed = true; DialogResult = true; }; var cancel = new Button { Content = plugin.Loc("MTDA_Cancel", "Cancel"), MinWidth = 120 }; cancel.Click += (s, e) => DialogResult = false; buttons.Children.Add(confirm); buttons.Children.Add(cancel); DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
+            var list = new ListBox { BorderThickness = new Thickness(0) }; foreach (var entry in values) { var separator = entry.IndexOf('|'); var label = separator >= 0 ? entry.Substring(separator + 1) : entry; var check = new CheckBox { Content = label, IsChecked = true, Margin = new Thickness(4) }; check.Checked += (s, e) => selected.Add(entry); check.Unchecked += (s, e) => selected.Remove(entry); list.Items.Add(check); } root.Children.Add(list); Content = root;
+        }
     }
 
     public static class ExtraMetadataLogoService

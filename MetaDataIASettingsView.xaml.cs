@@ -430,6 +430,24 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void ExportLibrarySnapshot_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Plugin.ExportLibrarySnapshot();
+        }
+
+        private void ExportLibraryCsv_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Plugin.ExportLibraryCsv();
+        }
+
+        private void ImportLibrarySnapshot_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null) viewModel.Plugin.ImportLibrarySnapshot();
+        }
+
         private void ScreenScraperPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;

@@ -4454,6 +4454,154 @@ namespace MetaDataIAPlugin
             try { window.ShowDialog(); } finally { RestoreWindowActivation(owner); }
         }
 
+        public void ExportLibrarySnapshot()
+        {
+            var games = SelectLibraryExportGames();
+            if (games == null || games.Count == 0) return;
+            var dialog = new SaveFileDialog { Filter = "JSON (*.json)|*.json", FileName = "MetadataAI_Library_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".json" };
+            if (dialog.ShowDialog() != true) return;
+            var snapshot = new LibrarySnapshot { SchemaVersion = 1, ExportedAt = DateTime.UtcNow, Games = games };
+            File.WriteAllText(dialog.FileName, JsonConvert.SerializeObject(snapshot, Formatting.Indented), Encoding.UTF8);
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_LibraryExportDone", "Exported {0} games."), snapshot.Games.Count), PluginTitle);
+        }
+
+        public void ExportLibraryCsv()
+        {
+            var games = SelectLibraryExportGames();
+            if (games == null || games.Count == 0) return;
+            var dialog = new SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = "MetadataAI_Library_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv" };
+            if (dialog.ShowDialog() != true) return;
+            var rows = new List<string> { "Id,Name,SortingName,ReleaseDate,Genres,Tags,Features,Developers,Publishers,AgeRatings,Regions,Categories,Series,Description,CoverImage,Icon,BackgroundImage" };
+            rows.AddRange(games.Select(game => string.Join(",", Csv(game.Id.ToString()), Csv(game.Name), Csv(game.SortingName), Csv(game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty), Csv(Names(game.Genres)), Csv(Names(game.Tags)), Csv(Names(game.Features)), Csv(Names(game.Developers)), Csv(Names(game.Publishers)), Csv(Names(game.AgeRatings)), Csv(Names(game.Regions)), Csv(Names(game.Categories)), Csv(Names(game.Series)), Csv(game.Description), Csv(game.CoverImage), Csv(game.Icon), Csv(game.BackgroundImage))));
+            File.WriteAllLines(dialog.FileName, rows, Encoding.UTF8);
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_LibraryExportDone", "Exported {0} games."), games.Count), PluginTitle);
+        }
+
+        private List<Game> SelectLibraryExportGames()
+        {
+            var window = new LibraryTransferSelectionWindow(this, PlayniteApi.Database.Games.GetClone());
+            return window.ShowDialog() == true ? window.Result : null;
+        }
+
+        private static string Names(IEnumerable<DatabaseObject> values)
+        {
+            return string.Join("; ", (values ?? Enumerable.Empty<DatabaseObject>()).Where(x => x != null).Select(x => x.Name));
+        }
+
+        private static string Csv(string value)
+        {
+            return "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
+        }
+
+        public void ImportLibrarySnapshot()
+        {
+            var dialog = new OpenFileDialog { Filter = "Library export (*.json;*.csv)|*.json;*.csv|JSON (*.json)|*.json|CSV (*.csv)|*.csv" };
+            if (dialog.ShowDialog() != true) return;
+            if (string.Equals(System.IO.Path.GetExtension(dialog.FileName), ".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                ImportLibraryCsv(dialog.FileName);
+                return;
+            }
+            LibrarySnapshot snapshot;
+            try { snapshot = JsonConvert.DeserializeObject<LibrarySnapshot>(File.ReadAllText(dialog.FileName)); }
+            catch { snapshot = null; }
+            var candidates = snapshot == null || snapshot.Games == null ? new List<Game>() : snapshot.Games
+                .Where(x => x != null && PlayniteApi.Database.Games.Get(x.Id) != null).ToList();
+            if (candidates.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_LibraryImportInvalid", "The file has no compatible games to import."), PluginTitle);
+                return;
+            }
+            var ignored = snapshot.Games.Count - candidates.Count;
+            var preview = new LibraryTransferPreviewWindow(this, string.Format(Loc("MTDA_LibraryImportConfirm", "Import metadata and media references for {0} matching games? {1} file entries do not match this library and will be ignored. This replaces the saved game records."), candidates.Count, ignored), candidates.Select(x => x.Id + "|" + x.Name));
+            if (preview.ShowDialog() != true || !preview.Confirmed) return;
+            var selectedIds = new HashSet<Guid>((preview.SelectedEntries ?? new List<string>()).Select(x => ParseGuid(x.Split('|')[0])).Where(x => x.HasValue).Select(x => x.Value));
+            candidates = candidates.Where(x => selectedIds.Contains(x.Id)).ToList();
+            if (candidates.Count == 0) return;
+            foreach (var game in candidates) PlayniteApi.Database.Games.Update(game);
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_LibraryImportDone", "Imported {0} games."), candidates.Count), PluginTitle);
+        }
+
+        private void ImportLibraryCsv(string path)
+        {
+            List<List<string>> rows;
+            try { rows = File.ReadAllLines(path).Skip(1).Select(ParseCsv).Where(x => x.Count >= 17).ToList(); }
+            catch { rows = null; }
+            if (rows == null || rows.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_LibraryImportInvalid", "The file has no compatible games to import."), PluginTitle);
+                return;
+            }
+            var current = PlayniteApi.Database.Games.GetClone().ToDictionary(x => x.Id, x => x);
+            var records = rows.Select(x => new { Row = x, Id = ParseGuid(x[0]) }).Where(x => x.Id.HasValue && current.ContainsKey(x.Id.Value)).ToList();
+            if (records.Count == 0)
+            {
+                PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_LibraryImportInvalid", "The file has no compatible games to import."), PluginTitle);
+                return;
+            }
+            var ignored = rows.Count - records.Count;
+            var preview = new LibraryTransferPreviewWindow(this, string.Format(Loc("MTDA_LibraryCsvImportConfirm", "Apply the editable metadata columns from the CSV to {0} matching games? {1} rows do not match this library and will be ignored. Name and media files are not changed."), records.Count, ignored), records.Select(x => x.Id.Value + "|" + x.Row[1]));
+            if (preview.ShowDialog() != true || !preview.Confirmed) return;
+            var selectedIds = new HashSet<Guid>((preview.SelectedEntries ?? new List<string>()).Select(x => ParseGuid(x.Split('|')[0])).Where(x => x.HasValue).Select(x => x.Value));
+            records = records.Where(x => selectedIds.Contains(x.Id.Value)).ToList();
+            if (records.Count == 0) return;
+            var importSettings = CreateLibraryImportSettings();
+            foreach (var record in records)
+            {
+                var row = record.Row;
+                var result = new AiMetadataResult
+                {
+                    Description = row[13], SortingName = row[2], ReleaseDate = row[3],
+                    Genres = SplitCsvValues(row[4]), Tags = SplitCsvValues(row[5]), Features = SplitCsvValues(row[6]),
+                    Developers = SplitCsvValues(row[7]), Publishers = SplitCsvValues(row[8]), AgeRatings = SplitCsvValues(row[9]),
+                    Regions = SplitCsvValues(row[10]), Categories = SplitCsvValues(row[11]), Series = SplitCsvValues(row[12])
+                };
+                MetadataApplyService.Apply(PlayniteApi, current[record.Id.Value], result, importSettings);
+                var imported = current[record.Id.Value];
+                imported.CoverImage = row[14]; imported.Icon = row[15]; imported.BackgroundImage = row[16];
+                PlayniteApi.Database.Games.Update(imported);
+            }
+            PlayniteApi.Dialogs.ShowMessage(string.Format(Loc("MTDA_LibraryImportDone", "Imported {0} games."), records.Count), PluginTitle);
+        }
+
+        private MetaDataIASettings CreateLibraryImportSettings()
+        {
+            var copy = Serialization.GetClone(settings.Settings);
+            copy.GenerateDescription = copy.GenerateGenres = copy.GenerateTags = copy.GenerateFeatures = true;
+            copy.GenerateDevelopers = copy.GeneratePublishers = copy.GenerateAgeRatings = copy.GenerateRegions = true;
+            copy.GenerateCategories = copy.GenerateSortingName = copy.GenerateReleaseDate = copy.GenerateSeries = true;
+            copy.DescriptionApplyMode = copy.GenresApplyMode = copy.TagsApplyMode = copy.FeaturesApplyMode = MetaDataIASettings.ApplyOverwrite;
+            copy.DevelopersApplyMode = copy.PublishersApplyMode = copy.AgeRatingsApplyMode = copy.RegionsApplyMode = MetaDataIASettings.ApplyOverwrite;
+            copy.CategoriesApplyMode = copy.SortingNameApplyMode = copy.ReleaseDateApplyMode = copy.SeriesApplyMode = MetaDataIASettings.ApplyOverwrite;
+            copy.MaxGenres = copy.MaxTags = copy.MaxFeatures = copy.MaxDevelopers = copy.MaxPublishers = 100;
+            copy.MaxAgeRatings = copy.MaxRegions = copy.MaxCategories = copy.MaxSeries = 100;
+            return copy;
+        }
+
+        private static Guid? ParseGuid(string value)
+        {
+            Guid parsed; return Guid.TryParse(value, out parsed) ? parsed : (Guid?)null;
+        }
+
+        private static List<string> SplitCsvValues(string value)
+        {
+            return (value ?? string.Empty).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+        }
+
+        private static List<string> ParseCsv(string value)
+        {
+            var result = new List<string>(); var item = new StringBuilder(); var quoted = false;
+            for (var index = 0; index < (value ?? string.Empty).Length; index++)
+            {
+                var character = value[index];
+                if (character == '"' && quoted && index + 1 < value.Length && value[index + 1] == '"') { item.Append('"'); index++; continue; }
+                if (character == '"') { quoted = !quoted; continue; }
+                if (character == ',' && !quoted) { result.Add(item.ToString()); item.Clear(); continue; }
+                item.Append(character);
+            }
+            result.Add(item.ToString()); return result;
+        }
+
         private bool RepairAuditIssue(LibraryAuditIssue issue)
         {
             if (issue == null || !issue.IsRepairable || issue.Game == null)
