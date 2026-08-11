@@ -116,7 +116,6 @@ namespace MetaDataIAPlugin
                 {
                     metadata.IsExactMatch = true;
                     result.Add(metadata);
-                    break;
                 }
             }
 
@@ -524,7 +523,7 @@ namespace MetaDataIAPlugin
                 Features = capabilities == null ? new List<string>() : ReadStringArray(capabilities.Properties().Select(x => x.Value)),
                 Developers = SplitCompanies((string)product["developerName"]),
                 Publishers = SplitCompanies((string)product["publisherName"]),
-                AgeRating = string.IsNullOrWhiteSpace(board) || string.IsNullOrWhiteSpace(value) ? null : board + " " + value,
+                AgeRating = CombineAgeRating(board, value),
                 ReleaseDate = NormalizeReleaseDate((string)product["releaseDate"] ?? (string)product["originalReleaseDate"])
             };
         }
@@ -538,13 +537,13 @@ namespace MetaDataIAPlugin
             }
 
             var html = await GetStringAsync(match.Url, cancelToken).ConfigureAwait(false);
-            var stateMatch = Regex.Match(html ?? string.Empty, "window\\.__PRELOADED_STATE__\\s*=\\s*(?<json>.+);\\r?\\n", RegexOptions.Singleline);
-            if (!stateMatch.Success)
+            var stateJson = ExtractJavaScriptObject(html, "window.__PRELOADED_STATE__");
+            if (string.IsNullOrWhiteSpace(stateJson))
             {
                 return null;
             }
 
-            var root = JObject.Parse(stateMatch.Groups["json"].Value);
+            var root = JObject.Parse(stateJson);
             var summary = root["core2"] == null || root["core2"]["products"] == null || root["core2"]["products"]["productSummaries"] == null
                 ? null
                 : root["core2"]["products"]["productSummaries"][match.Id] as JObject;
@@ -949,6 +948,81 @@ namespace MetaDataIAPlugin
 
             var match = Regex.Match(url, "/([0-9a-z]{12})(?:[/?#]|$)", RegexOptions.IgnoreCase);
             return match.Success ? match.Groups[1].Value.ToUpperInvariant() : null;
+        }
+
+        private static string CombineAgeRating(string board, string value)
+        {
+            board = CleanText(board);
+            value = CleanText(value);
+            if (string.IsNullOrWhiteSpace(board) || string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return value.StartsWith(board, StringComparison.OrdinalIgnoreCase) ? value : board + " " + value;
+        }
+
+        // Xbox embeds the product payload in a JavaScript assignment followed by more scripts.
+        // A greedy regular expression can therefore consume subsequent JavaScript and make the
+        // JSON invalid. Read the balanced object instead, respecting JSON string escaping.
+        private static string ExtractJavaScriptObject(string html, string assignmentName)
+        {
+            if (string.IsNullOrWhiteSpace(html) || string.IsNullOrWhiteSpace(assignmentName))
+            {
+                return null;
+            }
+
+            var assignmentIndex = html.IndexOf(assignmentName, StringComparison.Ordinal);
+            if (assignmentIndex < 0)
+            {
+                return null;
+            }
+
+            var objectStart = html.IndexOf('{', assignmentIndex + assignmentName.Length);
+            if (objectStart < 0)
+            {
+                return null;
+            }
+
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            for (var index = objectStart; index < html.Length; index++)
+            {
+                var character = html[index];
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (character == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else if (character == '"')
+                    {
+                        inString = false;
+                    }
+
+                    continue;
+                }
+
+                if (character == '"')
+                {
+                    inString = true;
+                }
+                else if (character == '{')
+                {
+                    depth++;
+                }
+                else if (character == '}' && --depth == 0)
+                {
+                    return html.Substring(objectStart, index - objectStart + 1);
+                }
+            }
+
+            return null;
         }
 
         private static bool LooksLikeCloudflareChallenge(string html)

@@ -213,7 +213,7 @@ namespace MetaDataIAPlugin
         private string recommendedForLength = "Media";
         private string extraInstructions = string.Empty;
         private string existingMetadataMode = "Usar como contexto";
-        private bool useOfficialStoreContext = false;
+        private bool useOfficialStoreContext = true;
         private bool strictCompanyAgeRegion = true;
         private bool enableLocalFallback = true;
         private bool tryLmStudioFallback = true;
@@ -276,6 +276,8 @@ namespace MetaDataIAPlugin
         private string giantBombApiKey = string.Empty;
         private bool mediaUseMobyGames = false;
         private string mobyGamesApiKey = string.Empty;
+        private bool mediaUseTheGamesDb = false;
+        private string theGamesDbApiKey = string.Empty;
         private bool mediaUseIgdb = false;
         private string igdbClientId = string.Empty;
         private string igdbClientSecret = string.Empty;
@@ -565,6 +567,8 @@ namespace MetaDataIAPlugin
         public string GiantBombApiKey { get { return giantBombApiKey; } set { SetValue(ref giantBombApiKey, value); } }
         public bool MediaUseMobyGames { get { return mediaUseMobyGames; } set { SetValue(ref mediaUseMobyGames, value); } }
         public string MobyGamesApiKey { get { return mobyGamesApiKey; } set { SetValue(ref mobyGamesApiKey, value); } }
+        public bool MediaUseTheGamesDb { get { return mediaUseTheGamesDb; } set { SetValue(ref mediaUseTheGamesDb, value); } }
+        public string TheGamesDbApiKey { get { return theGamesDbApiKey; } set { SetValue(ref theGamesDbApiKey, value); } }
         public bool MediaUseIgdb { get { return mediaUseIgdb; } set { SetValue(ref mediaUseIgdb, value); } }
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
         public string IgdbClientSecret { get { return igdbClientSecret; } set { SetValue(ref igdbClientSecret, value); } }
@@ -581,6 +585,7 @@ namespace MetaDataIAPlugin
             ScreenScraperDeveloperPassword = SecretProtectionService.Protect(ScreenScraperDeveloperPassword);
             GiantBombApiKey = SecretProtectionService.Protect(GiantBombApiKey);
             MobyGamesApiKey = SecretProtectionService.Protect(MobyGamesApiKey);
+            TheGamesDbApiKey = SecretProtectionService.Protect(TheGamesDbApiKey);
             IgdbClientId = SecretProtectionService.Protect(IgdbClientId);
             IgdbClientSecret = SecretProtectionService.Protect(IgdbClientSecret);
             IgdbAccessToken = SecretProtectionService.Protect(IgdbAccessToken);
@@ -609,6 +614,8 @@ namespace MetaDataIAPlugin
             GiantBombApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(MobyGamesApiKey, out plainText) && succeeded;
             MobyGamesApiKey = plainText;
+            succeeded = SecretProtectionService.TryUnprotect(TheGamesDbApiKey, out plainText) && succeeded;
+            TheGamesDbApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(IgdbClientId, out plainText) && succeeded;
             IgdbClientId = plainText;
             succeeded = SecretProtectionService.TryUnprotect(IgdbClientSecret, out plainText) && succeeded;

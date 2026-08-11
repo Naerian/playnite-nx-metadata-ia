@@ -522,8 +522,8 @@ namespace MetaDataIAPlugin
             working.UseOfficialStoreContext = true;
             working.UseOriginIntegrationAsAiContext = true;
             working.UseOriginIntegrationForFactualMetadata = true;
-            working.GenerateRegions = false;
-            working.GenerateAgeRatings = false;
+            working.GenerateRegions = profile != "media";
+            working.GenerateAgeRatings = profile != "media";
             working.MaxDevelopers = 1;
             working.MaxPublishers = 1;
             working.MaxTags = 9;

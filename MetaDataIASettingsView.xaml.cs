@@ -320,6 +320,7 @@ namespace MetaDataIAPlugin
                 !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) && !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword));
             SetSourceStatus(GiantBombSourceStatusText, settings.MediaUseGiantBomb, !string.IsNullOrWhiteSpace(settings.GiantBombApiKey));
             SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
+            SetSourceStatus(TheGamesDbSourceStatusText, settings.MediaUseTheGamesDb, !string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey));
             SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
                 !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                 (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken)));
@@ -389,6 +390,7 @@ namespace MetaDataIAPlugin
             SetPassword(ScreenScraperDeveloperPasswordBox, settings.ScreenScraperDeveloperPassword);
             SetPassword(GiantBombApiKeyBox, settings.GiantBombApiKey);
             SetPassword(MobyGamesApiKeyBox, settings.MobyGamesApiKey);
+            SetPassword(TheGamesDbApiKeyBox, settings.TheGamesDbApiKey);
             SetPassword(IgdbClientIdBox, settings.IgdbClientId);
             SetPassword(IgdbClientSecretBox, settings.IgdbClientSecret);
         }
@@ -452,6 +454,15 @@ namespace MetaDataIAPlugin
             if (viewModel != null)
             {
                 viewModel.Settings.MobyGamesApiKey = MobyGamesApiKeyBox.Password;
+            }
+        }
+
+        private void TheGamesDbApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel != null)
+            {
+                viewModel.Settings.TheGamesDbApiKey = TheGamesDbApiKeyBox.Password;
             }
         }
 
@@ -521,6 +532,62 @@ namespace MetaDataIAPlugin
                 }
 
                 viewModel.RestoreDefaultTemplates();
+            }
+        }
+
+        private void SourcesPanel_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ApplySourceCapabilityFilter();
+        }
+
+        private void SourceFilterAll_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (SourceMetadataFilter != null) SourceMetadataFilter.IsChecked = false;
+            if (SourceMediaFilter != null) SourceMediaFilter.IsChecked = false;
+            ApplySourceCapabilityFilter();
+        }
+
+        private void SourceCapabilityFilter_OnChanged(object sender, RoutedEventArgs e)
+        {
+            ApplySourceCapabilityFilter();
+        }
+
+        private void ApplySourceCapabilityFilter()
+        {
+            if (SourcesPanel == null) return;
+            var requireMetadata = SourceMetadataFilter != null && SourceMetadataFilter.IsChecked == true;
+            var requireMedia = SourceMediaFilter != null && SourceMediaFilter.IsChecked == true;
+
+            foreach (var source in FindVisualChildren<Expander>(SourcesPanel))
+            {
+                var title = FindVisualChildren<TextBlock>(source)
+                    .Select(x => x.Text ?? string.Empty)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
+                var mediaOnly = title.IndexOf("steamgrid", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("rawg", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("wallhaven", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("screen", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("giant bomb", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("mobygames", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("thegamesdb", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("web", StringComparison.OrdinalIgnoreCase) >= 0;
+                var hasMetadata = !mediaOnly;
+                var hasMedia = true;
+                source.Visibility = (!requireMetadata || hasMetadata) && (!requireMedia || hasMedia)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) yield break;
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, index);
+                var typed = child as T;
+                if (typed != null) yield return typed;
+                foreach (var nested in FindVisualChildren<T>(child)) yield return nested;
             }
         }
 
@@ -1380,6 +1447,15 @@ namespace MetaDataIAPlugin
             });
         }
 
+        private void TestTheGamesDbMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "TheGamesDB", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseTheGamesDb = true;
+            });
+        }
+
         private void TestIgdbMedia_OnClick(object sender, RoutedEventArgs e)
         {
             TestMediaSource(sender as Button, "IGDB", s =>
@@ -1756,6 +1832,7 @@ namespace MetaDataIAPlugin
             settings.MediaUseScreenScraper = false;
             settings.MediaUseGiantBomb = false;
             settings.MediaUseMobyGames = false;
+            settings.MediaUseTheGamesDb = false;
             settings.MediaUseIgdb = false;
         }
 

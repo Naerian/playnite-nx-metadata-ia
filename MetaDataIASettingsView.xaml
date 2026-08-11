@@ -208,6 +208,11 @@
             <Setter Property="Margin" Value="10,0,0,0"/>
             <Setter Property="CornerRadius" Value="8"/>
         </Style>
+        <Style x:Key="SourceCapabilityBadge" TargetType="Border" BasedOn="{StaticResource SourceStatusBadge}">
+            <Setter Property="Padding" Value="6,1"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
         <Style x:Key="SettingsNavigationTabItem" TargetType="TabItem">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -971,12 +976,10 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="{DynamicResource MTDA_TabMedia}">
+            <TabItem Header="{DynamicResource MTDA_TabSources}">
                 <Grid Margin="8">
-                    <TabControl Style="{StaticResource SettingsNavigationTabControl}">
-            <TabItem Header="{DynamicResource MTDA_NavMediaSources}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="8" HorizontalAlignment="Stretch">
+                    <StackPanel x:Name="SourcesPanel" Margin="8" HorizontalAlignment="Stretch" Loaded="SourcesPanel_OnLoaded">
                         <Border Style="{StaticResource PageIntroCard}">
                             <TextBlock Text="{Binding Settings.SteamGridDbHelp, Mode=OneWay}"
                                        TextWrapping="Wrap"
@@ -987,13 +990,18 @@
                             <Run Text="NOTA: " FontWeight="SemiBold"/>
                             <Run Text="{DynamicResource MTDA_MissingApiKeyHelp}"/>
                         </TextBlock>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="{DynamicResource MTDA_SourceFilterAll}" MinWidth="80" Margin="0,0,8,0" Click="SourceFilterAll_OnClick"/>
+                            <ToggleButton x:Name="SourceMetadataFilter" Content="{DynamicResource MTDA_SourceCapabilityMetadata}" MinWidth="100" Margin="0,0,8,0" Checked="SourceCapabilityFilter_OnChanged" Unchecked="SourceCapabilityFilter_OnChanged"/>
+                            <ToggleButton x:Name="SourceMediaFilter" Content="{DynamicResource MTDA_SourceCapabilityMedia}" MinWidth="80" Checked="SourceCapabilityFilter_OnChanged" Unchecked="SourceCapabilityFilter_OnChanged"/>
+                        </StackPanel>
 
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
                         <StackPanel Margin="0,0,0,14">
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{DynamicResource MTDA_OriginIntegrationsTab}" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="OriginSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="{DynamicResource MTDA_OriginIntegrationsTab}" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="OriginSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_OriginIntegrationsDescription}" Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox IsChecked="{Binding Settings.UseOriginIntegrationForMedia}"
@@ -1026,7 +1034,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Steam CDN oficial" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Steam CDN oficial" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Steam usa recursos públicos oficiales cuando el juego se puede asociar a su ficha: portadas, heroes de biblioteca y capturas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Steam oficial para portadas y heroes"
@@ -1040,7 +1048,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="SteamGridDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamGridDbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="SteamGridDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamGridDbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="SteamGridDB suele ser la mejor fuente para portadas, iconos y fondos creados o curados por la comunidad." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar SteamGridDB para portadas, iconos y heroes"
@@ -1062,7 +1070,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="PlayStation" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PsnSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="PlayStation" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PsnSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="PlayStation Store usa la tienda web pública para intentar obtener portadas, fondos y descripción oficial. No requiere API key, pero puede variar por región o por cambios de Sony." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar PlayStation Store como fuente de portadas y fondos"
@@ -1072,7 +1080,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Xbox" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="XboxSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Xbox" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="XboxSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Xbox Store usa el catálogo público de Microsoft Store para obtener box art, posters, super hero art, capturas y descripción oficial." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Xbox Store como fuente de portadas y fondos"
@@ -1082,7 +1090,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Epic" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="EpicSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Epic" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="EpicSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="Epic Store se usa como fuente auxiliar si el juego ya tiene enlace de Epic o la tienda expone datos públicos. La web puede bloquear consultas automáticas, así que se omite si no responde limpiamente." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar Epic Store como fuente auxiliar"
@@ -1092,7 +1100,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="RAWG.io" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="RAWG.io" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="RawgSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="RAWG ayuda a encontrar capturas, fondos y metadatos generales cuando no hay buenos resultados en fuentes más directas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar RAWG como fuente de imagen principal y capturas"
@@ -1108,7 +1116,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Wallhaven" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WallhavenSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Wallhaven" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WallhavenSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_WallhavenHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableWallhaven}"
@@ -1118,7 +1126,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{DynamicResource MTDA_SourceWebSearch}" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WebSearchSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="{DynamicResource MTDA_SourceWebSearch}" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WebSearchSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_WebSearchHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableWebSearch}"
@@ -1127,7 +1135,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="ScreenScraper" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="ScreenScraperSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="ScreenScraper" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="ScreenScraperSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_ScreenScraperHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableScreenScraper}" IsChecked="{Binding Settings.MediaUseScreenScraper}" Margin="0,0,0,10"/>
@@ -1143,7 +1151,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Giant Bomb" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="GiantBombSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Giant Bomb" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="GiantBombSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_GiantBombHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableGiantBomb}" IsChecked="{Binding Settings.MediaUseGiantBomb}" Margin="0,0,0,10"/>
@@ -1153,7 +1161,7 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="MobyGames" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="MobyGamesSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="MobyGames" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="MobyGamesSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="MobyGames es útil como fuente histórica y de respaldo, especialmente en juegos antiguos o con fichas poco completas." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar MobyGames como fuente de covers y capturas históricas"
@@ -1169,7 +1177,18 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
-                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="IGDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="TheGamesDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="TheGamesDbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_TheGamesDbHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableTheGamesDb}" IsChecked="{Binding Settings.MediaUseTheGamesDb}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="TheGamesDB API Key"/>
+                                    <PasswordBox x:Name="TheGamesDbApiKeyBox" PasswordChanged="TheGamesDbApiKeyBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_TheGamesDbKeyHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestTheGamesDb}" HorizontalAlignment="Left" MinWidth="150" Click="TestTheGamesDbMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="IGDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="IGDB usa credenciales de Twitch y aporta imágenes y datos estructurados con buena cobertura para juegos modernos." Style="{StaticResource HintText}" Margin="0,0,0,12"/>
                                     <CheckBox Content="Activar IGDB como fuente de covers, artworks y screenshots"
@@ -1211,7 +1230,12 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
+                </Grid>
             </TabItem>
+
+            <TabItem Header="{DynamicResource MTDA_TabMedia}">
+                <Grid Margin="8">
+                    <TabControl Style="{StaticResource SettingsNavigationTabControl}">
             <TabItem Header="{DynamicResource MTDA_NavMediaDownload}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="8" HorizontalAlignment="Stretch">

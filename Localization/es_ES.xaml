@@ -6,6 +6,10 @@
     <sys:String x:Key="MTDA_AiGeneration">Generación</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">Plantillas</sys:String>
     <sys:String x:Key="MTDA_TabMedia">Media</sys:String>
+    <sys:String x:Key="MTDA_TabSources">Fuentes</sys:String>
+    <sys:String x:Key="MTDA_SourceCapabilityMetadata">Metadatos</sys:String>
+    <sys:String x:Key="MTDA_SourceCapabilityMedia">Media</sys:String>
+    <sys:String x:Key="MTDA_SourceFilterAll">Todas las fuentes</sys:String>
     <sys:String x:Key="MTDA_TabImport">Importación</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">Mantenimiento</sys:String>
     <sys:String x:Key="MTDA_TabFields">Campos</sys:String>
@@ -877,4 +881,8 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaAnimated">Animado — se conserva el formato original</sys:String>
     <sys:String x:Key="MTDA_ApplyMediaFilters">Filtrar</sys:String>
     <sys:String x:Key="MTDA_MediaInfoFormat">Formato</sys:String>
+    <sys:String x:Key="MTDA_TheGamesDbHelp">TheGamesDB es una base de datos comunitaria con portadas, fondos, capturas y logotipos útiles, especialmente para juegos retro y emulados.</sys:String>
+    <sys:String x:Key="MTDA_EnableTheGamesDb">Activar TheGamesDB como fuente de portadas, fondos y logotipos</sys:String>
+    <sys:String x:Key="MTDA_TheGamesDbKeyHelp">Crea una clave personal gratuita en api.thegamesdb.net/key.php. TheGamesDB la requiere.</sys:String>
+    <sys:String x:Key="MTDA_TestTheGamesDb">Probar TheGamesDB</sys:String>
 </ResourceDictionary>

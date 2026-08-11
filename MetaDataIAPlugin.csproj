@@ -64,6 +64,7 @@
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MetadataHistoryService.cs" />
+    <Compile Include="IgdbMetadataContextService.cs" />
     <Compile Include="MetadataMaintenanceService.cs" />
     <Compile Include="MetadataTrustModels.cs" />
     <Compile Include="MetadataTrustWindows.cs" />

@@ -925,6 +925,30 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            if (settings.MediaUseTheGamesDb)
+            {
+                if (string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey))
+                {
+                    AddDiagnostic(diagnostics, "TheGamesDB", Loc("MTDA_MediaDiagMissingApiKey", "missing API key"));
+                }
+                else
+                {
+                    try
+                    {
+                        var sourceCandidates = await GetTheGamesDbCandidates(kind, effectiveSearchText, cancelToken).ConfigureAwait(false);
+                        AddSourceCandidates(candidates, diagnostics, "TheGamesDB", sourceCandidates);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        AddDiagnostic(diagnostics, "TheGamesDB", Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                    }
+                }
+            }
+
             if (kind != MediaKind.Logo && settings.MediaUseIgdb)
             {
                 if (string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
@@ -1019,6 +1043,7 @@ namespace MetaDataIAPlugin
                 settings.MediaUseScreenScraper.ToString(),
                 settings.MediaUseGiantBomb.ToString(),
                 settings.MediaUseMobyGames.ToString(),
+                settings.MediaUseTheGamesDb.ToString(),
                 settings.MediaUseIgdb.ToString(),
                 GetPlayniteCoverRatioCacheKey(),
                 settings.MediaCoverSourcePriority,
@@ -1705,6 +1730,90 @@ namespace MetaDataIAPlugin
             }
 
             return result;
+        }
+
+        private async Task<List<MediaCandidate>> GetTheGamesDbCandidates(MediaKind kind, string searchTitle, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(searchTitle) || string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey))
+            {
+                return new List<MediaCandidate>();
+            }
+
+            JObject selected = null;
+            foreach (var title in BuildTitleAliases(searchTitle))
+            {
+                var searchUrl = "https://api.thegamesdb.net/v1/Games/ByGameName?apikey=" + Uri.EscapeDataString(settings.TheGamesDbApiKey) +
+                                "&name=" + Uri.EscapeDataString(title) + "&fields=overview,release_date&include=boxart";
+                var search = await GetPublicJson(searchUrl, cancelToken).ConfigureAwait(false);
+                selected = (search.SelectToken("data.games") as JArray ?? new JArray())
+                    .OfType<JObject>()
+                    .FirstOrDefault(x => IsGoodSteamTitleMatch(title, (string)x["game_title"]));
+                if (selected != null)
+                {
+                    break;
+                }
+            }
+
+            var gameId = selected == null ? 0 : ((int?)selected["id"] ?? 0);
+            if (gameId <= 0)
+            {
+                return new List<MediaCandidate>();
+            }
+
+            var imagesUrl = "https://api.thegamesdb.net/v1/Games/Images?apikey=" + Uri.EscapeDataString(settings.TheGamesDbApiKey) +
+                            "&games_id=" + gameId + "&filter[type]=boxart,fanart,screenshot,clearlogo";
+            var imagesResult = await GetPublicJson(imagesUrl, cancelToken).ConfigureAwait(false);
+            var baseUrl = (string)imagesResult.SelectToken("data.base_url.original") ?? string.Empty;
+            var images = imagesResult.SelectToken("data.images." + gameId) as JArray ?? new JArray();
+            var allowedTypes = kind == MediaKind.Cover
+                ? new[] { "boxart" }
+                : kind == MediaKind.Background
+                    ? new[] { "fanart", "screenshot" }
+                    : new[] { "clearlogo" };
+
+            return images.OfType<JObject>()
+                .Where(x => allowedTypes.Contains(((string)x["type"] ?? string.Empty), StringComparer.OrdinalIgnoreCase))
+                .Where(x => kind != MediaKind.Cover || string.Equals((string)x["side"], "front", StringComparison.OrdinalIgnoreCase))
+                .Select(x =>
+                {
+                    var size = ParseTheGamesDbResolution((string)x["resolution"]);
+                    var filename = (string)x["filename"];
+                    return CreateExternalCandidate(
+                        string.IsNullOrWhiteSpace(filename) ? null : baseUrl.TrimEnd('/') + "/" + filename.TrimStart('/'),
+                        kind,
+                        size.Item1,
+                        size.Item2,
+                        TheGamesDbStyle((string)x["type"]),
+                        kind == MediaKind.Cover ? 60 : 50,
+                        "TheGamesDB",
+                        kind == MediaKind.Cover ? 42 : 36,
+                        false);
+                })
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
+                .Take(Math.Max(1, Math.Min(24, settings.MediaSearchMaxResults)))
+                .ToList();
+        }
+
+        private static Tuple<int, int> ParseTheGamesDbResolution(string value)
+        {
+            var match = Regex.Match(value ?? string.Empty, "^(?<width>\\d+)x(?<height>\\d+)$", RegexOptions.IgnoreCase);
+            int width;
+            int height;
+            return match.Success && int.TryParse(match.Groups["width"].Value, out width) && int.TryParse(match.Groups["height"].Value, out height)
+                ? Tuple.Create(width, height)
+                : Tuple.Create(0, 0);
+        }
+
+        private static string TheGamesDbStyle(string type)
+        {
+            switch ((type ?? string.Empty).ToLowerInvariant())
+            {
+                case "boxart": return "portada";
+                case "fanart": return "fondo de comunidad";
+                case "screenshot": return "captura de comunidad";
+                case "clearlogo": return "logotipo";
+                default: return "imagen de comunidad";
+            }
         }
 
         private async Task<List<MediaCandidate>> GetIgdbCandidates(Game game, MediaKind kind, string searchTitle, CancellationToken cancelToken)

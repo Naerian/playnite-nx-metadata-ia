@@ -6,6 +6,10 @@
     <sys:String x:Key="MTDA_AiGeneration">Generation</sys:String>
     <sys:String x:Key="MTDA_TabTemplates">Templates</sys:String>
     <sys:String x:Key="MTDA_TabMedia">Media</sys:String>
+    <sys:String x:Key="MTDA_TabSources">Sources</sys:String>
+    <sys:String x:Key="MTDA_SourceCapabilityMetadata">Metadata</sys:String>
+    <sys:String x:Key="MTDA_SourceCapabilityMedia">Media</sys:String>
+    <sys:String x:Key="MTDA_SourceFilterAll">All sources</sys:String>
     <sys:String x:Key="MTDA_TabImport">Import</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">Maintenance</sys:String>
     <sys:String x:Key="MTDA_TabFields">Fields</sys:String>
@@ -901,4 +905,8 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaAnimated">Animated — kept in original format</sys:String>
     <sys:String x:Key="MTDA_ApplyMediaFilters">Apply filters</sys:String>
     <sys:String x:Key="MTDA_MediaInfoFormat">Format</sys:String>
+    <sys:String x:Key="MTDA_TheGamesDbHelp">TheGamesDB is a community database with useful box art, fan art, screenshots and clear logos, particularly for retro and emulated games.</sys:String>
+    <sys:String x:Key="MTDA_EnableTheGamesDb">Enable TheGamesDB as a source for covers, backgrounds and logos</sys:String>
+    <sys:String x:Key="MTDA_TheGamesDbKeyHelp">Create a free personal API key at api.thegamesdb.net/key.php. It is required by TheGamesDB.</sys:String>
+    <sys:String x:Key="MTDA_TestTheGamesDb">Test TheGamesDB</sys:String>
 </ResourceDictionary>

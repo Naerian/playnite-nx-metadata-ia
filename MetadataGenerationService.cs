@@ -234,8 +234,28 @@ namespace MetaDataIAPlugin
 
             DetectListConflict(result, "developers", sources, x => x.Developers);
             DetectListConflict(result, "publishers", sources, x => x.Publishers);
+            DetectListConflict(result, "genres", sources, x => x.Genres);
+            DetectListConflict(result, "features", sources, x => x.Features);
             DetectListConflict(result, "ageRatings", sources, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating });
             DetectListConflict(result, "regions", sources, x => x.Regions);
+
+            if (settings.GenerateGenres)
+            {
+                var genres = FirstOfficialList(x => x.Genres);
+                if (genres.Count > 0) result.Genres = genres.Take(settings.MaxGenres).ToList();
+            }
+
+            if (settings.GenerateFeatures)
+            {
+                var features = FirstOfficialList(x => x.Features);
+                if (features.Count > 0) result.Features = features.Take(settings.MaxFeatures).ToList();
+            }
+
+            if (settings.GenerateLinks)
+            {
+                var links = FirstOfficialLinks();
+                if (links.Count > 0) result.Links = links;
+            }
 
             var dates = sources
                 .Where(x => !string.IsNullOrWhiteSpace(x.ReleaseDate))
@@ -378,6 +398,15 @@ namespace MetaDataIAPlugin
                 .Where(x => x != null && hasField(x))
                 .OrderByDescending(x => x.IsExactMatch)
                 .FirstOrDefault();
+        }
+
+        private List<AiMetadataLink> FirstOfficialLinks()
+        {
+            return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && x.IsExactMatch && x.Links != null && x.Links.Any(link => link != null && !string.IsNullOrWhiteSpace(link.Url)))
+                .Select(x => x.Links.Where(link => link != null && !string.IsNullOrWhiteSpace(link.Url))
+                    .Select(link => new AiMetadataLink { Name = link.Name, Url = link.Url }).ToList())
+                .FirstOrDefault() ?? new List<AiMetadataLink>();
         }
 
         private MetadataFieldProvenance BuildProvenance(string field, OfficialStoreMetadata official, bool hasExisting, bool editorial)
@@ -657,10 +686,19 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.UseOfficialStoreContext)
+            if (settings.UseOfficialStoreContext || NeedsTrustedEnrichment())
             {
                 var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
                 officialContextForCurrentRequest.AddRange(officialContext);
+            }
+
+            if (ShouldUseTrustedEnrichment(game) && HasMissingTrustedEvidence())
+            {
+                var igdbContext = await new IgdbMetadataContextService(settings).GetContextAsync(game, cancellationToken).ConfigureAwait(false);
+                if (igdbContext != null && igdbContext.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(igdbContext);
+                }
             }
 
             if (officialContextForCurrentRequest.Count > 0)
@@ -1592,10 +1630,49 @@ namespace MetaDataIAPlugin
                 ex.ToString());
         }
 
+        private bool NeedsTrustedEnrichment()
+        {
+            return (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateReleaseDate && settings.ReleaseDateApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateSeries && settings.SeriesApplyMode != MetaDataIASettings.ApplySkip) ||
+                   (settings.GenerateLinks && settings.LinksApplyMode != MetaDataIASettings.ApplySkip);
+        }
+
+        private bool ShouldUseTrustedEnrichment(Game game)
+        {
+            return game != null &&
+                   NeedsTrustedEnrichment() &&
+                   settings.MediaUseIgdb &&
+                   !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
+                   (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
+        }
+
+        private bool HasMissingTrustedEvidence()
+        {
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && x.IsExactMatch)
+                .ToList();
+            if (sources.Count == 0) return true;
+
+            return (settings.GenerateGenres && !sources.Any(x => x.Genres != null && x.Genres.Count > 0)) ||
+                   (settings.GenerateDevelopers && !sources.Any(x => x.Developers != null && x.Developers.Count > 0)) ||
+                   (settings.GeneratePublishers && !sources.Any(x => x.Publishers != null && x.Publishers.Count > 0)) ||
+                   (settings.GenerateAgeRatings && !sources.Any(x => !string.IsNullOrWhiteSpace(x.AgeRating))) ||
+                   (settings.GenerateRegions && !sources.Any(x => x.Regions != null && x.Regions.Count > 0)) ||
+                   (settings.GenerateReleaseDate && !sources.Any(x => !string.IsNullOrWhiteSpace(x.ReleaseDate))) ||
+                   (settings.GenerateSeries && !sources.Any(x => x.Series != null && x.Series.Count > 0)) ||
+                   (settings.GenerateLinks && !sources.Any(x => x.Links != null && x.Links.Count > 0));
+        }
+
         private void ApplyStrictFactualGuard(AiMetadataResult result, Game game)
         {
             if (result == null ||
-                !(settings.UseOfficialStoreContext || settings.UseOriginIntegrationForFactualMetadata) ||
+                !(settings.UseOfficialStoreContext || settings.UseOriginIntegrationForFactualMetadata ||
+                  (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>()).Any(x => x != null && x.IsExactMatch)) ||
                 !settings.StrictCompanyAgeRegion)
             {
                 return;
