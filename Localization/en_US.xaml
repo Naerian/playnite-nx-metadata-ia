@@ -54,6 +54,7 @@
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">If the cloud provider fails because of quota, limits or high demand, try local providers</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">To make this work, LM Studio must have its local server enabled or Ollama must be running with the model downloaded. The API key is empty for local providers.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Output language</sys:String>
+    <sys:String x:Key="MTDA_OutputLanguageHelp">Controls generated metadata and default template headings. The plugin interface follows Playnite&apos;s interface language.</sys:String>
     <sys:String x:Key="MTDA_Tone">Tone</sys:String>
     <sys:String x:Key="MTDA_Length">Length</sys:String>
     <sys:String x:Key="MTDA_LengthHelp">The global length also guides how many items are returned in lists. For text, length per token lets you tune each block: for synopsis, Short=1 paragraph, Medium=2, Long=3 and Extra long=4-5.</sys:String>
@@ -82,6 +83,11 @@
     <sys:String x:Key="MTDA_TemplateContent">Template content</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Template name</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">You can use HTML in the template. Playnite renders tags such as &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; and &amp;lt;br/&amp;gt;, so the description does not appear crammed together.</sys:String>
+    <sys:String x:Key="MTDA_TemplateHtmlHelpTitle">HTML formatting help</sys:String>
+    <sys:String x:Key="MTDA_LocalizeDefaultTemplates">Use output language</sys:String>
+    <sys:String x:Key="MTDA_LocalizeDefaultTemplatesHelp">Updates only untouched default templates to the selected output language. Custom and modified templates are preserved.</sys:String>
+    <sys:String x:Key="MTDA_DefaultTemplatesLocalized">Untouched default templates were updated to the selected output language.</sys:String>
+    <sys:String x:Key="MTDA_DefaultTemplatesAlreadyLocalized">There were no untouched default templates to update.</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Tokens available for the description</sys:String>
     <sys:String x:Key="MTDA_Token">Token</sys:String>
     <sys:String x:Key="MTDA_Reference">Reference</sys:String>
@@ -552,6 +558,11 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">If Metadata AI is useful to you, you can support its continued development on Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Support on Ko-fi</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupTitle">First-time setup</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceResetTitle">Reset Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceResetHelp">Returns the extension to its initial state, including templates, provider credentials and local vocabulary. It never modifies games.</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettings">Reset all settings</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettingsConfirm">Reset all Metadata AI settings, templates, provider credentials and local vocabulary? This does not modify any games.</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettingsDone">Metadata AI settings were reset. The setup assistant will now open.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupHelp">Reopen the guided assistant to choose a safe profile, provider, language and enabled fields. It never modifies games when it finishes.</sys:String>
     <sys:String x:Key="MTDA_OpenSetupWizard">Open setup assistant</sys:String>
     <sys:String x:Key="MTDA_MaintenanceHistoryTitle">Change history and recovery</sys:String>

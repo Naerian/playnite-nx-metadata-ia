@@ -1074,9 +1074,50 @@ namespace MetaDataIAPlugin
 
         public void ResetTemplates()
         {
-            Templates = CreateDefaultTemplates();
+            Templates = CreateLocalizedDefaultTemplates();
             ActiveTemplateName = "Media";
-            DescriptionTemplate = DefaultMediumTemplate;
+            DescriptionTemplate = Templates.FirstOrDefault(x => string.Equals(x.Name, ActiveTemplateName, StringComparison.OrdinalIgnoreCase)).Template;
+        }
+
+        public ObservableCollection<TemplateProfile> CreateLocalizedDefaultTemplates()
+        {
+            var defaults = CreateDefaultTemplates();
+            foreach (var template in defaults)
+            {
+                template.Template = LocalizeDefaultTemplate(template.Template);
+            }
+            return defaults;
+        }
+
+        // Converts only untouched legacy defaults. Custom and modified templates
+        // remain exactly as the user wrote them.
+        public bool LocalizeUntouchedDefaultTemplates()
+        {
+            var canonical = CreateDefaultTemplates();
+            var localized = CreateLocalizedDefaultTemplates();
+            var changed = false;
+            foreach (var template in Templates ?? new ObservableCollection<TemplateProfile>())
+            {
+                if (template == null)
+                {
+                    continue;
+                }
+
+                var original = canonical.FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
+                var translated = localized.FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
+                if (original != null && translated != null && string.Equals(template.Template, original.Template, StringComparison.Ordinal))
+                {
+                    template.Template = translated.Template;
+                    changed = true;
+                }
+            }
+
+            var active = GetActiveTemplateWithoutEnsure();
+            if (active != null && changed)
+            {
+                DescriptionTemplate = active.Template;
+            }
+            return changed;
         }
 
         public TemplateProfile GetActiveTemplate()
@@ -1290,7 +1331,7 @@ namespace MetaDataIAPlugin
 
         private void RepairEmptyDefaultTemplates()
         {
-            var defaults = CreateDefaultTemplates();
+            var defaults = CreateLocalizedDefaultTemplates();
             foreach (var template in Templates)
             {
                 if (template == null || !string.IsNullOrWhiteSpace(template.Template))
@@ -1328,7 +1369,7 @@ namespace MetaDataIAPlugin
 
             if (cleaned.Count == 0)
             {
-                Templates = CreateDefaultTemplates();
+                Templates = CreateLocalizedDefaultTemplates();
                 return;
             }
 
@@ -1570,7 +1611,7 @@ namespace MetaDataIAPlugin
             {
                 return new List<LanguageOption>
                 {
-                    new LanguageOption("es", "Espanol (es)"),
+                    new LanguageOption("es", "Español (es)"),
                     new LanguageOption("en", "English (en)"),
                     new LanguageOption("fr", "Francais (fr)"),
                     new LanguageOption("de", "Deutsch (de)"),
@@ -2139,7 +2180,7 @@ namespace MetaDataIAPlugin
                     return string.Empty;
                 }
 
-                var defaultTemplate = MetaDataIASettings.CreateDefaultTemplates()
+                var defaultTemplate = Settings.CreateLocalizedDefaultTemplates()
                     .FirstOrDefault(x => string.Equals(x.Name, SelectedTemplate.Name, StringComparison.OrdinalIgnoreCase));
                 if (defaultTemplate == null)
                 {
@@ -2258,7 +2299,9 @@ namespace MetaDataIAPlugin
         {
             Settings.EnsureDefaults();
             var name = CreateUniqueTemplateName(PluginLocalization.GetString("MTDA_NewTemplateName", "New template"));
-            var profile = new TemplateProfile(name, MetaDataIASettings.DefaultMediumTemplate);
+            var defaultMedium = Settings.CreateLocalizedDefaultTemplates()
+                .FirstOrDefault(x => string.Equals(x.Name, "Media", StringComparison.OrdinalIgnoreCase));
+            var profile = new TemplateProfile(name, defaultMedium == null ? MetaDataIASettings.DefaultMediumTemplate : defaultMedium.Template);
             Settings.Templates.Add(profile);
             SelectedTemplate = profile;
             OnPropertyChanged("CanDeleteSelectedTemplate");
@@ -2301,6 +2344,25 @@ namespace MetaDataIAPlugin
             Settings.ResetTemplates();
             SelectedTemplate = Settings.GetActiveTemplate();
             OnPropertyChanged("CanDeleteSelectedTemplate");
+        }
+
+        public bool LocalizeUntouchedDefaultTemplates()
+        {
+            var changed = Settings.LocalizeUntouchedDefaultTemplates();
+            SelectedTemplate = Settings.GetActiveTemplate();
+            OnPropertyChanged("SelectedTemplateStatusText");
+            return changed;
+        }
+
+        public void ResetAllSettings()
+        {
+            Settings = new MetaDataIASettings();
+            Settings.SetupWizardCompleted = false;
+            Settings.SetupWizardMigrationApplied = true;
+            RefreshOriginLibraryIntegrations();
+            SelectedTemplate = Settings.GetActiveTemplate();
+            editingClone = Serialization.GetClone(Settings);
+            plugin.SaveSettingsSecurely(Settings);
         }
 
         private string CreateUniqueTemplateName(string requestedName)

@@ -524,6 +524,41 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void LocalizeDefaultTemplates_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null)
+            {
+                return;
+            }
+
+            var changed = viewModel.LocalizeUntouchedDefaultTemplates();
+            viewModel.Plugin.Api.Dialogs.ShowMessage(
+                changed
+                    ? Loc("MTDA_DefaultTemplatesLocalized", "Untouched default templates were updated to the selected output language.")
+                    : Loc("MTDA_DefaultTemplatesAlreadyLocalized", "There were no untouched default templates to update."),
+                PluginTitle);
+        }
+
+        private void ResetAllSettings_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null)
+            {
+                return;
+            }
+
+            var confirmation = Loc("MTDA_ResetAllSettingsConfirm", "Reset all Metadata AI settings, templates, provider credentials and local vocabulary? This does not modify any games.");
+            if (MessageBox.Show(confirmation, PluginTitle, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            viewModel.ResetAllSettings();
+            viewModel.Plugin.Api.Dialogs.ShowMessage(Loc("MTDA_ResetAllSettingsDone", "Metadata AI settings were reset. The setup assistant will now open."), PluginTitle);
+            viewModel.Plugin.OpenSetupWizard(true);
+        }
+
         private void FocusTemplateNameEditor()
         {
             Dispatcher.BeginInvoke(new Action(() =>

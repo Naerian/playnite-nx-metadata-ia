@@ -54,6 +54,7 @@
     <sys:String x:Key="MTDA_LocalFallbackCheckbox">Si el proveedor cloud falla por cuota, limite o saturacion, probar proveedores locales</sys:String>
     <sys:String x:Key="MTDA_LocalFallbackHelp">Para que funcione, LM Studio debe tener activo el servidor local o Ollama debe estar arrancado con el modelo descargado. La API key queda vacia en local.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Idioma de salida</sys:String>
+    <sys:String x:Key="MTDA_OutputLanguageHelp">Controla los metadatos generados y los encabezados de las plantillas predeterminadas. La interfaz del plugin sigue el idioma de la interfaz de Playnite.</sys:String>
     <sys:String x:Key="MTDA_Tone">Tono</sys:String>
     <sys:String x:Key="MTDA_Length">Longitud</sys:String>
     <sys:String x:Key="MTDA_LengthHelp">La longitud global tambien orienta cuantos elementos devolver en listados. En textos, la longitud por token permite afinar cada bloque: en sinopsis, Corta=1 parrafo, Media=2, Larga=3 y Extra larga=4-5.</sys:String>
@@ -82,6 +83,11 @@
     <sys:String x:Key="MTDA_TemplateContent">Contenido de la plantilla</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nombre de plantilla</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Puedes usar HTML en la plantilla. Playnite renderiza etiquetas como &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; y &amp;lt;br/&amp;gt;, asi la descripcion no queda apelotonada.</sys:String>
+    <sys:String x:Key="MTDA_TemplateHtmlHelpTitle">Ayuda de formato HTML</sys:String>
+    <sys:String x:Key="MTDA_LocalizeDefaultTemplates">Usar idioma de salida</sys:String>
+    <sys:String x:Key="MTDA_LocalizeDefaultTemplatesHelp">Actualiza solo las plantillas predeterminadas sin modificar al idioma de salida seleccionado. Las personalizadas o modificadas se conservan.</sys:String>
+    <sys:String x:Key="MTDA_DefaultTemplatesLocalized">Las plantillas predeterminadas sin modificar se actualizaron al idioma de salida seleccionado.</sys:String>
+    <sys:String x:Key="MTDA_DefaultTemplatesAlreadyLocalized">No hay plantillas predeterminadas sin modificar que actualizar.</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Tokenes disponibles para usar en la descripcion</sys:String>
     <sys:String x:Key="MTDA_Token">Token</sys:String>
     <sys:String x:Key="MTDA_Reference">Referencia</sys:String>
@@ -528,6 +534,11 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Si Metadata AI te resulta útil, puedes apoyar su desarrollo en Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Apoyar en Ko-fi</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupTitle">Configuración inicial</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceResetTitle">Restablecer Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_MaintenanceResetHelp">Devuelve la extensión a su estado inicial, incluidas plantillas, credenciales de proveedor y vocabulario local. No modifica juegos.</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettings">Restablecer toda la configuración</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettingsConfirm">¿Restablecer toda la configuración de Metadata AI, plantillas, credenciales de proveedor y vocabulario local? No se modificará ningún juego.</sys:String>
+    <sys:String x:Key="MTDA_ResetAllSettingsDone">La configuración de Metadata AI se restableció. Ahora se abrirá el asistente de configuración.</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupHelp">Vuelve a abrir el asistente guiado para elegir un perfil seguro, proveedor, idioma y campos activos. Al terminar nunca modifica juegos.</sys:String>
     <sys:String x:Key="MTDA_OpenSetupWizard">Abrir asistente de configuración</sys:String>
     <sys:String x:Key="MTDA_MaintenanceHistoryTitle">Historial y recuperación de cambios</sys:String>

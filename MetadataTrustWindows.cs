@@ -251,6 +251,8 @@ namespace MetaDataIAPlugin
             selectedProfile = firstRun ? "balanced" : "current";
             if (firstRun)
             {
+                working.Language = ResolvePlayniteLanguage();
+                working.ResetTemplates();
                 ApplyProfile(selectedProfile);
             }
 
@@ -352,9 +354,15 @@ namespace MetaDataIAPlugin
             var panel = new StackPanel();
             panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardPurposeHelp", "The assistant only prepares the configuration. It will not modify any game when you finish."), new Thickness(0, 0, 0, 16)));
             panel.Children.Add(Label(plugin.Loc("MTDA_OutputLanguage", "Output language")));
-            var language = new ComboBox { ItemsSource = working.LanguageOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Value", SelectedValue = working.Language, MinWidth = 280, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 20) };
-            language.SelectionChanged += (s, e) => { if (language.SelectedValue != null) working.Language = language.SelectedValue.ToString(); };
+            var language = new ComboBox { ItemsSource = working.LanguageOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Code", SelectedValue = working.Language, MinWidth = 280, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 20) };
+            language.SelectionChanged += (s, e) =>
+            {
+                if (language.SelectedValue == null) return;
+                working.Language = language.SelectedValue.ToString();
+                if (firstRun) working.ResetTemplates();
+            };
             panel.Children.Add(language);
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_OutputLanguageHelp", "This controls generated metadata and default template headings. The plugin interface follows Playnite's interface language."), new Thickness(0, -12, 0, 20)));
 
             panel.Children.Add(Label(plugin.Loc("MTDA_SetupWizardProfile", "Configuration profile")));
             var profiles = new List<LocalizedOption>
@@ -549,6 +557,20 @@ namespace MetaDataIAPlugin
             working.IconApplyMode = MetaDataIASettings.ApplyEmptyOnly;
             working.BackgroundImageApplyMode = MetaDataIASettings.ApplyEmptyOnly;
             working.ExistingMetadataMode = profile == "normalize" ? "Normalizar" : working.ExistingMetadataMode;
+        }
+
+        private string ResolvePlayniteLanguage()
+        {
+            var configured = plugin.Api == null || plugin.Api.ApplicationSettings == null
+                ? null
+                : plugin.Api.ApplicationSettings.Language;
+            var normalized = (configured ?? string.Empty).Replace('_', '-').Trim();
+            var exact = working.LanguageOptions.FirstOrDefault(x => string.Equals(x.Code, normalized, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact.Code;
+
+            var shortCode = normalized.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            var match = working.LanguageOptions.FirstOrDefault(x => string.Equals(x.Code, shortCode, StringComparison.OrdinalIgnoreCase));
+            return match == null ? "en" : match.Code;
         }
 
         private static TextBlock Label(string value)
