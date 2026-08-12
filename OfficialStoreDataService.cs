@@ -74,6 +74,7 @@ namespace MetaDataIAPlugin
         public const string SourcePsnStore = "PlayStation Store";
         public const string SourceXboxStore = "Xbox Store";
         public const string SourceEpicStore = "Epic Store";
+        public const string SourceEsrb = "ESRB";
 
         private static readonly HttpClient Client = new HttpClient();
         private readonly MetaDataIASettings settings;
@@ -174,6 +175,11 @@ namespace MetaDataIAPlugin
                 return await GetEpicMetadataAsync(game, cancelToken).ConfigureAwait(false);
             }
 
+            if (string.Equals(source, SourceEsrb, StringComparison.OrdinalIgnoreCase))
+            {
+                return await GetEsrbMetadataAsync(game, cancelToken).ConfigureAwait(false);
+            }
+
             return null;
         }
 
@@ -192,6 +198,7 @@ namespace MetaDataIAPlugin
             AddUnique(order, SourceXboxStore);
             AddUnique(order, SourcePsnStore);
             AddUnique(order, SourceEpicStore);
+            AddUnique(order, SourceEsrb);
             return order;
         }
 
@@ -948,6 +955,66 @@ namespace MetaDataIAPlugin
 
             var match = Regex.Match(url, "/([0-9a-z]{12})(?:[/?#]|$)", RegexOptions.IgnoreCase);
             return match.Success ? match.Groups[1].Value.ToUpperInvariant() : null;
+        }
+
+        private async Task<OfficialStoreMetadata> GetEsrbMetadataAsync(Game game, CancellationToken cancelToken)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return null;
+            }
+
+            foreach (var title in BuildTitleAliases(game.Name))
+            {
+                var url = "https://www.esrb.org/search/?searchKeyword=" + Uri.EscapeDataString(title);
+                var html = await GetStringAsync(url, cancelToken).ConfigureAwait(false);
+                var matches = Regex.Matches(html ?? string.Empty,
+                    "<div\\s+class=\\\"game\\\">(?<body>[\\s\\S]*?<h2>\\s*<a\\s+href=\\\"(?<url>https://www\\.esrb\\.org/ratings/[^\\\"]+)\\\"[^>]*>(?<title>[^<]+)</a>[\\s\\S]*?</table>)\\s*</div>",
+                    RegexOptions.IgnoreCase)
+                    .Cast<Match>()
+                    .Select(x => new
+                    {
+                        Url = x.Groups["url"].Value,
+                        Title = CleanText(WebUtility.HtmlDecode(x.Groups["title"].Value)),
+                        Platforms = CleanText(Regex.Match(x.Groups["body"].Value, "<div\\s+class=\\\"platforms\\\">(?<value>[\\s\\S]*?)</div>", RegexOptions.IgnoreCase).Groups["value"].Value),
+                        Rating = WebUtility.HtmlDecode(Regex.Match(x.Groups["body"].Value, "<img[^>]+alt=\\\"(?<value>[^\\\"]+)\\\"", RegexOptions.IgnoreCase).Groups["value"].Value)
+                    })
+                    .Where(x => IsReliableStoreTitleMatch(game.Name, x.Title) &&
+                                !string.IsNullOrWhiteSpace(x.Rating) &&
+                                IsEsrbPlatformCompatible(game, x.Platforms))
+                    .ToList();
+                var selected = matches.FirstOrDefault();
+                if (selected != null)
+                {
+                    return new OfficialStoreMetadata
+                    {
+                        SourceName = SourceEsrb,
+                        StoreUrl = selected.Url,
+                        Title = selected.Title,
+                        AgeRating = "ESRB " + selected.Rating,
+                        IsExactMatch = true
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsEsrbPlatformCompatible(Game game, string esrbPlatforms)
+        {
+            if (game == null || game.Platforms == null || game.Platforms.Count == 0 || string.IsNullOrWhiteSpace(esrbPlatforms))
+            {
+                return true;
+            }
+
+            var target = esrbPlatforms.ToLowerInvariant();
+            return game.Platforms.Any(platform =>
+            {
+                var name = (platform == null ? string.Empty : platform.Name ?? string.Empty).ToLowerInvariant();
+                return (name.Contains("windows") || name == "pc")
+                    ? target.Contains("windows pc")
+                    : target.Contains(name);
+            });
         }
 
         private static string CombineAgeRating(string board, string value)

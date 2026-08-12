@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using Playnite.SDK;
+using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
@@ -208,8 +209,19 @@ namespace MetaDataIAPlugin
         public int Width { get; set; }
         public int Height { get; set; }
         public string SourceName { get; set; }
+        public bool IsSuggestion { get; set; }
+        [JsonIgnore]
+        public MetaDataIASettings FocusedSettings { get; set; }
         [JsonIgnore]
         public bool SelectedForAction { get; set; }
+        [JsonIgnore]
+        public string LastRepairMessage { get; set; }
+    }
+
+    public sealed class LibraryAuditRepairResult
+    {
+        public bool Resolved { get; set; }
+        public string Message { get; set; }
     }
 
     public sealed class LibraryAuditDecision
@@ -220,6 +232,39 @@ namespace MetaDataIAPlugin
         public string Field { get; set; }
         public string Problem { get; set; }
         public string Action { get; set; }
+    }
+
+    public static class LibraryAuditDecisionFile
+    {
+        public static List<LibraryAuditDecision> Read(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return new List<LibraryAuditDecision>();
+            return string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)
+                ? (JsonConvert.DeserializeObject<List<LibraryAuditDecision>>(File.ReadAllText(path)) ?? new List<LibraryAuditDecision>())
+                : ReadCsv(File.ReadAllLines(path));
+        }
+
+        private static List<LibraryAuditDecision> ReadCsv(IEnumerable<string> lines)
+        {
+            var values = (lines ?? Enumerable.Empty<string>()).Skip(1).Select(ParseCsv).Where(x => x.Count >= 6).ToList();
+            return values.Select(x => new LibraryAuditDecision
+            {
+                GameId = Guid.Parse(x[0]), Game = x[1], Area = x[2], Field = x[3], Problem = x[4], Action = x[5]
+            }).ToList();
+        }
+
+        private static List<string> ParseCsv(string value)
+        {
+            var result = new List<string>(); var builder = new StringBuilder(); var quoted = false;
+            foreach (var character in value ?? string.Empty)
+            {
+                if (character == '"') { quoted = !quoted; continue; }
+                if (character == ',' && !quoted) { result.Add(builder.ToString()); builder.Clear(); continue; }
+                builder.Append(character);
+            }
+            result.Add(builder.ToString());
+            return result;
+        }
     }
 
     public sealed class LibrarySnapshot
@@ -259,8 +304,8 @@ namespace MetaDataIAPlugin
                 AddMissing(issues, game, "Developer", settings.GenerateDevelopers, game.DeveloperIds == null || game.DeveloperIds.Count == 0);
                 AddMissing(issues, game, "Publisher", settings.GeneratePublishers, game.PublisherIds == null || game.PublisherIds.Count == 0);
                 AddMissing(issues, game, "Age ratings", settings.GenerateAgeRatings, game.AgeRatingIds == null || game.AgeRatingIds.Count == 0);
-                AddMissing(issues, game, "Regions", settings.GenerateRegions, game.RegionIds == null || game.RegionIds.Count == 0);
-                AddMissing(issues, game, "Categories", settings.GenerateCategories, game.CategoryIds == null || game.CategoryIds.Count == 0);
+                AddOptionalMissing(issues, game, "Regions", settings.GenerateRegions, game.RegionIds == null || game.RegionIds.Count == 0);
+                AddOptionalMissing(issues, game, "Categories", settings.GenerateCategories, game.CategoryIds == null || game.CategoryIds.Count == 0);
                 AddMissing(issues, game, "Links", settings.GenerateLinks, game.Links == null || game.Links.Count == 0);
                 AddMissing(issues, game, "Release date", settings.GenerateReleaseDate, !game.ReleaseDate.HasValue);
                 AddMissing(
@@ -338,6 +383,11 @@ namespace MetaDataIAPlugin
             if (enabled && missing) issues.Add(new LibraryAuditIssue { Game = game, Area = "Metadata", Field = field, Severity = "Warning", Problem = "missing-value", IsRepairable = true });
         }
 
+        private static void AddOptionalMissing(List<LibraryAuditIssue> issues, Game game, string field, bool enabled, bool missing)
+        {
+            if (enabled && missing) issues.Add(new LibraryAuditIssue { Game = game, Area = "Suggestions", Field = field, Severity = "Info", Problem = "optional-missing", IsRepairable = false, IsSuggestion = true });
+        }
+
         private static void AddDuplicates(List<LibraryAuditIssue> issues, Game game, string field, IEnumerable<DatabaseObject> values)
         {
             var names = (values ?? Enumerable.Empty<DatabaseObject>()).Where(x => x != null).Select(x => Normalize(x.Name)).Where(x => x.Length > 0).ToList();
@@ -352,16 +402,37 @@ namespace MetaDataIAPlugin
     {
         private readonly MetaDataIAPlugin plugin;
         private readonly IList<LibraryAuditIssue> allIssues;
-        private readonly Func<LibraryAuditIssue, bool> repair;
+        private readonly Func<LibraryAuditIssue, bool, CancellationToken, LibraryAuditRepairResult> repair;
         private readonly Func<Game, IList<LibraryAuditIssue>> rescan;
+        private readonly Action<Game> openEditor;
+        private readonly bool showHiddenOption;
         private readonly ListBox issues = new ListBox();
         private readonly CheckBox showHidden = new CheckBox();
+        private readonly CheckBox showSuggestions = new CheckBox();
         private readonly CheckBox selectAll = new CheckBox();
+        private readonly ComboBox typeFilter = new ComboBox();
+        private readonly ComboBox fieldFilter = new ComboBox();
+        private readonly ComboBox statusFilter = new ComboBox();
         private readonly TextBlock summary = new TextBlock();
+        private readonly TextBlock batchStatus = new TextBlock();
+        private readonly Button historyButton = new Button();
         private readonly TextBlock detailTitle = new TextBlock();
-        private readonly TextBlock detailBody = new TextBlock();
-        private readonly Button repairButton = new Button();
+        private readonly TextBlock detailSource = new TextBlock();
+        private readonly TextBlock informationBody = new TextBlock();
+        private readonly TextBlock resolutionBody = new TextBlock();
+        private readonly TextBlock resultBody = new TextBlock();
         private readonly Button applySelectedButton = new Button();
+        private readonly Button editGameButton = new Button();
+        private readonly Button markModifiedButton = new Button();
+        private StackPanel resultSection;
+        private string lastBatchSummary;
+        private bool updatingFilters;
+
+        private sealed class AuditFilterOption
+        {
+            public string Value { get; set; }
+            public string DisplayName { get; set; }
+        }
 
         public LibraryAuditIssue SelectedIssue
         {
@@ -372,30 +443,77 @@ namespace MetaDataIAPlugin
             }
         }
 
-        public LibraryAuditWindow(MetaDataIAPlugin plugin, IList<LibraryAuditIssue> data, Func<LibraryAuditIssue, bool> repair, Func<Game, IList<LibraryAuditIssue>> rescan)
+        public LibraryAuditWindow(
+            MetaDataIAPlugin plugin,
+            IList<LibraryAuditIssue> data,
+            Func<LibraryAuditIssue, bool, CancellationToken, LibraryAuditRepairResult> repair,
+            Func<Game, IList<LibraryAuditIssue>> rescan,
+            Action<Game> openEditor,
+            bool showHiddenOption)
         {
             this.plugin = plugin;
             this.allIssues = data ?? new List<LibraryAuditIssue>();
             this.repair = repair;
             this.rescan = rescan;
+            this.openEditor = openEditor;
+            this.showHiddenOption = showHiddenOption;
             Title = plugin.Loc("MTDA_AuditTitle", "Metadata AI library audit"); Width = 1050; Height = 720; MinWidth = 760; MinHeight = 480; ShowInTaskbar = false;
             MetadataTrustUi.ApplyWindowTheme(this);
-            var owner = plugin.Api.Dialogs.GetCurrentAppWindow(); if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            // Playnite's themed owner relation can retain a dim backdrop after a
+            // modeless audit is closed. The audit manages input blocking itself.
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
             var root = new DockPanel { Margin = new Thickness(18) };
             var heading = new TextBlock { Text = plugin.Loc("MTDA_AuditHeading", "Library health and selective repair"), FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) };
             DockPanel.SetDock(heading, Dock.Top); root.Children.Add(heading);
             summary.TextWrapping = TextWrapping.Wrap; summary.Opacity = 0.75; summary.Margin = new Thickness(0, 0, 0, 10);
             DockPanel.SetDock(summary, Dock.Top); root.Children.Add(summary);
+            batchStatus.TextWrapping = TextWrapping.Wrap;
+            batchStatus.FontWeight = FontWeights.SemiBold;
+            batchStatus.VerticalAlignment = VerticalAlignment.Center;
+            MetadataTrustUi.SetResource(batchStatus, TextBlock.ForegroundProperty, "TextBrush");
+            historyButton.Content = plugin.Loc("MTDA_AuditOpenHistory", "View change history");
+            historyButton.MinWidth = 150;
+            historyButton.Margin = new Thickness(14, 0, 0, 0);
+            historyButton.VerticalAlignment = VerticalAlignment.Center;
+            historyButton.Click += (s, e) => plugin.ShowHistory();
+            var batchStatusPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10), Visibility = Visibility.Collapsed };
+            batchStatusPanel.Children.Add(batchStatus);
+            batchStatusPanel.Children.Add(historyButton);
+            DockPanel.SetDock(batchStatusPanel, Dock.Top); root.Children.Add(batchStatusPanel);
             showHidden.Content = plugin.Loc("MTDA_AuditShowHidden", "Show hidden games");
-            showHidden.Margin = new Thickness(0, 0, 0, 14);
             showHidden.Checked += (s, e) => RefreshIssues();
             showHidden.Unchecked += (s, e) => RefreshIssues();
-            DockPanel.SetDock(showHidden, Dock.Top); root.Children.Add(showHidden);
-            selectAll.Content = plugin.Loc("MTDA_AuditSelectAll", "Select all repairable issues");
-            selectAll.Margin = new Thickness(0, 0, 0, 14);
+            showSuggestions.Content = plugin.Loc("MTDA_AuditShowSuggestions", "Show optional enrichment suggestions");
+            showSuggestions.Checked += (s, e) => RefreshIssues();
+            showSuggestions.Unchecked += (s, e) => RefreshIssues();
+            selectAll.Content = plugin.Loc("MTDA_AuditSelectAll", "Select all");
             selectAll.Checked += (s, e) => SetAllVisibleSelections(true);
             selectAll.Unchecked += (s, e) => SetAllVisibleSelections(false);
-            DockPanel.SetDock(selectAll, Dock.Top); root.Children.Add(selectAll);
+            var auditOptions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
+            selectAll.Margin = new Thickness(0, 0, 28, 0);
+            auditOptions.Children.Add(selectAll);
+            if (showHiddenOption) auditOptions.Children.Add(showHidden);
+            showSuggestions.Margin = showHiddenOption ? new Thickness(28, 0, 0, 0) : new Thickness(0);
+            auditOptions.Children.Add(showSuggestions);
+            DockPanel.SetDock(auditOptions, Dock.Top); root.Children.Add(auditOptions);
+            ConfigureFilter(typeFilter, plugin.Loc("MTDA_AuditFilterType", "Type"));
+            ConfigureFilter(fieldFilter, plugin.Loc("MTDA_AuditFilterField", "Field"));
+            ConfigureFilter(statusFilter, plugin.Loc("MTDA_AuditFilterStatus", "Status"));
+            typeFilter.SelectionChanged += (s, e) => { if (!updatingFilters) RefreshIssues(); };
+            fieldFilter.SelectionChanged += (s, e) => { if (!updatingFilters) RefreshIssues(); };
+            statusFilter.SelectionChanged += (s, e) => { if (!updatingFilters) RefreshIssues(); };
+            var filters = new Grid { Margin = new Thickness(0, 0, 0, 14) };
+            filters.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            filters.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+            filters.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            filters.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+            filters.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var typeFilterControl = CreateFilterControl(plugin.Loc("MTDA_AuditFilterType", "Type"), typeFilter);
+            var fieldFilterControl = CreateFilterControl(plugin.Loc("MTDA_AuditFilterField", "Field"), fieldFilter);
+            var statusFilterControl = CreateFilterControl(plugin.Loc("MTDA_AuditFilterStatus", "Status"), statusFilter);
+            filters.Children.Add(typeFilterControl);
+            Grid.SetColumn(fieldFilterControl, 2); filters.Children.Add(fieldFilterControl);
+            Grid.SetColumn(statusFilterControl, 4); filters.Children.Add(statusFilterControl);
             var buttons = new DockPanel { Margin = new Thickness(0, 14, 0, 0), LastChildFill = false };
             var transferButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
             var exportCsv = new Button { Content = plugin.Loc("MTDA_AuditExportCsv", "Export CSV"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
@@ -407,17 +525,10 @@ namespace MetaDataIAPlugin
             transferButtons.Children.Add(exportCsv); transferButtons.Children.Add(exportJson); transferButtons.Children.Add(import);
             DockPanel.SetDock(transferButtons, Dock.Left); buttons.Children.Add(transferButtons);
             var actionButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            applySelectedButton.Content = plugin.Loc("MTDA_AuditApplySelected", "Apply selected"); applySelectedButton.MinWidth = 145; applySelectedButton.Margin = new Thickness(0, 0, 8, 0);
+            applySelectedButton.Content = plugin.Loc("MTDA_AuditApplySelected", "Repair marked issues"); applySelectedButton.MinWidth = 185; applySelectedButton.Margin = new Thickness(0, 0, 8, 0);
             applySelectedButton.Click += (s, e) => ApplySelected();
-            repairButton.Content = plugin.Loc("MTDA_AuditRepairSelected", "Repair selected issue"); repairButton.MinWidth = 180; repairButton.Margin = new Thickness(0, 0, 8, 0); repairButton.IsEnabled = false;
-            repairButton.Click += (s, e) =>
-            {
-                var selected = SelectedIssue;
-                if (selected == null || repair == null) return;
-                if (repair(selected)) RescanIssue(selected);
-            };
             var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 120 }; close.Click += (s, e) => Close();
-            actionButtons.Children.Add(applySelectedButton); actionButtons.Children.Add(repairButton); actionButtons.Children.Add(close);
+            actionButtons.Children.Add(applySelectedButton); actionButtons.Children.Add(close);
             DockPanel.SetDock(actionButtons, Dock.Right); buttons.Children.Add(actionButtons); DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons);
 
             var content = new Grid();
@@ -425,15 +536,50 @@ namespace MetaDataIAPlugin
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 270 });
             issues.BorderThickness = new Thickness(0); issues.Padding = new Thickness(0, 0, 14, 0); issues.SelectionChanged += (s, e) => RefreshDetails();
-            Grid.SetColumn(issues, 0); content.Children.Add(issues);
+            // Filters belong to the issue pane: keep their width aligned with the
+            // list instead of stretching them across the detail pane.
+            filters.Margin = new Thickness(0, 0, 14, 14);
+            var issuePane = new DockPanel();
+            DockPanel.SetDock(filters, Dock.Top);
+            issuePane.Children.Add(filters);
+            issuePane.Children.Add(issues);
+            Grid.SetColumn(issuePane, 0); content.Children.Add(issuePane);
             var separator = new Border { BorderThickness = new Thickness(1, 0, 0, 0) };
             MetadataTrustUi.SetResource(separator, Border.BorderBrushProperty, "GlyphBrush");
             Grid.SetColumn(separator, 1); content.Children.Add(separator);
 
             var detailStack = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
             detailTitle.FontSize = 18; detailTitle.FontWeight = FontWeights.SemiBold; detailTitle.TextWrapping = TextWrapping.Wrap;
-            detailBody.Margin = new Thickness(0, 10, 0, 0); detailBody.TextWrapping = TextWrapping.Wrap; detailBody.Opacity = 0.82;
-            detailStack.Children.Add(detailTitle); detailStack.Children.Add(detailBody);
+            detailTitle.Margin = new Thickness(0, 0, 0, 4);
+            detailSource.FontSize = 12;
+            detailSource.Opacity = 0.62;
+            detailSource.Margin = new Thickness(0, 0, 0, 16);
+            ConfigureDetailBody(informationBody);
+            ConfigureDetailBody(resolutionBody);
+            ConfigureDetailBody(resultBody);
+            detailStack.Children.Add(detailTitle);
+            detailStack.Children.Add(detailSource);
+            detailStack.Children.Add(CreateDetailSection(plugin.Loc("MTDA_AuditInformation", "Information"), informationBody, new Thickness(0, 0, 0, 20)));
+            var resolutionSection = new StackPanel();
+            resolutionSection.Children.Add(CreateDetailSection(plugin.Loc("MTDA_AuditResolution", "Resolution"), resolutionBody, new Thickness(0)));
+            editGameButton.Content = plugin.Loc("MTDA_AuditOpenGameEditor", "Open game editor");
+            editGameButton.Margin = new Thickness(0, 14, 0, 0);
+            editGameButton.MinWidth = 170;
+            editGameButton.HorizontalAlignment = HorizontalAlignment.Left;
+            editGameButton.Click += (s, e) => OpenSelectedGameEditor();
+            markModifiedButton.Content = plugin.Loc("MTDA_AuditMarkModified", "Mark as modified");
+            markModifiedButton.Margin = new Thickness(8, 14, 0, 0);
+            markModifiedButton.MinWidth = 165;
+            markModifiedButton.HorizontalAlignment = HorizontalAlignment.Left;
+            markModifiedButton.Click += (s, e) => MarkSelectedAsModified();
+            var manualActions = new StackPanel { Orientation = Orientation.Horizontal };
+            manualActions.Children.Add(editGameButton);
+            manualActions.Children.Add(markModifiedButton);
+            resolutionSection.Children.Add(manualActions);
+            detailStack.Children.Add(resolutionSection);
+            resultSection = new StackPanel { Margin = new Thickness(0, 20, 0, 0) };
+            resultSection.Children.Add(CreateDetailSection(plugin.Loc("MTDA_AuditResolutionResult", "Resolution result"), resultBody, new Thickness(0)));
+            detailStack.Children.Add(resultSection);
             Grid.SetColumn(detailStack, 2); content.Children.Add(detailStack);
             root.Children.Add(content);
             Content = root;
@@ -442,8 +588,17 @@ namespace MetaDataIAPlugin
 
         private void RefreshIssues()
         {
-            var visible = allIssues.Where(x => x.Game != null && ((showHidden.IsChecked == true) || !x.Game.Hidden)).ToList();
-            summary.Text = string.Format(plugin.Loc("MTDA_AuditSummary", "{0} issue(s) shown. Protected media is reported but never replaced."), visible.Count);
+            UpdateFilterOptions();
+            var visible = allIssues.Where(x => x.Game != null &&
+                (!showHiddenOption || showHidden.IsChecked == true || !x.Game.Hidden) &&
+                (showSuggestions.IsChecked == true || !x.IsSuggestion) &&
+                MatchesFilters(x)).ToList();
+            var actualCount = allIssues.Count(x => x.Game != null && !x.IsSuggestion && (!showHiddenOption || showHidden.IsChecked == true || !x.Game.Hidden));
+            var suggestionCount = allIssues.Count(x => x.Game != null && x.IsSuggestion && (!showHiddenOption || showHidden.IsChecked == true || !x.Game.Hidden));
+            summary.Text = string.Format(plugin.Loc("MTDA_AuditSummaryDetailed", "{0} issue(s) found. {1} optional enrichment suggestion(s) are available."), actualCount, suggestionCount);
+            batchStatus.Text = lastBatchSummary ?? string.Empty;
+            var statusPanel = batchStatus.Parent as StackPanel;
+            if (statusPanel != null) statusPanel.Visibility = string.IsNullOrWhiteSpace(batchStatus.Text) ? Visibility.Collapsed : Visibility.Visible;
             issues.Items.Clear();
             foreach (var issue in visible) issues.Items.Add(CreateRow(issue));
             if (issues.Items.Count > 0) issues.SelectedIndex = 0; else RefreshDetails();
@@ -477,32 +632,35 @@ namespace MetaDataIAPlugin
 
         private ListBoxItem CreateRow(LibraryAuditIssue issue)
         {
-            var grid = new Grid { Margin = new Thickness(10, 8, 10, 8) };
+            var grid = new Grid { Margin = new Thickness(8, 4, 8, 4) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            var select = new CheckBox { IsChecked = issue.SelectedForAction, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var select = new CheckBox { IsChecked = issue.SelectedForAction, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             select.Checked += (s, e) => { issue.SelectedForAction = true; RefreshActionState(); };
             select.Unchecked += (s, e) => { issue.SelectedForAction = false; RefreshActionState(); };
             grid.Children.Add(select);
             var text = new StackPanel();
-            var title = MetadataTrustUi.Text(issue.Game.Name); title.FontWeight = FontWeights.SemiBold; title.FontSize = 15;
+            var title = MetadataTrustUi.Text(issue.Game.Name); title.FontWeight = FontWeights.SemiBold; title.FontSize = 13;
             text.Children.Add(title);
-            var badges = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
-            badges.Children.Add(CreateBadge(FieldName(issue), true));
+            var badges = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };
+            badges.Children.Add(CreateFieldBadge(FieldName(issue), issue));
             badges.Children.Add(CreateBadge(ProblemText(issue), false));
             text.Children.Add(badges);
-            if (!string.IsNullOrWhiteSpace(issue.SourceName))
-            {
-                var source = MetadataTrustUi.Text(string.Format(plugin.Loc("MTDA_AuditSource", "Source: {0}"), issue.SourceName)); source.Margin = new Thickness(0, 3, 0, 0); source.Opacity = 0.62; source.FontSize = 11;
-                text.Children.Add(source);
-            }
             Grid.SetColumn(text, 1); grid.Children.Add(text);
+            if (!string.IsNullOrWhiteSpace(issue.LastRepairMessage))
+            {
+                var review = CreateWarningBadge(plugin.Loc("MTDA_AuditReview", "Review"));
+                review.VerticalAlignment = VerticalAlignment.Center;
+                review.Margin = new Thickness(8, 0, 0, 0);
+                Grid.SetColumn(review, 2);
+                grid.Children.Add(review);
+            }
             var border = new Border
             {
                 Child = grid,
                 BorderThickness = new Thickness(0, 0, 0, 1),
-                Padding = new Thickness(0, 0, 0, 7),
-                Margin = new Thickness(0, 0, 0, 7)
+                Padding = new Thickness(0)
             };
             MetadataTrustUi.SetResource(border, Border.BorderBrushProperty, "GlyphBrush");
             return new ListBoxItem
@@ -510,14 +668,40 @@ namespace MetaDataIAPlugin
                 Content = border,
                 Tag = issue,
                 Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 0, 4),
+                ClipToBounds = true,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch
             };
+        }
+
+        private static void ConfigureDetailBody(TextBlock body)
+        {
+            body.Margin = new Thickness(0, 10, 0, 0);
+            body.TextWrapping = TextWrapping.Wrap;
+            body.Opacity = 0.82;
+        }
+
+        private static UIElement CreateDetailSection(string title, TextBlock body, Thickness margin)
+        {
+            var section = new StackPanel { Margin = margin };
+            var heading = MetadataTrustUi.Text(title);
+            heading.FontWeight = FontWeights.SemiBold;
+            var header = new Border
+            {
+                Child = heading,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(0, 0, 0, 7)
+            };
+            MetadataTrustUi.SetResource(header, Border.BorderBrushProperty, "GlyphBrush");
+            section.Children.Add(header);
+            section.Children.Add(body);
+            return section;
         }
 
         private static Border CreateBadge(string value, bool fieldBadge)
         {
             var label = MetadataTrustUi.Text(value);
-            label.FontSize = 11;
+            label.FontSize = 10;
             label.FontWeight = FontWeights.SemiBold;
             label.VerticalAlignment = VerticalAlignment.Center;
             var badge = new Border
@@ -525,12 +709,47 @@ namespace MetaDataIAPlugin
                 Child = label,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(3),
-                Padding = new Thickness(8, 4, 8, 4),
-                MinHeight = 24,
-                Margin = new Thickness(0, 0, 6, 4)
+                Padding = new Thickness(6, 2, 6, 2),
+                MinHeight = 22,
+                Margin = new Thickness(0, 0, 5, 2)
             };
             MetadataTrustUi.SetResource(badge, Border.BorderBrushProperty, "GlyphBrush");
             MetadataTrustUi.SetResource(badge, Border.BackgroundProperty, fieldBadge ? "ControlBackgroundBrush" : "ButtonBackgroundBrush");
+            return badge;
+        }
+
+        private static Border CreateFieldBadge(string value, LibraryAuditIssue issue)
+        {
+            var badge = CreateBadge(value, true);
+            var label = badge.Child as TextBlock;
+            var brush = issue != null && issue.IsSuggestion
+                ? "WarningBrush"
+                : issue != null && issue.MediaKind.HasValue
+                    ? "PositiveRatingBrush"
+                    : "TextBrush";
+            MetadataTrustUi.SetResource(badge, Border.BorderBrushProperty, brush);
+            if (label != null) MetadataTrustUi.SetResource(label, TextBlock.ForegroundProperty, brush);
+            return badge;
+        }
+
+        private static Border CreateWarningBadge(string value)
+        {
+            var label = MetadataTrustUi.Text(value);
+            label.FontSize = 10;
+            label.FontWeight = FontWeights.SemiBold;
+            label.VerticalAlignment = VerticalAlignment.Center;
+            label.HorizontalAlignment = HorizontalAlignment.Center;
+            var badge = new Border
+            {
+                Child = label,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(7, 3, 7, 3),
+                MinHeight = 22,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            MetadataTrustUi.SetResource(badge, Border.BorderBrushProperty, "WarningBrush");
+            MetadataTrustUi.SetResource(label, TextBlock.ForegroundProperty, "WarningBrush");
             return badge;
         }
 
@@ -540,14 +759,129 @@ namespace MetaDataIAPlugin
             if (issue == null)
             {
                 detailTitle.Text = plugin.Loc("MTDA_AuditNoSelection", "Select an issue to see its details.");
-                detailBody.Text = string.Empty;
-                repairButton.IsEnabled = false;
+                detailSource.Text = string.Empty;
+                informationBody.Text = string.Empty;
+                resolutionBody.Text = string.Empty;
+                resultBody.Text = string.Empty;
+                if (resultSection != null) resultSection.Visibility = Visibility.Collapsed;
+                editGameButton.IsEnabled = false;
+                markModifiedButton.IsEnabled = false;
                 return;
             }
             detailTitle.Text = issue.Game.Name + " - " + FieldName(issue);
-            detailBody.Text = ProblemExplanation(issue) + Environment.NewLine + Environment.NewLine + RecommendedAction(issue);
-            repairButton.IsEnabled = issue.IsRepairable && !issue.IsLocked;
+            detailSource.Text = string.IsNullOrWhiteSpace(issue.SourceName)
+                ? string.Empty
+                : string.Format(plugin.Loc("MTDA_AuditSource", "Source: {0}"), issue.SourceName);
+            informationBody.Text = ProblemExplanation(issue);
+            resolutionBody.Text = RecommendedAction(issue);
+            resultBody.Text = issue.LastRepairMessage ?? string.Empty;
+            if (resultSection != null) resultSection.Visibility = string.IsNullOrWhiteSpace(resultBody.Text) ? Visibility.Collapsed : Visibility.Visible;
+            editGameButton.IsEnabled = issue.Game != null && openEditor != null;
+            markModifiedButton.IsEnabled = issue != null;
             RefreshActionState();
+        }
+
+        private void MarkSelectedAsModified()
+        {
+            var selected = SelectedIssue;
+            if (selected == null) return;
+            allIssues.Remove(selected);
+            RefreshIssues();
+        }
+
+        private void OpenSelectedGameEditor()
+        {
+            var selected = SelectedIssue;
+            if (selected == null || selected.Game == null || openEditor == null) return;
+            var owner = Owner;
+            var ownerHitTestVisible = owner == null || owner.IsHitTestVisible;
+            try
+            {
+                // Let Playnite own its editor without another visible themed child.
+                // Otherwise a nested modal backdrop can remain after the editor closes.
+                Hide();
+                if (owner != null && owner.IsVisible) owner.IsHitTestVisible = true;
+                openEditor(selected.Game);
+            }
+            finally
+            {
+                if (owner != null && owner.IsVisible) owner.IsHitTestVisible = ownerHitTestVisible;
+                if (!IsVisible) Show();
+                Activate();
+            }
+        }
+
+        private void ConfigureFilter(ComboBox filter, string label)
+        {
+            filter.MinWidth = 150;
+            filter.ToolTip = label;
+            filter.DisplayMemberPath = "DisplayName";
+            filter.SelectedValuePath = "Value";
+        }
+
+        private static StackPanel CreateFilterControl(string label, ComboBox filter)
+        {
+            var panel = new StackPanel();
+            var heading = MetadataTrustUi.Text(label);
+            heading.FontSize = 11;
+            heading.Opacity = 0.75;
+            heading.Margin = new Thickness(0, 0, 0, 3);
+            panel.Children.Add(heading);
+            panel.Children.Add(filter);
+            return panel;
+        }
+
+        private void UpdateFilterOptions()
+        {
+            updatingFilters = true;
+            try
+            {
+                UpdateFilterItems(typeFilter, new[]
+                {
+                    new AuditFilterOption { Value = "all", DisplayName = plugin.Loc("MTDA_AuditFilterAllTypes", "All types") },
+                    new AuditFilterOption { Value = "metadata", DisplayName = plugin.Loc("MTDA_AuditFilterMetadata", "Metadata") },
+                    new AuditFilterOption { Value = "media", DisplayName = plugin.Loc("MTDA_AuditFilterMedia", "Media") },
+                    new AuditFilterOption { Value = "suggestion", DisplayName = plugin.Loc("MTDA_AuditFilterSuggestions", "Suggestions") }
+                });
+                var fields = allIssues.Where(x => x != null && x.Game != null)
+                    .Select(x => new { Value = x.Field ?? string.Empty, Name = FieldName(x) })
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                    .GroupBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
+                    .Select(x => new AuditFilterOption { Value = x.First().Value, DisplayName = x.First().Name })
+                    .OrderBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+                fields.Insert(0, new AuditFilterOption { Value = "all", DisplayName = plugin.Loc("MTDA_AuditFilterAllFields", "All fields") });
+                UpdateFilterItems(fieldFilter, fields);
+                UpdateFilterItems(statusFilter, new[]
+                {
+                    new AuditFilterOption { Value = "all", DisplayName = plugin.Loc("MTDA_AuditFilterAllStates", "All states") },
+                    new AuditFilterOption { Value = "pending", DisplayName = plugin.Loc("MTDA_AuditFilterPending", "Pending") },
+                    new AuditFilterOption { Value = "review", DisplayName = plugin.Loc("MTDA_AuditFilterReview", "Requires review") }
+                });
+            }
+            finally { updatingFilters = false; }
+        }
+
+        private static void UpdateFilterItems(ComboBox filter, IEnumerable<AuditFilterOption> values)
+        {
+            var selected = filter.SelectedValue as string ?? "all";
+            filter.ItemsSource = values.ToList();
+            filter.SelectedValue = selected;
+            if (filter.SelectedIndex < 0) filter.SelectedIndex = 0;
+        }
+
+        private bool MatchesFilters(LibraryAuditIssue issue)
+        {
+            var type = typeFilter.SelectedValue as string ?? "all";
+            var field = fieldFilter.SelectedValue as string ?? "all";
+            var status = statusFilter.SelectedValue as string ?? "all";
+            if (type == "metadata" && (issue.MediaKind.HasValue || issue.IsSuggestion)) return false;
+            if (type == "media" && !issue.MediaKind.HasValue) return false;
+            if (type == "suggestion" && !issue.IsSuggestion) return false;
+            if (field != "all" && !string.Equals(field, issue.Field, StringComparison.OrdinalIgnoreCase)) return false;
+            if (status == "pending" && !string.IsNullOrWhiteSpace(issue.LastRepairMessage)) return false;
+            if (status == "review" && string.IsNullOrWhiteSpace(issue.LastRepairMessage)) return false;
+            return true;
         }
 
         private void RefreshActionState()
@@ -560,7 +894,7 @@ namespace MetaDataIAPlugin
 
         private void SetAllVisibleSelections(bool selected)
         {
-            foreach (var issue in allIssues.Where(x => x.Game != null && (showHidden.IsChecked == true || !x.Game.Hidden)))
+            foreach (var issue in allIssues.Where(x => x.Game != null && (!showHiddenOption || showHidden.IsChecked == true || !x.Game.Hidden)))
             {
                 if (issue.IsRepairable && !issue.IsLocked) issue.SelectedForAction = selected;
             }
@@ -571,11 +905,76 @@ namespace MetaDataIAPlugin
         {
             var selected = allIssues.Where(x => x.SelectedForAction && x.IsRepairable && !x.IsLocked).ToList();
             if (selected.Count == 0) return;
-            foreach (var issue in selected)
+            var workItems = selected.Select(issue => Tuple.Create(issue, CreateBackgroundCopy(issue))).ToList();
+            var completed = new List<Tuple<LibraryAuditIssue, LibraryAuditRepairResult>>();
+            var progress = new MetadataAuditProgressWindow(
+                plugin,
+                this,
+                string.Format(plugin.Loc("MTDA_AuditBatchProgress", "Resolving marked issues: {0} of {1}"), 0, workItems.Count),
+                (token, report) =>
+                {
+                    for (var index = 0; index < workItems.Count; index++)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        var originalIssue = workItems[index].Item1;
+                        var workerIssue = workItems[index].Item2;
+                        report(string.Format(
+                            plugin.Loc("MTDA_AuditBatchProgressGame", "Resolving marked issues: {0} of {1} - {2}"),
+                            index + 1,
+                            workItems.Count,
+                            originalIssue.Game == null ? string.Empty : originalIssue.Game.Name));
+                        LibraryAuditRepairResult result;
+                        try { result = repair(workerIssue, true, token) ?? new LibraryAuditRepairResult(); }
+                        catch (Exception ex) { result = new LibraryAuditRepairResult { Resolved = false, Message = ex.Message }; }
+                        completed.Add(Tuple.Create(originalIssue, result));
+                    }
+                });
+            progress.ShowUntilCompleted();
+            var repaired = 0;
+            var unresolved = 0;
+            foreach (var attempt in completed)
             {
-                if (repair(issue)) RescanIssue(issue);
+                var issue = attempt.Item1;
+                var result = attempt.Item2;
+                if (result.Resolved)
+                {
+                    repaired++;
+                    RescanIssue(issue);
+                }
+                else
+                {
+                    unresolved++;
+                    issue.SelectedForAction = false;
+                    issue.LastRepairMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? plugin.Loc("MTDA_AuditNoReliableValue", "No reliable value could be determined for this field. The issue will remain in the audit.")
+                        : result.Message;
+                }
             }
+            lastBatchSummary = string.Format(plugin.Loc("MTDA_AuditBatchResult", "Repair complete: {0} resolved · {1} need review."), repaired, unresolved);
+            RefreshIssues();
             RefreshActionState();
+        }
+
+        private LibraryAuditIssue CreateBackgroundCopy(LibraryAuditIssue issue)
+        {
+            if (issue == null) return null;
+            var copy = new LibraryAuditIssue
+            {
+                Game = issue.Game == null ? null : Serialization.GetClone(issue.Game),
+                Area = issue.Area,
+                Field = issue.Field,
+                Severity = issue.Severity,
+                Problem = issue.Problem,
+                MediaKind = issue.MediaKind,
+                IsRepairable = issue.IsRepairable,
+                IsLocked = issue.IsLocked,
+                Width = issue.Width,
+                Height = issue.Height,
+                SourceName = issue.SourceName,
+                IsSuggestion = issue.IsSuggestion
+            };
+            copy.FocusedSettings = plugin.CreateAuditFocusedSettings(copy);
+            return copy;
         }
 
         private List<LibraryAuditDecision> Decisions()
@@ -617,12 +1016,7 @@ namespace MetaDataIAPlugin
             var dialog = new OpenFileDialog { Filter = "Audit decisions (*.json;*.csv)|*.json;*.csv|JSON (*.json)|*.json|CSV (*.csv)|*.csv" };
             if (dialog.ShowDialog(this) != true) return;
             List<LibraryAuditDecision> decisions;
-            try
-            {
-                decisions = string.Equals(Path.GetExtension(dialog.FileName), ".json", StringComparison.OrdinalIgnoreCase)
-                    ? JsonConvert.DeserializeObject<List<LibraryAuditDecision>>(File.ReadAllText(dialog.FileName))
-                    : ReadCsvDecisions(File.ReadAllLines(dialog.FileName));
-            }
+            try { decisions = LibraryAuditDecisionFile.Read(dialog.FileName); }
             catch
             {
                 plugin.Api.Dialogs.ShowMessage(plugin.Loc("MTDA_AuditImportInvalid", "The audit file could not be read."), plugin.Loc("MTDA_AuditTitle", "Metadata AI library audit"));
@@ -639,29 +1033,7 @@ namespace MetaDataIAPlugin
             RefreshIssues();
         }
 
-        private static List<LibraryAuditDecision> ReadCsvDecisions(IEnumerable<string> lines)
-        {
-            var values = (lines ?? Enumerable.Empty<string>()).Skip(1).Select(ParseCsv).Where(x => x.Count >= 6).ToList();
-            return values.Select(x => new LibraryAuditDecision
-            {
-                GameId = Guid.Parse(x[0]), Game = x[1], Area = x[2], Field = x[3], Problem = x[4], Action = x[5]
-            }).ToList();
-        }
-
         private static string Csv(string value) { return "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\""; }
-
-        private static List<string> ParseCsv(string value)
-        {
-            var result = new List<string>(); var builder = new StringBuilder(); var quoted = false;
-            foreach (var character in value ?? string.Empty)
-            {
-                if (character == '"') { quoted = !quoted; continue; }
-                if (character == ',' && !quoted) { result.Add(builder.ToString()); builder.Clear(); continue; }
-                builder.Append(character);
-            }
-            result.Add(builder.ToString());
-            return result;
-        }
 
         private string FieldName(LibraryAuditIssue issue)
         {
@@ -697,6 +1069,7 @@ namespace MetaDataIAPlugin
         private string ProblemText(LibraryAuditIssue issue)
         {
             if (issue.Problem == "missing" || issue.Problem == "missing-value") return plugin.Loc("MTDA_AuditProblemMissing", "Missing value");
+            if (issue.Problem == "optional-missing") return plugin.Loc("MTDA_AuditProblemOptional", "Optional enrichment");
             if (issue.Problem == "file-missing") return plugin.Loc("MTDA_AuditProblemFileMissing", "Referenced file is missing");
             if (issue.Problem == "invalid") return plugin.Loc("MTDA_AuditProblemInvalid", "Image cannot be read");
             if (issue.Problem == "blank") return plugin.Loc("MTDA_AuditProblemBlank", "Image is almost blank");
@@ -709,6 +1082,7 @@ namespace MetaDataIAPlugin
         {
             if (issue.Problem == "missing" && issue.MediaKind.HasValue)
                 return plugin.Loc("MTDA_AuditExplainMediaMissing", "No game-specific image is assigned. Playnite or the active theme may still display a platform, source, or theme fallback image.");
+            if (issue.Problem == "optional-missing") return plugin.Loc("MTDA_AuditExplainOptional", "This optional library field is empty. Playnite integrations often do not provide it, so it is offered only as an enrichment suggestion.");
             if (issue.Problem == "missing-value") return plugin.Loc("MTDA_AuditExplainValueMissing", "This field is enabled in Metadata AI settings but the game currently has no value assigned.");
             if (issue.Problem == "file-missing") return plugin.Loc("MTDA_AuditExplainFileMissing", "The game references an image path, but the file no longer exists on disk.");
             if (issue.Problem == "invalid") return plugin.Loc("MTDA_AuditExplainInvalid", "The referenced file exists, but it is damaged or is not a readable image.");
@@ -719,6 +1093,7 @@ namespace MetaDataIAPlugin
 
         private string RecommendedAction(LibraryAuditIssue issue)
         {
+            if (issue.IsSuggestion) return plugin.Loc("MTDA_AuditActionOptional", "Optional field: review or fill it manually in Playnite if it is useful for your library organization.");
             if (issue.IsLocked) return plugin.Loc("MTDA_AuditActionLocked", "This media is protected from the game's Metadata AI context menu. Allow replacement there before repairing it.");
             if (issue.MediaKind.HasValue) return plugin.Loc("MTDA_AuditActionRepair", "Use Repair selected issue to open the corresponding media search and choose a replacement.");
             if (issue.IsRepairable) return string.Format(plugin.Loc("MTDA_AuditActionRepairField", "Use Repair selected issue to run only the configured action for {0}. Other metadata fields will not be changed."), FieldName(issue));

@@ -836,4 +836,16 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_ClearGameMediaEmpty">This game has no cover, icon or background to remove.</sys:String>
     <sys:String x:Key="MTDA_ClearGameMediaConfirm">Remove the cover, icon and background assigned to ‘{0}’? Files managed by Playnite will also be removed when they are no longer used by another game.</sys:String>
     <sys:String x:Key="MTDA_ClearGameMediaDone">The game media was removed.</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterType">Type</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterField">Field</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterStatus">Status</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterAllTypes">All types</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterMetadata">Metadata</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterMedia">Media</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterSuggestions">Suggestions</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterAllFields">All fields</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterAllStates">All states</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterPending">Pending</sys:String>
+    <sys:String x:Key="MTDA_AuditFilterReview">Review</sys:String>
+    <sys:String x:Key="MTDA_AuditMarkModified">Mark as modified</sys:String>
 </ResourceDictionary>

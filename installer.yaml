@@ -1,5 +1,14 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.2
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-12
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.2/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_2.pext
+    Changelog:
+      - Expanded the Library Audit with compact semantic badges, filters for type, field and repair state, and a one-click action to dismiss issues handled manually.
+      - Improved audit repair progress, change history recording, result explanations, selection controls and Playnite editor handoff without leaving a dimmed backdrop.
+      - Added official ESRB age-rating fallback and hardened IGDB factual enrichment so verified age ratings, companies and regions can create missing Playnite values safely.
+      - Made media audit quality thresholds visible without requiring Advanced mode.
   - Version: 1.4.1
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-11

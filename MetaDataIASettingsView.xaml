@@ -663,8 +663,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource AdvancedSettingsCard}"
-                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
+                        <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                             <Border Style="{StaticResource SectionHeaderBorder}">
                                 <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>

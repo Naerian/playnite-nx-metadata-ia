@@ -1646,7 +1646,6 @@ namespace MetaDataIAPlugin
         {
             return game != null &&
                    NeedsTrustedEnrichment() &&
-                   settings.MediaUseIgdb &&
                    !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                    (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
         }

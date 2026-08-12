@@ -15,6 +15,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace MetaDataIAPlugin
 {
@@ -1562,9 +1563,7 @@ namespace MetaDataIAPlugin
 
         private UIElement BuildGameImage(Guid gameId)
         {
-            var frame = new Border { Width = 86, Height = 100, BorderThickness = new Thickness(1), Padding = new Thickness(2), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
-            MetadataTrustUi.SetResource(frame, Border.BorderBrushProperty, "GlyphBrush");
-            MetadataTrustUi.SetResource(frame, Border.BackgroundProperty, "ControlBackgroundBrush");
+            var frame = new Border { Width = 86, Height = 100, BorderThickness = new Thickness(0), Padding = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
             try
             {
                 var game = plugin.Api.Database.Games[gameId];
@@ -1718,24 +1717,35 @@ namespace MetaDataIAPlugin
     internal sealed class MetadataAuditProgressWindow : Window
     {
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-        private readonly Action<CancellationToken> operation;
+        private readonly Action<CancellationToken, Action<string>> operation;
+        private readonly Window operationOwner;
         private readonly Button cancelButton = new Button();
+        private TextBlock messageText;
         private bool completed;
+        private bool ownerHitTestVisible;
 
         public Exception Error { get; private set; }
         public bool Cancelled { get; private set; }
 
         public MetadataAuditProgressWindow(MetaDataIAPlugin plugin, Window owner, string message, Action<CancellationToken> operation)
+            : this(plugin, owner, message, (token, report) => operation(token))
+        {
+        }
+
+        public MetadataAuditProgressWindow(MetaDataIAPlugin plugin, Window owner, string message, Action<CancellationToken, Action<string>> operation)
         {
             this.operation = operation;
+            operationOwner = owner;
             Title = plugin.Loc("MTDA_PluginName", "Metadata AI");
             Width = 520;
             SizeToContent = SizeToContent.Height;
             MinHeight = 180;
             ResizeMode = ResizeMode.NoResize;
             ShowInTaskbar = false;
-            Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            // Do not create a WPF owner relationship here. Some Playnite desktop
+            // themes keep its modal dimming layer alive after an owned progress
+            // window closes. operationOwner is still used to block interaction.
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
             MetadataTrustUi.ApplyWindowTheme(this);
 
             var root = new Grid { Margin = new Thickness(20) };
@@ -1743,10 +1753,10 @@ namespace MetaDataIAPlugin
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var text = MetadataTrustUi.Text(message);
-            text.FontSize = 14;
-            text.Margin = new Thickness(0, 0, 0, 16);
-            root.Children.Add(text);
+            messageText = MetadataTrustUi.Text(message);
+            messageText.FontSize = 14;
+            messageText.Margin = new Thickness(0, 0, 0, 16);
+            root.Children.Add(messageText);
             var progress = new ProgressBar { IsIndeterminate = true, Height = 8, Margin = new Thickness(0, 0, 0, 18) };
             Grid.SetRow(progress, 1);
             root.Children.Add(progress);
@@ -1767,13 +1777,51 @@ namespace MetaDataIAPlugin
                 cancelButton.IsEnabled = false;
                 cancellation.Cancel();
             };
+            Closed += (s, e) =>
+            {
+                if (operationOwner != null && operationOwner.IsVisible) operationOwner.IsHitTestVisible = ownerHitTestVisible;
+                ReleaseModalOwners(owner);
+            };
+        }
+
+        // ShowDialog creates a theme-dependent modal backdrop in Playnite that can
+        // survive closing nested audit windows. Keep this spinner modeless and
+        // block only hit testing on its owner while a nested dispatcher frame waits.
+        public void ShowUntilCompleted()
+        {
+            var frame = new DispatcherFrame();
+            EventHandler closed = null;
+            closed = (s, e) =>
+            {
+                Closed -= closed;
+                frame.Continue = false;
+            };
+            Closed += closed;
+            try
+            {
+                if (operationOwner != null && operationOwner.IsVisible)
+                {
+                    ownerHitTestVisible = operationOwner.IsHitTestVisible;
+                    operationOwner.IsHitTestVisible = false;
+                }
+                Show();
+                Dispatcher.PushFrame(frame);
+            }
+            finally
+            {
+                if (operationOwner != null && operationOwner.IsVisible) operationOwner.IsHitTestVisible = ownerHitTestVisible;
+            }
         }
 
         private async void RunOperation(object sender, RoutedEventArgs e)
         {
             try
             {
-                await Task.Run(() => operation(cancellation.Token));
+                // Playnite's own global progress invokes extension work from an
+                // STA worker. Keep the same requirement for this custom progress:
+                // metadata integrations and database-backed models can otherwise
+                // throw when accessed from a thread-pool MTA worker.
+                await RunStaOperation(() => operation(cancellation.Token, UpdateMessage));
             }
             catch (OperationCanceledException)
             {
@@ -1787,8 +1835,65 @@ namespace MetaDataIAPlugin
             completed = true;
             if (IsVisible)
             {
-                DialogResult = Error == null && !Cancelled;
+                Close();
             }
+        }
+
+        private static Task RunStaOperation(Action action)
+        {
+            var completion = new TaskCompletionSource<bool>();
+            var worker = new Thread(() =>
+            {
+                try
+                {
+                    action();
+                    completion.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    completion.SetException(ex);
+                }
+            });
+            worker.IsBackground = true;
+            worker.SetApartmentState(ApartmentState.STA);
+            worker.Start();
+            return completion.Task;
+        }
+
+        private void UpdateMessage(string value)
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (messageText != null) messageText.Text = value ?? string.Empty;
+                }));
+            }
+            catch { }
+        }
+
+        private static void ReleaseModalOwners(Window owner)
+        {
+            var dispatcher = owner == null ? (Application.Current == null ? null : Application.Current.Dispatcher) : owner.Dispatcher;
+            if (dispatcher == null) return;
+            try
+            {
+                dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var current = owner;
+                    while (current != null)
+                    {
+                        if (current.IsVisible) current.IsEnabled = true;
+                        current = current.Owner;
+                    }
+                    if (Application.Current == null) return;
+                    foreach (Window window in Application.Current.Windows)
+                    {
+                        if (window != null && window.IsVisible) window.IsEnabled = true;
+                    }
+                }), DispatcherPriority.ApplicationIdle);
+            }
+            catch { }
         }
     }
 
