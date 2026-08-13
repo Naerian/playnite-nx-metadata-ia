@@ -22,7 +22,7 @@ It is useful when your library has mixed description styles, missing metadata, d
 
 It is not meant to replace validated metadata sources when those already provide exactly what you need. Instead, it complements them by normalizing, translating, restructuring and filling gaps according to your own templates and rules.
 
-The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, RAWG, ScreenScraper, Giant Bomb, MobyGames and IGDB.
+The extension does not generate AI artwork. Media assets are fetched from configured sources such as Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, IGN, SteamGridDB, RAWG, ScreenScraper, Giant Bomb, MobyGames and IGDB.
 
 ## Features
 
@@ -134,6 +134,7 @@ Metadata AI can fetch covers, icons, and backgrounds from:
 - PlayStation Store
 - Xbox Store
 - Epic Store
+- IGN (verified covers and promotional backgrounds)
 - SteamGridDB
 - RAWG.io
 - Wallhaven (optional SFW, 16:9 background fallback)
@@ -142,7 +143,7 @@ Metadata AI can fetch covers, icons, and backgrounds from:
 - MobyGames
 - IGDB
 
-Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, and Wallhaven do not require an API key. SteamGridDB, RAWG.io, Giant Bomb, MobyGames, and IGDB require their own API credentials. ScreenScraper requires both a ScreenScraper account and developer credentials issued for its API.
+Steam CDN public assets, PlayStation Store, Xbox Store, Epic Store, IGN, and Wallhaven do not require an API key. SteamGridDB, RAWG.io, Giant Bomb, MobyGames, and IGDB require their own API credentials. ScreenScraper requires both a ScreenScraper account and developer credentials issued for its API.
 
 For IGDB, the extension uses Twitch `Client ID` and `Client Secret` and automatically obtains the access token internally, so users do not need to copy temporary access tokens manually.
 
@@ -150,11 +151,15 @@ When available, Metadata AI can ask the exact library integration that imported 
 
 Store websites can be region-dependent and may change or block automated reads. If the origin integration or an official store does not return the requested field, Metadata AI skips it and continues with the next enabled source based on your configured priority.
 
+IGN is a best-effort public catalogue source. For an exact title match it can add structured factual context (description, companies, series, age rating, release date, genres, and an IGN link), an official cover, and a small promotional image gallery. It is never used for icons. If its public endpoint changes or has no exact match, Metadata AI safely continues with the remaining sources.
+
 ## AI factual context
 
 Metadata AI is designed to normalize and structure metadata, not blindly invent it.
 
 When trusted context is enabled, the extension first asks the Playnite library integration that owns the game. It can then use reliable public store data such as Steam, PlayStation Store, Xbox Store, or Epic Store as additional context and fallback. The AI receives that information as factual context and is instructed to translate, rewrite, summarize, and structure it according to your templates and field rules.
+
+Optional community sources are also available from **Sources**: Wikidata can provide broad, structured game facts, while VNDB specializes in visual novels. Both are disabled by default and are used only as supplementary factual context; they never replace a verified store match.
 
 If the plugin cannot find reliable official context, the AI can still generate descriptive text from the game name and existing Playnite metadata, but stricter options can prevent sensitive fields such as developers, publishers, age ratings, and regions from being created when confidence is low.
 
@@ -191,7 +196,7 @@ Selection criteria include:
 
 Automatic media selection follows the per-kind source priority configured in settings. For example, covers, icons, and backgrounds can each prefer different sources. If a source returns no reliable candidates for a game, the extension continues with the next enabled source.
 
-New installations place the origin library integration in the recommended priority position. When an existing installation is upgraded, Metadata AI appends this source to each saved priority instead of resetting or reordering the user's customized sources.
+New installations place the origin library integration in the recommended priority position. When an existing installation is upgraded, Metadata AI appends newly introduced recommended sources, such as IGN where applicable, without resetting or reordering the user's customized sources.
 
 The selected format and resolution describe the final stored file. Automatic priority can favor configured sources, usable source resolution, or strict quality that skips candidates requiring upscaling after crop. Cover and background crop origins are configurable, and processed JPEG quality can be reduced to save disk space without changing output dimensions.
 

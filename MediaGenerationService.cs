@@ -765,6 +765,26 @@ namespace MetaDataIAPlugin
                 AddSourceCandidates(candidates, diagnostics, OfficialStoreDataService.SourceEpicStore, sourceCandidates);
             }
 
+            if (settings.MediaUseIgn && (kind == MediaKind.Cover || kind == MediaKind.Background))
+            {
+                try
+                {
+                    var ignGame = manualSearch ? new Game { Name = effectiveSearchText } : game;
+                    var sourceCandidates = (await new IgnDataService().GetMediaCandidatesAsync(ignGame, kind, cancelToken).ConfigureAwait(false))
+                        .Select(CreateOfficialStoreCandidate)
+                        .ToList();
+                    AddSourceCandidates(candidates, diagnostics, MetaDataIASettings.SourceIgn, sourceCandidates);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    AddDiagnostic(diagnostics, MetaDataIASettings.SourceIgn, Loc("MTDA_MediaDiagSourceError", "source error or rejected filters"));
+                }
+            }
+
             if (settings.MediaUseSteamGridDb)
             {
                 if (string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey))
@@ -1045,6 +1065,7 @@ namespace MetaDataIAPlugin
                 settings.MediaUseMobyGames.ToString(),
                 settings.MediaUseTheGamesDb.ToString(),
                 settings.MediaUseIgdb.ToString(),
+                settings.MediaUseIgn.ToString(),
                 GetPlayniteCoverRatioCacheKey(),
                 settings.MediaCoverSourcePriority,
                 settings.MediaIconSourcePriority,

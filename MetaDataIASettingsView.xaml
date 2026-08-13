@@ -998,7 +998,7 @@
                         <Border Style="{StaticResource SectionHeaderBorder}">
                             <TextBlock Text="{DynamicResource MTDA_SourceKeysAndTests}" Style="{StaticResource SectionHeaderText}"/>
                         </Border>
-                        <StackPanel Margin="0,0,0,14">
+                        <StackPanel x:Name="SourceItemsPanel" Margin="0,0,0,14">
                             <Expander Style="{StaticResource MediaSourceExpander}">
                                 <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="{DynamicResource MTDA_OriginIntegrationsTab}" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="OriginSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
                                 <StackPanel Margin="0">
@@ -1184,6 +1184,30 @@
                                     <PasswordBox x:Name="TheGamesDbApiKeyBox" PasswordChanged="TheGamesDbApiKeyBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0,2,0,8"/>
                                     <TextBlock Text="{DynamicResource MTDA_TheGamesDbKeyHelp}" Style="{StaticResource HintText}" Margin="0,0,0,10"/>
                                     <Button Content="{DynamicResource MTDA_TestTheGamesDb}" HorizontalAlignment="Left" MinWidth="150" Click="TestTheGamesDbMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="IGN" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgnSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_IgnMediaHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableIgnMedia}"
+                                              IsChecked="{Binding Settings.MediaUseIgn}"
+                                              Margin="0,0,0,10"/>
+                                    <Button Content="{DynamicResource MTDA_TestIgn}" HorizontalAlignment="Left" MinWidth="120" Click="TestIgnMedia_OnClick"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="VNDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="VndbSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_VndbHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableVndb}" IsChecked="{Binding Settings.UseVndbMetadata}" Margin="0,0,0,10"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}, Converter={StaticResource MediaSourceHeaderWidthConverter}, ConverterParameter=58}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Orientation="Horizontal"><TextBlock Text="Wikidata" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border></StackPanel><Border Grid.Column="1" Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="WikidataSourceStatusText" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/></Border></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_WikidataHelp}" Style="{StaticResource HintText}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableWikidata}" IsChecked="{Binding Settings.UseWikidataMetadata}" Margin="0,0,0,10"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">

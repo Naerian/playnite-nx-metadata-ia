@@ -701,6 +701,36 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            if (settings.MediaUseIgn && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            {
+                var ignContext = await new IgnDataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
+                if (ignContext != null && ignContext.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(ignContext);
+                }
+            }
+
+            // These are opt-in, specialist/fallback catalogues. Their data is
+            // offered to the same factual-validation path as other sources; it
+            // never bypasses the configured field apply rules.
+            if (settings.UseVndbMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            {
+                var vndbContext = await new VndbMetadataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
+                if (vndbContext != null && vndbContext.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(vndbContext);
+                }
+            }
+
+            if (settings.UseWikidataMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            {
+                var wikidataContext = await new WikidataMetadataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
+                if (wikidataContext != null && wikidataContext.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(wikidataContext);
+                }
+            }
+
             if (officialContextForCurrentRequest.Count > 0)
             {
                 context["officialStoreContext"] = officialContextForCurrentRequest.Select(x => new

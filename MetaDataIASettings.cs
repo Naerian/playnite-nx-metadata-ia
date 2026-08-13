@@ -257,6 +257,7 @@ namespace MetaDataIAPlugin
         private bool useOriginIntegrationForFactualMetadata = true;
         private List<Guid> disabledOriginIntegrationIds = new List<Guid>();
         private bool originIntegrationPriorityMigrated = false;
+        private bool ignSourcePriorityMigrated = false;
         private bool mediaUsePsnStore = false;
         private bool mediaUseXboxStore = false;
         private bool mediaUseEpicStore = false;
@@ -279,6 +280,9 @@ namespace MetaDataIAPlugin
         private bool mediaUseTheGamesDb = false;
         private string theGamesDbApiKey = string.Empty;
         private bool mediaUseIgdb = false;
+        private bool mediaUseIgn = true;
+        private bool useVndbMetadata = false;
+        private bool useWikidataMetadata = false;
         private string igdbClientId = string.Empty;
         private string igdbClientSecret = string.Empty;
         private string igdbAccessToken = string.Empty;
@@ -344,9 +348,14 @@ namespace MetaDataIAPlugin
         public const string ImageQualityHigh = "Alta";
         public const string ImageQualityMaximum = "Maxima";
         public const string SourceOriginIntegration = "Integracion de origen";
-        public const string DefaultCoverSourcePriority = "Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, IGDB, ScreenScraper, RAWG, Giant Bomb, MobyGames";
+        public const string SourceIgn = "IGN";
+        public const string SourceVndb = "VNDB";
+        public const string SourceWikidata = "Wikidata";
+        // These defaults favour game-specific artwork first. The user can still
+        // override the order independently for each media type in the settings.
+        public const string DefaultCoverSourcePriority = "Integracion de origen, SteamGridDB, Steam oficial, PlayStation Store, Xbox Store, Epic Store, IGDB, IGN, Giant Bomb, MobyGames, ScreenScraper, RAWG";
         public const string DefaultIconSourcePriority = "SteamGridDB, ScreenScraper, Integracion de origen, Steam oficial, PlayStation Store, Xbox Store, Epic Store";
-        public const string DefaultBackgroundSourcePriority = "Integracion de origen, Steam oficial, Steam capturas, PlayStation Store, Xbox Store, Epic Store, SteamGridDB, ScreenScraper, RAWG, Wallhaven, IGDB, Giant Bomb, MobyGames";
+        public const string DefaultBackgroundSourcePriority = "Integracion de origen, Steam oficial, Steam capturas, SteamGridDB, PlayStation Store, Xbox Store, Epic Store, IGDB, IGN, Giant Bomb, MobyGames, ScreenScraper, Wallhaven, RAWG";
 
         public string ProviderPreset
         {
@@ -512,6 +521,7 @@ namespace MetaDataIAPlugin
         public bool UseOriginIntegrationForFactualMetadata { get { return useOriginIntegrationForFactualMetadata; } set { SetValue(ref useOriginIntegrationForFactualMetadata, value); } }
         public List<Guid> DisabledOriginIntegrationIds { get { return disabledOriginIntegrationIds; } set { SetValue(ref disabledOriginIntegrationIds, value); } }
         public bool OriginIntegrationPriorityMigrated { get { return originIntegrationPriorityMigrated; } set { SetValue(ref originIntegrationPriorityMigrated, value); } }
+        public bool IgnSourcePriorityMigrated { get { return ignSourcePriorityMigrated; } set { SetValue(ref ignSourcePriorityMigrated, value); } }
         public bool MediaUsePsnStore { get { return mediaUsePsnStore; } set { SetValue(ref mediaUsePsnStore, value); } }
         public bool MediaUseXboxStore { get { return mediaUseXboxStore; } set { SetValue(ref mediaUseXboxStore, value); } }
         public bool MediaUseEpicStore { get { return mediaUseEpicStore; } set { SetValue(ref mediaUseEpicStore, value); } }
@@ -570,6 +580,9 @@ namespace MetaDataIAPlugin
         public bool MediaUseTheGamesDb { get { return mediaUseTheGamesDb; } set { SetValue(ref mediaUseTheGamesDb, value); } }
         public string TheGamesDbApiKey { get { return theGamesDbApiKey; } set { SetValue(ref theGamesDbApiKey, value); } }
         public bool MediaUseIgdb { get { return mediaUseIgdb; } set { SetValue(ref mediaUseIgdb, value); } }
+        public bool MediaUseIgn { get { return mediaUseIgn; } set { SetValue(ref mediaUseIgn, value); } }
+        public bool UseVndbMetadata { get { return useVndbMetadata; } set { SetValue(ref useVndbMetadata, value); } }
+        public bool UseWikidataMetadata { get { return useWikidataMetadata; } set { SetValue(ref useWikidataMetadata, value); } }
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
         public string IgdbClientSecret { get { return igdbClientSecret; } set { SetValue(ref igdbClientSecret, value); } }
         public string IgdbAccessToken { get { return igdbAccessToken; } set { SetValue(ref igdbAccessToken, value); } }
@@ -784,6 +797,17 @@ namespace MetaDataIAPlugin
                 }
 
                 OriginIntegrationPriorityMigrated = true;
+            }
+
+            if (!IgnSourcePriorityMigrated)
+            {
+                if (existingSettings)
+                {
+                    MediaCoverSourcePriority = AppendSourcePriority(MediaCoverSourcePriority, SourceIgn);
+                    MediaBackgroundSourcePriority = AppendSourcePriority(MediaBackgroundSourcePriority, SourceIgn);
+                }
+
+                IgnSourcePriorityMigrated = true;
             }
         }
 
@@ -2028,7 +2052,7 @@ namespace MetaDataIAPlugin
         [DontSerialize]
         public string SteamGridDbHelp
         {
-            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG.io, Wallhaven, MobyGames and IGDB when enabled. Wallhaven is limited to SFW 16:9 backgrounds. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
+            get { return Loc("MTDA_MediaHelp", "The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store and IGN when usable, SteamGridDB as a community source if you configure its API key, plus RAWG.io, Wallhaven, MobyGames and IGDB when enabled. Wallhaven is limited to SFW 16:9 backgrounds. In automatic mode it prioritizes official assets and then applies format, score and filter preferences."); }
         }
 
         private static LocalizedOption Option(string value, string key, string fallback)

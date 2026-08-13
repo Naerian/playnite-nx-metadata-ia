@@ -243,7 +243,8 @@ namespace MetaDataIAPlugin
                 settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, settings.MediaUsePsnStore, settings.MediaUseXboxStore,
                 settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseWallhaven, settings.MediaUseScreenScraper,
                 settings.MediaUseGiantBomb, settings.MediaUseMobyGames,
-                settings.MediaUseIgdb, settings.MediaUseWebSearch
+                settings.MediaUseIgdb, settings.MediaUseIgn, settings.MediaUseWebSearch,
+                settings.UseVndbMetadata, settings.UseWikidataMetadata
             }.Count(x => x);
             ConfigurationMediaSummaryText.Text = string.Format(
                 Loc("MTDA_MediaEnabledSummary", "{0} media types · {1} sources"),
@@ -324,6 +325,9 @@ namespace MetaDataIAPlugin
             SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
                 !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                 (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken)));
+            SetSourceStatus(IgnSourceStatusText, settings.MediaUseIgn, true);
+            SetSourceStatus(VndbSourceStatusText, settings.UseVndbMetadata, true);
+            SetSourceStatus(WikidataSourceStatusText, settings.UseWikidataMetadata, true);
         }
 
         private static void SetSourceStatus(TextBlock target, bool enabled, bool configured)
@@ -555,7 +559,39 @@ namespace MetaDataIAPlugin
 
         private void SourcesPanel_OnLoaded(object sender, RoutedEventArgs e)
         {
+            SortSourcesAlphabetically();
             ApplySourceCapabilityFilter();
+        }
+
+        private void SortSourcesAlphabetically()
+        {
+            if (SourceItemsPanel == null)
+            {
+                return;
+            }
+
+            var sources = SourceItemsPanel.Children.OfType<Expander>().ToList();
+            if (sources.Count < 2)
+            {
+                return;
+            }
+
+            foreach (var source in sources)
+            {
+                SourceItemsPanel.Children.Remove(source);
+            }
+
+            foreach (var source in sources.OrderBy(GetSourceDisplayName, StringComparer.CurrentCultureIgnoreCase))
+            {
+                SourceItemsPanel.Children.Add(source);
+            }
+        }
+
+        private static string GetSourceDisplayName(Expander source)
+        {
+            return FindVisualChildren<TextBlock>(source)
+                .Select(x => x.Text ?? string.Empty)
+                .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
         }
 
         private void SourceFilterAll_OnClick(object sender, RoutedEventArgs e)
@@ -1483,6 +1519,15 @@ namespace MetaDataIAPlugin
             });
         }
 
+        private void TestIgnMedia_OnClick(object sender, RoutedEventArgs e)
+        {
+            TestMediaSource(sender as Button, "IGN", s =>
+            {
+                DisableAllMediaSources(s);
+                s.MediaUseIgn = true;
+            });
+        }
+
         private TestOperationState BeginTestOperation(
             Button triggerButton,
             string targetName,
@@ -1852,6 +1897,7 @@ namespace MetaDataIAPlugin
             settings.MediaUseMobyGames = false;
             settings.MediaUseTheGamesDb = false;
             settings.MediaUseIgdb = false;
+            settings.MediaUseIgn = false;
         }
 
         private static MetaDataIASettings CreateProviderProbeSettings(MetaDataIASettings source)
@@ -2284,6 +2330,11 @@ namespace MetaDataIAPlugin
                 return settings.MediaUseIgdb;
             }
 
+            if (string.Equals(source, MetaDataIASettings.SourceIgn, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.MediaUseIgn;
+            }
+
             return true;
         }
 
@@ -2314,6 +2365,7 @@ namespace MetaDataIAPlugin
                     Source("Xbox Store"),
                     Source("Epic Store"),
                     Source("SteamGridDB"),
+                    Source(MetaDataIASettings.SourceIgn),
                     Source("ScreenScraper"),
                     Source("RAWG"),
                     Source("Wallhaven"),
@@ -2332,6 +2384,7 @@ namespace MetaDataIAPlugin
                 Source("Epic Store"),
                 Source("SteamGridDB"),
                 Source("IGDB"),
+                Source(MetaDataIASettings.SourceIgn),
                 Source("ScreenScraper"),
                 Source("RAWG"),
                 Source("Giant Bomb"),

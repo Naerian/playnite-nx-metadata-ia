@@ -118,12 +118,13 @@ namespace MetaDataIAPlugin
                 overlay = new Grid
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
-                    VerticalAlignment = VerticalAlignment.Stretch,
-                    // A transparent panel still participates in hit testing, so the
-                    // picker behind the busy dialog cannot be used concurrently.
-                    Background = Brushes.Transparent
+                    VerticalAlignment = VerticalAlignment.Stretch
                 };
-                Grid.SetRowSpan(overlay, 2);
+                // Match the background used by the audit progress window.  Some
+                // Playnite themes expose a semi-transparent control brush, which
+                // made the local picker progress panel look like it had no body.
+                ApplyDynamicResource(overlay, Panel.BackgroundProperty, "StandardWindowBackgroundBrush");
+                Grid.SetRowSpan(overlay, 3);
                 Panel.SetZIndex(overlay, 20);
 
                 var panel = new Border
@@ -1876,6 +1877,7 @@ namespace MetaDataIAPlugin
             if (source.MediaUseGiantBomb && kind != MediaKind.Logo) names.Add("Giant Bomb");
             if (source.MediaUseMobyGames && kind != MediaKind.Logo) names.Add("MobyGames");
             if (source.MediaUseIgdb && kind != MediaKind.Logo) names.Add("IGDB");
+            if (source.MediaUseIgn && (kind == MediaKind.Cover || kind == MediaKind.Background)) names.Add(MetaDataIASettings.SourceIgn);
             if (source.MediaUseWebSearch && kind != MediaKind.Logo) names.Add("Web search");
             return names;
         }
@@ -1897,6 +1899,7 @@ namespace MetaDataIAPlugin
             value.MediaUseGiantBomb &= enabled.Contains("Giant Bomb");
             value.MediaUseMobyGames &= enabled.Contains("MobyGames");
             value.MediaUseIgdb &= enabled.Contains("IGDB");
+            value.MediaUseIgn &= enabled.Contains(MetaDataIASettings.SourceIgn);
             return value;
         }
 
@@ -2022,6 +2025,15 @@ namespace MetaDataIAPlugin
                 return bingResults;
             }
 
+            // Google fallback markup does not expose the source page reliably.
+            // For covers, icons and backgrounds that makes a one-word game title
+            // indistinguishable from its ordinary dictionary meaning (for
+            // example, Thief), so do not return unverified artwork.
+            if (kind == MediaKind.Cover || kind == MediaKind.Icon || kind == MediaKind.Background)
+            {
+                return bingResults;
+            }
+
             var results = new List<MediaPreviewOption>();
             if (PlayniteApi == null || PlayniteApi.WebViews == null || string.IsNullOrWhiteSpace(query)) return results;
             try
@@ -2109,10 +2121,10 @@ namespace MetaDataIAPlugin
                 return results;
             }
 
+            var relevanceTerms = GetWebSearchTerms(query);
             try
             {
                 var searchQuery = BuildWebImageSearchQuery(query, kind, pickerSettings, candidateFilter);
-                var relevanceTerms = GetWebSearchTerms(query);
                 var address = "https://www.bing.com/images/search?form=HDRSC3&adlt=strict&setlang=en&q=" + Uri.EscapeDataString(searchQuery);
                 string source;
                 using (var client = new WebClient())
@@ -2142,13 +2154,22 @@ namespace MetaDataIAPlugin
                         object rawPageUrl;
                         payload.TryGetValue("t", out rawTitle);
                         payload.TryGetValue("purl", out rawPageUrl);
+                        var pageUrl = Convert.ToString(rawPageUrl);
+                        var title = Convert.ToString(rawTitle);
                         var searchableText = string.Join(" ", new[]
                         {
-                            Convert.ToString(rawTitle),
-                            Convert.ToString(rawPageUrl),
+                            title,
+                            pageUrl,
                             url
                         });
-                        if (!IsWebSearchResultRelevant(searchableText, relevanceTerms))
+                        var relevance = GetWebSearchRelevance(searchableText, relevanceTerms, kind);
+                        if (relevance <= 0)
+                        {
+                            continue;
+                        }
+
+                        if ((kind == MediaKind.Cover || kind == MediaKind.Icon || kind == MediaKind.Background) && relevanceTerms.Count == 1 &&
+                            !IsTrustedWebGameResult(pageUrl, title, kind))
                         {
                             continue;
                         }
@@ -2172,7 +2193,8 @@ namespace MetaDataIAPlugin
                             Height = 0,
                             Extension = System.IO.Path.GetExtension(uri.AbsolutePath),
                             SourceName = GetLocalizedOrFallback("MTDA_SourceWebSearch", "Web search"),
-                            Style = GetLocalizedOrFallback("MTDA_MediaStyleWeb", "Web result")
+                            Style = GetLocalizedOrFallback("MTDA_MediaStyleWeb", "Web result"),
+                            Score = relevance
                         });
                     }
                     catch
@@ -2191,7 +2213,15 @@ namespace MetaDataIAPlugin
                 logger.Warn(ex, "Bing image search failed.");
             }
 
-            return ValidateWebImageCandidates(results);
+            // For a one-word ambiguous title, retain generic matches only when no
+            // game-context result exists. This avoids filling the picker with
+            // literal illustrations (for example, thieves for the game Thief).
+            var contextual = results.Where(x => x.Score >= 140).ToList();
+            if (relevanceTerms.Count == 1 && contextual.Count > 0)
+            {
+                results = contextual;
+            }
+            return ValidateWebImageCandidates(results.OrderByDescending(x => x.Score));
         }
 
         private static string BuildWebImageSearchQuery(
@@ -2200,14 +2230,15 @@ namespace MetaDataIAPlugin
             MetaDataIASettings pickerSettings,
             MediaPickerCandidateFilter candidateFilter)
         {
-            var terms = new List<string> { "game" };
+            var title = (query ?? string.Empty).Trim().Replace("\"", string.Empty);
+            var terms = new List<string> { "\"" + title + "\"", "video game" };
             if (kind == MediaKind.Cover)
             {
                 terms.Add("cover art");
             }
             else if (kind == MediaKind.Icon)
             {
-                terms.Add("icon");
+                terms.Add("official game logo icon");
             }
             else
             {
@@ -2298,11 +2329,11 @@ namespace MetaDataIAPlugin
                 .ToList();
         }
 
-        private static bool IsWebSearchResultRelevant(string searchableText, List<string> terms)
+        private static int GetWebSearchRelevance(string searchableText, List<string> terms, MediaKind kind)
         {
             if (terms == null || terms.Count == 0)
             {
-                return true;
+                return 100;
             }
 
             var text = (searchableText ?? string.Empty).ToLowerInvariant();
@@ -2310,7 +2341,48 @@ namespace MetaDataIAPlugin
             // A one-word title such as Palworld must match exactly. For longer
             // titles, two matching significant words reject unrelated pages while
             // still allowing editions and subtitles to differ between sources.
-            return matches >= (terms.Count == 1 ? 1 : 2);
+            if (matches < (terms.Count == 1 ? 1 : 2))
+            {
+                return 0;
+            }
+
+            var hasGameContext = new[]
+            {
+                "video game", "videogame", "steam", "steamgriddb", "igdb", "playstation", "xbox", "nintendo", "gamefaqs", "fandom"
+            }.Any(signal => text.IndexOf(signal, StringComparison.OrdinalIgnoreCase) >= 0);
+            var genericIllustration = new[] { "clipart", "cartoon", "illustration", "vector", "robber", "burglar" }
+                .Any(signal => text.IndexOf(signal, StringComparison.OrdinalIgnoreCase) >= 0);
+            var score = 100 + (hasGameContext ? 55 : 0) + (matches * 10);
+            if (kind == MediaKind.Icon && genericIllustration && !hasGameContext)
+            {
+                score -= 45;
+            }
+            return score;
+        }
+
+        private static bool IsTrustedWebGameResult(string pageUrl, string title, MediaKind kind)
+        {
+            Uri uri;
+            var host = Uri.TryCreate(pageUrl, UriKind.Absolute, out uri) ? (uri.Host ?? string.Empty).ToLowerInvariant() : string.Empty;
+            var trustedHost = new[]
+            {
+                "steamgriddb.com", "steampowered.com", "steamcommunity.com", "ign.com", "igdb.com",
+                "gamespot.com", "giantbomb.com", "mobygames.com", "rawg.io", "thegamesdb.net",
+                "screenscraper.fr", "xbox.com", "playstation.com", "nintendo.com", "fandom.com", "gamebanana.com"
+            }.Any(domain => host == domain || host.EndsWith("." + domain, StringComparison.Ordinal));
+            if (trustedHost)
+            {
+                return true;
+            }
+
+            var text = (title ?? string.Empty).ToLowerInvariant();
+            return text.IndexOf("official game", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("video game", StringComparison.Ordinal) >= 0 ||
+                   (kind == MediaKind.Icon && text.IndexOf("game icon", StringComparison.Ordinal) >= 0) ||
+                   (kind == MediaKind.Background &&
+                    (text.IndexOf("game wallpaper", StringComparison.Ordinal) >= 0 ||
+                     text.IndexOf("video game wallpaper", StringComparison.Ordinal) >= 0 ||
+                     text.IndexOf("game background", StringComparison.Ordinal) >= 0));
         }
 
         private string BuildMediaResolutionFallbackMessage(MediaKind kind, string requestedValue, string fallbackValue, MetaDataIASettings pickerSettings)
@@ -3308,7 +3380,9 @@ namespace MetaDataIAPlugin
             var sourceBadge = new Border { BorderThickness = new Thickness(1), Padding = new Thickness(7, 2, 7, 2), CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 5) };
             if (listMode) sourceBadge.HorizontalAlignment = HorizontalAlignment.Right;
             ApplyDynamicResource(sourceBadge, Border.BackgroundProperty, "ControlBackgroundBrush");
-            ApplyDynamicResource(sourceBadge, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+            // Keep the source/platform badge legible on themes whose banner
+            // divider is nearly black. GlyphBrush follows the active theme.
+            ApplyDynamicResource(sourceBadge, Border.BorderBrushProperty, "GlyphBrush");
             var sourceText = new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(option.SourceName) ? Loc("MTDA_UnknownSource", "Unknown source") : string.Equals(option.SourceName, MetaDataIASettings.SourceOriginIntegration, StringComparison.OrdinalIgnoreCase) ? Loc("MTDA_SourceOriginIntegration", "Origin library integration") : option.SourceName,

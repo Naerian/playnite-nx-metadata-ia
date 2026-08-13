@@ -305,7 +305,7 @@ What you can do without paying:
     <sys:String x:Key="MTDA_ErrorSteamGridDbApiKeyRequired">Configure the SteamGridDB API key in the Media tab before downloading images.</sys:String>
     <sys:String x:Key="MTDA_ErrorSteamGridDbImagesFailed">SteamGridDB could not return images ({0}). Check the API key or try again later.</sys:String>
     <sys:String x:Key="MTDA_ErrorUnspecified">Unspecified error.</sys:String>
-    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store when usable, SteamGridDB as a community source if you configure its API key, plus RAWG.io, Wallhaven, MobyGames and IGDB when enabled. Wallhaven is limited to SFW 16:9 backgrounds. In automatic mode the plugin prioritizes official assets and then applies format, score and filter preferences.</sys:String>
+    <sys:String x:Key="MTDA_MediaHelp">The plugin combines media sources: official Steam, PlayStation Store, Xbox Store, Epic Store and IGN when usable, SteamGridDB as a community source if you configure its API key, plus RAWG.io, Wallhaven, MobyGames and IGDB when enabled. Wallhaven is limited to SFW 16:9 backgrounds. In automatic mode the plugin prioritizes official assets and then applies format, score and filter preferences.</sys:String>
     <sys:String x:Key="MTDA_SourcePriority">Automatic source priority</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityShort">Sources</sys:String>
     <sys:String x:Key="MTDA_SourcePriorityHelp">Controls which source wins when automatic media mode finds several valid candidates. Put sources first to make them preferred. Disabled sources or sources without an API key are ignored.</sys:String>
@@ -980,4 +980,13 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AuditFilterPending">Pending</sys:String>
     <sys:String x:Key="MTDA_AuditFilterReview">Requires review</sys:String>
     <sys:String x:Key="MTDA_AuditMarkModified">Mark as modified</sys:String>
+    <sys:String x:Key="MTDA_EnableIgnMetadata">Use IGN as a structured metadata source</sys:String>
+    <sys:String x:Key="MTDA_IgnMetadataHelp">IGN can enrich verified matching games with description, series, companies, age ratings, release date, genres and an IGN link. It is a best-effort public catalogue source and never requires an API key.</sys:String>
+    <sys:String x:Key="MTDA_IgnMediaHelp">IGN can enrich verified matching games with structured metadata, an official cover and a small gallery of promotional backgrounds. It does not provide icons and needs no API key.</sys:String>
+    <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for metadata, covers and backgrounds</sys:String>
+    <sys:String x:Key="MTDA_VndbHelp">VNDB is a specialist, public catalogue for visual novels. It is used only after an exact title match and supplies structured factual context.</sys:String>
+    <sys:String x:Key="MTDA_EnableVndb">Enable VNDB as an optional visual-novel metadata source</sys:String>
+    <sys:String x:Key="MTDA_WikidataHelp">Wikidata is a community-maintained fallback for factual data such as release date, developer, publisher, genre and series. Only exact video-game entries are used.</sys:String>
+    <sys:String x:Key="MTDA_EnableWikidata">Enable Wikidata as an optional factual metadata fallback</sys:String>
+    <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
 </ResourceDictionary>

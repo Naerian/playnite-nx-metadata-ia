@@ -18,15 +18,15 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.2`
-- Latest release tag: `v1.4.2`
-- Latest release commit: see tag `v1.4.2`
+- Latest released version: `1.4.3`
+- Latest release tag: `v1.4.3`
+- Latest release commit: see tag `v1.4.3`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_2.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_3.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.2
-- Public package SHA-256 verified for v1.4.2:
-`733EB88E09E8C3AFA458451389143EB95024C9A2FB2104B1DFD47C45CF8AD3C0`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.3
+- Public package SHA-256 verified for v1.4.3:
+`9D0CCEDEB365163B9B8AACAAD51032240299ABF91C3309F5267222176E060791`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -53,7 +53,7 @@ Main capabilities currently implemented:
   during development.
 - Media search and selection for covers, icons, backgrounds and optional logos
   for Extra Metadata Loader.
-- Media sources include Steam CDN public assets, SteamGridDB, RAWG.io, Wallhaven,
+- Media sources include Steam CDN public assets, IGN, SteamGridDB, RAWG.io, Wallhaven,
   ScreenScraper, Giant Bomb, MobyGames, IGDB, PS Store, Xbox and source integration
   context. Wallhaven is an optional SFW, 16:9 background-only fallback and does not
   require an API key. ScreenScraper needs both user and developer API credentials.
