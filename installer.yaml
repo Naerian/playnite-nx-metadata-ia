@@ -1,5 +1,12 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.4
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-16
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.4/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_4.pext
+    Changelog:
+      - "Fixed square and Playnite-defined cover searches so compatible square source sizes, such as 512x512 and 1024x1024, are accepted and processed to the selected output size."
+      - "Fixed IGN cover candidates so gallery screenshots are not added when searching for covers, including after applying manual picker filters."
   - Version: 1.4.3
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-13

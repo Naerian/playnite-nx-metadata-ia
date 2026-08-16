@@ -97,7 +97,14 @@ namespace MetaDataIAPlugin
                 foreach (var image in assets)
                 {
                     var isCover = IsLikelyCoverAsset(image.Url, image.Caption);
-                    AddCandidate(candidates, image.Url, isCover ? "official cover" : "official gallery artwork", isCover ? 72 : 52);
+                    // Covers must not quietly include gallery screenshots. IGN
+                    // labels neither every asset nor every URL consistently, so
+                    // retain the primary cover above and only add gallery items
+                    // whose URL/caption identifies them as cover-like artwork.
+                    if (isCover)
+                    {
+                        AddCandidate(candidates, image.Url, "official cover", 72);
+                    }
                 }
             }
             else

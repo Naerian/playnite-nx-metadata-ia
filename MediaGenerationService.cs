@@ -219,6 +219,19 @@ namespace MetaDataIAPlugin
                 return candidates ?? Enumerable.Empty<MediaCandidate>();
             }
 
+            // A cover preset describes the processed output, not the exact
+            // dimensions required from the source. SteamGridDB legitimately
+            // returns square covers as 512x512 or 1024x1024, both of which are
+            // valid inputs for a 600x600 Playnite cover.
+            if (kind == MediaKind.Cover)
+            {
+                var targetRatio = (double)target.Width / target.Height;
+                return (candidates ?? Enumerable.Empty<MediaCandidate>())
+                    .Where(x => x != null && x.Width > 0 && x.Height > 0)
+                    .Where(x => Math.Abs(((double)x.Width / x.Height) - targetRatio) < 0.08)
+                    .ToList();
+            }
+
             return (candidates ?? Enumerable.Empty<MediaCandidate>())
                 .Where(x => x != null && x.Width == target.Width && x.Height == target.Height)
                 .ToList();
