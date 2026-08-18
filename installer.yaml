@@ -1,5 +1,15 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.5
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-18
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.5/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_5.pext
+    Changelog:
+      - "Fixed generated metadata leaking Spanish values when the output language was English or another non-Spanish language."
+      - "Store-sourced genres, features and tags are now translated into the configured output language instead of being copied verbatim."
+      - "Added the Use existing Playnite values option for age ratings."
+      - "Diagnostics reports now show apply modes in English."
+      - "Added indexed template tokens {feature_1}, {feature_2}, {similar_game_1} and {similar_game_2}."
   - Version: 1.4.4
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-16
