@@ -431,6 +431,9 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Desarrolladores.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Longitud estimada cuando se pueda inferir.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Lista de características principales.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Primera característica de la lista generada.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Segunda característica de la lista generada.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Característica individual por posición. Sustituye N por 1, 2, 3… Puedes añadir tantas como quieras; si se generaron menos, el hueco queda vacío.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">Cómo se juega y el bucle principal del juego.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Géneros generados.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Notas editoriales adicionales.</sys:String>
@@ -443,6 +446,9 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenSettingHelp">Entorno o mundo.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Breve resumen del juego.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Juegos similares o referencias útiles.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Primer juego similar de la lista generada.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Segundo juego similar de la lista generada.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Juego similar individual por posición. Sustituye N por 1, 2, 3… Puedes añadir tantos como quieras; si se generaron menos, el hueco queda vacío.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">Sinopsis general.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Etiquetas generadas.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Tono: serio, humorístico, oscuro, relajado, etc.</sys:String>
@@ -534,7 +540,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutLinksTitle">Enlaces directos</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Documentación Wiki</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Reportar un problema</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Apoyar el desarrollo</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Soporte</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Si Metadata AI te resulta útil, puedes apoyar su desarrollo en Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Apoyar en Ko-fi</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupTitle">Configuración inicial</sys:String>
@@ -804,6 +810,9 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Causa</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Reintentar pendientes</sys:String>
     <sys:String x:Key="MTDA_CopyList">Copiar listado</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Copiar</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Copia {feature_1}. Cambia el número para añadir más.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Copia {similar_game_1}. Cambia el número para añadir más.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Exportar listado</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Exportar juegos no actualizados</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Elige una sección</sys:String>
@@ -965,4 +974,5 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_WikidataHelp">Wikidata es una fuente comunitaria de respaldo para datos factuales como fecha, desarrolladora, editora, género y serie. Solo se usan entradas de videojuegos con coincidencia exacta.</sys:String>
     <sys:String x:Key="MTDA_EnableWikidata">Activar Wikidata como respaldo opcional de metadatos factuales</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Probar IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Despliega para configurar esta sección.</sys:String>
 </ResourceDictionary>

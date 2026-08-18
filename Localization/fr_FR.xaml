@@ -421,6 +421,9 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Développeurs.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Longueur estimée lorsqu'elle peut être déduite.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Liste des fonctionnalités principales.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Premier élément de la liste de fonctionnalités générée.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Deuxième élément de la liste de fonctionnalités générée.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Caractéristique individuelle par position. Remplacez N par 1, 2, 3… Ajoutez-en autant que vous voulez ; les jetons en trop restent vides s'il y a moins de caractéristiques.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">Comment il joue et la boucle de gameplay principale.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Genres générés.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Notes éditoriales supplémentaires.</sys:String>
@@ -433,6 +436,9 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_TokenSettingHelp">Cadre ou monde.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Bref résumé du jeu.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Jeux similaires ou références utiles.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Premier jeu similaire de la liste générée.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Deuxième jeu similaire de la liste générée.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Jeu similaire individuel par position. Remplacez N par 1, 2, 3… Ajoutez-en autant que vous voulez ; les jetons en trop restent vides s'il y a moins de noms.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">Résumé général.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Balises générées.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Ton : sérieux, humoristique, sombre, détendu, etc.</sys:String>
@@ -512,7 +518,7 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_AboutLinksTitle">Liens directs</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Documentation Wiki</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Signaler un problème</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Soutenir le développement</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Support</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Si Metadata AI vous est utile, vous pouvez soutenir la poursuite de son développement sur Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Soutenir sur Ko-fi</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Règles de génération et d’application des champs</sys:String>
@@ -774,6 +780,9 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Cause</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Réessayer les éléments en attente</sys:String>
     <sys:String x:Key="MTDA_CopyList">Copier la liste</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Copier</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Copie {feature_1}. Changez le numéro pour en ajouter d'autres.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Copie {similar_game_1}. Changez le numéro pour en ajouter d'autres.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Exporter la liste</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Exporter les jeux non mis à jour</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Choisissez une section</sys:String>
@@ -848,4 +857,5 @@ Arrière-plans : {4}</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Développez pour configurer cette section.</sys:String>
 </ResourceDictionary>

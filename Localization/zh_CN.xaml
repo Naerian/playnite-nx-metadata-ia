@@ -421,6 +421,9 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_TokenDevelopersHelp">开发者。</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">可推断时的预计时长。</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">主要功能列表。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">生成功能列表中的第一项。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">生成功能列表中的第二项。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">按序号插入单项特色。将 N 换成 1、2、3… 可按需添加；若生成的特色较少，多余标记会留空。</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">玩法及主要游戏循环。</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">生成的类型。</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">额外编辑备注。</sys:String>
@@ -433,6 +436,9 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_TokenSettingHelp">设定或世界背景。</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">简短的游戏简介。</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">类似游戏或有用的参考。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">生成类似游戏列表中的第一项。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">生成类似游戏列表中的第二项。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">按序号插入单个类似游戏。将 N 换成 1、2、3… 可按需添加；若生成的名称较少，多余标记会留空。</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">总体简介。</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">生成的标签。</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">语气：严肃、幽默、黑暗、轻松等。</sys:String>
@@ -507,7 +513,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_AboutLinksTitle">直接链接</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Wiki 文档</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">报告问题</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">支持开发</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">支持</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">如果 Metadata AI 对你有帮助，可以通过 Ko-fi 支持后续开发。</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">在 Ko-fi 上支持</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">字段生成与应用规则</sys:String>
@@ -769,6 +775,9 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_BatchFailureReason">原因</sys:String>
     <sys:String x:Key="MTDA_RetryPending">重试待处理项</sys:String>
     <sys:String x:Key="MTDA_CopyList">复制列表</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">复制</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">复制 {feature_1}。更改编号即可添加更多。</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">复制 {similar_game_1}。更改编号即可添加更多。</sys:String>
     <sys:String x:Key="MTDA_ExportList">导出列表</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">导出未更新的游戏</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">选择一个部分</sys:String>
@@ -843,4 +852,5 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">展开以配置此部分。</sys:String>
 </ResourceDictionary>

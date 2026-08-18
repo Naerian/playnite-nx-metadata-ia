@@ -455,6 +455,9 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Developers.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Estimated length when it can be inferred.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Main feature list.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">First item from the generated feature list.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Second item from the generated feature list.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Individual feature by index. Replace N with 1, 2, 3… Add as many as you want; unused tokens stay empty if fewer features were generated.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">How it plays and the main gameplay loop.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Generated genres.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Additional editorial notes.</sys:String>
@@ -467,6 +470,9 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenSettingHelp">Setting or world.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Brief game summary.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Similar games or useful references.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">First similar game from the generated list.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Second similar game from the generated list.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Individual similar game by index. Replace N with 1, 2, 3… Add as many as you want; unused tokens stay empty if fewer names were generated.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">General synopsis.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Generated tags.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Tone: serious, humorous, dark, relaxed, etc.</sys:String>
@@ -558,7 +564,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutLinksTitle">Direct links</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Wiki documentation</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Report an issue</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Support development</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Support</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">If Metadata AI is useful to you, you can support its continued development on Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Support on Ko-fi</sys:String>
     <sys:String x:Key="MTDA_MaintenanceSetupTitle">First-time setup</sys:String>
@@ -828,6 +834,9 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Reason</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Retry pending</sys:String>
     <sys:String x:Key="MTDA_CopyList">Copy list</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Copy</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Copies {feature_1}. Change the number to add more.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Copies {similar_game_1}. Change the number to add more.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Export list</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Export games not updated</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Choose a section</sys:String>
@@ -989,4 +998,5 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_WikidataHelp">Wikidata is a community-maintained fallback for factual data such as release date, developer, publisher, genre and series. Only exact video-game entries are used.</sys:String>
     <sys:String x:Key="MTDA_EnableWikidata">Enable Wikidata as an optional factual metadata fallback</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Expand to configure this section.</sys:String>
 </ResourceDictionary>

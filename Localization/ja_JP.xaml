@@ -421,6 +421,9 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_TokenDevelopersHelp">開発者。</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">推測できる場合の推定長さ。</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">主な機能リスト。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">生成された機能リストの1番目。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">生成された機能リストの2番目。</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">位置指定の個別機能。N を 1、2、3… に置き換えます。必要なだけ追加でき、生成数が少ない場合は空のままです。</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">プレイ方法とメインのゲームプレイ ループ。</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">生成されたジャンル。</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">追加の編集メモ。</sys:String>
@@ -433,6 +436,9 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_TokenSettingHelp">設定とか世界観とか。</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">ゲームの簡単な概要。</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">似たようなゲームや参考になるもの。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">生成された類似ゲームの1番目。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">生成された類似ゲームの2番目。</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">位置指定の類似ゲーム。N を 1、2、3… に置き換えます。必要なだけ追加でき、生成数が少ない場合は空のままです。</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">大まかなあらすじ。</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">生成されたタグ。</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">口調：シリアス、ユーモラス、ダーク、リラックスなど。</sys:String>
@@ -507,7 +513,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_AboutLinksTitle">直接リンク</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Wiki ドキュメント</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">問題を報告</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">開発を支援</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">サポート</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Metadata AI が役立った場合は、Ko-fi で継続的な開発を支援できます。</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Ko-fi で支援</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">フィールド生成と適用ルール</sys:String>
@@ -769,6 +775,9 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_BatchFailureReason">理由</sys:String>
     <sys:String x:Key="MTDA_RetryPending">未処理を再試行</sys:String>
     <sys:String x:Key="MTDA_CopyList">一覧をコピー</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">コピー</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">{feature_1} をコピーします。番号を変えて追加できます。</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">{similar_game_1} をコピーします。番号を変えて追加できます。</sys:String>
     <sys:String x:Key="MTDA_ExportList">一覧をエクスポート</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">未更新ゲームをエクスポート</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">セクションを選択</sys:String>
@@ -843,4 +852,5 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">展開してこのセクションを設定します。</sys:String>
 </ResourceDictionary>

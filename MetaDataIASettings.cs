@@ -23,6 +23,7 @@ namespace MetaDataIAPlugin
             }
         }
 
+        [DontSerialize]
         public string DisplayName { get { return LocalizeTemplateName(Name); } }
         public string Template { get { return template; } set { SetValue(ref template, value); } }
 
@@ -692,7 +693,9 @@ namespace MetaDataIAPlugin
 
         public MetaDataIASettings()
         {
-            ResetTemplates();
+            // Do not seed Templates here. Playnite deserializes by constructing
+            // the object first and then merging JSON into existing collections,
+            // which would keep factory copies and drop user-edited templates.
         }
 
         public void EnsureDefaults()
@@ -1138,7 +1141,8 @@ namespace MetaDataIAPlugin
 
                 var original = canonical.FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
                 var translated = localized.FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
-                if (original != null && translated != null && string.Equals(template.Template, original.Template, StringComparison.Ordinal))
+                if (original != null && translated != null &&
+                    string.Equals(NormalizeTemplateText(template.Template), NormalizeTemplateText(original.Template), StringComparison.Ordinal))
                 {
                     template.Template = translated.Template;
                     changed = true;
@@ -1161,6 +1165,11 @@ namespace MetaDataIAPlugin
 
         private TemplateProfile GetActiveTemplateWithoutEnsure()
         {
+            if (Templates == null || Templates.Count == 0)
+            {
+                return null;
+            }
+
             var match = Templates.FirstOrDefault(x => string.Equals(x.Name, ActiveTemplateName, StringComparison.OrdinalIgnoreCase));
             return match ?? Templates.FirstOrDefault();
         }
@@ -1210,38 +1219,39 @@ namespace MetaDataIAPlugin
                 return template;
             }
 
-            if (string.Equals(template, DefaultShortTemplate, StringComparison.Ordinal))
+            var normalized = NormalizeTemplateText(template);
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultShortTemplate), StringComparison.Ordinal))
             {
                 return "<p>{short}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}";
             }
 
-            if (string.Equals(template, DefaultMediumTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultMediumTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("brief") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("playModes") + "</h3>\n<p>{playModes}</p>\n\n<h3>" + Header("estimatedLength") + "</h3>\n<p>{estimatedLength}</p>\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
-            if (string.Equals(template, DefaultLongTemplate, StringComparison.Ordinal) ||
-                string.Equals(template, LegacyDefaultLongTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultLongTemplate), StringComparison.Ordinal) ||
+                string.Equals(normalized, NormalizeTemplateText(LegacyDefaultLongTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("brief") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("premise") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("gameplay") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("toneSetting") + "</h3>\n<p>{tone}</p>\n<p>{setting}</p>\n\n<h3>" + Header("perspectiveModes") + "</h3>\n<p>{perspective}</p>\n<p>{playModes}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("estimatedLength") + "</h3>\n<p>{estimatedLength}</p>\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>\n\n<h3>" + Header("notes") + "</h3>\n<p>{notes}</p>";
             }
 
-            if (string.Equals(template, DefaultRpgTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultRpgTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("synopsis") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("roleProgression") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("worldTone") + "</h3>\n<p>{setting}</p>\n<p>{tone}</p>\n\n<h3>" + Header("rpgFeatures") + "</h3>\n{features}\n\n<h3>" + Header("recommendedFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
-            if (string.Equals(template, DefaultAdventureTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultAdventureTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("premise") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("adventure") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("explorationPacing") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}\n\n<h3>" + Header("idealFor") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
-            if (string.Equals(template, DefaultIndieTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultIndieTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("summary") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("concept") + "</h3>\n<p>{premise}</p>\n\n<h3>" + Header("style") + "</h3>\n<p>{tone}</p>\n\n<h3>" + Header("keyElements") + "</h3>\n{features}\n\n<h3>" + Header("forPlayers") + "</h3>\n<p>{recommendedFor}</p>";
             }
 
-            if (string.Equals(template, DefaultEmulationTemplate, StringComparison.Ordinal))
+            if (string.Equals(normalized, NormalizeTemplateText(DefaultEmulationTemplate), StringComparison.Ordinal))
             {
                 return "<h3>" + Header("summary") + "</h3>\n<p>{short}</p>\n\n<h3>" + Header("context") + "</h3>\n<p>{synopsis}</p>\n\n<h3>" + Header("gameplay") + "</h3>\n<p>{gameplay}</p>\n\n<h3>" + Header("usefulDetails") + "</h3>\n<p>" + Header("platformPerspective") + ": {perspective}</p>\n<p>" + Header("modes") + ": {playModes}</p>\n\n<h3>" + Header("features") + "</h3>\n{features}";
             }
@@ -1394,7 +1404,7 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(existing.Template) && !string.IsNullOrWhiteSpace(template.Template))
+                if (ShouldPreferTemplate(name, existing.Template, template.Template))
                 {
                     existing.Template = template.Template;
                 }
@@ -1410,6 +1420,64 @@ namespace MetaDataIAPlugin
             {
                 Templates = cleaned;
             }
+        }
+
+        private bool ShouldPreferTemplate(string name, string current, string incoming)
+        {
+            if (string.IsNullOrWhiteSpace(incoming))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(current))
+            {
+                return true;
+            }
+
+            if (string.Equals(NormalizeTemplateText(current), NormalizeTemplateText(incoming), StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var currentIsFactory = IsUntouchedFactoryTemplate(name, current);
+            var incomingIsFactory = IsUntouchedFactoryTemplate(name, incoming);
+            if (currentIsFactory && !incomingIsFactory)
+            {
+                return true;
+            }
+
+            if (!currentIsFactory && incomingIsFactory)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool IsUntouchedFactoryTemplate(string name, string template)
+        {
+            var normalized = NormalizeTemplateText(template);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return true;
+            }
+
+            foreach (var candidate in CreateDefaultTemplates().Concat(CreateLocalizedDefaultTemplates()))
+            {
+                if (candidate != null &&
+                    string.Equals(candidate.Name, name, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(NormalizeTemplateText(candidate.Template), normalized, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static string NormalizeTemplateText(string template)
+        {
+            return (template ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n").Trim();
         }
 
         public List<string> GetBlacklistTerms()
@@ -2213,14 +2281,13 @@ namespace MetaDataIAPlugin
                     return string.Empty;
                 }
 
-                var defaultTemplate = Settings.CreateLocalizedDefaultTemplates()
-                    .FirstOrDefault(x => string.Equals(x.Name, SelectedTemplate.Name, StringComparison.OrdinalIgnoreCase));
-                if (defaultTemplate == null)
+                if (!MetaDataIASettings.CreateDefaultTemplates().Concat(Settings.CreateLocalizedDefaultTemplates())
+                    .Any(x => x != null && string.Equals(x.Name, SelectedTemplate.Name, StringComparison.OrdinalIgnoreCase)))
                 {
                     return PluginLocalization.GetString("MTDA_TemplateCustomStatus", "Custom");
                 }
 
-                return string.Equals(defaultTemplate.Template, SelectedTemplate.Template, StringComparison.Ordinal)
+                return Settings.IsUntouchedFactoryTemplate(SelectedTemplate.Name, SelectedTemplate.Template)
                     ? PluginLocalization.GetString("MTDA_TemplateDefaultStatus", "Default")
                     : PluginLocalization.GetString("MTDA_TemplateModifiedStatus", "Modified");
             }

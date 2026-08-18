@@ -4141,6 +4141,13 @@ namespace MetaDataIAPlugin
         private static MetaDataIASettings CreateNativeReviewSettings(MetaDataIASettings activeSettings)
         {
             var reviewSettings = Serialization.GetClone(activeSettings);
+            if (reviewSettings != null &&
+                reviewSettings.GenerateDescription &&
+                reviewSettings.DescriptionApplyMode != MetaDataIASettings.ApplySkip)
+            {
+                reviewSettings.DescriptionApplyMode = MetaDataIASettings.ApplyOverwrite;
+            }
+
             return reviewSettings;
         }
 

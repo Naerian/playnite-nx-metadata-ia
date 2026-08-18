@@ -421,6 +421,9 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Sviluppatori.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Lunghezza stimata quando può essere dedotta.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Elenco delle caratteristiche principali.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Prima caratteristica dell'elenco generato.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Seconda caratteristica dell'elenco generato.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Caratteristica singola per posizione. Sostituisci N con 1, 2, 3… Puoi aggiungerne quante vuoi; i token extra restano vuoti se ne sono state generate meno.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">Come si gioca e il ciclo di gioco principale.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Generi generati.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Ulteriori note editoriali.</sys:String>
@@ -433,6 +436,9 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenSettingHelp">Ambientazione o mondo.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Breve riassunto del gioco.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Giochi simili o riferimenti utili.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Primo gioco simile dell'elenco generato.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Secondo gioco simile dell'elenco generato.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Gioco simile singolo per posizione. Sostituisci N con 1, 2, 3… Puoi aggiungerne quanti vuoi; i token extra restano vuoti se ne sono stati generati meno.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">Sinossi generale.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Tag generati.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Tono: serio, divertente, cupo, rilassato, ecc.</sys:String>
@@ -510,7 +516,7 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutLinksTitle">Collegamenti diretti</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Documentazione Wiki</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Segnala un problema</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Sostieni lo sviluppo</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Supporto</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Se Metadata AI ti è utile, puoi sostenerne lo sviluppo su Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Sostieni su Ko-fi</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Regole per la generazione e l'applicazione dei campi</sys:String>
@@ -772,6 +778,9 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Causa</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Riprova in sospeso</sys:String>
     <sys:String x:Key="MTDA_CopyList">Copia elenco</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Copia</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Copia {feature_1}. Cambia il numero per aggiungerne altri.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Copia {similar_game_1}. Cambia il numero per aggiungerne altri.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Esporta elenco</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Esporta giochi non aggiornati</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Scegli una sezione</sys:String>
@@ -846,4 +855,5 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Espandi per configurare questa sezione.</sys:String>
 </ResourceDictionary>

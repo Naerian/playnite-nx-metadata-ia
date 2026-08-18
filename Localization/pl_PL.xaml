@@ -421,6 +421,9 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Deweloperzy.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Szacowana długość, jeśli można ją wywnioskować.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Główna lista funkcji.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Pierwszy element wygenerowanej listy funkcji.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Drugi element wygenerowanej listy funkcji.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Pojedyncza cecha według pozycji. Zamień N na 1, 2, 3… Możesz dodać dowolną liczbę; zbędne tokeny zostaną puste, jeśli wygenerowano mniej cech.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">Jak to się gra i główna pętla rozgrywki.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Wygenerowane gatunki.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Dodatkowe uwagi redakcyjne.</sys:String>
@@ -433,6 +436,9 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_TokenSettingHelp">Ustawienie lub świat.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Krótkie podsumowanie meczu.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Podobne gry lub przydatne odniesienia.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Pierwsza podobna gra z wygenerowanej listy.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Druga podobna gra z wygenerowanej listy.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Pojedyncza podobna gra według pozycji. Zamień N na 1, 2, 3… Możesz dodać dowolną liczbę; zbędne tokeny zostaną puste, jeśli wygenerowano mniej nazw.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">Streszczenie ogólne.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Wygenerowane tagi.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Ton: poważny, humorystyczny, mroczny, zrelaksowany itp.</sys:String>
@@ -507,7 +513,7 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_AboutLinksTitle">Bezpośrednie linki</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Dokumentacja Wiki</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Zgłoś problem</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Wesprzyj rozwój</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Wsparcie</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Jeśli Metadata AI jest dla Ciebie przydatne, możesz wesprzeć dalszy rozwój na Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Wesprzyj na Ko-fi</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Zasady generowania i stosowania pól</sys:String>
@@ -769,6 +775,9 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Powód</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Ponów oczekujące</sys:String>
     <sys:String x:Key="MTDA_CopyList">Kopiuj listę</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Kopiuj</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Kopiuje {feature_1}. Zmień numer, aby dodać kolejne.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Kopiuje {similar_game_1}. Zmień numer, aby dodać kolejne.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Eksportuj listę</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Eksportuj niezaktualizowane gry</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Wybierz sekcję</sys:String>
@@ -843,4 +852,5 @@ Tła: {4}</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Rozwiń, aby skonfigurować tę sekcję.</sys:String>
 </ResourceDictionary>

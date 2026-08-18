@@ -421,6 +421,9 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_TokenDevelopersHelp">Разработчики.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Предполагаемая длина, когда ее можно определить.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">Основной список функций.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Первый элемент из сгенерированного списка функций.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Второй элемент из сгенерированного списка функций.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Отдельная особенность по номеру. Замените N на 1, 2, 3… Можно добавить сколько угодно; лишние токены останутся пустыми, если особенностей меньше.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">Как это происходит и основной цикл игрового процесса.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">Генерируемые жанры.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">Дополнительные редакционные примечания.</sys:String>
@@ -433,6 +436,9 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_TokenSettingHelp">Сеттинг или мир.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">Краткое содержание игры.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Похожие игры или полезные ссылки.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Первая похожая игра из сгенерированного списка.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Вторая похожая игра из сгенерированного списка.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Отдельная похожая игра по номеру. Замените N на 1, 2, 3… Можно добавить сколько угодно; лишние токены останутся пустыми, если названий меньше.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">Общий синопсис.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">Сгенерированные теги.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">Тон: серьезный, юмористический, мрачный, расслабленный и т. д.</sys:String>
@@ -507,7 +513,7 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_AboutLinksTitle">Прямые ссылки</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Документация Wiki</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">Сообщить о проблеме</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">Поддержать разработку</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">Поддержка</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Если Metadata AI полезен вам, вы можете поддержать дальнейшую разработку на Ko-fi.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Поддержать на Ko-fi</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Правила генерации и применения полей</sys:String>
@@ -769,6 +775,9 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_BatchFailureReason">Причина</sys:String>
     <sys:String x:Key="MTDA_RetryPending">Повторить ожидающие</sys:String>
     <sys:String x:Key="MTDA_CopyList">Копировать список</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">Копировать</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">Копирует {feature_1}. Измените номер, чтобы добавить ещё.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">Копирует {similar_game_1}. Измените номер, чтобы добавить ещё.</sys:String>
     <sys:String x:Key="MTDA_ExportList">Экспортировать список</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">Экспортировать необновлённые игры</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">Выберите раздел</sys:String>
@@ -843,4 +852,5 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">Разверните, чтобы настроить этот раздел.</sys:String>
 </ResourceDictionary>

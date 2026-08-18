@@ -494,6 +494,9 @@ namespace MetaDataIAPlugin
                 case "notes": return !string.IsNullOrWhiteSpace(result.Notes);
                 case "recommendedfor": return !string.IsNullOrWhiteSpace(result.RecommendedFor);
                 case "features": return result.Features != null && result.Features.Count > 0;
+                case "similargameslist":
+                    return (result.SimilarGamesList != null && result.SimilarGamesList.Count > 0) ||
+                           !string.IsNullOrWhiteSpace(result.SimilarGames);
                 case "genres": return result.Genres != null && result.Genres.Count > 0;
                 case "tags": return result.Tags != null && result.Tags.Count > 0;
                 case "developers": return result.Developers != null && result.Developers.Count > 0;
@@ -636,7 +639,8 @@ namespace MetaDataIAPlugin
             context["length"] = NormalizeLengthForPrompt(settings.Length);
             context["tokenLengths"] = BuildTokenLengths();
             context["strictCompanyAgeRegion"] = settings.StrictCompanyAgeRegion;
-            context["fieldsToGenerate"] = BuildFieldsToGenerate();
+            var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+            context["fieldsToGenerate"] = BuildFieldsToGenerate(requestedTokens);
             context["maxDevelopers"] = settings.MaxDevelopers;
             context["maxPublishers"] = settings.MaxPublishers;
             context["companyPolicy"] = "developers must contain only the main credited developer studio for the base game. publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty.";
@@ -647,7 +651,7 @@ namespace MetaDataIAPlugin
             context["tagPrefix"] = settings.TagPrefix;
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
-            context["requestedDescriptionTokens"] = ExtractTemplateTokens(settings.ResolveTemplate(game));
+            context["requestedDescriptionTokens"] = requestedTokens;
             var trustedContextEnabled = settings.UseOfficialStoreContext ||
                                         settings.UseOriginIntegrationAsAiContext ||
                                         settings.UseOriginIntegrationForFactualMetadata;
@@ -754,12 +758,13 @@ namespace MetaDataIAPlugin
             return "Generate normalized metadata for this game. " +
                    "The requested output language is " + TargetLanguageName(settings.Language) + " (" + settings.Language + "). Every generated value must be in that language unless it is a proper noun, company name, official rating name, URL or platform/store brand. " +
                    "Respect fieldsToGenerate: if a field is false, return an empty string or empty array for that field. " +
-                   "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms or the provided game identity. " +
+                   "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms or the provided game identity. similarGamesList is the exception: when those tokens are requested, comparable well-known game names are allowed even if they are not listed in officialStoreContext. " +
                    "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative: do not guess developers, publishers, age ratings, regions, links, release-specific features, platform capabilities or store-specific claims. Leave uncertain fields empty. " +
                    "Respect tone, length, tokenLengths, blacklist and prefixes. " +
                    "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
-                   "Leave similarGames and similarGamesList empty unless requestedDescriptionTokens contains similarGames or a similar_game_N pattern. If requestedDescriptionTokens contains similar_game_1 or any similar_game_N token, populate similarGamesList as an array of individual game names (do not use a single joined string). " +
+                   "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
+                   "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
                    "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
                    "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
                    "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
@@ -780,7 +785,7 @@ namespace MetaDataIAPlugin
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
-                   "features, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
+                   "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
                    "If fieldsToGenerate.series is true, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
                    "Respond with this exact JSON object shape: " +
                    "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"similarGamesList\":[],\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[]} " +
@@ -848,13 +853,13 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private Dictionary<string, bool> BuildFieldsToGenerate()
+        private Dictionary<string, bool> BuildFieldsToGenerate(IList<string> requestedTokens)
         {
             var fields = new Dictionary<string, bool>();
             fields["description"] = settings.GenerateDescription;
             fields["genres"] = settings.GenerateGenres;
             fields["tags"] = settings.GenerateTags;
-            fields["features"] = settings.GenerateFeatures;
+            fields["features"] = settings.GenerateFeatures || ContainsToken(requestedTokens, "features");
             fields["developers"] = settings.GenerateDevelopers;
             fields["publishers"] = settings.GeneratePublishers;
             fields["ageRatings"] = settings.GenerateAgeRatings;
@@ -864,6 +869,11 @@ namespace MetaDataIAPlugin
             fields["releaseDate"] = settings.GenerateReleaseDate;
             fields["series"] = settings.GenerateSeries;
             return fields;
+        }
+
+        private static bool ContainsToken(IList<string> tokens, string name)
+        {
+            return tokens != null && tokens.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
         }
 
         private List<string> BuildKnownSeriesCandidates(Game game)
@@ -950,20 +960,41 @@ namespace MetaDataIAPlugin
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            if (tokens.Any(x => Regex.IsMatch(x, @"^feature_\d+$", RegexOptions.IgnoreCase)) &&
-                !tokens.Contains("features", StringComparer.OrdinalIgnoreCase))
+            var hasFeatureIndex = tokens.Any(IsIndexedFeatureToken);
+            var hasSimilarIndex = tokens.Any(IsIndexedSimilarGameToken);
+            tokens = tokens
+                .Where(x => !IsIndexedFeatureToken(x) && !IsIndexedSimilarGameToken(x))
+                .ToList();
+
+            if (hasFeatureIndex && !tokens.Contains("features", StringComparer.OrdinalIgnoreCase))
             {
                 tokens.Add("features");
             }
 
-            if (tokens.Any(x => Regex.IsMatch(x, @"^similar_game_\d+$", RegexOptions.IgnoreCase)) &&
-                !tokens.Contains("similarGames", StringComparer.OrdinalIgnoreCase))
+            if (hasSimilarIndex)
             {
-                tokens.Add("similarGames");
-                tokens.Add("similar_game_1");
+                if (!tokens.Contains("similarGames", StringComparer.OrdinalIgnoreCase))
+                {
+                    tokens.Add("similarGames");
+                }
+
+                if (!tokens.Contains("similarGamesList", StringComparer.OrdinalIgnoreCase))
+                {
+                    tokens.Add("similarGamesList");
+                }
             }
 
             return tokens;
+        }
+
+        private static bool IsIndexedFeatureToken(string token)
+        {
+            return Regex.IsMatch(token ?? string.Empty, @"^feature_(\d+|N)$", RegexOptions.IgnoreCase);
+        }
+
+        private static bool IsIndexedSimilarGameToken(string token)
+        {
+            return Regex.IsMatch(token ?? string.Empty, @"^similar_game_(\d+|N)$", RegexOptions.IgnoreCase);
         }
 
         private static string TargetLanguageName(string code)
@@ -1213,6 +1244,18 @@ namespace MetaDataIAPlugin
                 throw new InvalidOperationException(Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted."));
             }
 
+            var features = List(json, "features");
+            if (features.Count == 0)
+            {
+                features = IndexedList(json, "feature_");
+            }
+
+            var similarGamesList = List(json, "similarGamesList");
+            if (similarGamesList.Count == 0)
+            {
+                similarGamesList = IndexedList(json, "similar_game_");
+            }
+
             return new AiMetadataResult
             {
                 Short = Text(json, "short"),
@@ -1225,8 +1268,9 @@ namespace MetaDataIAPlugin
                 PlayModes = Text(json, "playModes"),
                 EstimatedLength = Text(json, "estimatedLength"),
                 SimilarGames = Text(json, "similarGames"),
+                SimilarGamesList = similarGamesList,
                 Notes = Text(json, "notes"),
-                Features = List(json, "features"),
+                Features = features,
                 RecommendedFor = Text(json, "recommendedFor"),
                 Genres = List(json, "genres"),
                 Tags = List(json, "tags"),
@@ -1274,8 +1318,9 @@ namespace MetaDataIAPlugin
                 PlayModes = LooseText(content, "playModes"),
                 EstimatedLength = LooseText(content, "estimatedLength"),
                 SimilarGames = LooseText(content, "similarGames"),
+                SimilarGamesList = MergeNonEmpty(LooseList(content, "similarGamesList"), LooseIndexedList(content, "similar_game_")),
                 Notes = LooseText(content, "notes"),
-                Features = LooseList(content, "features"),
+                Features = MergeNonEmpty(LooseList(content, "features"), LooseIndexedList(content, "feature_")),
                 RecommendedFor = LooseText(content, "recommendedFor"),
                 Genres = LooseList(content, "genres"),
                 Tags = LooseList(content, "tags"),
@@ -1293,7 +1338,7 @@ namespace MetaDataIAPlugin
         private static readonly string[] KnownJsonFields = new[]
         {
             "short", "synopsis", "premise", "gameplay", "tone", "setting", "perspective", "playModes",
-            "estimatedLength", "similarGames", "notes", "features", "recommendedFor", "genres", "tags",
+            "estimatedLength", "similarGames", "similarGamesList", "notes", "features", "recommendedFor", "genres", "tags",
             "developers", "publishers", "ageRatings", "ageRating", "regions", "region", "categories",
             "releaseDate", "series", "franchise", "links"
         };
@@ -1553,6 +1598,76 @@ namespace MetaDataIAPlugin
         private static List<string> List(JObject json, params string[] names)
         {
             return TokenToList(Token(json, names));
+        }
+
+        private static List<string> IndexedList(JObject json, string prefix)
+        {
+            var items = new List<KeyValuePair<int, string>>();
+            if (json == null || string.IsNullOrWhiteSpace(prefix))
+            {
+                return new List<string>();
+            }
+
+            var pattern = "^" + Regex.Escape(prefix) + @"(\d+)$";
+            foreach (var property in json.Properties())
+            {
+                var match = Regex.Match(property.Name ?? string.Empty, pattern, RegexOptions.IgnoreCase);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                int index;
+                if (!int.TryParse(match.Groups[1].Value, out index))
+                {
+                    continue;
+                }
+
+                var text = TokenToText(property.Value);
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    items.Add(new KeyValuePair<int, string>(index, text));
+                }
+            }
+
+            return items.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private static List<string> LooseIndexedList(string content, string prefix)
+        {
+            var items = new List<KeyValuePair<int, string>>();
+            if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(prefix))
+            {
+                return new List<string>();
+            }
+
+            var pattern = "\"" + Regex.Escape(prefix) + "(\\d+)\"\\s*:\\s*\"([^\"]*)\"";
+            foreach (Match match in Regex.Matches(content, pattern, RegexOptions.IgnoreCase))
+            {
+                int index;
+                if (!int.TryParse(match.Groups[1].Value, out index))
+                {
+                    continue;
+                }
+
+                var text = UnescapeLooseText(match.Groups[2].Value);
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    items.Add(new KeyValuePair<int, string>(index, text));
+                }
+            }
+
+            return items.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private static List<string> MergeNonEmpty(List<string> primary, List<string> fallback)
+        {
+            if (primary != null && primary.Count > 0)
+            {
+                return primary;
+            }
+
+            return fallback ?? new List<string>();
         }
 
         private static List<AiMetadataLink> Links(JObject json, params string[] names)

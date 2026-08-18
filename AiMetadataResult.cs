@@ -91,6 +91,10 @@ namespace MetaDataIAPlugin
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            if (SimilarGamesList.Count == 0)
+            {
+                SimilarGamesList = ParseSimilarGamesText(SimilarGames);
+            }
             Notes = Clean(Notes);
             RecommendedFor = Clean(RecommendedFor);
             Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
@@ -123,7 +127,7 @@ namespace MetaDataIAPlugin
             ReleaseDate = Clean(ReleaseDate);
             Series = CleanList(Series, settings.MaxSeries, blacklist, string.Empty);
             AddReliableSourceLinks(game, settings);
-            EnsureFeatureFallback(settings);
+            EnsureFeatureFallback(settings, game);
             Description = BuildDescription(settings, game);
         }
 
@@ -152,14 +156,32 @@ namespace MetaDataIAPlugin
             Links.Add(new AiMetadataLink(name, url));
         }
 
-        private void EnsureFeatureFallback(MetaDataIASettings settings)
+        private void EnsureFeatureFallback(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
-            if (!settings.GenerateFeatures || Features.Count > 0)
+            if (Features.Count > 0)
+            {
+                return;
+            }
+
+            var template = settings.ResolveTemplate(game) ?? string.Empty;
+            var templateNeedsFeatures = Regex.IsMatch(template, @"\{features\}|\{feature_\d+\}", RegexOptions.IgnoreCase);
+            if (!settings.GenerateFeatures && !templateNeedsFeatures)
             {
                 return;
             }
 
             var fallback = new List<string>();
+            if (game != null && game.Features != null)
+            {
+                foreach (var feature in game.Features)
+                {
+                    if (feature != null && !string.IsNullOrWhiteSpace(feature.Name))
+                    {
+                        fallback.Add(feature.Name);
+                    }
+                }
+            }
+
             AddFallback(fallback, Gameplay);
             AddFallback(fallback, PlayModes);
             AddFallback(fallback, Perspective);
@@ -186,7 +208,8 @@ namespace MetaDataIAPlugin
         private string BuildDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
             var template = settings.ResolveTemplate(game) ?? string.Empty;
-            var description = template;
+            var description = Regex.Replace(template, @"\{feature_N\}", "{feature_1}", RegexOptions.IgnoreCase);
+            description = Regex.Replace(description, @"\{similar_game_N\}", "{similar_game_1}", RegexOptions.IgnoreCase);
 
             description = ReplaceHtmlTextToken(description, "short", Short);
             description = ReplaceHtmlTextToken(description, "synopsis", Synopsis);
@@ -214,6 +237,7 @@ namespace MetaDataIAPlugin
             {
                 description = ReplaceHtmlTextToken(description, "feature_" + (i + 1), Features[i]);
             }
+            description = Regex.Replace(description, @"<li\b[^>]*>\s*\{feature_\d+\}\s*</li>\s*", string.Empty, RegexOptions.IgnoreCase);
             description = Regex.Replace(description, @"\{feature_\d+\}", string.Empty, RegexOptions.IgnoreCase);
 
             var similarList = SimilarGamesList != null && SimilarGamesList.Count > 0
@@ -223,6 +247,7 @@ namespace MetaDataIAPlugin
             {
                 description = ReplaceHtmlTextToken(description, "similar_game_" + (i + 1), similarList[i]);
             }
+            description = Regex.Replace(description, @"<li\b[^>]*>\s*\{similar_game_\d+\}\s*</li>\s*", string.Empty, RegexOptions.IgnoreCase);
             description = Regex.Replace(description, @"\{similar_game_\d+\}", string.Empty, RegexOptions.IgnoreCase);
 
             return description.Trim();
@@ -233,6 +258,7 @@ namespace MetaDataIAPlugin
             var tokenPattern = Regex.Escape("{" + token + "}");
             var paragraphs = FormatHtmlParagraphs(value);
             var inline = FormatHtmlInline(value);
+            var listItem = string.IsNullOrWhiteSpace(value) ? string.Empty : "<li>" + inline + "</li>";
 
             var result = Regex.Replace(
                 template,
@@ -242,11 +268,17 @@ namespace MetaDataIAPlugin
 
             result = Regex.Replace(
                 result,
+                @"<li\b[^>]*>\s*" + tokenPattern + @"\s*</li>",
+                match => listItem,
+                RegexOptions.IgnoreCase);
+
+            result = Regex.Replace(
+                result,
                 @"(?m)^\s*" + tokenPattern + @"\s*$",
                 match => paragraphs,
                 RegexOptions.IgnoreCase);
 
-            return result.Replace("{" + token + "}", inline);
+            return Regex.Replace(result, tokenPattern, match => inline, RegexOptions.IgnoreCase);
         }
 
         private static string ReplaceHtmlListToken(string template, string token, IEnumerable<string> values)
@@ -672,9 +704,9 @@ namespace MetaDataIAPlugin
                 return new List<string>();
             }
 
-            return Regex.Split(text, @"[,;\n]+")
-                .Select(x => x.Trim())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+            return Regex.Split(text, @"\s*(?:,|;|/|\n|·|\u2022|(?:\s+y\s+)|(?:\s+and\s+))\s*")
+                .Select(x => x.Trim().Trim('.', '-', '\u2013', '\u2014'))
+                .Where(x => !string.IsNullOrWhiteSpace(x) && x.Length > 1)
                 .ToList();
         }
     }

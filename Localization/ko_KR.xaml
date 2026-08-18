@@ -421,6 +421,9 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_TokenDevelopersHelp">개발자.</sys:String>
     <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">추론할 수 있는 경우의 예상 길이입니다.</sys:String>
     <sys:String x:Key="MTDA_TokenFeaturesHelp">주요 기능 목록.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">생성된 기능 목록의 첫 항목.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">생성된 기능 목록의 둘째 항목.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">위치별 개별 기능입니다. N을 1, 2, 3…으로 바꾸세요. 원하는 만큼 넣을 수 있고, 생성된 항목이 더 적으면 비어 있습니다.</sys:String>
     <sys:String x:Key="MTDA_TokenGameplayHelp">재생 방법과 주요 게임플레이 루프입니다.</sys:String>
     <sys:String x:Key="MTDA_TokenGenresHelp">생성된 장르.</sys:String>
     <sys:String x:Key="MTDA_TokenNotesHelp">추가 편집 참고 사항.</sys:String>
@@ -433,6 +436,9 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_TokenSettingHelp">설정 또는 세계.</sys:String>
     <sys:String x:Key="MTDA_TokenShortHelp">간략한 게임 요약.</sys:String>
     <sys:String x:Key="MTDA_TokenSimilarGamesHelp">비슷한 게임이나 유용한 참고자료.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">생성된 유사 게임 목록의 첫 항목.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">생성된 유사 게임 목록의 둘째 항목.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">위치별 개별 유사 게임입니다. N을 1, 2, 3…으로 바꾸세요. 원하는 만큼 넣을 수 있고, 생성된 항목이 더 적으면 비어 있습니다.</sys:String>
     <sys:String x:Key="MTDA_TokenSynopsisHelp">일반 개요.</sys:String>
     <sys:String x:Key="MTDA_TokenTagsHelp">생성된 태그.</sys:String>
     <sys:String x:Key="MTDA_TokenToneHelp">어조: 진지함, 유머러스함, 어두움, 여유로움 등</sys:String>
@@ -507,7 +513,7 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_AboutLinksTitle">직접 링크</sys:String>
     <sys:String x:Key="MTDA_AboutWikiButton">Wiki 문서</sys:String>
     <sys:String x:Key="MTDA_AboutReportIssueButton">문제 신고</sys:String>
-    <sys:String x:Key="MTDA_AboutSupportTitle">개발 지원</sys:String>
+    <sys:String x:Key="MTDA_AboutSupportTitle">지원</sys:String>
     <sys:String x:Key="MTDA_AboutSupportDescription">Metadata AI가 유용하다면 Ko-fi에서 지속적인 개발을 지원할 수 있습니다.</sys:String>
     <sys:String x:Key="MTDA_AboutKoFiButton">Ko-fi에서 지원</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">필드 생성 및 적용 규칙</sys:String>
@@ -769,6 +775,9 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_BatchFailureReason">원인</sys:String>
     <sys:String x:Key="MTDA_RetryPending">대기 항목 다시 시도</sys:String>
     <sys:String x:Key="MTDA_CopyList">목록 복사</sys:String>
+    <sys:String x:Key="MTDA_CopyToken">복사</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedFeatureToken">{feature_1}을(를) 복사합니다. 번호를 바꿔 더 추가하세요.</sys:String>
+    <sys:String x:Key="MTDA_CopyIndexedSimilarToken">{similar_game_1}을(를) 복사합니다. 번호를 바꿔 더 추가하세요.</sys:String>
     <sys:String x:Key="MTDA_ExportList">목록 내보내기</sys:String>
     <sys:String x:Key="MTDA_ExportPendingGames">업데이트되지 않은 게임 내보내기</sys:String>
     <sys:String x:Key="MTDA_SettingsNavigationHelp">섹션 선택</sys:String>
@@ -843,4 +852,5 @@ Gemini를 사용하는 경우 앱에 Gemini Pro/Google AI Pro가 있어도 이�
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Test IGN</sys:String>
+    <sys:String x:Key="MTDA_ExpandSectionHint">펼쳐서 이 섹션을 구성하세요.</sys:String>
 </ResourceDictionary>

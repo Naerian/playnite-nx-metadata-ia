@@ -11,22 +11,22 @@ important decisions for the Playnite extension.
 - Add-on id: `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83`
 - Author shown in Playnite: `Narian`
 - Extension type: `MetadataProvider`
-- Main local checkout: `C:\Users\naria\Documents\MetaDataIAPlugin`
+- Main local checkout: `C:\Proyectos\playnite-nx-metadata-ia`
 - Playnite install path used during development: `C:\Playnite`
 - Installed extension folder:
   `C:\Playnite\Extensions\MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83`
 
 ## Current Release State
 
-- Latest released version: `1.4.4`
-- Latest release tag: `v1.4.4`
-- Latest release commit: see tag `v1.4.4`
+- Latest released version: `1.4.6` (pending public SHA-256 after GitHub upload)
+- Latest release tag: `v1.4.6`
+- Latest release commit: see tag `v1.4.6`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_4.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_6.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.4
-- Public package SHA-256 verified for v1.4.4:
-`DC0C208363DA4A1A61DABF509AEB9DE12EACE638C921ED7DF5483850EEA9DD94`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.6
+- Public package SHA-256 verified for v1.4.6:
+  (fill after `gh release create` and hash comparison)
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -96,6 +96,8 @@ Main capabilities currently implemented:
 
 - `BuildAndInstall.ps1` is a local helper. Do not commit or push it unless the
   user explicitly changes that decision.
+- `docs/PLAYNITE-SDK.md` is a general Playnite SDK reference. Do not restore
+  CSM leftover files (`PLAYNITE-INTEGRATION.md`, `PLAYNITE-ADDON-SUBMISSION.md`).
 - Never commit API keys, provider secrets, local Playnite settings or generated
   user data.
 - `bin/`, `obj/`, `dist/`, `.vs/` and package outputs are ignored and should
@@ -111,13 +113,13 @@ This project is a classic .NET Framework Playnite plugin project. Do not use
 Preferred build command:
 
 ```powershell
-C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe C:\Users\naria\Documents\MetaDataIAPlugin\MetaDataIAPlugin.sln /p:Configuration=Release
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe C:\Proyectos\playnite-nx-metadata-ia\MetaDataIAPlugin.sln /p:Configuration=Release
 ```
 
 Expected output:
 
 ```text
-C:\Users\naria\Documents\MetaDataIAPlugin\bin\Release\MetaDataIAPlugin.dll
+C:\Proyectos\playnite-nx-metadata-ia\bin\Release\MetaDataIAPlugin.dll
 ```
 
 Some .NET Framework reference/architecture warnings have been seen before and
@@ -128,18 +130,19 @@ are not automatically release blockers. Real compile errors are blockers.
 Use Playnite Toolbox from the local Playnite install:
 
 ```powershell
-C:\Playnite\Toolbox.exe pack <clean-staging-folder> C:\Users\naria\Documents\MetaDataIAPlugin\dist
+C:\Playnite\Toolbox.exe pack <clean-staging-folder> C:\Proyectos\playnite-nx-metadata-ia\dist
 ```
 
-Package from a clean staging directory, not directly from the repo root. The
-package should include the extension output and required assets, but should not
-include helper scripts or unrelated runtime files such as `mscorlib.dll` or
-`norm*.nlp`.
+Package from a clean staging directory (use `%TEMP%`, never leave a `stage`
+folder inside `dist/`). The package should include the extension output and
+required assets, but should not include helper scripts or unrelated runtime
+files such as `mscorlib.dll` or `norm*.nlp`. After packing, `dist/` should
+contain only the `.pext`.
 
 Verify installer manifest:
 
 ```powershell
-C:\Playnite\Toolbox.exe verify Installer C:\Users\naria\Documents\MetaDataIAPlugin\installer.yaml
+C:\Playnite\Toolbox.exe verify Installer C:\Proyectos\playnite-nx-metadata-ia\installer.yaml
 ```
 
 ## Install Locally
@@ -212,7 +215,7 @@ git commit -m "Add Codex handoff documentation"
 Check all localization files contain the same keys:
 
 ```powershell
-$files = Get-ChildItem C:\Users\naria\Documents\MetaDataIAPlugin\Localization\*.xaml
+$files = Get-ChildItem C:\Proyectos\playnite-nx-metadata-ia\Localization\*.xaml
 $keySets = @{}
 foreach ($file in $files) {
     $keys = Select-String -Path $file.FullName -Pattern 'x:Key="([^"]+)"' |
@@ -233,7 +236,7 @@ foreach ($name in $keySets.Keys) {
 Check package/asset hash:
 
 ```powershell
-Get-FileHash C:\Users\naria\Documents\MetaDataIAPlugin\dist\<package>.pext -Algorithm SHA256
+Get-FileHash C:\Proyectos\playnite-nx-metadata-ia\dist\<package>.pext -Algorithm SHA256
 ```
 
 ## Current Follow-Up Ideas
@@ -260,7 +263,7 @@ Recommended recovery flow:
 2. Clone the repo:
 
    ```powershell
-   git clone https://github.com/Naerian/playnite-nx-metadata-ia.git C:\Users\naria\Documents\MetaDataIAPlugin
+   git clone https://github.com/Naerian/playnite-nx-metadata-ia.git C:\Proyectos\playnite-nx-metadata-ia
    ```
 
 3. Restore or reinstall Playnite at `C:\Playnite` if that path is still desired.
