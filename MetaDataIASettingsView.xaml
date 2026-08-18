@@ -1669,6 +1669,7 @@
                             <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.GenerateAgeRatings}"/>
                             <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,0,8,0"/>
                             <TextBox Grid.Row="7" Grid.Column="3" Text="{Binding Settings.MaxAgeRatings}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="7" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingAgeRatings}"/>
 
                             <TextBlock Grid.Row="8" Text="{DynamicResource MTDA_Region}" Margin="10,0,8,0"/>
                             <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.GenerateRegions}"/>

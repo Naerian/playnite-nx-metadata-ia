@@ -197,6 +197,7 @@ namespace MetaDataIAPlugin
         private bool preferExistingTags = false;
         private bool preferExistingFeatures = false;
         private bool preferExistingCategories = true;
+        private bool preferExistingAgeRatings = false;
         private string tone = "Neutral";
         private string length = "Media";
         private string shortLength = "Media";
@@ -461,6 +462,7 @@ namespace MetaDataIAPlugin
         public bool PreferExistingTags { get { return preferExistingTags; } set { SetValue(ref preferExistingTags, value); } }
         public bool PreferExistingFeatures { get { return preferExistingFeatures; } set { SetValue(ref preferExistingFeatures, value); } }
         public bool PreferExistingCategories { get { return preferExistingCategories; } set { SetValue(ref preferExistingCategories, value); } }
+        public bool PreferExistingAgeRatings { get { return preferExistingAgeRatings; } set { SetValue(ref preferExistingAgeRatings, value); } }
         public string Tone { get { return tone; } set { SetValue(ref tone, value); } }
         public string Length { get { return length; } set { SetValue(ref length, value); } }
         public string ShortLength { get { return shortLength; } set { SetValue(ref shortLength, value); } }

@@ -38,6 +38,7 @@ namespace MetaDataIAPlugin
         public string PlayModes { get; set; }
         public string EstimatedLength { get; set; }
         public string SimilarGames { get; set; }
+        public List<string> SimilarGamesList { get; set; }
         public string Notes { get; set; }
         public List<string> Features { get; set; }
         public string RecommendedFor { get; set; }
@@ -68,6 +69,7 @@ namespace MetaDataIAPlugin
             Categories = new List<string>();
             Links = new List<AiMetadataLink>();
             Series = new List<string>();
+            SimilarGamesList = new List<string>();
         }
 
         public void Normalize(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
@@ -84,6 +86,11 @@ namespace MetaDataIAPlugin
             PlayModes = Clean(PlayModes);
             EstimatedLength = Clean(EstimatedLength);
             SimilarGames = Clean(SimilarGames);
+            SimilarGamesList = (SimilarGamesList ?? new List<string>())
+                .Select(x => Clean(x))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
             Notes = Clean(Notes);
             RecommendedFor = Clean(RecommendedFor);
             Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
@@ -202,6 +209,22 @@ namespace MetaDataIAPlugin
             description = ReplaceHtmlListToken(description, "regions", Regions);
             description = ReplaceHtmlListToken(description, "categories", Categories);
             description = ReplaceHtmlListToken(description, "features", Features);
+
+            for (int i = 0; i < Features.Count; i++)
+            {
+                description = ReplaceHtmlTextToken(description, "feature_" + (i + 1), Features[i]);
+            }
+            description = Regex.Replace(description, @"\{feature_\d+\}", string.Empty, RegexOptions.IgnoreCase);
+
+            var similarList = SimilarGamesList != null && SimilarGamesList.Count > 0
+                ? SimilarGamesList
+                : ParseSimilarGamesText(SimilarGames);
+            for (int i = 0; i < similarList.Count; i++)
+            {
+                description = ReplaceHtmlTextToken(description, "similar_game_" + (i + 1), similarList[i]);
+            }
+            description = Regex.Replace(description, @"\{similar_game_\d+\}", string.Empty, RegexOptions.IgnoreCase);
+
             return description.Trim();
         }
 
@@ -640,6 +663,19 @@ namespace MetaDataIAPlugin
             }
 
             return result;
+        }
+
+        private static List<string> ParseSimilarGamesText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return new List<string>();
+            }
+
+            return Regex.Split(text, @"[,;\n]+")
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
         }
     }
 

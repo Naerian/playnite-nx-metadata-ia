@@ -632,9 +632,8 @@ namespace MetaDataIAPlugin
             context["releaseYear"] = game.ReleaseYear;
             context["source"] = game.Source == null ? null : game.Source.Name;
             context["platforms"] = Names(game.Platforms);
-            context["platformContextHint"] = "source es la tienda/biblioteca desde la que se agrego el juego; platforms son las plataformas del juego en Playnite. Usa ambos como contexto, especialmente para caracteristicas, pero no inventes funciones especificas de una tienda si no hay seguridad razonable.";
-            context["tone"] = settings.Tone;
-            context["length"] = settings.Length;
+            context["tone"] = NormalizeToneForPrompt(settings.Tone);
+            context["length"] = NormalizeLengthForPrompt(settings.Length);
             context["tokenLengths"] = BuildTokenLengths();
             context["strictCompanyAgeRegion"] = settings.StrictCompanyAgeRegion;
             context["fieldsToGenerate"] = BuildFieldsToGenerate();
@@ -672,7 +671,7 @@ namespace MetaDataIAPlugin
                     series = Names(game.Series),
                     links = game.Links == null ? new List<object>() : game.Links.Select(x => new { name = x.Name, url = x.Url }).Cast<object>().ToList()
                 };
-                context["existingMetadataMode"] = settings.ExistingMetadataMode;
+                context["existingMetadataMode"] = NormalizeExistingMetadataModeForPrompt(settings.ExistingMetadataMode);
             }
 
             if ((settings.UseOriginIntegrationAsAiContext || settings.UseOriginIntegrationForFactualMetadata) && playniteApi != null)
@@ -760,14 +759,14 @@ namespace MetaDataIAPlugin
                    "Respect tone, length, tokenLengths, blacklist and prefixes. " +
                    "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
-                   "Leave similarGames empty unless requestedDescriptionTokens contains similarGames. " +
-                   "Interpret tokenLengths for short as: Corta/Short = 1 brief sentence; Media/Medium = 2 or 3 sentences; Larga/Long = 1 paragraph; Extra larga/Extra long = 2 compact paragraphs. " +
-                   "Interpret tokenLengths for synopsis as: Corta/Short = 1 paragraph of 4 to 6 sentences; Media/Medium = 2 paragraphs of 4 to 6 sentences each; Larga/Long = 3 paragraphs of 4 to 6 sentences each; Extra larga/Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
-                   "If tokenLengths.synopsis is Media, Larga, Extra larga, Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
+                   "Leave similarGames and similarGamesList empty unless requestedDescriptionTokens contains similarGames or a similar_game_N pattern. If requestedDescriptionTokens contains similar_game_1 or any similar_game_N token, populate similarGamesList as an array of individual game names (do not use a single joined string). " +
+                   "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
+                   "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
+                   "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
                    "Inside JSON strings, never use raw line breaks; always use escaped \\n or \\n\\n. " +
-                   "Each paragraph must be substantial, not a single sentence, except fields configured as short. " +
-                   "For other text fields: Corta/Short = 1 brief sentence; Media/Medium = 1 paragraph of 3 to 5 sentences; Larga/Long = 2 paragraphs of 3 to 5 sentences; Extra larga/Extra long = 3 paragraphs of 3 to 5 sentences. " +
-                   "For lists, length controls how many useful items to return within each max value: Corta/Short = few essentials; Media/Medium = balanced coverage; Larga/Long = broad coverage; Extra larga/Extra long = use the max only when enough reliable information exists. " +
+                   "Each paragraph must be substantial, not a single sentence, except fields configured as Short. " +
+                   "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
+                   "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
                    "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games. If both are empty for a field, create stable terms directly in the requested language and reuse the same wording consistently. " +
                    "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
@@ -776,34 +775,77 @@ namespace MetaDataIAPlugin
                    "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
-                   "If existingMetadataMode is Normalizar/Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
-                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. Translate and normalize generated user-facing values into the requested output language, but do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
+                   "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
+                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
                    "features, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
                    "If fieldsToGenerate.series is true, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
                    "Respond with this exact JSON object shape: " +
-                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[]} " +
+                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"similarGamesList\":[],\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[]} " +
                    "Context: " + JsonConvert.SerializeObject(context);
         }
 
         private Dictionary<string, string> BuildTokenLengths()
         {
             var lengths = new Dictionary<string, string>();
-            lengths["short"] = settings.ShortLength;
-            lengths["synopsis"] = settings.SynopsisLength;
-            lengths["premise"] = settings.PremiseLength;
-            lengths["gameplay"] = settings.GameplayLength;
-            lengths["tone"] = settings.ToneLength;
-            lengths["setting"] = settings.SettingLength;
-            lengths["perspective"] = settings.PerspectiveLength;
-            lengths["playModes"] = settings.PlayModesLength;
-            lengths["estimatedLength"] = settings.EstimatedLengthLength;
-            lengths["similarGames"] = settings.SimilarGamesLength;
-            lengths["notes"] = settings.NotesLength;
-            lengths["recommendedFor"] = settings.RecommendedForLength;
+            lengths["short"] = NormalizeLengthForPrompt(settings.ShortLength);
+            lengths["synopsis"] = NormalizeLengthForPrompt(settings.SynopsisLength);
+            lengths["premise"] = NormalizeLengthForPrompt(settings.PremiseLength);
+            lengths["gameplay"] = NormalizeLengthForPrompt(settings.GameplayLength);
+            lengths["tone"] = NormalizeLengthForPrompt(settings.ToneLength);
+            lengths["setting"] = NormalizeLengthForPrompt(settings.SettingLength);
+            lengths["perspective"] = NormalizeLengthForPrompt(settings.PerspectiveLength);
+            lengths["playModes"] = NormalizeLengthForPrompt(settings.PlayModesLength);
+            lengths["estimatedLength"] = NormalizeLengthForPrompt(settings.EstimatedLengthLength);
+            lengths["similarGames"] = NormalizeLengthForPrompt(settings.SimilarGamesLength);
+            lengths["notes"] = NormalizeLengthForPrompt(settings.NotesLength);
+            lengths["recommendedFor"] = NormalizeLengthForPrompt(settings.RecommendedForLength);
             return lengths;
+        }
+
+        private static string NormalizeLengthForPrompt(string value)
+        {
+            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "corta": return "Short";
+                case "media": return "Medium";
+                case "larga": return "Long";
+                case "extra larga": return "Extra long";
+                default: return value;
+            }
+        }
+
+        private static string NormalizeToneForPrompt(string value)
+        {
+            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "enciclopedico": return "Encyclopedic";
+                case "tienda": return "Store";
+                case "critico": return "Critical";
+                case "breve": return "Brief";
+                case "entusiasta": return "Enthusiastic";
+                case "tecnico": return "Technical";
+                case "familiar": return "Family-friendly";
+                default: return value;
+            }
+        }
+
+        private static string NormalizeExistingMetadataModeForPrompt(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+            switch (value.Trim().ToLowerInvariant())
+            {
+                case "usar como contexto": return "Use as context";
+                case "normalizar": return "Normalize";
+                case "ignorar": return "Ignore";
+                default: return value;
+            }
         }
 
         private Dictionary<string, bool> BuildFieldsToGenerate()
@@ -901,12 +943,27 @@ namespace MetaDataIAPlugin
                 return new List<string>();
             }
 
-            return Regex.Matches(template, @"\{([A-Za-z0-9]+)\}")
+            var tokens = Regex.Matches(template, @"\{([A-Za-z0-9_]+)\}")
                 .Cast<Match>()
                 .Select(x => x.Groups[1].Value)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+            if (tokens.Any(x => Regex.IsMatch(x, @"^feature_\d+$", RegexOptions.IgnoreCase)) &&
+                !tokens.Contains("features", StringComparer.OrdinalIgnoreCase))
+            {
+                tokens.Add("features");
+            }
+
+            if (tokens.Any(x => Regex.IsMatch(x, @"^similar_game_\d+$", RegexOptions.IgnoreCase)) &&
+                !tokens.Contains("similarGames", StringComparer.OrdinalIgnoreCase))
+            {
+                tokens.Add("similarGames");
+                tokens.Add("similar_game_1");
+            }
+
+            return tokens;
         }
 
         private static string TargetLanguageName(string code)

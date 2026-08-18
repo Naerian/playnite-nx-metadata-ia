@@ -891,19 +891,19 @@ namespace MetaDataIAPlugin
             builder.AppendLine();
 
             builder.AppendLine("Enabled metadata fields");
-            builder.AppendLine("- Description: " + settings.GenerateDescription + " / " + settings.DescriptionApplyMode);
-            builder.AppendLine("- Genres: " + settings.GenerateGenres + " / " + settings.GenresApplyMode + " / max " + settings.MaxGenres + " / existing only " + settings.PreferExistingGenres);
-            builder.AppendLine("- Tags: " + settings.GenerateTags + " / " + settings.TagsApplyMode + " / max " + settings.MaxTags + " / existing only " + settings.PreferExistingTags);
-            builder.AppendLine("- Features: " + settings.GenerateFeatures + " / " + settings.FeaturesApplyMode + " / max " + settings.MaxFeatures + " / existing only " + settings.PreferExistingFeatures);
-            builder.AppendLine("- Categories: " + settings.GenerateCategories + " / " + settings.CategoriesApplyMode + " / max " + settings.MaxCategories + " / existing only " + settings.PreferExistingCategories);
-            builder.AppendLine("- Developers: " + settings.GenerateDevelopers + " / " + settings.DevelopersApplyMode + " / max " + settings.MaxDevelopers);
-            builder.AppendLine("- Publishers: " + settings.GeneratePublishers + " / " + settings.PublishersApplyMode + " / max " + settings.MaxPublishers);
-            builder.AppendLine("- Age ratings: " + settings.GenerateAgeRatings + " / " + settings.AgeRatingsApplyMode);
-            builder.AppendLine("- Regions: " + settings.GenerateRegions + " / " + settings.RegionsApplyMode);
-            builder.AppendLine("- Release date: " + settings.GenerateReleaseDate + " / " + settings.ReleaseDateApplyMode);
-            builder.AppendLine("- Series: " + settings.GenerateSeries + " / " + settings.SeriesApplyMode);
-            builder.AppendLine("- Sorting name: " + settings.GenerateSortingName + " / " + settings.SortingNameApplyMode);
-            builder.AppendLine("- Links: " + settings.GenerateLinks + " / " + settings.LinksApplyMode);
+            builder.AppendLine("- Description: " + settings.GenerateDescription + " / " + LocalizeApplyMode(settings.DescriptionApplyMode));
+            builder.AppendLine("- Genres: " + settings.GenerateGenres + " / " + LocalizeApplyMode(settings.GenresApplyMode) + " / max " + settings.MaxGenres + " / existing only " + settings.PreferExistingGenres);
+            builder.AppendLine("- Tags: " + settings.GenerateTags + " / " + LocalizeApplyMode(settings.TagsApplyMode) + " / max " + settings.MaxTags + " / existing only " + settings.PreferExistingTags);
+            builder.AppendLine("- Features: " + settings.GenerateFeatures + " / " + LocalizeApplyMode(settings.FeaturesApplyMode) + " / max " + settings.MaxFeatures + " / existing only " + settings.PreferExistingFeatures);
+            builder.AppendLine("- Categories: " + settings.GenerateCategories + " / " + LocalizeApplyMode(settings.CategoriesApplyMode) + " / max " + settings.MaxCategories + " / existing only " + settings.PreferExistingCategories);
+            builder.AppendLine("- Developers: " + settings.GenerateDevelopers + " / " + LocalizeApplyMode(settings.DevelopersApplyMode) + " / max " + settings.MaxDevelopers);
+            builder.AppendLine("- Publishers: " + settings.GeneratePublishers + " / " + LocalizeApplyMode(settings.PublishersApplyMode) + " / max " + settings.MaxPublishers);
+            builder.AppendLine("- Age ratings: " + settings.GenerateAgeRatings + " / " + LocalizeApplyMode(settings.AgeRatingsApplyMode) + " / existing only " + settings.PreferExistingAgeRatings);
+            builder.AppendLine("- Regions: " + settings.GenerateRegions + " / " + LocalizeApplyMode(settings.RegionsApplyMode));
+            builder.AppendLine("- Release date: " + settings.GenerateReleaseDate + " / " + LocalizeApplyMode(settings.ReleaseDateApplyMode));
+            builder.AppendLine("- Series: " + settings.GenerateSeries + " / " + LocalizeApplyMode(settings.SeriesApplyMode));
+            builder.AppendLine("- Sorting name: " + settings.GenerateSortingName + " / " + LocalizeApplyMode(settings.SortingNameApplyMode));
+            builder.AppendLine("- Links: " + settings.GenerateLinks + " / " + LocalizeApplyMode(settings.LinksApplyMode));
             builder.AppendLine();
 
             builder.AppendLine("Media");
@@ -949,6 +949,18 @@ namespace MetaDataIAPlugin
             builder.AppendLine();
             builder.AppendLine("Secrets are intentionally omitted. Only whether a credential is set is reported.");
             return builder.ToString();
+        }
+
+        private static string LocalizeApplyMode(string mode)
+        {
+            switch (mode)
+            {
+                case MetaDataIASettings.ApplySkip: return "Skip";
+                case MetaDataIASettings.ApplyEmptyOnly: return "Fill if empty";
+                case MetaDataIASettings.ApplyAppend: return "Append";
+                case MetaDataIASettings.ApplyOverwrite: return "Overwrite";
+                default: return mode ?? string.Empty;
+            }
         }
 
         private static string HasValue(string value)

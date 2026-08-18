@@ -50,7 +50,7 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), false), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
+                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.PreferExistingAgeRatings), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
