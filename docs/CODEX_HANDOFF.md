@@ -18,7 +18,7 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.6` (pending public SHA-256 after GitHub upload)
+- Latest released version: `1.4.6`
 - Latest release tag: `v1.4.6`
 - Latest release commit: see tag `v1.4.6`
 - Current package name:
@@ -26,7 +26,7 @@ important decisions for the Playnite extension.
 - Release page:
   https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.6
 - Public package SHA-256 verified for v1.4.6:
-  (fill after `gh release create` and hash comparison)
+  `9B79DFA8201ACED30A5040D752621412F756A79F6410710924A572A4513F54DB`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
