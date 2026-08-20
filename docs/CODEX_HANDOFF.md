@@ -26,7 +26,7 @@ important decisions for the Playnite extension.
 - Release page:
   https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.8
 - Public package SHA-256 verified for v1.4.8:
-  `(pending package)`
+  `E251DFB65E409F2A63B1EC8048FB32D4B00F2ED1982D1D7165A314CAD725F40E`
 - UI reference for other plugins: `docs/SETTINGS-UI-GUIDE.md`
 
 When continuing work, first verify the current repository state instead of
