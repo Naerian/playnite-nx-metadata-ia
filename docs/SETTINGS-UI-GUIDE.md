@@ -236,9 +236,13 @@ Fila de capacidades:
 
 ## Pestañas / navegación lateral
 
-- Labels **14 px**.
-- Ítem: altura mínima ~44, hover/selección con `HoverBrush`, acento 4 px
-  `GlyphBrush` si es navegación vertical.
+- Labels **14 px**; icono/label **heredan** el `Foreground` del `TabItem`
+  (no forzar `TextBrush` en el TextBlock).
+- Ítem: altura mínima ~44, hover/selección con `HoverBrush`.
+- En hover/selección el texto pasa a **`TextBrushDark`** (brush del tema para
+  fondos claros). Sin eso, temas con `HoverBrush` claro + `TextBrush` claro
+  fusionan el texto.
+- Acento 4 px `GlyphBrush` si es navegación vertical.
 - Iconos de tab (Segoe Fluent / MDL2): ~16 px, margen derecho 8.
 
 ---

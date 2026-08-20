@@ -1,5 +1,11 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.8
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-20
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.8/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_8.pext
+    Changelog:
+      - "Fixed settings tab labels disappearing on themes where the selected or hovered tab background is light."
   - Version: 1.4.7
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-20
