@@ -138,6 +138,7 @@ namespace MetaDataIAPlugin
         public const string ProviderCustom = "Personalizado compatible con OpenAI";
 
         private string providerPreset = ProviderGroq;
+        private string appearancePreset = SettingsAppearance.Midnight;
         private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
         private string model = "llama-3.1-8b-instant";
@@ -376,6 +377,25 @@ namespace MetaDataIAPlugin
                 OnPropertyChanged("ProviderBillingHelp");
                 OnPropertyChanged("ShowEndpointEditor");
                 OnPropertyChanged("CanRestoreProviderEndpoint");
+            }
+        }
+
+        /// <summary>
+        /// Settings chrome color preset (Midnight, Paper, OLED, Ocean, Ember).
+        /// Structure tokens stay fixed; only semantic colors change.
+        /// </summary>
+        public string AppearancePreset
+        {
+            get { return appearancePreset; }
+            set
+            {
+                var normalized = SettingsAppearance.Normalize(value);
+                if (string.Equals(appearancePreset, normalized, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                SetValue(ref appearancePreset, normalized);
             }
         }
         public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
@@ -709,6 +729,8 @@ namespace MetaDataIAPlugin
             {
                 ProviderPreset = ProviderGroq;
             }
+
+            AppearancePreset = SettingsAppearance.Normalize(AppearancePreset);
 
             EnsureTextLengthDefaults();
             EnsureCompanyLimitDefaults();
@@ -1701,6 +1723,22 @@ namespace MetaDataIAPlugin
                     Option(ProviderClaude, "MTDA_ProviderClaude", "Claude Anthropic"),
                     Option(ProviderOpenRouter, "MTDA_ProviderOpenRouter", "OpenRouter"),
                     Option(ProviderCustom, "MTDA_ProviderCustom", "Custom OpenAI-compatible")
+                };
+            }
+        }
+
+        [DontSerialize]
+        public List<LocalizedOption> AppearancePresetOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(SettingsAppearance.Midnight, "MTDA_PresetMidnight", "Midnight"),
+                    Option(SettingsAppearance.Paper, "MTDA_PresetPaper", "Paper"),
+                    Option(SettingsAppearance.Oled, "MTDA_PresetOled", "OLED"),
+                    Option(SettingsAppearance.Ocean, "MTDA_PresetOcean", "Ocean"),
+                    Option(SettingsAppearance.Ember, "MTDA_PresetEmber", "Ember")
                 };
             }
         }

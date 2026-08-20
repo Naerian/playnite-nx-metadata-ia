@@ -18,16 +18,18 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.8`
-- Latest release tag: `v1.4.8`
-- Latest release commit: see tag `v1.4.8`
+- Latest released version: `1.4.9`
+- Latest release tag: `v1.4.9`
+- Latest release commit: see tag `v1.4.9`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_8.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_9.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.8
-- Public package SHA-256 verified for v1.4.8:
-  `E251DFB65E409F2A63B1EC8048FB32D4B00F2ED1982D1D7165A314CAD725F40E`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.9
+- Public package SHA-256 verified for v1.4.9:
+  `79A517F6420B60494ABF87AC9BD72B6446E9A135DC95F343D8F259210389AD1E`
 - UI reference for other plugins: `docs/SETTINGS-UI-GUIDE.md`
+- Settings design system (Figma):
+  https://www.figma.com/design/0ilhUvo6xBoEkEldkdP3Wh/Narian-Plugins-%E2%80%94-Settings-Design-System
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -88,8 +90,12 @@ Main capabilities currently implemented:
   only as optional assets for Extra Metadata Loader.
 - The Fullscreen experience exists but should stay conservative because complex
   review flows are much more usable in Desktop.
-- UI should follow Playnite theme resources as much as possible. Avoid hardcoded
-  colors and fake input styles that fight custom themes.
+- Settings UI direction (2026-08): **plugin-owned chrome** with fixed structure
+  tokens and user-selectable **color presets** (Midnight, Paper, OLED, Ocean,
+  Ember). Do not chase every Playnite desktop theme for contrast. Source of
+  truth: `docs/SETTINGS-UI-GUIDE.md` + the Figma file above. Optional later:
+  a “Follow Playnite” preset. Until migration lands, shipped XAML may still use
+  Playnite brushes; new work should target the preset system.
 - If a repair/action fails because of quota, cancellation, no candidates or
   provider errors, the audit issue should remain visible.
 

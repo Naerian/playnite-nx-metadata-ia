@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
@@ -7,6 +7,7 @@
     <sys:String x:Key="MTDA_TabTemplates">模板</sys:String>
     <sys:String x:Key="MTDA_TabMedia">媒体</sys:String>
     <sys:String x:Key="MTDA_TabImport">导入</sys:String>
+    <sys:String x:Key="MTDA_ImportPageHelp">选择当 Playnite 在库中检测到新游戏时，Metadata AI 应自动执行的操作。</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">维护</sys:String>
     <sys:String x:Key="MTDA_TabFields">字段</sys:String>
     <sys:String x:Key="MTDA_TabRules">规则</sys:String>
@@ -15,6 +16,7 @@
     <sys:String x:Key="MTDA_AiSectionOutput">输出样式</sys:String>
     <sys:String x:Key="MTDA_AiSectionReliability">上下文和可靠性</sys:String>
     <sys:String x:Key="MTDA_AiSectionAdvanced">高级 AI 选项</sys:String>
+    <sys:String x:Key="MTDA_AiProviderCardTitle">AI 提供商</sys:String>
     <sys:String x:Key="MTDA_Provider">提供者</sys:String>
     <sys:String x:Key="MTDA_ApplyProvider">申请提供者</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">关键/帮助页面：</sys:String>
@@ -804,6 +806,13 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_TabOverview">概览</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummary">配置概览</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">快速查看当前提供商、已启用的元数据字段和媒体配置。</sys:String>
+    <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
+    <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
+    <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>
+    <sys:String x:Key="MTDA_PresetOcean">Ocean</sys:String>
+    <sys:String x:Key="MTDA_PresetEmber">Ember</sys:String>
     <sys:String x:Key="MTDA_NavMediaSources">来源</sys:String>
     <sys:String x:Key="MTDA_NavMediaDownload">下载</sys:String>
     <sys:String x:Key="MTDA_NavMediaQuality">质量</sys:String>

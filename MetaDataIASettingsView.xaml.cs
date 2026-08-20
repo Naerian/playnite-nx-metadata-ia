@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Threading;
@@ -82,6 +83,8 @@ namespace MetaDataIAPlugin
                     lastAppliedProviderPreset = viewModel.Settings.ProviderPreset;
                     viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
+                    ApplyAppearancePreset();
+                    BuildAppearancePresetChips();
                     RefreshConfigurationSummary();
                     Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
                     Dispatcher.BeginInvoke(new Action(async () => await RefreshProviderModelsAsync(false)));
@@ -102,12 +105,213 @@ namespace MetaDataIAPlugin
 
         private void OnSettingsHostLoaded(object sender, RoutedEventArgs e)
         {
+            ApplyAppearancePreset();
+            BuildAppearancePresetChips();
             ApplyPreferredWindowSize();
             AttachToHost();
             Dispatcher.BeginInvoke(new Action(AttachToHost), DispatcherPriority.Loaded);
             Dispatcher.BeginInvoke(new Action(AttachToHost), DispatcherPriority.ApplicationIdle);
             Dispatcher.BeginInvoke(new Action(FillSelectedContentHosts), DispatcherPriority.Loaded);
             Dispatcher.BeginInvoke(new Action(FillSelectedContentHosts), DispatcherPriority.ApplicationIdle);
+        }
+
+        private void ApplyAppearancePreset()
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var preset = viewModel != null && viewModel.Settings != null
+                ? viewModel.Settings.AppearancePreset
+                : SettingsAppearance.Midnight;
+            SettingsAppearance.Apply(this, preset);
+            RefreshAppearancePresetChips();
+            // Host Save/Cancel + window chrome exist outside this control; paint after layout.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var palette = SettingsAppearance.GetPalette(preset);
+                SettingsAppearance.ApplyHostChrome(this, palette);
+            }), DispatcherPriority.Loaded);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var palette = SettingsAppearance.GetPalette(preset);
+                SettingsAppearance.ApplyHostChrome(this, palette);
+            }), DispatcherPriority.ApplicationIdle);
+        }
+
+        private void BuildAppearancePresetChips()
+        {
+            if (AppearancePresetChips == null)
+            {
+                return;
+            }
+
+            AppearancePresetChips.Children.Clear();
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var options = viewModel != null && viewModel.Settings != null
+                ? viewModel.Settings.AppearancePresetOptions
+                : null;
+            if (options == null)
+            {
+                return;
+            }
+
+            foreach (var option in options)
+            {
+                if (option == null || string.IsNullOrWhiteSpace(option.Value))
+                {
+                    continue;
+                }
+
+                var button = new Button
+                {
+                    Content = option.DisplayName,
+                    Tag = option.Value,
+                    MinHeight = 36,
+                    Height = 36,
+                    MinWidth = 88,
+                    Padding = new Thickness(12, 0, 12, 0),
+                    Margin = new Thickness(0, 0, 8, 8),
+                    Cursor = Cursors.Hand,
+                    Focusable = true,
+                    BorderThickness = new Thickness(1),
+                    FontSize = 14,
+                    Template = CreateAppearanceChipTemplate()
+                };
+                button.Click += AppearancePresetChip_OnClick;
+                button.MouseEnter += AppearancePresetChip_OnMouseEnter;
+                button.MouseLeave += AppearancePresetChip_OnMouseLeave;
+                AppearancePresetChips.Children.Add(button);
+            }
+
+            RefreshAppearancePresetChips();
+        }
+
+        private static ControlTemplate CreateAppearanceChipTemplate()
+        {
+            var template = new ControlTemplate(typeof(Button));
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.Name = "Bd";
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+            border.SetBinding(Border.BackgroundProperty, new System.Windows.Data.Binding("Background")
+            {
+                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
+            });
+            border.SetBinding(Border.BorderBrushProperty, new System.Windows.Data.Binding("BorderBrush")
+            {
+                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
+            });
+            border.SetBinding(Border.BorderThicknessProperty, new System.Windows.Data.Binding("BorderThickness")
+            {
+                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
+            });
+            border.SetBinding(Border.PaddingProperty, new System.Windows.Data.Binding("Padding")
+            {
+                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
+            });
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            presenter.SetBinding(TextElement.ForegroundProperty, new System.Windows.Data.Binding("Foreground")
+            {
+                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
+            });
+            border.AppendChild(presenter);
+            template.VisualTree = border;
+            return template;
+        }
+
+        private void AppearancePresetChip_OnMouseEnter(object sender, MouseEventArgs e)
+        {
+            var button = sender as Button;
+            if (button == null || IsAppearanceChipSelected(button))
+            {
+                return;
+            }
+
+            var palette = GetCurrentAppearancePalette();
+            button.Background = new SolidColorBrush(palette.Hover);
+        }
+
+        private void AppearancePresetChip_OnMouseLeave(object sender, MouseEventArgs e)
+        {
+            var button = sender as Button;
+            if (button == null || IsAppearanceChipSelected(button))
+            {
+                return;
+            }
+
+            var palette = GetCurrentAppearancePalette();
+            button.Background = new SolidColorBrush(palette.BadgeBg);
+        }
+
+        private bool IsAppearanceChipSelected(Button button)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var selected = viewModel != null && viewModel.Settings != null
+                ? SettingsAppearance.Normalize(viewModel.Settings.AppearancePreset)
+                : SettingsAppearance.Midnight;
+            return string.Equals(button.Tag as string, selected, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private SettingsAppearance.Palette GetCurrentAppearancePalette()
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var selected = viewModel != null && viewModel.Settings != null
+                ? viewModel.Settings.AppearancePreset
+                : SettingsAppearance.Midnight;
+            return SettingsAppearance.GetPalette(selected);
+        }
+
+        private void AppearancePresetChip_OnClick(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var preset = button == null ? null : button.Tag as string;
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || viewModel.Settings == null || string.IsNullOrWhiteSpace(preset))
+            {
+                return;
+            }
+
+            viewModel.Settings.AppearancePreset = preset;
+            ApplyAppearancePreset();
+        }
+
+        private void RefreshAppearancePresetChips()
+        {
+            if (AppearancePresetChips == null)
+            {
+                return;
+            }
+
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var selected = viewModel != null && viewModel.Settings != null
+                ? SettingsAppearance.Normalize(viewModel.Settings.AppearancePreset)
+                : SettingsAppearance.Midnight;
+            var palette = SettingsAppearance.GetPalette(selected);
+            var accent = new SolidColorBrush(palette.Accent);
+            var accentOn = new SolidColorBrush(palette.AccentOn);
+            var badgeBg = new SolidColorBrush(palette.BadgeBg);
+            var text = new SolidColorBrush(palette.Text);
+            accent.Freeze();
+            accentOn.Freeze();
+            badgeBg.Freeze();
+            text.Freeze();
+
+            foreach (var child in AppearancePresetChips.Children)
+            {
+                var button = child as Button;
+                if (button == null)
+                {
+                    continue;
+                }
+
+                var isSelected = string.Equals(button.Tag as string, selected, StringComparison.OrdinalIgnoreCase);
+                button.Background = isSelected ? accent : badgeBg;
+                button.Foreground = isSelected ? accentOn : text;
+                button.BorderBrush = isSelected ? accent : new SolidColorBrush(palette.Border);
+                button.BorderThickness = new Thickness(1);
+                button.FontWeight = isSelected ? FontWeights.SemiBold : FontWeights.Normal;
+                // Active chip keeps accent on hover (no alternate hover fill).
+            }
         }
 
         private void AttachToHost()
@@ -386,6 +590,10 @@ namespace MetaDataIAPlugin
             {
                 providerTestSucceeded = null;
             }
+            if (e != null && e.PropertyName == "AppearancePreset")
+            {
+                ApplyAppearancePreset();
+            }
             if (e != null && e.PropertyName == "ShowAdvancedOptions" && observedSettings != null &&
                 !observedSettings.ShowAdvancedOptions && ReferenceEquals(AdvancedSectionNavigation.SelectedItem, RulesNavigationItem))
             {
@@ -543,9 +751,27 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            // Keep border in sync with the status text color (theme Positive/Warning/Glyph).
-            badge.SetResourceReference(Border.BorderBrushProperty, brushKey);
+            // Same pill shape as neutral badges; background tinted by status color.
+            badge.BorderThickness = new Thickness(0);
+            badge.BorderBrush = Brushes.Transparent;
+            badge.Effect = null;
             badge.Opacity = opacity;
+
+            string backgroundKey;
+            if (string.Equals(brushKey, "PositiveRatingBrush", StringComparison.Ordinal))
+            {
+                backgroundKey = "Narian.BadgeSuccessBg";
+            }
+            else if (string.Equals(brushKey, "WarningBrush", StringComparison.Ordinal))
+            {
+                backgroundKey = "Narian.BadgeWarningBg";
+            }
+            else
+            {
+                backgroundKey = "Narian.BadgeMutedBg";
+            }
+
+            badge.SetResourceReference(Border.BackgroundProperty, backgroundKey);
         }
 
         private static void SetSummaryStatus(TextBlock textBlock, bool enabled)

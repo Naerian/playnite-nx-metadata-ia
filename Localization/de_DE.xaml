@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
@@ -7,6 +7,7 @@
     <sys:String x:Key="MTDA_TabTemplates">Vorlagen</sys:String>
     <sys:String x:Key="MTDA_TabMedia">Medien</sys:String>
     <sys:String x:Key="MTDA_TabImport">Importieren</sys:String>
+    <sys:String x:Key="MTDA_ImportPageHelp">Legen Sie fest, was Metadata AI automatisch tun soll, wenn Playnite neue Spiele in Ihrer Bibliothek erkennt.</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">Wartung</sys:String>
     <sys:String x:Key="MTDA_TabFields">Felder</sys:String>
     <sys:String x:Key="MTDA_TabRules">Regeln</sys:String>
@@ -15,6 +16,7 @@
     <sys:String x:Key="MTDA_AiSectionOutput">Ausgabestil</sys:String>
     <sys:String x:Key="MTDA_AiSectionReliability">Kontext und Zuverlässigkeit</sys:String>
     <sys:String x:Key="MTDA_AiSectionAdvanced">Erweiterte KI-Optionen</sys:String>
+    <sys:String x:Key="MTDA_AiProviderCardTitle">KI-Anbieter</sys:String>
     <sys:String x:Key="MTDA_Provider">Anbieter</sys:String>
     <sys:String x:Key="MTDA_ApplyProvider">Anbieter bewerben</sys:String>
     <sys:String x:Key="MTDA_KeyHelpPage">Schlüssel/Hilfeseite:</sys:String>
@@ -814,6 +816,13 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_TabOverview">Übersicht</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummary">Konfigurationsübersicht</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Aktiven Anbieter, aktivierte Metadatenfelder und Medienkonfiguration auf einen Blick prüfen.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
+    <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
+    <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>
+    <sys:String x:Key="MTDA_PresetOcean">Ocean</sys:String>
+    <sys:String x:Key="MTDA_PresetEmber">Ember</sys:String>
     <sys:String x:Key="MTDA_NavMediaSources">Quellen</sys:String>
     <sys:String x:Key="MTDA_NavMediaDownload">Download</sys:String>
     <sys:String x:Key="MTDA_NavMediaQuality">Qualität</sys:String>

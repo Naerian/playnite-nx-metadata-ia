@@ -2,6 +2,7 @@ using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -40,18 +42,60 @@ namespace MetaDataIAPlugin
 
         public static TextBlock Hint(string text, Thickness margin)
         {
-            var block = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Opacity = 0.75, Margin = margin };
-            SetResource(block, TextBlock.ForegroundProperty, "TextBrush");
+            var block = new TextBlock
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+                Opacity = 1,
+                Margin = margin
+            };
+            SetResource(block, TextBlock.ForegroundProperty, "GlyphBrush");
             return block;
         }
 
         public static Border Card(UIElement child, Thickness margin)
         {
-            var border = new Border { Child = child, BorderThickness = new Thickness(1), Padding = new Thickness(12), Margin = margin, CornerRadius = new CornerRadius(3) };
+            var border = new Border
+            {
+                Child = child,
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(16),
+                Margin = margin,
+                CornerRadius = new CornerRadius(4),
+                SnapsToDevicePixels = true
+            };
             SetResource(border, Border.BackgroundProperty, "ControlBackgroundBrush");
-            SetResource(border, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+            if (!TrySetResource(border, Border.BorderBrushProperty, "Narian.Border"))
+            {
+                SetResource(border, Border.BorderBrushProperty, "GlyphBrush");
+            }
+
             ApplyTextBrush(border);
             return border;
+        }
+
+        private static bool TrySetResource(FrameworkElement element, DependencyProperty property, string key)
+        {
+            if (element == null || string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (element.TryFindResource(key) == null)
+                {
+                    return false;
+                }
+
+                element.SetResourceReference(property, key);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static FrameworkElement Section(string title, UIElement content, Thickness margin)
@@ -73,11 +117,15 @@ namespace MetaDataIAPlugin
             {
                 Child = content,
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(12),
-                CornerRadius = new CornerRadius(3)
+                Padding = new Thickness(16),
+                CornerRadius = new CornerRadius(4),
+                SnapsToDevicePixels = true
             };
             SetResource(body, Border.BackgroundProperty, "ControlBackgroundBrush");
-            SetResource(body, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+            if (!TrySetResource(body, Border.BorderBrushProperty, "Narian.Border"))
+            {
+                SetResource(body, Border.BorderBrushProperty, "GlyphBrush");
+            }
             ApplyTextBrush(body);
             stack.Children.Add(body);
             return stack;
@@ -104,22 +152,40 @@ namespace MetaDataIAPlugin
 
             SetResource(box, Control.ForegroundProperty, "TextBrush");
             SetResource(box, PasswordBox.CaretBrushProperty, "TextBrush");
-            SetResource(box, Control.BackgroundProperty, "PopupBackgroundBrush");
-            SetResource(box, Control.BorderBrushProperty, "GlyphBrush");
+            SetResource(box, Control.BackgroundProperty, "ControlBackgroundBrush");
+            if (!TrySetResource(box, Control.BorderBrushProperty, "Narian.Border"))
+            {
+                SetResource(box, Control.BorderBrushProperty, "GlyphBrush");
+            }
+
             box.BorderThickness = new Thickness(1);
-            box.Padding = new Thickness(6, 4, 6, 4);
-            box.MinHeight = 30;
+            box.Padding = new Thickness(6, 0, 6, 0);
+            box.Height = 36;
+            box.MinHeight = 36;
+            box.MaxHeight = 36;
+            box.FontSize = 14;
+            box.FontFamily = new FontFamily("Segoe UI");
             box.SnapsToDevicePixels = true;
+
+            // Prefer chrome template when available; otherwise keep a minimal local one.
+            var chromeTemplate = box.TryFindResource(typeof(PasswordBox)) as Style;
+            if (chromeTemplate != null)
+            {
+                box.Style = chromeTemplate;
+                return;
+            }
 
             var template = new ControlTemplate(typeof(PasswordBox));
             var border = new FrameworkElementFactory(typeof(Border));
             border.SetBinding(Border.BackgroundProperty, new Binding("Background") { RelativeSource = RelativeSource.TemplatedParent });
             border.SetBinding(Border.BorderBrushProperty, new Binding("BorderBrush") { RelativeSource = RelativeSource.TemplatedParent });
             border.SetBinding(Border.BorderThicknessProperty, new Binding("BorderThickness") { RelativeSource = RelativeSource.TemplatedParent });
-            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            border.SetValue(FrameworkElement.HeightProperty, 36.0);
             var host = new FrameworkElementFactory(typeof(ScrollViewer));
             host.Name = "PART_ContentHost";
             host.SetBinding(FrameworkElement.MarginProperty, new Binding("Padding") { RelativeSource = RelativeSource.TemplatedParent });
+            host.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
             border.AppendChild(host);
             template.VisualTree = border;
             box.Template = template;
@@ -234,9 +300,13 @@ namespace MetaDataIAPlugin
         private readonly ContentControl content = new ContentControl();
         private readonly TextBlock stepText = new TextBlock();
         private readonly TextBlock titleText = new TextBlock();
+        private readonly Border titleHeader = new Border();
         private readonly Button backButton = new Button();
         private readonly Button nextButton = new Button();
         private readonly Button skipButton = new Button();
+        private readonly ObservableCollection<string> providerModelIds = new ObservableCollection<string>();
+        private CancellationTokenSource providerModelsRefreshCancellation;
+        private bool providerModelsRefreshActive;
         private int page;
         private string selectedProfile = "balanced";
 
@@ -259,12 +329,11 @@ namespace MetaDataIAPlugin
 
             Title = plugin.Loc("MTDA_SetupWizardTitle", "Metadata AI setup assistant");
             Width = 780;
-            Height = 620;
+            Height = 640;
             MinWidth = 680;
             MinHeight = 520;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            MetadataTrustUi.ApplyWindowTheme(this);
 
             var owner = plugin.Api.Dialogs.GetCurrentAppWindow();
             if (owner != null)
@@ -273,45 +342,62 @@ namespace MetaDataIAPlugin
                 WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
 
-            var root = new Grid { Margin = new Thickness(20) };
-            MetadataTrustUi.ApplyTextBrush(root);
+            var root = new Grid { Margin = new Thickness(24) };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var header = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
-            stepText.Opacity = 0.7;
-            titleText.FontSize = 22;
+            stepText.FontSize = 12;
+            stepText.Margin = new Thickness(0, 0, 0, 8);
+            titleText.FontSize = 20;
             titleText.FontWeight = FontWeights.SemiBold;
-            titleText.Margin = new Thickness(0, 4, 0, 0);
+            titleHeader.Child = titleText;
+            titleHeader.BorderThickness = new Thickness(0, 0, 0, 1);
+            titleHeader.Padding = new Thickness(0, 0, 0, 8);
+            titleHeader.Margin = new Thickness(0, 0, 0, 8);
+            titleHeader.HorizontalAlignment = HorizontalAlignment.Stretch;
+            titleHeader.Background = Brushes.Transparent;
             header.Children.Add(stepText);
-            header.Children.Add(titleText);
+            header.Children.Add(titleHeader);
             Grid.SetRow(header, 0);
             root.Children.Add(header);
 
-            var scroll = new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+            var scroll = new ScrollViewer
+            {
+                Content = content,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Padding = new Thickness(0, 0, 4, 0),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0)
+            };
             Grid.SetRow(scroll, 1);
             root.Children.Add(scroll);
 
-            var buttons = new Grid { Margin = new Thickness(0, 18, 0, 0) };
+            var buttons = new Grid { Margin = new Thickness(0, 16, 0, 0) };
             buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             skipButton.Content = firstRun ? plugin.Loc("MTDA_SetupWizardSkip", "Skip for now") : plugin.Loc("MTDA_Close", "Close");
-            skipButton.MinWidth = 110;
+            skipButton.MinWidth = 120;
+            skipButton.Height = 36;
             skipButton.Click += (s, e) => { Skipped = true; DialogResult = false; };
             buttons.Children.Add(skipButton);
 
             backButton.Content = plugin.Loc("MTDA_SetupWizardBack", "Back");
             backButton.MinWidth = 100;
+            backButton.Height = 36;
             backButton.Margin = new Thickness(0, 0, 8, 0);
             backButton.Click += (s, e) => { if (page > 0) { page--; RenderPage(); } };
             Grid.SetColumn(backButton, 2);
             buttons.Children.Add(backButton);
 
-            nextButton.MinWidth = 120;
+            nextButton.MinWidth = 140;
+            nextButton.Height = 36;
+            nextButton.IsDefault = true;
             nextButton.Click += NextButtonOnClick;
             Grid.SetColumn(nextButton, 3);
             buttons.Children.Add(nextButton);
@@ -319,6 +405,11 @@ namespace MetaDataIAPlugin
             root.Children.Add(buttons);
 
             Content = root;
+            SettingsAppearance.ApplyWindow(this, working.AppearancePreset);
+            MetadataTrustUi.SetResource(stepText, TextBlock.ForegroundProperty, "GlyphBrush");
+            MetadataTrustUi.SetResource(titleText, TextBlock.ForegroundProperty, "Narian.Accent");
+            MetadataTrustUi.SetResource(titleHeader, Border.BorderBrushProperty, "Narian.Border");
+            Closed += (s, e) => CancelProviderModelsRefresh();
             RenderPage();
         }
 
@@ -355,7 +446,16 @@ namespace MetaDataIAPlugin
             var panel = new StackPanel();
             panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardPurposeHelp", "The assistant only prepares the configuration. It will not modify any game when you finish."), new Thickness(0, 0, 0, 16)));
             panel.Children.Add(Label(plugin.Loc("MTDA_OutputLanguage", "Output language")));
-            var language = new ComboBox { ItemsSource = working.LanguageOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Code", SelectedValue = working.Language, MinWidth = 280, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 20) };
+            var language = new ComboBox
+            {
+                ItemsSource = working.LanguageOptions,
+                DisplayMemberPath = "DisplayName",
+                SelectedValuePath = "Code",
+                SelectedValue = working.Language,
+                MinWidth = 280,
+                Height = 36,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
             language.SelectionChanged += (s, e) =>
             {
                 if (language.SelectedValue == null) return;
@@ -363,7 +463,7 @@ namespace MetaDataIAPlugin
                 if (firstRun) working.ResetTemplates();
             };
             panel.Children.Add(language);
-            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_OutputLanguageHelp", "This controls generated metadata and default template headings. The plugin interface follows Playnite's interface language."), new Thickness(0, -12, 0, 20)));
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_OutputLanguageHelp", "This controls generated metadata and default template headings. The plugin interface follows Playnite's interface language."), new Thickness(0, 8, 0, 16)));
 
             panel.Children.Add(Label(plugin.Loc("MTDA_SetupWizardProfile", "Configuration profile")));
             var profiles = new List<LocalizedOption>
@@ -374,7 +474,16 @@ namespace MetaDataIAPlugin
                 new LocalizedOption("media", plugin.Loc("MTDA_SetupProfileMedia", "Media only")),
                 new LocalizedOption("current", plugin.Loc("MTDA_SetupProfileCurrent", "Keep current configuration"))
             };
-            var profile = new ComboBox { ItemsSource = profiles, DisplayMemberPath = "DisplayName", SelectedValuePath = "Value", SelectedValue = selectedProfile, MinWidth = 360, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 8) };
+            var profile = new ComboBox
+            {
+                ItemsSource = profiles,
+                DisplayMemberPath = "DisplayName",
+                SelectedValuePath = "Value",
+                SelectedValue = selectedProfile,
+                MinWidth = 360,
+                Height = 36,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
             profile.SelectionChanged += (s, e) =>
             {
                 if (profile.SelectedValue == null) return;
@@ -382,7 +491,7 @@ namespace MetaDataIAPlugin
                 ApplyProfile(selectedProfile);
             };
             panel.Children.Add(profile);
-            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardProfileHelp", "You can fine-tune every field later. Existing installations are never reset automatically."), new Thickness(0, 0, 0, 0)));
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardProfileHelp", "You can fine-tune every field later. Existing installations are never reset automatically."), new Thickness(0, 8, 0, 0)));
             return panel;
         }
 
@@ -391,23 +500,173 @@ namespace MetaDataIAPlugin
             titleText.Text = plugin.Loc("MTDA_SetupWizardProviderTitle", "Configure the AI provider");
             var panel = new StackPanel();
             panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardProviderHelp", "Local providers such as LM Studio and Ollama can work without a paid API. The API key can stay empty when the selected provider does not require one."), new Thickness(0, 0, 0, 16)));
-            panel.Children.Add(Label(plugin.Loc("MTDA_Provider", "Provider")));
-            var provider = new ComboBox { ItemsSource = working.ProviderPresetOptions, DisplayMemberPath = "DisplayName", SelectedValuePath = "Value", SelectedValue = working.ProviderPreset, MinWidth = 360, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 14) };
-            panel.Children.Add(provider);
-            panel.Children.Add(Label(plugin.Loc("MTDA_Model", "Model")));
-            var model = new TextBox { Text = working.Model, MinWidth = 480, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 4, 0, 14) };
-            panel.Children.Add(model);
-            panel.Children.Add(Label(plugin.Loc("MTDA_ApiKey", "API key")));
-            var key = new PasswordBox { Password = working.ApiKey ?? string.Empty, MinWidth = 480, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 4, 0, 8) };
-            MetadataTrustUi.ApplySecurePasswordBox(key);
-            panel.Children.Add(key);
-            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardProviderAdvancedHelp", "The endpoint is selected automatically. Custom endpoints remain available from Advanced mode in the AI tab."), new Thickness(0, 0, 0, 0)));
 
-            var testPanel = new StackPanel { Margin = new Thickness(0, 16, 0, 0) };
-            var testButton = new Button { Content = plugin.Loc("MTDA_TestProvider", "Test provider"), MinWidth = 140, HorizontalAlignment = HorizontalAlignment.Left };
+            panel.Children.Add(Label(plugin.Loc("MTDA_Provider", "Provider")));
+            var provider = new ComboBox
+            {
+                ItemsSource = working.ProviderPresetOptions,
+                DisplayMemberPath = "DisplayName",
+                SelectedValuePath = "Value",
+                SelectedValue = working.ProviderPreset,
+                MinWidth = 360,
+                Height = 36,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            panel.Children.Add(provider);
+            if (!string.IsNullOrWhiteSpace(working.ProviderKeyHelp))
+            {
+                panel.Children.Add(MetadataTrustUi.Hint(working.ProviderKeyHelp, new Thickness(0, 0, 0, 8)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(working.ProviderBillingHelp))
+            {
+                panel.Children.Add(MetadataTrustUi.Hint(working.ProviderBillingHelp, new Thickness(0, 0, 0, 16)));
+            }
+            else
+            {
+                panel.Children.Add(new Border { Height = 8 });
+            }
+
+            panel.Children.Add(Label(plugin.Loc("MTDA_ApiKey", "API key")));
+            var key = new PasswordBox
+            {
+                Password = working.ApiKey ?? string.Empty,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Height = 36,
+                MinHeight = 36,
+                MaxHeight = 36,
+                Padding = new Thickness(6, 0, 6, 0),
+                FontSize = 14,
+                Margin = new Thickness(0)
+            };
+            var passwordStyle = TryFindResource(typeof(PasswordBox)) as Style;
+            if (passwordStyle != null)
+            {
+                key.Style = passwordStyle;
+            }
+
+            panel.Children.Add(key);
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_ApiKeyHelp", "Stored only on this PC in Playnite plugin settings."), new Thickness(0, 8, 0, 16)));
+
+            panel.Children.Add(Label(plugin.Loc("MTDA_Model", "Model")));
+            var modelRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            modelRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            modelRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var model = new ComboBox
+            {
+                IsEditable = true,
+                IsTextSearchEnabled = true,
+                ItemsSource = providerModelIds,
+                Text = working.Model ?? string.Empty,
+                Height = 36,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            Grid.SetColumn(model, 0);
+            modelRow.Children.Add(model);
+            var refreshModels = new Button
+            {
+                Content = plugin.Loc("MTDA_RefreshModels", "Refresh models"),
+                MinWidth = 140,
+                Height = 36
+            };
+            Grid.SetColumn(refreshModels, 1);
+            modelRow.Children.Add(refreshModels);
+            panel.Children.Add(modelRow);
+            var modelsStatus = MetadataTrustUi.Hint(string.Empty, new Thickness(0, 0, 0, 16));
+            panel.Children.Add(modelsStatus);
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardProviderAdvancedHelp", "The endpoint is selected automatically. Custom endpoints remain available from Advanced mode in the AI tab."), new Thickness(0, 0, 0, 16)));
+
+            var testButton = new Button
+            {
+                Content = plugin.Loc("MTDA_TestProvider", "Test provider"),
+                MinWidth = 140,
+                Height = 36,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            testButton.IsDefault = false;
+            // Primary look like settings: use accent via IsDefault styling temporarily — keep secondary chrome + accent fill.
+            testButton.SetResourceReference(Control.BackgroundProperty, "Narian.Accent");
+            testButton.SetResourceReference(Control.ForegroundProperty, "Narian.AccentOn");
+            testButton.SetResourceReference(Control.BorderBrushProperty, "Narian.Accent");
+            panel.Children.Add(testButton);
+
             var testStatus = MetadataTrustUi.Text(string.Empty);
-            var testStatusBorder = MetadataTrustUi.Card(testStatus, new Thickness(0, 10, 0, 0));
-            testStatusBorder.Visibility = Visibility.Collapsed;
+            var testStatusBorder = new Border
+            {
+                Child = testStatus,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(16),
+                Margin = new Thickness(0, 0, 0, 0),
+                Visibility = Visibility.Collapsed,
+                SnapsToDevicePixels = true
+            };
+            MetadataTrustUi.SetResource(testStatusBorder, Border.BackgroundProperty, "ControlBackgroundBrush");
+            MetadataTrustUi.SetResource(testStatusBorder, Border.BorderBrushProperty, "Narian.Border");
+            panel.Children.Add(testStatusBorder);
+
+            Action syncModelText = () =>
+            {
+                var selected = model.SelectedItem as string;
+                if (!string.IsNullOrWhiteSpace(selected))
+                {
+                    working.Model = selected;
+                    if (!string.Equals(model.Text, selected, StringComparison.Ordinal))
+                    {
+                        model.Text = selected;
+                    }
+
+                    return;
+                }
+
+                working.Model = model.Text;
+            };
+            model.LostFocus += (s, e) => syncModelText();
+            model.DropDownClosed += (s, e) => Dispatcher.BeginInvoke(new Action(syncModelText));
+            model.SelectionChanged += (s, e) =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var selected = model.SelectedItem as string;
+                    if (string.IsNullOrWhiteSpace(selected) && model.SelectedItem != null)
+                    {
+                        selected = model.SelectedItem.ToString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(selected))
+                    {
+                        working.Model = selected;
+                        model.Text = selected;
+                    }
+                    else
+                    {
+                        syncModelText();
+                    }
+                }));
+            };
+            key.PasswordChanged += (s, e) => working.ApiKey = key.Password;
+
+            Func<Task> refreshModelsAsync = async () =>
+            {
+                working.ApiKey = key.Password;
+                working.Model = model.Text;
+                await RefreshProviderModelsAsync(model, modelsStatus, refreshModels, true);
+            };
+            refreshModels.Click += async (s, e) => await refreshModelsAsync();
+
+            provider.SelectionChanged += async (s, e) =>
+            {
+                if (provider.SelectedValue == null) return;
+                working.ProviderPreset = provider.SelectedValue.ToString();
+                working.ApplyProviderPreset();
+                model.Text = working.Model ?? string.Empty;
+                // refresh help hints by rebuilding is heavy; update via status/models only
+                await RefreshProviderModelsAsync(model, modelsStatus, refreshModels, false);
+            };
+
             testButton.Click += async (s, e) =>
             {
                 working.Model = model.Text;
@@ -416,6 +675,7 @@ namespace MetaDataIAPlugin
                 backButton.IsEnabled = false;
                 nextButton.IsEnabled = false;
                 skipButton.IsEnabled = false;
+                refreshModels.IsEnabled = false;
                 testStatusBorder.Visibility = Visibility.Visible;
                 testStatus.Text = plugin.Loc("MTDA_TestSending", "Sending a test request to {0}...").Replace("{0}", working.ProviderPreset);
                 using (var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(90)))
@@ -439,30 +699,124 @@ namespace MetaDataIAPlugin
                         backButton.IsEnabled = page > 0;
                         nextButton.IsEnabled = true;
                         skipButton.IsEnabled = true;
+                        refreshModels.IsEnabled = true;
                     }
                 }
             };
-            testPanel.Children.Add(testButton);
-            testPanel.Children.Add(testStatusBorder);
-            panel.Children.Add(testPanel);
 
-            provider.SelectionChanged += (s, e) =>
-            {
-                if (provider.SelectedValue == null) return;
-                working.ProviderPreset = provider.SelectedValue.ToString();
-                working.ApplyProviderPreset();
-                model.Text = working.Model;
-            };
-            model.TextChanged += (s, e) => working.Model = model.Text;
-            key.PasswordChanged += (s, e) => working.ApiKey = key.Password;
+            Dispatcher.BeginInvoke(new Action(async () => await RefreshProviderModelsAsync(model, modelsStatus, refreshModels, false)));
             return panel;
+        }
+
+        private async Task RefreshProviderModelsAsync(ComboBox modelCombo, TextBlock status, Button refreshButton, bool manual)
+        {
+            if (providerModelsRefreshActive || modelCombo == null || status == null)
+            {
+                return;
+            }
+
+            AddCurrentProviderModel(working.Model);
+            if (RequiresApiKeyForModelListing(working) && string.IsNullOrWhiteSpace(working.ApiKey))
+            {
+                status.Text = plugin.Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models.");
+                return;
+            }
+
+            CancelProviderModelsRefresh();
+            providerModelsRefreshCancellation = new CancellationTokenSource();
+            var cancellation = providerModelsRefreshCancellation;
+            providerModelsRefreshActive = true;
+            if (refreshButton != null)
+            {
+                refreshButton.IsEnabled = false;
+            }
+
+            status.Text = plugin.Loc("MTDA_ProviderModelsLoading", "Loading available models...");
+
+            try
+            {
+                var models = await ProviderModelService.GetModelsAsync(working, cancellation.Token);
+                if (cancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var configuredModel = working.Model;
+                providerModelIds.Clear();
+                foreach (var option in models)
+                {
+                    providerModelIds.Add(option.Id);
+                }
+
+                AddCurrentProviderModel(configuredModel);
+                modelCombo.Text = configuredModel ?? string.Empty;
+                status.Text = models.Count == 0
+                    ? plugin.Loc("MTDA_ProviderModelsEmpty", "The provider did not return compatible text models. You can still enter one manually.")
+                    : string.Format(plugin.Loc("MTDA_ProviderModelsLoaded", "{0} compatible models available. You can also enter one manually."), models.Count);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                status.Text = manual
+                    ? string.Format(plugin.Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
+                    : plugin.Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually.");
+            }
+            finally
+            {
+                if (ReferenceEquals(providerModelsRefreshCancellation, cancellation))
+                {
+                    providerModelsRefreshActive = false;
+                    if (refreshButton != null)
+                    {
+                        refreshButton.IsEnabled = true;
+                    }
+
+                    providerModelsRefreshCancellation.Dispose();
+                    providerModelsRefreshCancellation = null;
+                }
+            }
+        }
+
+        private void AddCurrentProviderModel(string model)
+        {
+            if (string.IsNullOrWhiteSpace(model) ||
+                providerModelIds.Any(x => string.Equals(x, model, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            providerModelIds.Insert(0, model.Trim());
+        }
+
+        private void CancelProviderModelsRefresh()
+        {
+            if (providerModelsRefreshCancellation != null)
+            {
+                providerModelsRefreshCancellation.Cancel();
+                providerModelsRefreshCancellation.Dispose();
+                providerModelsRefreshCancellation = null;
+            }
+
+            providerModelsRefreshActive = false;
+        }
+
+        private static bool RequiresApiKeyForModelListing(MetaDataIASettings settings)
+        {
+            return settings.ProviderPreset == MetaDataIASettings.ProviderOpenAI ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderGemini ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderClaude ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderMistral ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderGroq ||
+                   settings.ProviderPreset == MetaDataIASettings.ProviderCerebras;
         }
 
         private UIElement BuildFieldsPage()
         {
             titleText.Text = plugin.Loc("MTDA_SetupWizardFieldsTitle", "Choose what Metadata AI may change");
             var panel = new StackPanel();
-            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardFieldsHelp", "These switches control generation. The apply rules selected by the profile still decide whether existing values are preserved, appended or replaced."), new Thickness(0, 0, 0, 14)));
+            panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardFieldsHelp", "These switches control generation. The apply rules selected by the profile still decide whether existing values are preserved, appended or replaced."), new Thickness(0, 0, 0, 16)));
             var wrap = new WrapPanel();
             AddFieldCheck(wrap, plugin.Loc("MTDA_Description", "Description"), () => working.GenerateDescription, v => working.GenerateDescription = v);
             AddFieldCheck(wrap, plugin.Loc("MTDA_Genres", "Genres"), () => working.GenerateGenres, v => working.GenerateGenres = v);
@@ -478,8 +832,14 @@ namespace MetaDataIAPlugin
             AddFieldCheck(wrap, plugin.Loc("MTDA_Cover", "Cover"), () => working.DownloadCoverImage, v => working.DownloadCoverImage = v);
             AddFieldCheck(wrap, plugin.Loc("MTDA_Icon", "Icon"), () => working.DownloadIcon, v => working.DownloadIcon = v);
             AddFieldCheck(wrap, plugin.Loc("MTDA_Background", "Background"), () => working.DownloadBackgroundImage, v => working.DownloadBackgroundImage = v);
-            panel.Children.Add(MetadataTrustUi.Card(wrap, new Thickness(0)));
-            var strict = new CheckBox { Content = plugin.Loc("MTDA_StrictCompanyAgeRegion", "Do not create developers, publishers, age ratings or regions without trusted evidence"), IsChecked = working.StrictCompanyAgeRegion, Margin = new Thickness(0, 16, 0, 4) };
+            panel.Children.Add(wrap);
+            var strict = new CheckBox
+            {
+                Content = plugin.Loc("MTDA_StrictCompanyAgeRegion", "Do not create developers, publishers, age ratings or regions without trusted evidence"),
+                IsChecked = working.StrictCompanyAgeRegion,
+                Margin = new Thickness(0, 16, 0, 0),
+                FontSize = 14
+            };
             strict.Checked += (s, e) => working.StrictCompanyAgeRegion = true;
             strict.Unchecked += (s, e) => working.StrictCompanyAgeRegion = false;
             panel.Children.Add(strict);
@@ -511,8 +871,8 @@ namespace MetaDataIAPlugin
             stack.Children.Add(SummaryLine(plugin.Loc("MTDA_Model", "Model"), working.Model));
             stack.Children.Add(SummaryLine(plugin.Loc("MTDA_SetupWizardProfile", "Configuration profile"), selectedProfile));
             stack.Children.Add(SummaryLine(plugin.Loc("MTDA_SetupWizardEnabledFields", "Enabled fields"), fields.Count == 0 ? plugin.Loc("MTDA_None", "None") : string.Join(", ", fields)));
-            stack.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardSummaryHelp", "Saving only changes the plugin configuration. Use Simulate changes from the Metadata AI menu to inspect a real game before applying anything."), new Thickness(0, 16, 0, 0)));
-            return MetadataTrustUi.Card(stack, new Thickness(0));
+            stack.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardSummaryHelp", "Saving only changes the plugin configuration. Use Simulate changes from the Metadata AI menu to inspect a real game before applying anything."), new Thickness(0, 8, 0, 0)));
+            return stack;
         }
 
         private void ApplyProfile(string profile)
@@ -576,20 +936,45 @@ namespace MetaDataIAPlugin
 
         private static TextBlock Label(string value)
         {
-            return new TextBlock { Text = value, FontWeight = FontWeights.SemiBold };
+            var block = new TextBlock
+            {
+                Text = value,
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            MetadataTrustUi.SetResource(block, TextBlock.ForegroundProperty, "TextBrush");
+            return block;
         }
 
         private static UIElement SummaryLine(string label, string value)
         {
-            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-            panel.Children.Add(new TextBlock { Text = label, FontWeight = FontWeights.SemiBold });
-            panel.Children.Add(new TextBlock { Text = value ?? string.Empty, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
+            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+            var title = new TextBlock { Text = label, FontSize = 14, FontWeight = FontWeights.SemiBold };
+            MetadataTrustUi.SetResource(title, TextBlock.ForegroundProperty, "TextBrush");
+            var body = new TextBlock
+            {
+                Text = value ?? string.Empty,
+                FontSize = 14,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+            MetadataTrustUi.SetResource(body, TextBlock.ForegroundProperty, "TextBrush");
+            panel.Children.Add(title);
+            panel.Children.Add(body);
             return panel;
         }
 
         private static void AddFieldCheck(Panel panel, string text, Func<bool> get, Action<bool> set)
         {
-            var check = new CheckBox { Content = text, IsChecked = get(), Width = 215, Margin = new Thickness(0, 5, 8, 5) };
+            var check = new CheckBox
+            {
+                Content = text,
+                IsChecked = get(),
+                Width = 215,
+                Margin = new Thickness(0, 4, 8, 4),
+                FontSize = 14
+            };
             check.Checked += (s, e) => set(true);
             check.Unchecked += (s, e) => set(false);
             panel.Children.Add(check);

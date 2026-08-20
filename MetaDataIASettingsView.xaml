@@ -10,9 +10,13 @@
              TextElement.FontSize="14"
              TextElement.Foreground="{DynamicResource TextBrush}">
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="SettingsChrome.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <Style x:Key="SectionHeaderBorder" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="Padding" Value="0,0,0,8"/>
@@ -21,7 +25,7 @@
         </Style>
         <Style x:Key="PageHeader" TargetType="Border" BasedOn="{StaticResource SectionHeaderBorder}"/>
         <Style x:Key="SectionHeaderText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Narian.Accent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="20"/>
         </Style>
@@ -31,39 +35,11 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
         <Style x:Key="SecurePasswordBox" TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="MinHeight" Value="30"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Border" Property="Opacity" Value="0.55"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="MaxHeight" Value="36"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
         <Style x:Key="SourcePriorityClickOverlay" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -79,23 +55,23 @@
             </Setter>
         </Style>
         <Style x:Key="TokenHeaderCell" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.TableHeader}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="MinHeight" Value="42"/>
             <Setter Property="Padding" Value="10,8"/>
         </Style>
         <Style x:Key="TokenNameCell" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.RowOdd}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="MinHeight" Value="36"/>
             <Setter Property="Padding" Value="10,7"/>
         </Style>
         <Style x:Key="TokenReferenceCell" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="MinHeight" Value="36"/>
             <Setter Property="Padding" Value="10,7"/>
         </Style>
         <Style x:Key="TokenCellText" TargetType="TextBlock">
@@ -118,10 +94,10 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style x:Key="HintText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource GlyphBrush}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Opacity" Value="0.78"/>
+            <Setter Property="Opacity" Value="1"/>
             <Setter Property="Margin" Value="0,8,0,16"/>
         </Style>
         <Style x:Key="FieldHintText" TargetType="TextBlock" BasedOn="{StaticResource HintText}">
@@ -138,6 +114,40 @@
             <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="NarianPrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{DynamicResource Narian.Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Narian.AccentOn}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Accent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Narian.AccentHover}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Narian.AccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="SectionSubtitleText" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
             <Setter Property="FontStyle" Value="Italic"/>
@@ -158,6 +168,7 @@
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
         <Style x:Key="FieldLabelText" TargetType="TextBlock" BasedOn="{StaticResource FieldLabel}"/>
+        <!-- Flat section wrapper: forms sit on page bg (Audio Switcher pattern). -->
         <Style x:Key="SettingsCard" TargetType="Border">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -168,6 +179,17 @@
         </Style>
         <Style x:Key="AdvancedSettingsCard" TargetType="Border" BasedOn="{StaticResource SettingsCard}"/>
         <Style x:Key="PageIntroCard" TargetType="Border" BasedOn="{StaticResource SettingsCard}"/>
+        <!-- Elevated surface: Overview summary tiles + About narrative only. -->
+        <Style x:Key="ElevatedCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,24"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
         <Style x:Key="PageSection" TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,0,24"/>
         </Style>
@@ -177,23 +199,43 @@
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
         </Style>
-        <Style x:Key="FieldTableRow" TargetType="Border">
+        <Style x:Key="FieldTableHeader" TargetType="Border">
             <Setter Property="Grid.ColumnSpan" Value="5"/>
-            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
-            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.TableHeader}"/>
+            <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Margin" Value="0,2"/>
-            <Setter Property="Opacity" Value="0.42"/>
+            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <Style x:Key="FieldTableRowOdd" TargetType="Border">
+            <Setter Property="Grid.ColumnSpan" Value="5"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.RowOdd}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="0,2"/>
             <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <Style x:Key="FieldTableRowEven" TargetType="Border">
+            <Setter Property="Grid.ColumnSpan" Value="5"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.RowEven}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+        <Style x:Key="FieldTableRow" TargetType="Border" BasedOn="{StaticResource FieldTableRowOdd}"/>
+        <Style x:Key="FieldTableFooter" TargetType="Border" BasedOn="{StaticResource FieldTableHeader}">
+            <Setter Property="MinHeight" Value="40"/>
         </Style>
         <Style x:Key="TokenHelpText" TargetType="TextBlock" BasedOn="{StaticResource TokenCellText}">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Opacity" Value="0.78"/>
         </Style>
         <Style x:Key="TokenCopyCell" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ControlHoverBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.RowEven}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="MinHeight" Value="36"/>
             <Setter Property="Padding" Value="4"/>
         </Style>
         <Style x:Key="TokenCopyButton" TargetType="Button">
@@ -226,7 +268,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CopyBorder" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="CopyBorder" Property="Background" Value="{DynamicResource Narian.Hover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="CopyBorder" Property="Opacity" Value="0.86"/>
@@ -237,18 +279,18 @@
             </Setter>
         </Style>
         <Style x:Key="TestOperationBorder" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
-            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+            <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Visibility" Value="Collapsed"/>
         </Style>
         <Style x:Key="SummaryCard" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource PopupBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource HighlightGlyphBrush}"/>
-            <Setter Property="BorderThickness" Value="4,1,1,1"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
             <Setter Property="CornerRadius" Value="4"/>
@@ -257,11 +299,12 @@
             <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}"/>
         </Style>
         <Style x:Key="SummaryCardTitle" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
+            <Setter Property="Foreground" Value="{DynamicResource Narian.Accent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="SummaryTitleSeparator" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="Padding" Value="0,0,0,8"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
@@ -273,9 +316,9 @@
             <Setter Property="Margin" Value="0,4,0,0"/>
         </Style>
         <Style x:Key="SummaryPill" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource GlyphBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource Narian.BadgeBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8,2"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="MinHeight" Value="22"/>
@@ -294,13 +337,15 @@
             <Setter Property="Margin" Value="0,8,0,0"/>
         </Style>
         <Style x:Key="SourceStatusBadge" TargetType="Border" BasedOn="{StaticResource SummaryPill}">
+            <Setter Property="Background" Value="{DynamicResource Narian.BadgeMutedBg}"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Margin" Value="8,0,0,0"/>
         </Style>
         <Style x:Key="SourceCapabilityBadge" TargetType="Border" BasedOn="{StaticResource SummaryPill}">
+            <Setter Property="Background" Value="{DynamicResource Narian.BadgeBg}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="6,1"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Opacity" Value="0.92"/>
         </Style>
         <Style x:Key="MediaSourceHeaderHint" TargetType="TextBlock" BasedOn="{StaticResource HintText}">
             <Setter Property="FontSize" Value="12"/>
@@ -408,12 +453,12 @@
                         </DockPanel>
                         <ControlTemplate.Triggers>
                             <Trigger SourceName="HeaderChrome" Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
                             </Trigger>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ExpanderContent" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
-                                <Setter TargetName="ExpanderAccent" Property="Fill" Value="{DynamicResource GlyphBrush}"/>
+                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
+                                <Setter TargetName="ExpanderAccent" Property="Fill" Value="{DynamicResource HighlightGlyphBrush}"/>
                                 <Setter TargetName="ExpanderHint" Property="Visibility" Value="Collapsed"/>
                                 <Setter TargetName="ExpanderArrow" Property="Data" Value="M6,15 L12,9 L18,15"/>
                                 <Setter TargetName="ExpanderHeader" Property="TextElement.FontWeight" Value="SemiBold"/>
@@ -432,6 +477,7 @@
             <Setter Property="Margin" Value="0,0,0,6"/>
             <Setter Property="MinHeight" Value="44"/>
             <Setter Property="ClipToBounds" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
@@ -446,14 +492,14 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="NavigationFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrushDark}"/>
+                                <Setter TargetName="NavigationFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="NavigationFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
-                                <Setter TargetName="NavigationAccent" Property="Fill" Value="{DynamicResource GlyphBrush}"/>
+                                <Setter TargetName="NavigationFill" Property="Fill" Value="{DynamicResource Narian.Selected}"/>
+                                <Setter TargetName="NavigationAccent" Property="Fill" Value="{DynamicResource Narian.Accent}"/>
                                 <Setter TargetName="NavigationHeader" Property="TextElement.FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrushDark}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -477,12 +523,13 @@
                                 <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Background="{DynamicResource PopupBackgroundBrush}" CornerRadius="4"
+                            <Border Background="{DynamicResource ControlBackgroundBrush}" CornerRadius="4"
                                     Padding="8" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                    BorderThickness="0"
                                     ClipToBounds="False">
                                 <DockPanel LastChildFill="True">
                                     <TextBlock DockPanel.Dock="Top" Text="{TemplateBinding Tag}"
-                                               Foreground="{DynamicResource TextBrush}" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Narian.Accent}" FontSize="14" FontWeight="SemiBold"
                                                Margin="8,8,8,16" TextWrapping="Wrap"/>
                                     <StackPanel x:Name="HeaderPanel" IsItemsHost="True"/>
                                 </DockPanel>
@@ -507,6 +554,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="ClipToBounds" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
@@ -519,13 +567,13 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrushDark}"/>
+                                <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource Narian.Selected}"/>
                                 <Setter TargetName="Header" Property="TextElement.FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextBrushDark}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Narian.Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -547,8 +595,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Border Background="{DynamicResource PopupBackgroundBrush}" CornerRadius="4"
+                            <Border Background="{DynamicResource ControlBackgroundBrush}" CornerRadius="4"
                                     Padding="6" ClipToBounds="False"
+                                    BorderThickness="0"
                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                 <WrapPanel x:Name="HeaderPanel" IsItemsHost="True"/>
                             </Border>
@@ -621,12 +670,12 @@
                         </DockPanel>
                         <ControlTemplate.Triggers>
                             <Trigger SourceName="HeaderChrome" Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
+                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
                             </Trigger>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ExpanderContent" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource HoverBrush}"/>
-                                <Setter TargetName="ExpanderAccent" Property="Fill" Value="{DynamicResource GlyphBrush}"/>
+                                <Setter TargetName="ExpanderFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
+                                <Setter TargetName="ExpanderAccent" Property="Fill" Value="{DynamicResource HighlightGlyphBrush}"/>
                                 <Setter TargetName="ExpanderArrow" Property="Data" Value="M6,15 L12,9 L18,15"/>
                                 <Setter TargetName="ExpanderHeader" Property="TextElement.FontWeight" Value="SemiBold"/>
                             </Trigger>
@@ -644,6 +693,7 @@
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="16,16">
         <Grid.RowDefinitions>
@@ -666,6 +716,13 @@
                             </Border>
                             <TextBlock Text="{DynamicResource MTDA_ConfigurationSummaryHelp}" Style="{StaticResource SectionSubtitleText}"/>
                         </StackPanel>
+                        <Border Style="{StaticResource SettingsCard}" Margin="0,0,0,24">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource MTDA_AppearancePreset}" Style="{StaticResource FieldLabelText}"/>
+                                <TextBlock Text="{DynamicResource MTDA_AppearancePresetHelp}" Style="{StaticResource FieldHintText}" Margin="0,0,0,8"/>
+                                <WrapPanel x:Name="AppearancePresetChips" Orientation="Horizontal"/>
+                            </StackPanel>
+                        </Border>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -680,11 +737,11 @@
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Grid.ColumnSpan="3" Style="{StaticResource SummaryCard}"
-                                    BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
-                                        <Border x:Name="ConfigurationProviderStatusBadge" Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="8,0,0,0">
+                                        <Border x:Name="ConfigurationProviderStatusBadge" Style="{StaticResource SourceStatusBadge}" DockPanel.Dock="Right" Margin="8,0,0,0">
                                             <TextBlock x:Name="ConfigurationProviderStatusText"/>
                                         </Border>
                                         <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource SummaryCardTitle}"/>
@@ -696,7 +753,7 @@
                             </Border>
 
                             <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SummaryCard}"
-                                    BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
@@ -710,7 +767,7 @@
                                 </StackPanel>
                             </Border>
                             <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SummaryCard}"
-                                    BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                         <TextBlock Text="{DynamicResource MTDA_TabTemplates}" Style="{StaticResource SummaryCardTitle}"/>
@@ -726,7 +783,7 @@
                             </Border>
 
                             <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource SummaryCard}"
-                                    BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                     <DockPanel LastChildFill="True">
@@ -740,7 +797,7 @@
                                 </StackPanel>
                             </Border>
                             <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource SummaryCard}"
-                                    BorderBrush="{DynamicResource HighlightGlyphBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                         <TextBlock Text="{DynamicResource MTDA_SummaryAutomation}" Style="{StaticResource SummaryCardTitle}"/>
@@ -761,7 +818,7 @@
                             </Border>
 
                             <Border Grid.Row="3" Grid.ColumnSpan="3" Style="{StaticResource SummaryCard}" Margin="0"
-                                    BorderBrush="{DynamicResource PositiveRatingBrush}" BorderThickness="4,1,1,1">
+                                   >
                                 <StackPanel Margin="0">
                                     <Border Style="{StaticResource SummaryTitleSeparator}">
                                         <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SummaryCardTitle}"/>
@@ -806,6 +863,10 @@
 
                         <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_AiProviderCardTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+
                                 <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource FieldLabelText}"/>
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -834,12 +895,9 @@
                                 <Button Content="{DynamicResource MTDA_OpenProviderPage}"
                                         HorizontalAlignment="Left"
                                         MinWidth="170"
+                                        Margin="0,0,0,16"
                                         Click="OpenProviderPage_OnClick"/>
-                            </StackPanel>
-                        </Border>
 
-                        <Border Style="{StaticResource SettingsCard}">
-                            <StackPanel>
                                 <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
                                             Margin="0,0,0,16">
                                     <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>
@@ -884,13 +942,10 @@
                                 </Grid>
                                 <TextBlock x:Name="ProviderModelsStatusText"
                                            Style="{StaticResource FieldHintText}"
-                                           Margin="0,0,0,0"/>
-                            </StackPanel>
-                        </Border>
+                                           Margin="0,0,0,16"/>
 
-                        <Border Style="{StaticResource SettingsCard}">
-                            <StackPanel>
                                 <Button Content="{DynamicResource MTDA_TestProvider}"
+                                        Style="{StaticResource NarianPrimaryButton}"
                                         HorizontalAlignment="Left"
                                         MinWidth="130"
                                         Margin="0,0,0,16"
@@ -921,7 +976,9 @@
 
                         <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource MTDA_ProviderUsageTitle}" Style="{StaticResource SettingsToggleTitle}" Margin="0,0,0,12"/>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_ProviderUsageTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
                                 <ProgressBar x:Name="ProviderUsageProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8" Visibility="Collapsed"/>
                                 <TextBlock x:Name="ProviderUsageStatusText" TextWrapping="Wrap"/>
                                 <TextBlock x:Name="ProviderUsageDetailsText" TextWrapping="Wrap" Margin="0,8,0,0"/>
@@ -976,7 +1033,7 @@
                                 <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ExistingMetadataMode}" Margin="0"/>
                                 <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" Style="{StaticResource HintText}"/>
                                 <CheckBox Content="{DynamicResource MTDA_OfficialStoreContext}" IsChecked="{Binding Settings.UseOfficialStoreContext}" Margin="0"/>
-                                <TextBlock Text="{DynamicResource MTDA_OfficialStoreContextHelp}" Style="{StaticResource HintText}" Margin="24,8,0,16"/>
+                                <TextBlock Text="{DynamicResource MTDA_OfficialStoreContextHelp}" Style="{StaticResource FieldHintText}" Margin="0,8,0,16"/>
                                 <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0"/>
                             </StackPanel>
                         </Border>
@@ -1060,7 +1117,7 @@
                                         <TextBlock Text="{DynamicResource MTDA_Model}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBox Text="{Binding Settings.OllamaFallbackModel, UpdateSourceTrigger=PropertyChanged}" MinWidth="180"/>
                                     </StackPanel>
-                                    <TextBlock Text="{DynamicResource MTDA_LocalFallbackHelp}" Style="{StaticResource HintText}" Margin="24,8,0,16"/>
+                                    <TextBlock Text="{DynamicResource MTDA_LocalFallbackHelp}" Style="{StaticResource FieldHintText}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -1095,9 +1152,9 @@
                 </TabItem.Header>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5*"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="6*"/>
+                        <ColumnDefinition Width="7*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="3*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -1138,7 +1195,7 @@
                     </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}">
+                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}" Margin="0,0,0,0" VerticalAlignment="Stretch">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -1152,11 +1209,11 @@
                         </Border>
 
                         <StackPanel Grid.Row="1">
-                            <DockPanel LastChildFill="True">
+                            <DockPanel LastChildFill="True" Margin="0,0,0,10">
                                 <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="8,0,0,0">
                                     <TextBlock Text="{Binding SelectedTemplateStatusText}" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="{DynamicResource MTDA_TemplateName}" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource MTDA_TemplateName}" Style="{StaticResource FieldLabelText}" VerticalAlignment="Center" Margin="0"/>
                             </DockPanel>
                             <TextBox x:Name="TemplateNameBox"
                                      Text="{Binding SelectedTemplateNameText, UpdateSourceTrigger=PropertyChanged}"
@@ -1169,8 +1226,9 @@
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  VerticalScrollBarVisibility="Auto"
-                                 MinHeight="240"
-                                 Margin="0,0,0,4"/>
+                                 VerticalAlignment="Stretch"
+                                 MinHeight="420"
+                                 Margin="0,0,0,8"/>
                         <StackPanel Grid.Row="3">
                             <Expander Header="{DynamicResource MTDA_TemplateHtmlHelpTitle}"
                                       Style="{StaticResource SettingsExpander}"
@@ -1185,25 +1243,10 @@
                     </Grid>
                     </Border>
 
-                    <GridSplitter Grid.Row="1"
-                                  Grid.Column="1"
-                                  Width="6"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Stretch"
-                                  ResizeDirection="Columns"
-                                  ResizeBehavior="PreviousAndNext"
-                                  ShowsPreview="True"
-                                  Background="{DynamicResource GlyphBrush}"
-                                  Opacity="0.55"/>
-
-                    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsCard}">
-                    <Grid>
-                        <Border BorderBrush="{DynamicResource GlyphBrush}"
-                                Background="{DynamicResource ControlIdleBackgroundBrush}"
-                                BorderThickness="1"
-                                Opacity="1">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer Grid.Row="1" Grid.Column="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalAlignment="Stretch">
                                 <Grid Margin="0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="158"/>
@@ -1312,9 +1355,6 @@
                                     <Border Grid.Row="22" Grid.Column="2" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenSimilarGameNHelp}" Style="{StaticResource TokenHelpText}"/></Border>
                                 </Grid>
                             </ScrollViewer>
-                        </Border>
-                    </Grid>
-                    </Border>
                 </Grid>
             </TabItem>
 
@@ -1632,8 +1672,8 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="115"/>
                                 <ColumnDefinition Width="65"/>
-                                <ColumnDefinition Width="135"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="220"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -1647,15 +1687,15 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource FieldTableRow}" Opacity="0.75"/>
-                            <Border Grid.Row="1" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="2" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="3" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="0" Style="{StaticResource FieldTableHeader}"/>
+                            <Border Grid.Row="1" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="2" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="3" Style="{StaticResource FieldTableRowOdd}"/>
 
                             <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="8,0,8,0"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Get}" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Format}" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Format}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_SourcePriorityShort}" FontWeight="SemiBold" Margin="8,0,0,0"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Cover}" Margin="8,0,8,0"/>
@@ -1903,22 +1943,28 @@
             <TabItem x:Name="ImportNavigationItem" Header="{DynamicResource MTDA_TabImport}">
                 <ScrollViewer Style="{StaticResource FillScrollViewer}">
                     <StackPanel Margin="8,8,8,16" HorizontalAlignment="Stretch">
+                        <StackPanel Style="{StaticResource PageSection}">
+                            <Border Style="{StaticResource PageHeader}">
+                                <TextBlock Text="{DynamicResource MTDA_TabImport}" Style="{StaticResource SectionHeaderText}"/>
+                            </Border>
+                            <TextBlock Text="{DynamicResource MTDA_ImportPageHelp}" Style="{StaticResource SectionSubtitleText}"/>
+                        </StackPanel>
                         <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                         <CheckBox Content="{DynamicResource MTDA_AutoImportNewGames}"
                                   IsChecked="{Binding Settings.AutoImportNewGames}"
                                   Margin="0"/>
-                        <TextBlock Text="{DynamicResource MTDA_AutoImportNewGamesHelp}" Style="{StaticResource HintText}" Margin="24,8,0,16"/>
+                        <TextBlock Text="{DynamicResource MTDA_AutoImportNewGamesHelp}" Style="{StaticResource FieldHintText}"/>
 
                         <CheckBox Content="{DynamicResource MTDA_AutoImportGenerateMetadata}"
                                   IsChecked="{Binding Settings.AutoImportGenerateMetadata}"
                                   Margin="0"/>
-                        <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMetadataHelp}" Style="{StaticResource HintText}" Margin="24,8,0,16"/>
+                        <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMetadataHelp}" Style="{StaticResource FieldHintText}"/>
 
                         <CheckBox Content="{DynamicResource MTDA_AutoImportGenerateMedia}"
                                   IsChecked="{Binding Settings.AutoImportGenerateMedia}"
                                   Margin="0"/>
-                        <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMediaHelp}" Style="{StaticResource HintText}" Margin="24,8,0,16"/>
+                        <TextBlock Text="{DynamicResource MTDA_AutoImportGenerateMediaHelp}" Style="{StaticResource FieldHintText}"/>
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource NoteText}" FontWeight="SemiBold"
@@ -1968,20 +2014,20 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource FieldTableRow}" Opacity="0.75"/>
-                            <Border Grid.Row="1" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="2" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="3" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="4" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="5" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="6" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="7" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="8" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="9" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="10" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="11" Style="{StaticResource FieldTableRow}"/>
-                            <Border Grid.Row="12" Style="{StaticResource FieldTableRow}" Opacity="0.2"/>
-                            <Border Grid.Row="13" Style="{StaticResource FieldTableRow}"/>
+                            <Border Grid.Row="0" Style="{StaticResource FieldTableHeader}"/>
+                            <Border Grid.Row="1" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="2" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="3" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="4" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="5" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="6" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="7" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="8" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="9" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="10" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="11" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="12" Style="{StaticResource FieldTableRowEven}"/>
+                            <Border Grid.Row="13" Style="{StaticResource FieldTableRowOdd}"/>
 
                             <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="8,0,8,0"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold" Margin="4,0"/>
@@ -2347,7 +2393,7 @@
                         <TextBlock Text="{Binding Settings.AboutVersionAuthor, Mode=OneWay}"
                                    FontWeight="SemiBold" Margin="0,0,0,16"/>
 
-                        <Border Style="{StaticResource SettingsCard}">
+                        <Border Style="{StaticResource ElevatedCard}">
                             <StackPanel>
                                 <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_AboutPurposeTitle}" Style="{StaticResource SectionHeaderText}"/>
