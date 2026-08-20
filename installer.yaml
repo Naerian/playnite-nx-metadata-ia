@@ -5,12 +5,16 @@ Packages:
     ReleaseDate: 2026-08-20
     PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.9/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_9.pext
     Changelog:
-      - "New Narian settings chrome with five appearance presets (Midnight, Paper, OLED, Ocean, Ember)."
-      - "Settings forms sit flat on the page background; elevated cards are reserved for Overview summary tiles and About."
+      - "Redesigned settings with the shared Narian chrome: own background, text, borders, accents, inputs, buttons, tabs, navigation, badges, and scrollbars instead of relying on the Playnite theme for contrast."
+      - "Added five appearance presets (Midnight, Paper, OLED, Ocean, Ember) so layout structure stays fixed while colors change."
+      - "Unified type and spacing scale (20/14/12 type, 4/8/16/24 spacing, radius 4, control height 36)."
+      - "Forms sit flat on the page background with section headers; elevated cards are reserved for Overview summary tiles and the About narrative."
+      - "Overview summary card title underlines now use the same border color as the card."
+      - "Unified controls: TextBox, PasswordBox, and ComboBox share height and padding; ComboBoxes open from the full control area; badges are neutral or status-tinted without shadows."
       - "Setup wizard uses the same themed chrome as settings."
       - "Media download table: wider Apply column and a tighter Format column."
       - "Library Import page now has a title and short help text."
-      - "Overview summary card title underlines match the card border color."
+      - "Updated the settings UI guide for porting the Narian design system to other plugins."
   - Version: 1.4.8
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-20
