@@ -102,7 +102,8 @@ Main capabilities currently implemented:
 ## Local Files To Treat Carefully
 
 - `package.ps1` is the supported manual build/pack script. It builds Release,
-  stages a clean package in `%TEMP%`, and writes only the `.pext` into `dist/`.
+  stages a clean package in `%TEMP%`, and writes the `.pext` into
+  `dist/<version>/` (for example `dist/1.4.9/`).
 - Do not restore old install helpers such as `BuildAndInstall.ps1`; packaging
   must not install into Playnite unless the user explicitly asks.
 - `docs/PLAYNITE-SDK.md` is a general Playnite SDK reference. Do not restore
@@ -146,7 +147,9 @@ Use `package.ps1` for a manual Release build and `.pext`:
 It packs from a clean staging directory in `%TEMP%` (never leave a `stage`
 folder inside `dist/`). The package includes the extension output and required
 assets, but not helper scripts or unrelated runtime files such as `mscorlib.dll`
-or `norm*.nlp`. After packing, `dist/` contains only the `.pext`.
+or `norm*.nlp`. After packing, the `.pext` is under `dist/<version>/`
+(for example `dist/1.4.9/MetaDataIAPlugin_..._1_4_9.pext`). Other version
+folders in `dist/` are left intact.
 
 Verify installer manifest:
 
@@ -245,7 +248,7 @@ foreach ($name in $keySets.Keys) {
 Check package/asset hash:
 
 ```powershell
-Get-FileHash C:\Proyectos\playnite-nx-metadata-ia\dist\<package>.pext -Algorithm SHA256
+Get-FileHash C:\Proyectos\playnite-nx-metadata-ia\dist\<version>\<package>.pext -Algorithm SHA256
 ```
 
 ## Current Follow-Up Ideas

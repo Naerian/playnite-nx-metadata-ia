@@ -57,6 +57,7 @@ foreach ($path in $required) {
 # Pack from a clean TEMP stage. Never leave a stage folder inside dist/.
 $stage = Join-Path $env:TEMP "mtda-pext-stage"
 $dist = Join-Path $root "dist"
+$distVersion = Join-Path $dist $Version
 if (Test-Path -LiteralPath $stage) {
     Remove-Item -LiteralPath $stage -Recurse -Force
 }
@@ -64,7 +65,13 @@ New-Item -ItemType Directory -Path $stage | Out-Null
 if (-not (Test-Path -LiteralPath $dist)) {
     New-Item -ItemType Directory -Path $dist | Out-Null
 }
-Get-ChildItem -LiteralPath $dist -Force | Remove-Item -Recurse -Force
+# Remove legacy flat packages at dist root; keep other version folders.
+Get-ChildItem -LiteralPath $dist -File -Filter '*.pext' -ErrorAction SilentlyContinue |
+    Remove-Item -Force
+if (Test-Path -LiteralPath $distVersion) {
+    Remove-Item -LiteralPath $distVersion -Recurse -Force
+}
+New-Item -ItemType Directory -Path $distVersion | Out-Null
 
 Copy-Item -LiteralPath (Join-Path $build "MetaDataIAPlugin.dll") -Destination $stage
 Copy-Item -LiteralPath (Join-Path $build "extension.yaml") -Destination $stage
@@ -73,14 +80,14 @@ Copy-Item -LiteralPath (Join-Path $build "media") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $build "Localization") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $build "Icons") -Destination $stage -Recurse
 
-& $ToolboxPath pack $stage $dist
+& $ToolboxPath pack $stage $distVersion
 $packExit = $LASTEXITCODE
 Remove-Item -LiteralPath $stage -Recurse -Force
 if ($packExit -ne 0) {
     throw "Playnite Toolbox pack failed with exit code $packExit"
 }
 
-$package = Get-ChildItem -LiteralPath $dist -Filter '*.pext' |
+$package = Get-ChildItem -LiteralPath $distVersion -Filter '*.pext' |
     Sort-Object LastWriteTime -Descending |
     Select-Object -First 1
 if (-not $package) {
