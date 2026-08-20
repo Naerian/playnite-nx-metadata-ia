@@ -252,6 +252,24 @@ namespace MetaDataIAPlugin
             FillSelectedContentHosts();
         }
 
+        private void ExpanderChevronButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            for (var parent = VisualTreeHelper.GetParent(sender as DependencyObject);
+                 parent != null;
+                 parent = VisualTreeHelper.GetParent(parent))
+            {
+                var expander = parent as Expander;
+                if (expander == null)
+                {
+                    continue;
+                }
+
+                expander.IsExpanded = !expander.IsExpanded;
+                e.Handled = true;
+                return;
+            }
+        }
+
         private Size FindWindowGridSlot()
         {
             for (var parent = VisualTreeHelper.GetParent(this);
@@ -412,8 +430,7 @@ namespace MetaDataIAPlugin
             ConfigurationProviderEndpointText.Visibility = Visibility.Collapsed;
             ConfigurationProviderStatusText.Text = providerStatus;
             var providerStatusBrush = providerReady && providerTestSucceeded != false ? "PositiveRatingBrush" : "WarningBrush";
-            ConfigurationProviderStatusText.SetResourceReference(TextBlock.ForegroundProperty, providerStatusBrush);
-            ConfigurationProviderStatusBadge.SetResourceReference(Border.BorderBrushProperty, providerStatusBrush);
+            ApplyStatusBadgeAppearance(ConfigurationProviderStatusText, providerStatusBrush);
 
             var enabledFields = new[]
             {
@@ -496,6 +513,41 @@ namespace MetaDataIAPlugin
                 : Loc("MTDA_SourceStatusInactive", "Inactive");
         }
 
+        private static void ApplyStatusBadgeAppearance(TextBlock textBlock, string brushKey, double opacity = 1.0)
+        {
+            if (textBlock == null || string.IsNullOrWhiteSpace(brushKey))
+            {
+                return;
+            }
+
+            textBlock.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+            textBlock.Opacity = 1.0;
+
+            var badge = textBlock.Parent as Border;
+            if (badge == null)
+            {
+                for (var parent = VisualTreeHelper.GetParent(textBlock);
+                     parent != null;
+                     parent = VisualTreeHelper.GetParent(parent))
+                {
+                    badge = parent as Border;
+                    if (badge != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (badge == null)
+            {
+                return;
+            }
+
+            // Keep border in sync with the status text color (theme Positive/Warning/Glyph).
+            badge.SetResourceReference(Border.BorderBrushProperty, brushKey);
+            badge.Opacity = opacity;
+        }
+
         private static void SetSummaryStatus(TextBlock textBlock, bool enabled)
         {
             if (textBlock == null)
@@ -504,16 +556,9 @@ namespace MetaDataIAPlugin
             }
 
             textBlock.Text = StatusText(enabled);
-            textBlock.SetResourceReference(
-                TextBlock.ForegroundProperty,
+            ApplyStatusBadgeAppearance(
+                textBlock,
                 enabled ? "PositiveRatingBrush" : "WarningBrush");
-            var badge = textBlock.Parent as Border;
-            if (badge != null)
-            {
-                badge.SetResourceReference(
-                    Border.BorderBrushProperty,
-                    enabled ? "PositiveRatingBrush" : "WarningBrush");
-            }
         }
 
         private void RefreshMediaSourceStatuses(MetaDataIASettings settings)
@@ -554,13 +599,7 @@ namespace MetaDataIAPlugin
                     ? Loc("MTDA_SourceStatusNeedsKey", "Needs credentials")
                     : Loc("MTDA_SourceStatusActive", "Active");
             var statusBrush = enabled && configured ? "PositiveRatingBrush" : enabled ? "WarningBrush" : "GlyphBrush";
-            target.SetResourceReference(TextBlock.ForegroundProperty, statusBrush);
-            var badge = target.Parent as Border;
-            if (badge != null)
-            {
-                badge.SetResourceReference(Border.BorderBrushProperty, statusBrush);
-            }
-            target.Opacity = enabled ? 1.0 : 0.65;
+            ApplyStatusBadgeAppearance(target, statusBrush, enabled ? 1.0 : 0.65);
         }
 
         private void OpenSetupWizard_OnClick(object sender, RoutedEventArgs e)
@@ -805,14 +844,7 @@ namespace MetaDataIAPlugin
                 .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
         }
 
-        private void SourceFilterAll_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (SourceMetadataFilter != null) SourceMetadataFilter.IsChecked = false;
-            if (SourceMediaFilter != null) SourceMediaFilter.IsChecked = false;
-            ApplySourceCapabilityFilter();
-        }
-
-        private void SourceCapabilityFilter_OnChanged(object sender, RoutedEventArgs e)
+        private void SourceCapabilityFilter_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ApplySourceCapabilityFilter();
         }
@@ -820,8 +852,18 @@ namespace MetaDataIAPlugin
         private void ApplySourceCapabilityFilter()
         {
             if (SourcesPanel == null) return;
-            var requireMetadata = SourceMetadataFilter != null && SourceMetadataFilter.IsChecked == true;
-            var requireMedia = SourceMediaFilter != null && SourceMediaFilter.IsChecked == true;
+
+            var filter = "all";
+            var selected = SourceCapabilityFilterCombo != null
+                ? SourceCapabilityFilterCombo.SelectedItem as ComboBoxItem
+                : null;
+            if (selected != null && selected.Tag != null)
+            {
+                filter = Convert.ToString(selected.Tag) ?? "all";
+            }
+
+            var requireMetadata = string.Equals(filter, "metadata", StringComparison.OrdinalIgnoreCase);
+            var requireMedia = string.Equals(filter, "media", StringComparison.OrdinalIgnoreCase);
 
             foreach (var source in FindVisualChildren<Expander>(SourcesPanel))
             {
@@ -836,8 +878,10 @@ namespace MetaDataIAPlugin
                                 title.IndexOf("mobygames", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("thegamesdb", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("web", StringComparison.OrdinalIgnoreCase) >= 0;
+                var metadataOnly = title.IndexOf("vndb", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                   title.IndexOf("wikidata", StringComparison.OrdinalIgnoreCase) >= 0;
                 var hasMetadata = !mediaOnly;
-                var hasMedia = true;
+                var hasMedia = !metadataOnly;
                 source.Visibility = (!requireMetadata || hasMetadata) && (!requireMedia || hasMedia)
                     ? Visibility.Visible
                     : Visibility.Collapsed;
@@ -1482,9 +1526,27 @@ namespace MetaDataIAPlugin
 
             var settings = viewModel.Settings;
             var snapshot = ProviderUsageService.GetCached(settings);
-            OpenProviderUsageButton.Visibility = string.IsNullOrWhiteSpace(settings.ProviderUsageUrl)
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+            var exposesQuota = !ProviderUsageService.IsLocalProvider(settings) &&
+                               !ProviderUsageService.UsesDashboardOnly(settings);
+
+            if (ProviderUsageActionsPanel != null)
+            {
+                ProviderUsageActionsPanel.Visibility = exposesQuota ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (ProviderUsageProbeHelpText != null)
+            {
+                ProviderUsageProbeHelpText.Visibility = exposesQuota ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            OpenProviderUsageButton.Visibility = exposesQuota && !string.IsNullOrWhiteSpace(settings.ProviderUsageUrl)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+            if (RefreshProviderUsageButton != null)
+            {
+                RefreshProviderUsageButton.Visibility = exposesQuota ? Visibility.Visible : Visibility.Collapsed;
+            }
 
             if (!string.IsNullOrWhiteSpace(statusOverride))
             {
@@ -1500,7 +1562,7 @@ namespace MetaDataIAPlugin
             {
                 ProviderUsageStatusText.Text = Loc(
                     "MTDA_ProviderUsageDashboardOnly",
-                    "This provider does not expose a portable remaining-quota value to the plugin. Open its usage page for the current account limits.");
+                    "This provider does not expose a portable remaining-quota value to the plugin.");
             }
             else if (snapshot == null)
             {

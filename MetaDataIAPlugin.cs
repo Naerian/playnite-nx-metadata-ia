@@ -35,28 +35,17 @@ namespace MetaDataIAPlugin
             HorizontalContentAlignment = HorizontalAlignment.Center;
             VerticalContentAlignment = VerticalAlignment.Center;
 
-            var canvas = new Canvas { Width = 24, Height = 24 };
-            foreach (var geometry in new[]
+            // Same approach as Controller Session Manager: load Icons/*.svg at runtime.
+            var icon = SvgIconGeometryLoader.GetGeometry("settings-ai.svg");
+            var path = new System.Windows.Shapes.Path
             {
-                // Complete paths from Icons/settings-ai.svg (the empty SVG canvas path is omitted).
-                "M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065",
-                "M9 14v-2.5a1.5 1.5 0 0 1 3 0v2.5",
-                "M9 13h3",
-                "M15 10v4"
-            })
-            {
-                var path = new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse(geometry),
-                    StrokeThickness = 2,
-                    StrokeStartLineCap = PenLineCap.Round,
-                    StrokeEndLineCap = PenLineCap.Round,
-                    StrokeLineJoin = PenLineJoin.Round,
-                    Fill = Brushes.Transparent
-                };
-                path.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new Binding("Foreground") { Source = this });
-                canvas.Children.Add(path);
-            }
+                Data = icon.CreateGeometry(),
+                StrokeThickness = 0
+            };
+            path.SetBinding(System.Windows.Shapes.Shape.FillProperty, new Binding("Foreground") { Source = this });
+
+            var canvas = new Canvas { Width = icon.CanvasWidth, Height = icon.CanvasHeight };
+            canvas.Children.Add(path);
 
             Content = new Viewbox
             {

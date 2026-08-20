@@ -18,15 +18,16 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.6`
-- Latest release tag: `v1.4.6`
-- Latest release commit: see tag `v1.4.6`
+- Latest released version: `1.4.7`
+- Latest release tag: `v1.4.7`
+- Latest release commit: see tag `v1.4.7`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_6.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_7.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.6
-- Public package SHA-256 verified for v1.4.6:
-  `9B79DFA8201ACED30A5040D752621412F756A79F6410710924A572A4513F54DB`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.7
+- Public package SHA-256 verified for v1.4.7:
+  `262046454CA489282E3C4DD1E6FA9FB76D4DAA4D5726F51F477AF41CE16FB216`
+- UI reference for other plugins: `docs/SETTINGS-UI-GUIDE.md`
 
 When continuing work, first verify the current repository state instead of
 assuming this file is still current.
@@ -94,8 +95,10 @@ Main capabilities currently implemented:
 
 ## Local Files To Treat Carefully
 
-- `BuildAndInstall.ps1` is a local helper. Do not commit or push it unless the
-  user explicitly changes that decision.
+- `package.ps1` is the supported manual build/pack script. It builds Release,
+  stages a clean package in `%TEMP%`, and writes only the `.pext` into `dist/`.
+- Do not restore old install helpers such as `BuildAndInstall.ps1`; packaging
+  must not install into Playnite unless the user explicitly asks.
 - `docs/PLAYNITE-SDK.md` is a general Playnite SDK reference. Do not restore
   CSM leftover files (`PLAYNITE-INTEGRATION.md`, `PLAYNITE-ADDON-SUBMISSION.md`).
 - Never commit API keys, provider secrets, local Playnite settings or generated
@@ -127,17 +130,17 @@ are not automatically release blockers. Real compile errors are blockers.
 
 ## Package
 
-Use Playnite Toolbox from the local Playnite install:
+Use `package.ps1` for a manual Release build and `.pext`:
 
 ```powershell
-C:\Playnite\Toolbox.exe pack <clean-staging-folder> C:\Proyectos\playnite-nx-metadata-ia\dist
+.\package.ps1
+# or: .\package.ps1 -Version 1.4.6
 ```
 
-Package from a clean staging directory (use `%TEMP%`, never leave a `stage`
-folder inside `dist/`). The package should include the extension output and
-required assets, but should not include helper scripts or unrelated runtime
-files such as `mscorlib.dll` or `norm*.nlp`. After packing, `dist/` should
-contain only the `.pext`.
+It packs from a clean staging directory in `%TEMP%` (never leave a `stage`
+folder inside `dist/`). The package includes the extension output and required
+assets, but not helper scripts or unrelated runtime files such as `mscorlib.dll`
+or `norm*.nlp`. After packing, `dist/` contains only the `.pext`.
 
 Verify installer manifest:
 
@@ -179,7 +182,7 @@ complete workflow unless they explicitly say otherwise:
 4. Build Release with classic MSBuild.
 5. Package a clean `.pext`.
 6. Verify `installer.yaml` with Playnite Toolbox.
-7. Commit only intended files. Do not include `BuildAndInstall.ps1`.
+7. Commit only intended files.
 8. Push `main`.
 9. Create and push the tag.
 10. Create the GitHub release and upload the `.pext`.
