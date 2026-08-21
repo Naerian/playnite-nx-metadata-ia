@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">Aby to dzialalo, LM Studio musi miec wlaczony lokalny serwer albo Ollama musi dzialac z pobranym modelem. Klucz API dla lokalnych dostawcow zostaje pusty.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Jezyk wyjsciowy</sys:String>
     <sys:String x:Key="MTDA_Tone">Ton</sys:String>
-    <sys:String x:Key="MTDA_Length">Dlugosc</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">Dlugosc globalna podpowiada tez, ile elementow zwracac na listach. Dla tekstow dlugosc wedlug tokenu pozwala dopracowac kazdy blok: dla streszczenia Krotka=1 akapit, Srednia=2, Dluga=3 i Ekstra dluga=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Dlugosc wedlug tokenu</sys:String>
+    <sys:String x:Key="MTDA_Length">Dlugosc domyslna</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Uzywana na listach i jako domyslna, gdy blok jej nie nadpisuje.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Dlugosci blokow</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Wlacz Nadpisz tylko dla blokow, ktore maja ignorowac dlugosc domyslna. Dla streszczenia: Krotka=1 akapit, Srednia=2, Dluga=3, Ekstra dluga=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Dlugosc</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Nadpisz</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Obecne metadane</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Uzyj jako kontekstu pozwala AI uwzglednic obecne dane bez koniecznosci ich kopiowania. Normalizacja probuje poprawic i ujednolicic obecne metadane. Ignoruj nie wysyla tych danych do AI.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Używaj oficjalnych źródeł jako kontekstu AI</sys:String>

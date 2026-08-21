@@ -18,15 +18,15 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.9`
-- Latest release tag: `v1.4.9`
-- Latest release commit: see tag `v1.4.9`
+- Latest released version: `1.4.10`
+- Latest release tag: `v1.4.10`
+- Latest release commit: see tag `v1.4.10`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_9.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_10.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.9
-- Public package SHA-256 verified for v1.4.9:
-  `79A517F6420B60494ABF87AC9BD72B6446E9A135DC95F343D8F259210389AD1E`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.10
+- Public package SHA-256 verified for v1.4.10:
+  `F07B3FD2B78BA447751E149CAE835ED6D4BED3C69670161A346466BA3B60AD6B`
 - UI reference for other plugins: `docs/SETTINGS-UI-GUIDE.md`
 - Settings design system (Figma):
   https://www.figma.com/design/0ilhUvo6xBoEkEldkdP3Wh/Narian-Plugins-%E2%80%94-Settings-Design-System
@@ -104,6 +104,14 @@ Main capabilities currently implemented:
 - `package.ps1` is the supported manual build/pack script. It builds Release,
   stages a clean package in `%TEMP%`, and writes the `.pext` into
   `dist/<version>/` (for example `dist/1.4.9/`).
+- At the end of a coding task, always run `package.ps1` so `dist/<version>/`
+  has a fresh `.pext` for local install/test.
+- Do **not** bump `extension.yaml` / AssemblyInfo to a new version just to
+  package. Keep packaging the version already declared. Only bump when the user
+  asks for a release **and** the previous version already has a GitHub release
+  (or they explicitly request a new version). If the current declared version
+  has no release uploaded yet, keep iterating and packaging under that same
+  version.
 - Do not restore old install helpers such as `BuildAndInstall.ps1`; packaging
   must not install into Playnite unless the user explicitly asks.
 - `docs/PLAYNITE-SDK.md` is a general Playnite SDK reference. Do not restore

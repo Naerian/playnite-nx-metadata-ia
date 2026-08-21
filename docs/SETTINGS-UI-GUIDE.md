@@ -28,7 +28,7 @@ No cambian entre presets.
 | --- | --- | --- |
 | Títulos de página / sección (`SectionHeaderText`) | **20 px** | SemiBold · color `accent` |
 | Texto, labels, tabs, nav, expanders | **14 px** | Regular / SemiBold en activo |
-| Hints y texto de badges | **12 px** | Regular · `textMuted` |
+| Hints y texto de badges | **12 px** | Italic · `textMuted` / `GlyphBrush` |
 
 ### Espaciado (escala 4)
 
@@ -47,9 +47,11 @@ Cabecera de sección dentro de card (`SectionHeaderBorder` / `SummaryTitleSepara
 - No usar `GlyphBrush` ni accent en esa línea
 - Padding inferior **8**, margen inferior **8** hacia el contenido
 
-Hints (`FieldHintText` / `HintText`):
+Hints (`FieldHintText` / `HintText` / intros bajo título):
 
+- **Cursiva**, 12 px, `textMuted` / `GlyphBrush`
 - Margen **`0,8,0,16`** (alineados a la izquierda; **sin** indent 24)
+- `SectionSubtitleText` (intro de página): también italic + opacity 0.78
 
 ### Radios y tamaños
 
@@ -400,9 +402,23 @@ Compilar con Framework MSBuild (`package.ps1` / `C:\Windows\Microsoft.NET\Framew
 El asistente de primera configuración (`SetupWizardWindow`) usa el mismo chrome:
 
 1. `SettingsAppearance.ApplyWindow(window, AppearancePreset)`
-2. Secciones planas + hints / inputs / botones con tokens Narian (sin cards de formulario)
+2. `WindowStyle=None`, borde Narian, footer **Skip** a la izquierda / **Back+Next** a la derecha
 3. Título de paso **20** `accent`; step label **12** `textMuted`
 4. Botón Next/Finish con `IsDefault` → estilo primario
+5. Resumen con filas `WizardSummaryRow` (label muted + value), no un bloque de texto plano
+6. Entrada en **Avanzado → Configuración inicial** (`MTDA_TabSetup` / `MTDA_OpenSetupWizard`)
+7. `SetupWizardCompleted` + migración para no forzar el wizard en instalaciones viejas
+
+### Posicionamiento (ancla Playnite)
+
+- `WindowStartupLocation=Manual` (no `CenterOwner`)
+- Ancla de posición: `Application.Current.MainWindow` (no el `Owner`; el diálogo de ajustes puede ser pequeño/desplazado)
+- `Owner = GetCurrentAppWindow()` solo para modalidad / z-order
+- Si el ancla está maximizado: centrar en el **work area del monitor del ancla** (`Screen.FromHandle`); nunca usar `Left`/`Top` del ancla (son restore bounds)
+- Si no está maximizado: `PointToScreen` del centro del ancla + conversión a DIP
+- Clamp al work area del monitor del ancla (no `SystemParameters.WorkArea` del monitor principal)
+- Recentrar en `Loaded`, `SizeChanged`, cambio de paso y `ApplicationIdle`; respetar `userMovedWindow` tras `DragMove` en la cabecera
+- Referencias: `System.Windows.Forms` + `System.Drawing` si se usa `Screen`
 
 No modifica juegos; solo configuración.
 

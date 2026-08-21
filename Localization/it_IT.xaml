@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">Per far sì che funzioni, LM Studio deve avere il server locale abilitato oppure Ollama deve essere in esecuzione con il modello scaricato. La chiave API è vuota per i provider locali.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Lingua di uscita</sys:String>
     <sys:String x:Key="MTDA_Tone">Tono</sys:String>
-    <sys:String x:Key="MTDA_Length">Lunghezza</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">La lunghezza globale determina anche il numero di elementi restituiti negli elenchi. Per il testo, la lunghezza per token ti consente di ottimizzare ciascun blocco: per la sinossi, Breve=1 paragrafo, Medio=2, Lungo=3 e Molto lungo=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Lunghezza per token</sys:String>
+    <sys:String x:Key="MTDA_Length">Lunghezza predefinita</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Usata per gli elenchi e come valore predefinito quando un blocco non la sostituisce.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Lunghezze per blocco</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Attiva Sostituisci solo per i blocchi che devono ignorare la lunghezza predefinita. Per la sinossi: Breve=1 paragrafo, Medio=2, Lungo=3, Molto lungo=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Lunghezza</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Sostituisci</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Metadati attuali</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">L'utilizzo come contesto consente all'IA di considerare i dati esistenti senza necessariamente copiarli. Normalize tenta di correggere e unificare i metadati correnti. Ignora non invia tali dettagli all'IA.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Usa fonti ufficiali come contesto IA</sys:String>

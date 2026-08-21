@@ -79,9 +79,12 @@
     <sys:String x:Key="MTDA_OutputLanguage">Output language</sys:String>
     <sys:String x:Key="MTDA_OutputLanguageHelp">Controls generated metadata and default template headings. The plugin interface follows Playnite&apos;s interface language.</sys:String>
     <sys:String x:Key="MTDA_Tone">Tone</sys:String>
-    <sys:String x:Key="MTDA_Length">Length</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">The global length also guides how many items are returned in lists. For text, length per token lets you tune each block: for synopsis, Short=1 paragraph, Medium=2, Long=3 and Extra long=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Length per token</sys:String>
+    <sys:String x:Key="MTDA_Length">Default length</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Used for lists and as the overall default when a block does not override it.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Token lengths</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Enable Override only for blocks that should ignore the default length. For synopsis: Short=1 paragraph, Medium=2, Long=3, Extra long=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Length</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Override</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Current metadata</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Use as context lets the AI consider existing data without necessarily copying it. Normalize tries to fix and unify current metadata. Ignore does not send those details to the AI.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Use official sources as AI context</sys:String>

@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">Damit dies funktioniert, muss der lokale Server von LM Studio aktiviert sein oder Ollama muss mit dem heruntergeladenen Modell ausgeführt werden. Bei lokalen Anbietern ist der API-Schlüssel leer.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Ausgabesprache</sys:String>
     <sys:String x:Key="MTDA_Tone">Ton</sys:String>
-    <sys:String x:Key="MTDA_Length">Länge</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">Die globale Länge bestimmt auch, wie viele Elemente in Listen zurückgegeben werden. Bei Text können Sie mit der Länge pro Token jeden Block optimieren: für die Zusammenfassung: Kurz=1 Absatz, Mittel=2, Lang=3 und Extralang=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Länge pro Token</sys:String>
+    <sys:String x:Key="MTDA_Length">Standardlänge</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Gilt für Listen und als Standard, wenn ein Block sie nicht überschreibt.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Blocklängen</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Aktivieren Sie Überschreiben nur für Blöcke, die die Standardlänge ignorieren sollen. Für die Zusammenfassung: Kurz=1 Absatz, Mittel=2, Lang=3, Extralang=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Länge</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Überschreiben</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Aktuelle Metadaten</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Durch die Verwendung als Kontext kann die KI vorhandene Daten berücksichtigen, ohne sie unbedingt zu kopieren. Normalisieren versucht, aktuelle Metadaten zu korrigieren und zu vereinheitlichen. Ignorieren sendet diese Details nicht an die KI.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Offizielle Quellen als KI-Kontext verwenden</sys:String>

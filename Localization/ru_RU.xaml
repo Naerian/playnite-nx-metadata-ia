@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">Чтобы это работало, в LM Studio должен быть включен локальный сервер или должен быть запущен Ollama с загруженной моделью. Ключ API пуст для местных поставщиков.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Язык вывода</sys:String>
     <sys:String x:Key="MTDA_Tone">Тон</sys:String>
-    <sys:String x:Key="MTDA_Length">Длина</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">Глобальная длина также определяет, сколько элементов возвращается в списках. Для текста длина каждого токена позволяет настраивать каждый блок: для синопсиса Short=1 абзац, Medium=2, Long=3 и Extra long=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Длина токена</sys:String>
+    <sys:String x:Key="MTDA_Length">Длина по умолчанию</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Используется для списков и как значение по умолчанию, если блок её не переопределяет.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Длины блоков</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Включайте «Переопределить» только для блоков, которые должны игнорировать длину по умолчанию. Для синопсиса: Short=1 абзац, Medium=2, Long=3, Extra long=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Длина</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Переопределить</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Текущие метаданные</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Использование в качестве контекста позволяет ИИ учитывать существующие данные без необходимости их копирования. Normalize пытается исправить и унифицировать текущие метаданные. Игнорировать не отправляет эти данные ИИ.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Использовать официальные источники как контекст ИИ</sys:String>

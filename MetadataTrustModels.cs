@@ -81,7 +81,7 @@ namespace MetaDataIAPlugin
             AddList(changes, "features", Names(game.Features), result.Features, settings.GenerateFeatures, settings.FeaturesApplyMode, settings.MaxFeatures, settings.PreferExistingFeatures, api.Database.Features.Select(x => x.Name), result);
             AddList(changes, "developers", Names(game.Developers), result.Developers, settings.GenerateDevelopers, settings.DevelopersApplyMode, settings.MaxDevelopers, settings.StrictCompanyAgeRegion, api.Database.Companies.Select(x => x.Name), result);
             AddList(changes, "publishers", Names(game.Publishers), result.Publishers, settings.GeneratePublishers, settings.PublishersApplyMode, settings.MaxPublishers, settings.StrictCompanyAgeRegion, api.Database.Companies.Select(x => x.Name), result);
-            AddList(changes, "ageRatings", Names(game.AgeRatings), result.AgeRatings, settings.GenerateAgeRatings, settings.AgeRatingsApplyMode, settings.MaxAgeRatings, settings.StrictCompanyAgeRegion, api.Database.AgeRatings.Select(x => x.Name), result);
+            AddList(changes, "ageRatings", Names(game.AgeRatings), result.AgeRatings, settings.GenerateAgeRatings, settings.AgeRatingsApplyMode, settings.MaxAgeRatings, settings.PreferExistingAgeRatings, api.Database.AgeRatings.Select(x => x.Name), result);
             AddList(changes, "regions", Names(game.Regions), result.Regions, settings.GenerateRegions, settings.RegionsApplyMode, settings.MaxRegions, settings.StrictCompanyAgeRegion, api.Database.Regions.Select(x => x.Name), result);
             AddList(changes, "categories", Names(game.Categories), result.Categories, settings.GenerateCategories, settings.CategoriesApplyMode, settings.MaxCategories, settings.PreferExistingCategories, api.Database.Categories.Select(x => x.Name), result);
             AddScalar(changes, "releaseDate", game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty, result.ReleaseDate, settings.GenerateReleaseDate, settings.ReleaseDateApplyMode, result);
@@ -153,8 +153,7 @@ namespace MetaDataIAPlugin
             var generated = Clean(generatedValues).Take(Math.Max(1, maxItems)).ToList();
             if (existingOnly)
             {
-                var known = new HashSet<string>(Clean(knownValues), StringComparer.OrdinalIgnoreCase);
-                generated = generated.Where(known.Contains).ToList();
+                generated = LibraryNameMatching.MapToExisting(generated, knownValues, LibraryNameMatching.AliasesForField(field));
             }
 
             List<string> after;

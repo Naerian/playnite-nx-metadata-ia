@@ -795,19 +795,24 @@ namespace MetaDataIAPlugin
         private Dictionary<string, string> BuildTokenLengths()
         {
             var lengths = new Dictionary<string, string>();
-            lengths["short"] = NormalizeLengthForPrompt(settings.ShortLength);
-            lengths["synopsis"] = NormalizeLengthForPrompt(settings.SynopsisLength);
-            lengths["premise"] = NormalizeLengthForPrompt(settings.PremiseLength);
-            lengths["gameplay"] = NormalizeLengthForPrompt(settings.GameplayLength);
-            lengths["tone"] = NormalizeLengthForPrompt(settings.ToneLength);
-            lengths["setting"] = NormalizeLengthForPrompt(settings.SettingLength);
-            lengths["perspective"] = NormalizeLengthForPrompt(settings.PerspectiveLength);
-            lengths["playModes"] = NormalizeLengthForPrompt(settings.PlayModesLength);
-            lengths["estimatedLength"] = NormalizeLengthForPrompt(settings.EstimatedLengthLength);
-            lengths["similarGames"] = NormalizeLengthForPrompt(settings.SimilarGamesLength);
-            lengths["notes"] = NormalizeLengthForPrompt(settings.NotesLength);
-            lengths["recommendedFor"] = NormalizeLengthForPrompt(settings.RecommendedForLength);
+            lengths["short"] = ResolveTokenLength(settings.OverrideShortLength, settings.ShortLength);
+            lengths["synopsis"] = ResolveTokenLength(settings.OverrideSynopsisLength, settings.SynopsisLength);
+            lengths["premise"] = ResolveTokenLength(settings.OverridePremiseLength, settings.PremiseLength);
+            lengths["gameplay"] = ResolveTokenLength(settings.OverrideGameplayLength, settings.GameplayLength);
+            lengths["tone"] = ResolveTokenLength(settings.OverrideToneLength, settings.ToneLength);
+            lengths["setting"] = ResolveTokenLength(settings.OverrideSettingLength, settings.SettingLength);
+            lengths["perspective"] = ResolveTokenLength(settings.OverridePerspectiveLength, settings.PerspectiveLength);
+            lengths["playModes"] = ResolveTokenLength(settings.OverridePlayModesLength, settings.PlayModesLength);
+            lengths["estimatedLength"] = ResolveTokenLength(settings.OverrideEstimatedLengthLength, settings.EstimatedLengthLength);
+            lengths["similarGames"] = ResolveTokenLength(settings.OverrideSimilarGamesLength, settings.SimilarGamesLength);
+            lengths["notes"] = ResolveTokenLength(settings.OverrideNotesLength, settings.NotesLength);
+            lengths["recommendedFor"] = ResolveTokenLength(settings.OverrideRecommendedForLength, settings.RecommendedForLength);
             return lengths;
+        }
+
+        private string ResolveTokenLength(bool useOverride, string overrideValue)
+        {
+            return NormalizeLengthForPrompt(useOverride ? overrideValue : settings.Length);
         }
 
         private static string NormalizeLengthForPrompt(string value)

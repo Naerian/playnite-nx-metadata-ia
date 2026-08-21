@@ -214,6 +214,18 @@ namespace MetaDataIAPlugin
         private string similarGamesLength = "Corta";
         private string notesLength = "Corta";
         private string recommendedForLength = "Media";
+        private bool overrideShortLength = true;
+        private bool overrideSynopsisLength = true;
+        private bool overridePremiseLength = true;
+        private bool overrideGameplayLength = true;
+        private bool overrideToneLength = true;
+        private bool overrideSettingLength = true;
+        private bool overridePerspectiveLength = true;
+        private bool overridePlayModesLength = true;
+        private bool overrideEstimatedLengthLength = true;
+        private bool overrideSimilarGamesLength = true;
+        private bool overrideNotesLength = true;
+        private bool overrideRecommendedForLength = true;
         private string extraInstructions = string.Empty;
         private string existingMetadataMode = "Usar como contexto";
         private bool useOfficialStoreContext = true;
@@ -498,6 +510,18 @@ namespace MetaDataIAPlugin
         public string SimilarGamesLength { get { return similarGamesLength; } set { SetValue(ref similarGamesLength, value); } }
         public string NotesLength { get { return notesLength; } set { SetValue(ref notesLength, value); } }
         public string RecommendedForLength { get { return recommendedForLength; } set { SetValue(ref recommendedForLength, value); } }
+        public bool OverrideShortLength { get { return overrideShortLength; } set { SetValue(ref overrideShortLength, value); } }
+        public bool OverrideSynopsisLength { get { return overrideSynopsisLength; } set { SetValue(ref overrideSynopsisLength, value); } }
+        public bool OverridePremiseLength { get { return overridePremiseLength; } set { SetValue(ref overridePremiseLength, value); } }
+        public bool OverrideGameplayLength { get { return overrideGameplayLength; } set { SetValue(ref overrideGameplayLength, value); } }
+        public bool OverrideToneLength { get { return overrideToneLength; } set { SetValue(ref overrideToneLength, value); } }
+        public bool OverrideSettingLength { get { return overrideSettingLength; } set { SetValue(ref overrideSettingLength, value); } }
+        public bool OverridePerspectiveLength { get { return overridePerspectiveLength; } set { SetValue(ref overridePerspectiveLength, value); } }
+        public bool OverridePlayModesLength { get { return overridePlayModesLength; } set { SetValue(ref overridePlayModesLength, value); } }
+        public bool OverrideEstimatedLengthLength { get { return overrideEstimatedLengthLength; } set { SetValue(ref overrideEstimatedLengthLength, value); } }
+        public bool OverrideSimilarGamesLength { get { return overrideSimilarGamesLength; } set { SetValue(ref overrideSimilarGamesLength, value); } }
+        public bool OverrideNotesLength { get { return overrideNotesLength; } set { SetValue(ref overrideNotesLength, value); } }
+        public bool OverrideRecommendedForLength { get { return overrideRecommendedForLength; } set { SetValue(ref overrideRecommendedForLength, value); } }
         public string ExtraInstructions { get { return extraInstructions; } set { SetValue(ref extraInstructions, value); } }
         public string ExistingMetadataMode { get { return existingMetadataMode; } set { SetValue(ref existingMetadataMode, value); } }
         public bool UseOfficialStoreContext { get { return useOfficialStoreContext; } set { SetValue(ref useOfficialStoreContext, value); } }

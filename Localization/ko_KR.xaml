@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">이 작업을 수행하려면 LM Studio에서 로컬 서버를 활성화해야 하거나 Ollama가 다운로드된 모델과 함께 실행되어야 합니다. 로컬 공급자의 경우 API 키가 비어 있습니다.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">출력 언어</sys:String>
     <sys:String x:Key="MTDA_Tone">음정</sys:String>
-    <sys:String x:Key="MTDA_Length">길이</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">전역 길이는 목록에 반환되는 항목 수도 안내합니다. 텍스트의 경우 토큰당 길이를 사용하면 각 블록을 조정할 수 있습니다. 개요의 경우 짧은=1 문단, 중간=2, 긴=3, 매우 긴=4-5입니다.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">토큰당 길이</sys:String>
+    <sys:String x:Key="MTDA_Length">기본 길이</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">목록과, 블록이 덮어쓰지 않을 때의 기본값에 사용됩니다.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">블록 길이</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">기본 길이를 무시할 블록에만 재정의를 켜세요. 개요는 짧은=1문단, 중간=2, 긴=3, 매우 긴=4–5입니다.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">길이</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">재정의</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">현재 메타데이터</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">컨텍스트로 사용하면 AI가 기존 데이터를 복사할 필요 없이 기존 데이터를 고려할 수 있습니다. Normalize는 현재 메타데이터를 수정하고 통합하려고 시도합니다. 무시는 해당 세부 정보를 AI로 보내지 않습니다.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">공식 소스를 AI 컨텍스트로 사용</sys:String>

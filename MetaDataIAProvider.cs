@@ -42,7 +42,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Genres.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Genres, settings.PreferExistingGenres, "genres", () => plugin.Api.Database.Genres.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetDevelopers(GetMetadataFieldArgs args)
@@ -52,7 +52,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Developers.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Developers, settings.StrictCompanyAgeRegion, "developers", () => plugin.Api.Database.Companies.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetPublishers(GetMetadataFieldArgs args)
@@ -62,7 +62,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Publishers.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Publishers, settings.StrictCompanyAgeRegion, "publishers", () => plugin.Api.Database.Companies.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetTags(GetMetadataFieldArgs args)
@@ -72,7 +72,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Tags.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Tags, settings.PreferExistingTags, "tags", () => plugin.Api.Database.Tags.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetFeatures(GetMetadataFieldArgs args)
@@ -82,7 +82,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Features.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Features, settings.PreferExistingFeatures, "features", () => plugin.Api.Database.Features.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetAgeRatings(GetMetadataFieldArgs args)
@@ -92,7 +92,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().AgeRatings.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().AgeRatings, settings.PreferExistingAgeRatings, "ageRatings", () => plugin.Api.Database.AgeRatings.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetRegions(GetMetadataFieldArgs args)
@@ -102,7 +102,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return Generate().Regions.Select(x => new MetadataNameProperty(x));
+            return ToNameProperties(Generate().Regions, settings.StrictCompanyAgeRegion, "regions", () => plugin.Api.Database.Regions.Select(x => x.Name));
         }
 
         public override IEnumerable<Link> GetLinks(GetMetadataFieldArgs args)
@@ -162,6 +162,17 @@ namespace MetaDataIAPlugin
             }
 
             return GenerateMedia(MediaKind.Background);
+        }
+
+        private IEnumerable<MetadataProperty> ToNameProperties(IEnumerable<string> values, bool existingOnly, string field, Func<IEnumerable<string>> knownNames)
+        {
+            var names = values ?? Enumerable.Empty<string>();
+            if (existingOnly)
+            {
+                names = LibraryNameMatching.MapToExisting(names, knownNames(), LibraryNameMatching.AliasesForField(field));
+            }
+
+            return names.Select(x => new MetadataNameProperty(x));
         }
 
         private AiMetadataResult Generate()

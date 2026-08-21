@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">これを機能させるには、LM Studio のローカル サーバーが有効になっているか、ダウンロードされたモデルで Ollama が実行されている必要があります。ローカルプロバイダーの場合、API キーは空です。</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">出力言語</sys:String>
     <sys:String x:Key="MTDA_Tone">トーン</sys:String>
-    <sys:String x:Key="MTDA_Length">長さ</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">グローバル長は、リストで返される項目の数にも影響します。テキストの場合、トークンごとの長さによって各ブロックを調整できます。概要の場合、短い = 1 段落、中 = 2、長い = 3、および超長い = 4 ～ 5。</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">トークンごとの長さ</sys:String>
+    <sys:String x:Key="MTDA_Length">デフォルトの長さ</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">リストと、ブロックが上書きしない場合の既定値に使います。</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">ブロックの長さ</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">既定の長さを無視するブロックだけ「上書き」を有効にします。概要は短い=1段落、中=2、長い=3、超長い=4～5です。</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">長さ</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">上書き</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">現在のメタデータ</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">コンテキストとして使用すると、AI は既存のデータを必ずしもコピーすることなく考慮できます。 Normalize は、現在のメタデータを修正して統合しようとします。無視すると、これらの詳細は AI に送信されません。</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">公式ソースをAIコンテキストとして使用</sys:String>

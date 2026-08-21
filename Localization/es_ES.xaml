@@ -79,9 +79,12 @@
     <sys:String x:Key="MTDA_OutputLanguage">Idioma de salida</sys:String>
     <sys:String x:Key="MTDA_OutputLanguageHelp">Controla los metadatos generados y los encabezados de las plantillas predeterminadas. La interfaz del plugin sigue el idioma de la interfaz de Playnite.</sys:String>
     <sys:String x:Key="MTDA_Tone">Tono</sys:String>
-    <sys:String x:Key="MTDA_Length">Longitud</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">La longitud global tambien orienta cuantos elementos devolver en listados. En textos, la longitud por token permite afinar cada bloque: en sinopsis, Corta=1 parrafo, Media=2, Larga=3 y Extra larga=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Longitud por token</sys:String>
+    <sys:String x:Key="MTDA_Length">Longitud por defecto</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Se usa en listados y como valor general cuando un bloque no la anula.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Longitud por bloque</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Activa Anular solo en los bloques que deben ignorar la longitud por defecto. En sinopsis: Corta=1 párrafo, Media=2, Larga=3, Extra larga=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Longitud</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Anular</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Metadatos actuales</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Usar como contexto permite que la IA tenga en cuenta lo que ya hay sin copiarlo necesariamente. Normalizar intenta corregir y unificar los metadatos actuales. Ignorar no envia esos datos a la IA.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Usar fuentes oficiales como contexto para la IA</sys:String>
@@ -142,7 +145,7 @@
     <sys:String x:Key="MTDA_OfficialSteam">Steam oficial</sys:String>
     <sys:String x:Key="MTDA_OfficialSteamHelp">No requiere API key. Usa assets publicos de Steam cuando el juego se puede asociar a un AppID.</sys:String>
     <sys:String x:Key="MTDA_TestOfficialSteam">Probar Steam oficial</sys:String>
-    <sys:String x:Key="MTDA_SteamGridDbHelp">Se obtiene desde tu perfil de SteamGridDB, en Preferences/API. Es opcional para juegos de Steam, pero recomendable: anade portadas, heroes/fondos e iconos de la comunidad cuando Steam oficial no tiene una imagen adecuada.</sys:String>
+    <sys:String x:Key="MTDA_SteamGridDbHelp">Se obtiene desde tu perfil de SteamGridDB, en Preferences/API. Es opcional para juegos de Steam, pero recomendable: añade portadas, heroes/fondos e iconos de la comunidad cuando Steam oficial no tiene una imagen adecuada.</sys:String>
     <sys:String x:Key="MTDA_OpenSteamGridDb">Abrir SteamGridDB</sys:String>
     <sys:String x:Key="MTDA_TestSteamGridDb">Probar SteamGridDB</sys:String>
     <sys:String x:Key="MTDA_RawgHelp">RAWG requiere API key en cada peticion. Aporta sobre todo imagen principal y capturas para fondos.</sys:String>
@@ -184,10 +187,10 @@
     <sys:String x:Key="MTDA_AutoImportNewGames">Importar metadatos con Metadata AI al detectar juegos nuevos</sys:String>
     <sys:String x:Key="MTDA_AutoImportNewGamesHelp">El plugin recuerda los juegos que ya existen y, tras una actualizacion de biblioteca, procesa solo los IDs nuevos. Se ejecuta despues de Playnite, asi que puede sobrescribir o completar lo que Playnite haya descargado segun los modos de aplicacion configurados.</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMetadata">Generar metadatos de texto y listados con IA</sys:String>
-    <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">Usa la configuracion de las pestanas IA, Plantillas, Campos y Reglas. Si la IA no esta configurada, se omitira esta parte.</sys:String>
+    <sys:String x:Key="MTDA_AutoImportGenerateMetadataHelp">Usa la configuracion de las pestañas IA, Plantillas, Campos y Reglas. Si la IA no esta configurada, se omitira esta parte.</sys:String>
     <sys:String x:Key="MTDA_AutoImportGenerateMedia">Descargar media automaticamente</sys:String>
-    <sys:String x:Key="MTDA_AutoImportGenerateMediaHelp">Usa la configuracion de la pestana Media. Para juegos de Steam puede usar Steam oficial sin clave; SteamGridDB se usa como fuente adicional si tiene API key configurada.</sys:String>
-    <sys:String x:Key="MTDA_AutoImportPlayniteNote">Nota: Playnite no ofrece una forma fiable para que un plugin desactive globalmente su descarga de metadatos al importar. Metadata AI se aplica despues y respeta tus reglas de sobrescribir, anadir o rellenar solo vacios.</sys:String>
+    <sys:String x:Key="MTDA_AutoImportGenerateMediaHelp">Usa la configuracion de la pestaña Media. Para juegos de Steam puede usar Steam oficial sin clave; SteamGridDB se usa como fuente adicional si tiene API key configurada.</sys:String>
+    <sys:String x:Key="MTDA_AutoImportPlayniteNote">Nota: Playnite no ofrece una forma fiable para que un plugin desactive globalmente su descarga de metadatos al importar. Metadata AI se aplica despues y respeta tus reglas de sobrescribir, añadir o rellenar solo vacios.</sys:String>
     <sys:String x:Key="MTDA_GenerateAndApply">Generar y aplicar</sys:String>
     <sys:String x:Key="MTDA_ExistingOnly">Solo existentes</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Reglas de generación y aplicación por campo</sys:String>
@@ -213,7 +216,7 @@
     <sys:String x:Key="MTDA_SortingName">Orden nombre</sys:String>
     <sys:String x:Key="MTDA_Links">Enlaces</sys:String>
     <sys:String x:Key="MTDA_CompaniesLimitHelp">Para compañías, el valor recomendado es 1: el plugin intenta guardar solo el estudio/editor principal y evitar estudios de apoyo, ports, multijugador o distribución regional.</sys:String>
-    <sys:String x:Key="MTDA_SortingLinksHelp">Orden de nombre se calcula localmente: detecta secuelas con 2/3, II/III o v2/v3 y genera valores como Nombre base 01, 02, 03. Enlaces intenta usar URLs oficiales; si el juego viene de Steam y tiene AppId, se anade la URL de tienda de forma fiable.</sys:String>
+    <sys:String x:Key="MTDA_SortingLinksHelp">Orden de nombre se calcula localmente: detecta secuelas con 2/3, II/III o v2/v3 y genera valores como Nombre base 01, 02, 03. Enlaces intenta usar URLs oficiales; si el juego viene de Steam y tiene AppId, se añade la URL de tienda de forma fiable.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Prefijo para etiquetas</sys:String>
     <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva. Ejemplo: IA: Mundo abierto.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefijo para categorias</sys:String>
@@ -221,7 +224,7 @@
     <sys:String x:Key="MTDA_Blacklist">Lista negra de terminos</sys:String>
     <sys:String x:Key="MTDA_BlacklistHelp">Introduce palabras o expresiones separadas por comas, punto y coma o saltos de línea. Cualquier etiqueta, género, característica, categoría, desarrollador, editor, clasificación por edad o región generada que contenga uno de esos términos se descarta antes de aplicarse. Sirve para bloquear vocabulario ambiguo, no deseado, duplicado o mal traducido.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">Activar reglas automaticas de plantilla</sys:String>
-    <sys:String x:Key="MTDA_EnableTemplateRulesHelp">Si esta desactivado, el plugin usa siempre la plantilla seleccionada en la pestana Plantillas. Si lo activas, las reglas de fuente, plataforma o tipo pueden sustituirla automaticamente.</sys:String>
+    <sys:String x:Key="MTDA_EnableTemplateRulesHelp">Si esta desactivado, el plugin usa siempre la plantilla seleccionada en la pestaña Plantillas. Si lo activas, las reglas de fuente, plataforma o tipo pueden sustituirla automaticamente.</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">Reglas de plantilla por tipo de juego</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRulesHelp">Sirve para elegir automaticamente una plantilla segun el tipo de juego. El plugin busca el termino indicado en los generos, etiquetas y categorias actuales del juego. Formato: termino=NombrePlantilla. Si encuentra coincidencia, usa esa plantilla en lugar de la plantilla activa. Ejemplo: RPG=RPG.</sys:String>
     <sys:String x:Key="MTDA_PlatformRules">Reglas por plataforma</sys:String>

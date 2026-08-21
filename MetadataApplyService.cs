@@ -25,17 +25,17 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.GenreIds = MergeIds(game.GenreIds, Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres), settings.GenresApplyMode, settings.MaxGenres);
+                game.GenreIds = MergeIds(game.GenreIds, Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres, "genres"), settings.GenresApplyMode, settings.MaxGenres);
             }
 
             if (settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.TagIds = MergeIds(game.TagIds, Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags), settings.TagsApplyMode, settings.MaxTags);
+                game.TagIds = MergeIds(game.TagIds, Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags, "tags"), settings.TagsApplyMode, settings.MaxTags);
             }
 
             if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.FeatureIds = MergeIds(game.FeatureIds, Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures), settings.FeaturesApplyMode, settings.MaxFeatures);
+                game.FeatureIds = MergeIds(game.FeatureIds, Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures, "features"), settings.FeaturesApplyMode, settings.MaxFeatures);
             }
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
@@ -50,7 +50,7 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.PreferExistingAgeRatings), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
+                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.PreferExistingAgeRatings, "ageRatings"), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
@@ -60,7 +60,7 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.CategoryIds = MergeIds(game.CategoryIds, Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories), settings.CategoriesApplyMode, settings.MaxCategories);
+                game.CategoryIds = MergeIds(game.CategoryIds, Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories, "categories"), settings.CategoriesApplyMode, settings.MaxCategories);
             }
 
             if (settings.GenerateSortingName && settings.SortingNameApplyMode != MetaDataIASettings.ApplySkip)
@@ -97,9 +97,10 @@ namespace MetaDataIAPlugin
             api.Database.Games.Update(game);
         }
 
-        private static List<Guid> Ensure<T>(IItemCollection<T> collection, IEnumerable<string> names, bool preferExistingOnly) where T : DatabaseObject
+        private static List<Guid> Ensure<T>(IItemCollection<T> collection, IEnumerable<string> names, bool preferExistingOnly, string field = null) where T : DatabaseObject
         {
             var ids = new List<Guid>();
+            var aliases = LibraryNameMatching.AliasesForField(field);
             foreach (var name in names ?? Enumerable.Empty<string>())
             {
                 if (string.IsNullOrWhiteSpace(name))
@@ -107,13 +108,24 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                var existing = collection.FirstOrDefault(x => string.Equals(x.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+                var trimmed = name.Trim();
+                var existing = collection.FirstOrDefault(x => string.Equals(x.Name, trimmed, StringComparison.OrdinalIgnoreCase));
                 if (existing == null && preferExistingOnly)
                 {
-                    continue;
+                    var matchedName = LibraryNameMatching.FindExisting(trimmed, collection.Select(x => x.Name), aliases);
+                    if (matchedName == null)
+                    {
+                        continue;
+                    }
+
+                    existing = collection.FirstOrDefault(x => string.Equals(x.Name, matchedName, StringComparison.OrdinalIgnoreCase));
+                    if (existing == null)
+                    {
+                        continue;
+                    }
                 }
 
-                var item = existing ?? collection.Add(name.Trim());
+                var item = existing ?? collection.Add(trimmed);
                 ids.Add(item.Id);
             }
 

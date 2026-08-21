@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">要实现此功能，LM Studio 必须启用其本地服务器，或者 Ollama 必须在下载模型的情况下运行。对于本地提供商来说，API 密钥为空。</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">输出语言</sys:String>
     <sys:String x:Key="MTDA_Tone">语气</sys:String>
-    <sys:String x:Key="MTDA_Length">长度</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">全局长度还指导列表中返回的项目数量。对于文本，每个标记的长度可让您调整每个块：对于概要，短 = 1 段，中 = 2，长 = 3 和超长 = 4-5。</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">每个令牌的长度</sys:String>
+    <sys:String x:Key="MTDA_Length">默认长度</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">用于列表，以及块未覆盖时的默认值。</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">分块长度</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">仅为应忽略默认长度的块启用覆盖。概要：短=1段，中=2，长=3，超长=4–5。</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">长度</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">覆盖</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">当前元数据</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">作为上下文使用，人工智能可以考虑现有数据，而不必复制它。规范化尝试修复和统一当前的元数据。忽略不会将这些详细信息发送给 AI。</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">使用官方来源作为 AI 上下文</sys:String>

@@ -99,27 +99,31 @@ namespace MetaDataIAPlugin
             RecommendedFor = Clean(RecommendedFor);
             Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
                 .Select(CleanFeature)
-                .Select(x => Canonicalize(x, CanonicalFeatureAliases))
+                .Select(x => Canonicalize(x, FeatureAliases))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(settings.MaxFeatures)
                 .ToList();
             Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty)
-                .Select(x => Canonicalize(x, CanonicalGenreAliases))
+                .Select(x => Canonicalize(x, GenreAliases))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(settings.MaxGenres)
                 .ToList();
             Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix)
-                .Select(x => CanonicalizePrefixed(x, settings.TagPrefix, CanonicalTagAliases))
+                .Select(x => CanonicalizePrefixed(x, settings.TagPrefix, TagAliases))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(settings.MaxTags)
                 .ToList();
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
             Publishers = CleanList(Publishers, settings.MaxPublishers, blacklist, string.Empty);
-            AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty);
+            AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty)
+                .Select(x => Canonicalize(x, AgeRatingAliases))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(settings.MaxAgeRatings)
+                .ToList();
             Regions = CleanList(Regions, settings.MaxRegions, blacklist, string.Empty);
             Categories = CleanList(Categories, settings.MaxCategories, blacklist, settings.CategoryPrefix)
-                .Select(x => CanonicalizePrefixed(x, settings.CategoryPrefix, CanonicalCategoryAliases))
+                .Select(x => CanonicalizePrefixed(x, settings.CategoryPrefix, CategoryAliases))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(settings.MaxCategories)
                 .ToList();
@@ -570,34 +574,12 @@ namespace MetaDataIAPlugin
                 return string.Empty;
             }
 
-            var key = NormalizeKey(value);
+            var key = LibraryNameMatching.NormalizeKey(value);
             string canonical;
             return aliases.TryGetValue(key, out canonical) ? canonical : value.Trim();
         }
 
-        private static string NormalizeKey(string value)
-        {
-            var normalized = RemoveDiacritics(value ?? string.Empty).ToLowerInvariant();
-            normalized = Regex.Replace(normalized, @"[^a-z0-9]+", " ").Trim();
-            return Regex.Replace(normalized, @"\s+", " ");
-        }
-
-        private static string RemoveDiacritics(string value)
-        {
-            var normalized = value.Normalize(NormalizationForm.FormD);
-            var builder = new StringBuilder();
-            foreach (var c in normalized)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                {
-                    builder.Append(c);
-                }
-            }
-
-            return builder.ToString().Normalize(NormalizationForm.FormC);
-        }
-
-        private static readonly Dictionary<string, string> CanonicalGenreAliases = BuildAliases(new Dictionary<string, string[]>
+        internal static readonly Dictionary<string, string> GenreAliases = BuildAliases(new Dictionary<string, string[]>
         {
             { "Accion", new[] { "accion", "action" } },
             { "Aventura", new[] { "aventura", "adventure" } },
@@ -617,10 +599,11 @@ namespace MetaDataIAPlugin
             { "Mundo abierto", new[] { "mundo abierto", "open world" } },
             { "Metroidvania", new[] { "metroidvania" } },
             { "Novela visual", new[] { "novela visual", "visual novel" } },
-            { "Ritmo", new[] { "ritmo", "rhythm", "musical" } }
+            { "Ritmo", new[] { "ritmo", "rhythm", "musical" } },
+            { "Indie", new[] { "indie", "independiente" } }
         });
 
-        private static readonly Dictionary<string, string> CanonicalTagAliases = BuildAliases(new Dictionary<string, string[]>
+        internal static readonly Dictionary<string, string> TagAliases = BuildAliases(new Dictionary<string, string[]>
         {
             { "Un jugador", new[] { "un jugador", "single player", "singleplayer", "solo", "para un jugador" } },
             { "Multijugador", new[] { "multijugador", "multiplayer" } },
@@ -642,10 +625,14 @@ namespace MetaDataIAPlugin
             { "Ciencia ficcion", new[] { "ciencia ficcion", "ciencia ficción", "sci fi", "science fiction" } },
             { "Fantasia", new[] { "fantasia", "fantasía", "fantasy" } },
             { "Sandbox", new[] { "sandbox" } },
-            { "Procedural", new[] { "procedural", "generacion procedural", "generación procedural" } }
+            { "Procedural", new[] { "procedural", "generacion procedural", "generación procedural" } },
+            { "Action", new[] { "action", "accion", "acción" } },
+            { "Combat", new[] { "combat", "combate" } },
+            { "Racing", new[] { "racing", "carreras" } },
+            { "Post-apocalyptic", new[] { "post apocalyptic", "postapocalyptic", "post apocalipsis", "postapocalipsis" } }
         });
 
-        private static readonly Dictionary<string, string> CanonicalFeatureAliases = BuildAliases(new Dictionary<string, string[]>
+        internal static readonly Dictionary<string, string> FeatureAliases = BuildAliases(new Dictionary<string, string[]>
         {
             { "Un jugador", new[] { "un jugador", "single player", "singleplayer", "para un jugador" } },
             { "Multijugador online", new[] { "multijugador online", "online multiplayer", "multijugador en linea", "multijugador en línea" } },
@@ -665,7 +652,7 @@ namespace MetaDataIAPlugin
             { "Compras integradas", new[] { "compras integradas", "in app purchases", "microtransacciones", "microtransactions" } }
         });
 
-        private static readonly Dictionary<string, string> CanonicalCategoryAliases = BuildAliases(new Dictionary<string, string[]>
+        internal static readonly Dictionary<string, string> CategoryAliases = BuildAliases(new Dictionary<string, string[]>
         {
             { "Pendientes", new[] { "pendiente", "pendientes", "por jugar", "backlog" } },
             { "Completados", new[] { "completado", "completados", "terminado", "terminados", "finished", "completed" } },
@@ -682,15 +669,30 @@ namespace MetaDataIAPlugin
             { "Emulacion", new[] { "emulacion", "emulación", "emulation" } }
         });
 
+        internal static readonly Dictionary<string, string> AgeRatingAliases = BuildAliases(new Dictionary<string, string[]>
+        {
+            { "ESRB E", new[] { "esrb e", "esrb everyone", "everyone", "rated e", "e for everyone" } },
+            { "ESRB E10+", new[] { "esrb e10", "esrb e10+", "e10", "everyone 10", "esrb everyone 10" } },
+            { "ESRB T", new[] { "esrb t", "teen", "esrb teen" } },
+            { "ESRB M", new[] { "esrb m", "mature", "esrb mature" } },
+            { "ESRB AO", new[] { "esrb ao", "adults only", "esrb adults only" } },
+            { "ESRB RP", new[] { "esrb rp", "rating pending" } },
+            { "PEGI 3", new[] { "pegi 3", "pegi3" } },
+            { "PEGI 7", new[] { "pegi 7", "pegi7" } },
+            { "PEGI 12", new[] { "pegi 12", "pegi12" } },
+            { "PEGI 16", new[] { "pegi 16", "pegi16" } },
+            { "PEGI 18", new[] { "pegi 18", "pegi18" } }
+        });
+
         private static Dictionary<string, string> BuildAliases(Dictionary<string, string[]> source)
         {
             var result = new Dictionary<string, string>();
             foreach (var pair in source)
             {
-                result[NormalizeKey(pair.Key)] = pair.Key;
+                result[LibraryNameMatching.NormalizeKey(pair.Key)] = pair.Key;
                 foreach (var alias in pair.Value)
                 {
-                    result[NormalizeKey(alias)] = pair.Key;
+                    result[LibraryNameMatching.NormalizeKey(alias)] = pair.Key;
                 }
             }
 

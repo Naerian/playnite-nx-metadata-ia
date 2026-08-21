@@ -96,6 +96,7 @@
         <Style x:Key="HintText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource GlyphBrush}"/>
             <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontStyle" Value="Italic"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Opacity" Value="1"/>
             <Setter Property="Margin" Value="0,8,0,16"/>
@@ -1038,64 +1039,106 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SettingsCard}">
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderBorder}">
-                                <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>
-                            </Border>
-                            <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="130"/>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="24"/>
-                                <ColumnDefinition Width="130"/>
-                                <ColumnDefinition Width="120"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_LengthPerToken}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_LengthPerTokenHelp}" Style="{StaticResource SectionSubtitleText}"/>
+                                <Grid>
+                                    <Grid.Resources>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                    </Grid.Resources>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="88"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="{}{short}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ShortLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{}{synopsis}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="0" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SynopsisLength}" Margin="0,0,0,4"/>
+                                    <Border Grid.Row="0" Style="{StaticResource FieldTableHeader}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="1" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="2" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="3" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="4" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="5" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="6" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="7" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="8" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="9" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="10" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="11" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="3"/>
+                                    <Border Grid.Row="12" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="3"/>
 
-                            <TextBlock Grid.Row="1" Text="{}{premise}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PremiseLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="1" Grid.Column="3" Text="{}{gameplay}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="1" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GameplayLength}" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{DynamicResource MTDA_Token}" FontWeight="SemiBold" Margin="8,0,8,0"/>
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_LengthOverride}" FontWeight="SemiBold" Margin="4,0" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_LengthColumn}" FontWeight="SemiBold" Margin="8,0,8,0"/>
 
-                            <TextBlock Grid.Row="2" Text="{}{tone}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ToneLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="2" Grid.Column="3" Text="{}{setting}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="2" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SettingLength}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="1" Text="{}{short}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.OverrideShortLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ShortLength}" IsEnabled="{Binding Settings.OverrideShortLength}" Margin="8,0,8,0"/>
 
-                            <TextBlock Grid.Row="3" Text="{}{perspective}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PerspectiveLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="3" Grid.Column="3" Text="{}{playModes}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="3" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PlayModesLength}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="2" Text="{}{synopsis}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.OverrideSynopsisLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SynopsisLength}" IsEnabled="{Binding Settings.OverrideSynopsisLength}" Margin="8,0,8,0"/>
 
-                            <TextBlock Grid.Row="4" Text="{}{estimatedLength}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.EstimatedLengthLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="4" Grid.Column="3" Text="{}{similarGames}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="4" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SimilarGamesLength}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="3" Text="{}{premise}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.OverridePremiseLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PremiseLength}" IsEnabled="{Binding Settings.OverridePremiseLength}" Margin="8,0,8,0"/>
 
-                            <TextBlock Grid.Row="5" Text="{}{notes}" Margin="0,4,8,0"/>
-                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.NotesLength}" Margin="0,0,0,4"/>
-                            <TextBlock Grid.Row="5" Grid.Column="3" Text="{}{recommendedFor}" Margin="0,4,8,0"/>
-                             <ComboBox Grid.Row="5" Grid.Column="4" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" Margin="0,0,0,4"/>
-                            </Grid>
+                                    <TextBlock Grid.Row="4" Text="{}{gameplay}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.OverrideGameplayLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GameplayLength}" IsEnabled="{Binding Settings.OverrideGameplayLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="5" Text="{}{tone}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.OverrideToneLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ToneLength}" IsEnabled="{Binding Settings.OverrideToneLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="6" Text="{}{setting}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.OverrideSettingLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SettingLength}" IsEnabled="{Binding Settings.OverrideSettingLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="7" Text="{}{perspective}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.OverridePerspectiveLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PerspectiveLength}" IsEnabled="{Binding Settings.OverridePerspectiveLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="8" Text="{}{playModes}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.OverridePlayModesLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PlayModesLength}" IsEnabled="{Binding Settings.OverridePlayModesLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="9" Text="{}{estimatedLength}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.OverrideEstimatedLengthLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.EstimatedLengthLength}" IsEnabled="{Binding Settings.OverrideEstimatedLengthLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="10" Text="{}{similarGames}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.OverrideSimilarGamesLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="10" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SimilarGamesLength}" IsEnabled="{Binding Settings.OverrideSimilarGamesLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="11" Text="{}{notes}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.OverrideNotesLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.NotesLength}" IsEnabled="{Binding Settings.OverrideNotesLength}" Margin="8,0,8,0"/>
+
+                                    <TextBlock Grid.Row="12" Text="{}{recommendedFor}" Margin="8,0,8,0"/>
+                                    <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.OverrideRecommendedForLength}" Margin="4,0"/>
+                                    <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" IsEnabled="{Binding Settings.OverrideRecommendedForLength}" Margin="8,0,8,0"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 

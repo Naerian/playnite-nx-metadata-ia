@@ -15,9 +15,12 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Forms = System.Windows.Forms;
 
 namespace MetaDataIAPlugin
 {
@@ -300,7 +303,6 @@ namespace MetaDataIAPlugin
         private readonly ContentControl content = new ContentControl();
         private readonly TextBlock stepText = new TextBlock();
         private readonly TextBlock titleText = new TextBlock();
-        private readonly Border titleHeader = new Border();
         private readonly Button backButton = new Button();
         private readonly Button nextButton = new Button();
         private readonly Button skipButton = new Button();
@@ -309,6 +311,8 @@ namespace MetaDataIAPlugin
         private bool providerModelsRefreshActive;
         private int page;
         private string selectedProfile = "balanced";
+        private bool suppressRecenter;
+        private bool userMovedWindow;
 
         public MetaDataIASettings ResultSettings { get; private set; }
         public bool Skipped { get; private set; }
@@ -328,89 +332,183 @@ namespace MetaDataIAPlugin
             }
 
             Title = plugin.Loc("MTDA_SetupWizardTitle", "Metadata AI setup assistant");
-            Width = 780;
-            Height = 640;
-            MinWidth = 680;
-            MinHeight = 520;
-            ResizeMode = ResizeMode.CanResize;
+            Width = 640;
+            SizeToContent = SizeToContent.Height;
+            ResizeMode = ResizeMode.NoResize;
+            WindowStyle = WindowStyle.None;
+            Style = null;
             ShowInTaskbar = false;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            SnapsToDevicePixels = true;
 
+            // Owner only for modality/z-order; centering uses Application.Current.MainWindow.
             var owner = plugin.Api.Dialogs.GetCurrentAppWindow();
             if (owner != null)
             {
                 Owner = owner;
-                WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
 
-            var root = new Grid { Margin = new Thickness(24) };
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            SettingsAppearance.ApplyWindow(this, working.AppearancePreset);
+            EnsureWizardChromeStyles();
 
-            var header = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
-            stepText.FontSize = 12;
-            stepText.Margin = new Thickness(0, 0, 0, 8);
-            titleText.FontSize = 20;
-            titleText.FontWeight = FontWeights.SemiBold;
-            titleHeader.Child = titleText;
-            titleHeader.BorderThickness = new Thickness(0, 0, 0, 1);
-            titleHeader.Padding = new Thickness(0, 0, 0, 8);
-            titleHeader.Margin = new Thickness(0, 0, 0, 8);
-            titleHeader.HorizontalAlignment = HorizontalAlignment.Stretch;
-            titleHeader.Background = Brushes.Transparent;
-            header.Children.Add(stepText);
-            header.Children.Add(titleHeader);
-            Grid.SetRow(header, 0);
-            root.Children.Add(header);
-
-            var scroll = new ScrollViewer
+            var shell = new Border
             {
-                Content = content,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                Padding = new Thickness(0, 0, 4, 0),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0)
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                SnapsToDevicePixels = true
             };
-            Grid.SetRow(scroll, 1);
-            root.Children.Add(scroll);
+            shell.SetResourceReference(Border.BorderBrushProperty, "Narian.Border");
+            shell.SetResourceReference(Border.BackgroundProperty, "Narian.Bg");
 
-            var buttons = new Grid { Margin = new Thickness(0, 16, 0, 0) };
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var root = new DockPanel { LastChildFill = true, Margin = new Thickness(24, 20, 24, 20) };
 
-            skipButton.Content = firstRun ? plugin.Loc("MTDA_SetupWizardSkip", "Skip for now") : plugin.Loc("MTDA_Close", "Close");
+            var footer = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 24, 0, 0) };
+            DockPanel.SetDock(footer, Dock.Bottom);
+
+            skipButton.Content = firstRun
+                ? plugin.Loc("MTDA_SetupWizardSkip", "Skip for now")
+                : plugin.Loc("MTDA_Close", "Close");
             skipButton.MinWidth = 120;
-            skipButton.Height = 36;
-            skipButton.Click += (s, e) => { Skipped = true; DialogResult = false; };
-            buttons.Children.Add(skipButton);
+            skipButton.Margin = new Thickness(0, 0, 16, 0);
+            skipButton.HorizontalAlignment = HorizontalAlignment.Left;
+            skipButton.Click += (s, e) =>
+            {
+                Skipped = true;
+                working.SetupWizardCompleted = true;
+                working.SetupWizardMigrationApplied = true;
+                DialogResult = false;
+            };
+            DockPanel.SetDock(skipButton, Dock.Left);
+            footer.Children.Add(skipButton);
+
+            var nav = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            DockPanel.SetDock(nav, Dock.Right);
 
             backButton.Content = plugin.Loc("MTDA_SetupWizardBack", "Back");
             backButton.MinWidth = 100;
-            backButton.Height = 36;
             backButton.Margin = new Thickness(0, 0, 8, 0);
-            backButton.Click += (s, e) => { if (page > 0) { page--; RenderPage(); } };
-            Grid.SetColumn(backButton, 2);
-            buttons.Children.Add(backButton);
+            backButton.Click += (s, e) =>
+            {
+                if (page > 0)
+                {
+                    page--;
+                    RenderPage();
+                }
+            };
+            nav.Children.Add(backButton);
 
             nextButton.MinWidth = 140;
-            nextButton.Height = 36;
             nextButton.IsDefault = true;
+            nextButton.Style = TryFindResource("WizardPrimaryButton") as Style;
             nextButton.Click += NextButtonOnClick;
-            Grid.SetColumn(nextButton, 3);
-            buttons.Children.Add(nextButton);
-            Grid.SetRow(buttons, 2);
-            root.Children.Add(buttons);
+            nav.Children.Add(nextButton);
+            footer.Children.Add(nav);
+            footer.Children.Add(new Border());
+            root.Children.Add(footer);
 
-            Content = root;
+            // Same layout as CSM: header + step body grow the window (SizeToContent).
+            // No inner ScrollViewer — that reads as a nested dialog.
+            var main = new StackPanel();
+            var dragHeader = new Border
+            {
+                Background = Brushes.Transparent,
+                Cursor = Cursors.SizeAll,
+                Padding = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+            dragHeader.MouseLeftButtonDown += OnDragAreaMouseLeftButtonDown;
+            var headerStack = new StackPanel();
+            stepText.FontSize = 12;
+            stepText.Margin = new Thickness(0, 0, 0, 8);
+            stepText.SetResourceReference(TextBlock.ForegroundProperty, "Narian.TextMuted");
+            titleText.FontSize = 20;
+            titleText.FontWeight = FontWeights.SemiBold;
+            titleText.TextWrapping = TextWrapping.Wrap;
+            titleText.Margin = new Thickness(0, 0, 0, 0);
+            titleText.SetResourceReference(TextBlock.ForegroundProperty, "Narian.Accent");
+            headerStack.Children.Add(stepText);
+            headerStack.Children.Add(titleText);
+            dragHeader.Child = headerStack;
+            main.Children.Add(dragHeader);
+            main.Children.Add(content);
+            root.Children.Add(main);
+
+            shell.Child = root;
+            Content = shell;
+            // Re-apply after Content so window bg matches the chrome border.
             SettingsAppearance.ApplyWindow(this, working.AppearancePreset);
-            MetadataTrustUi.SetResource(stepText, TextBlock.ForegroundProperty, "GlyphBrush");
-            MetadataTrustUi.SetResource(titleText, TextBlock.ForegroundProperty, "Narian.Accent");
-            MetadataTrustUi.SetResource(titleHeader, Border.BorderBrushProperty, "Narian.Border");
+
+            PreviewKeyDown += OnPreviewKeyDown;
+            Loaded += OnWindowLoaded;
+            SizeChanged += OnWindowSizeChanged;
             Closed += (s, e) => CancelProviderModelsRefresh();
             RenderPage();
+        }
+
+        private void EnsureWizardChromeStyles()
+        {
+            if (Resources.Contains("WizardSummaryRow"))
+            {
+                return;
+            }
+
+            var summaryRow = new Style(typeof(Border));
+            summaryRow.Setters.Add(new Setter(Border.BackgroundProperty, new DynamicResourceExtension("ControlBackgroundBrush")));
+            summaryRow.Setters.Add(new Setter(Border.BorderBrushProperty, new DynamicResourceExtension("Narian.Border")));
+            summaryRow.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(1)));
+            summaryRow.Setters.Add(new Setter(Border.CornerRadiusProperty, new CornerRadius(4)));
+            summaryRow.Setters.Add(new Setter(Border.PaddingProperty, new Thickness(12, 10, 12, 10)));
+            summaryRow.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 8)));
+            Resources["WizardSummaryRow"] = summaryRow;
+
+            var summaryLabel = new Style(typeof(TextBlock));
+            summaryLabel.Setters.Add(new Setter(TextBlock.ForegroundProperty, new DynamicResourceExtension("Narian.TextMuted")));
+            summaryLabel.Setters.Add(new Setter(TextBlock.FontSizeProperty, 12.0));
+            summaryLabel.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 4)));
+            Resources["WizardSummaryLabel"] = summaryLabel;
+
+            var summaryValue = new Style(typeof(TextBlock));
+            summaryValue.Setters.Add(new Setter(TextBlock.ForegroundProperty, new DynamicResourceExtension("TextBrush")));
+            summaryValue.Setters.Add(new Setter(TextBlock.FontSizeProperty, 14.0));
+            summaryValue.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.SemiBold));
+            summaryValue.Setters.Add(new Setter(TextBlock.TextWrappingProperty, TextWrapping.Wrap));
+            Resources["WizardSummaryValue"] = summaryValue;
+
+            var baseButton = TryFindResource(typeof(Button)) as Style;
+            var primary = baseButton != null ? new Style(typeof(Button), baseButton) : new Style(typeof(Button));
+            primary.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension("Narian.Accent")));
+            primary.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension("Narian.AccentOn")));
+            primary.Setters.Add(new Setter(Control.BorderBrushProperty, new DynamicResourceExtension("Narian.Accent")));
+            primary.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(8, 0, 0, 0)));
+            primary.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 120.0));
+            var primaryTemplate = new ControlTemplate(typeof(Button));
+            var bdFactory = new FrameworkElementFactory(typeof(Border));
+            bdFactory.Name = "Bd";
+            bdFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            bdFactory.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            bdFactory.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            bdFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            bdFactory.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+            bdFactory.SetValue(Border.SnapsToDevicePixelsProperty, true);
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            presenter.SetValue(TextElement.ForegroundProperty, new TemplateBindingExtension(Control.ForegroundProperty));
+            bdFactory.AppendChild(presenter);
+            primaryTemplate.VisualTree = bdFactory;
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, new DynamicResourceExtension("Narian.AccentHover"), "Bd"));
+            hover.Setters.Add(new Setter(Border.BorderBrushProperty, new DynamicResourceExtension("Narian.AccentHover"), "Bd"));
+            primaryTemplate.Triggers.Add(hover);
+            var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55, "Bd"));
+            primaryTemplate.Triggers.Add(disabled);
+            primary.Setters.Add(new Setter(Control.TemplateProperty, primaryTemplate));
+            Resources["WizardPrimaryButton"] = primary;
         }
 
         private void NextButtonOnClick(object sender, RoutedEventArgs e)
@@ -431,13 +529,18 @@ namespace MetaDataIAPlugin
         private void RenderPage()
         {
             stepText.Text = string.Format(plugin.Loc("MTDA_SetupWizardStep", "Step {0} of 4"), page + 1);
-            backButton.IsEnabled = page > 0;
-            nextButton.Content = page == 3 ? plugin.Loc("MTDA_SetupWizardFinish", "Save configuration") : plugin.Loc("MTDA_SetupWizardNext", "Next");
+            backButton.Visibility = page == 0 ? Visibility.Collapsed : Visibility.Visible;
+            nextButton.Content = page == 3
+                ? plugin.Loc("MTDA_SetupWizardFinish", "Save configuration")
+                : plugin.Loc("MTDA_SetupWizardNext", "Next");
 
             if (page == 0) content.Content = BuildPurposePage();
             else if (page == 1) content.Content = BuildProviderPage();
             else if (page == 2) content.Content = BuildFieldsPage();
             else content.Content = BuildSummaryPage();
+
+            Dispatcher.BeginInvoke(new Action(CenterInOwnerOrScreen), DispatcherPriority.Loaded);
+            Dispatcher.BeginInvoke(new Action(CenterInOwnerOrScreen), DispatcherPriority.ApplicationIdle);
         }
 
         private UIElement BuildPurposePage()
@@ -866,13 +969,34 @@ namespace MetaDataIAPlugin
             if (working.DownloadBackgroundImage) fields.Add(plugin.Loc("MTDA_Background", "Background"));
 
             var stack = new StackPanel();
-            stack.Children.Add(SummaryLine(plugin.Loc("MTDA_OutputLanguage", "Output language"), working.Language));
-            stack.Children.Add(SummaryLine(plugin.Loc("MTDA_Provider", "Provider"), working.ProviderPreset));
-            stack.Children.Add(SummaryLine(plugin.Loc("MTDA_Model", "Model"), working.Model));
-            stack.Children.Add(SummaryLine(plugin.Loc("MTDA_SetupWizardProfile", "Configuration profile"), selectedProfile));
-            stack.Children.Add(SummaryLine(plugin.Loc("MTDA_SetupWizardEnabledFields", "Enabled fields"), fields.Count == 0 ? plugin.Loc("MTDA_None", "None") : string.Join(", ", fields)));
+            stack.Children.Add(AddSummaryRow(plugin.Loc("MTDA_OutputLanguage", "Output language"), working.Language));
+            stack.Children.Add(AddSummaryRow(plugin.Loc("MTDA_Provider", "Provider"), working.ProviderPreset));
+            stack.Children.Add(AddSummaryRow(plugin.Loc("MTDA_Model", "Model"), working.Model));
+            stack.Children.Add(AddSummaryRow(plugin.Loc("MTDA_SetupWizardProfile", "Configuration profile"), ResolveProfileDisplayName(selectedProfile)));
+            stack.Children.Add(AddSummaryRow(
+                plugin.Loc("MTDA_SetupWizardEnabledFields", "Enabled fields"),
+                fields.Count == 0 ? plugin.Loc("MTDA_None", "None") : string.Join(", ", fields)));
             stack.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SetupWizardSummaryHelp", "Saving only changes the plugin configuration. Use Simulate changes from the Metadata AI menu to inspect a real game before applying anything."), new Thickness(0, 8, 0, 0)));
             return stack;
+        }
+
+        private string ResolveProfileDisplayName(string profile)
+        {
+            switch ((profile ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "balanced":
+                    return plugin.Loc("MTDA_SetupProfileBalanced", "Balanced and safe (recommended)");
+                case "missing":
+                    return plugin.Loc("MTDA_SetupProfileMissing", "Fill missing metadata only");
+                case "normalize":
+                    return plugin.Loc("MTDA_SetupProfileNormalize", "Normalize an existing library");
+                case "media":
+                    return plugin.Loc("MTDA_SetupProfileMedia", "Media only");
+                case "current":
+                    return plugin.Loc("MTDA_SetupProfileCurrent", "Keep current configuration");
+                default:
+                    return profile ?? string.Empty;
+            }
         }
 
         private void ApplyProfile(string profile)
@@ -934,6 +1058,343 @@ namespace MetaDataIAPlugin
             return match == null ? "en" : match.Code;
         }
 
+        private UIElement AddSummaryRow(string label, string value)
+        {
+            var border = new Border();
+            var rowStyle = TryFindResource("WizardSummaryRow") as Style;
+            if (rowStyle != null)
+            {
+                border.Style = rowStyle;
+            }
+            else
+            {
+                border.Padding = new Thickness(12, 10, 12, 10);
+                border.Margin = new Thickness(0, 0, 0, 8);
+                border.CornerRadius = new CornerRadius(4);
+                border.BorderThickness = new Thickness(1);
+                border.SetResourceReference(Border.BackgroundProperty, "ControlBackgroundBrush");
+                border.SetResourceReference(Border.BorderBrushProperty, "Narian.Border");
+            }
+
+            var stack = new StackPanel();
+            var title = new TextBlock { Text = label ?? string.Empty };
+            var titleStyle = TryFindResource("WizardSummaryLabel") as Style;
+            if (titleStyle != null)
+            {
+                title.Style = titleStyle;
+            }
+            else
+            {
+                title.FontSize = 12;
+                title.Margin = new Thickness(0, 0, 0, 4);
+                title.SetResourceReference(TextBlock.ForegroundProperty, "Narian.TextMuted");
+            }
+
+            var body = new TextBlock { Text = value ?? string.Empty };
+            var valueStyle = TryFindResource("WizardSummaryValue") as Style;
+            if (valueStyle != null)
+            {
+                body.Style = valueStyle;
+            }
+            else
+            {
+                body.FontSize = 14;
+                body.FontWeight = FontWeights.SemiBold;
+                body.TextWrapping = TextWrapping.Wrap;
+                body.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            }
+
+            stack.Children.Add(title);
+            stack.Children.Add(body);
+            border.Child = stack;
+            return border;
+        }
+
+        private void OnPreviewKeyDown(object sender, KeyEventArgs args)
+        {
+            if (args.Key == Key.Escape)
+            {
+                args.Handled = true;
+                Skipped = true;
+                working.SetupWizardCompleted = true;
+                working.SetupWizardMigrationApplied = true;
+                DialogResult = false;
+            }
+        }
+
+        private void OnDragAreaMouseLeftButtonDown(object sender, MouseButtonEventArgs args)
+        {
+            if (args.ChangedButton == MouseButton.Left)
+            {
+                try
+                {
+                    userMovedWindow = true;
+                    DragMove();
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        private void OnWindowLoaded(object sender, RoutedEventArgs args)
+        {
+            CenterInOwnerOrScreen();
+            Dispatcher.BeginInvoke(new Action(CenterInOwnerOrScreen), DispatcherPriority.ApplicationIdle);
+        }
+
+        private void OnWindowSizeChanged(object sender, SizeChangedEventArgs args)
+        {
+            if (suppressRecenter || userMovedWindow || !IsLoaded)
+            {
+                return;
+            }
+
+            if (!args.HeightChanged && !args.WidthChanged)
+            {
+                return;
+            }
+
+            CenterInOwnerOrScreen();
+        }
+
+        private void CenterInOwnerOrScreen()
+        {
+            if (userMovedWindow)
+            {
+                return;
+            }
+
+            suppressRecenter = true;
+            try
+            {
+                UpdateLayout();
+                var width = ActualWidth;
+                var height = ActualHeight;
+                if (width < 100 || height < 100 || double.IsNaN(width) || double.IsNaN(height))
+                {
+                    return;
+                }
+
+                var anchor = GetCenteringAnchor();
+                Point? centerDip = null;
+                if (anchor == null || anchor.WindowState != WindowState.Maximized)
+                {
+                    centerDip = TryGetWindowCenterDip(anchor);
+                }
+
+                double left;
+                double top;
+                if (centerDip.HasValue)
+                {
+                    left = centerDip.Value.X - (width / 2.0);
+                    top = centerDip.Value.Y - (height / 2.0);
+                }
+                else
+                {
+                    var workArea = GetWorkAreaDip(anchor);
+                    left = workArea.Left + ((workArea.Width - width) / 2.0);
+                    top = workArea.Top + ((workArea.Height - height) / 2.0);
+                }
+
+                var clampArea = GetWorkAreaDip(anchor);
+                if (width <= clampArea.Width)
+                {
+                    left = Math.Min(Math.Max(left, clampArea.Left), clampArea.Right - width);
+                }
+                else
+                {
+                    left = clampArea.Left;
+                }
+
+                if (height <= clampArea.Height)
+                {
+                    top = Math.Min(Math.Max(top, clampArea.Top), clampArea.Bottom - height);
+                }
+                else
+                {
+                    top = clampArea.Top;
+                }
+
+                if (!double.IsNaN(left) && !double.IsNaN(top) &&
+                    !double.IsInfinity(left) && !double.IsInfinity(top))
+                {
+                    Left = left;
+                    Top = top;
+                }
+            }
+            finally
+            {
+                suppressRecenter = false;
+            }
+        }
+
+        private Window GetCenteringAnchor()
+        {
+            try
+            {
+                var main = Application.Current != null ? Application.Current.MainWindow : null;
+                if (main != null &&
+                    main.IsVisible &&
+                    main.WindowState != WindowState.Minimized &&
+                    main.ActualWidth > 0 &&
+                    main.ActualHeight > 0)
+                {
+                    return main;
+                }
+            }
+            catch
+            {
+            }
+
+            return Owner;
+        }
+
+        private Point? TryGetWindowCenterDip(Window window)
+        {
+            if (window == null ||
+                !window.IsVisible ||
+                window.WindowState == WindowState.Minimized ||
+                window.ActualWidth <= 0 ||
+                window.ActualHeight <= 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                var centerPx = window.PointToScreen(new Point(
+                    window.ActualWidth / 2.0,
+                    window.ActualHeight / 2.0));
+                var fromDevice = GetTransformFromDevice(this) ?? GetTransformFromDevice(window);
+                if (fromDevice == null)
+                {
+                    return new Point(centerPx.X, centerPx.Y);
+                }
+
+                return fromDevice.Value.Transform(new Point(centerPx.X, centerPx.Y));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private Rect GetWorkAreaDip(Window anchor)
+        {
+            try
+            {
+                var screen = GetScreenForWindow(anchor) ?? GetScreenForWindow(this) ?? Forms.Screen.PrimaryScreen;
+                if (screen == null)
+                {
+                    return SystemParameters.WorkArea;
+                }
+
+                var pixel = screen.WorkingArea;
+                var fromDevice = GetTransformFromDevice(anchor) ?? GetTransformFromDevice(this);
+                if (fromDevice == null)
+                {
+                    return new Rect(pixel.Left, pixel.Top, pixel.Width, pixel.Height);
+                }
+
+                var topLeft = fromDevice.Value.Transform(new Point(pixel.Left, pixel.Top));
+                var bottomRight = fromDevice.Value.Transform(new Point(pixel.Right, pixel.Bottom));
+                return new Rect(topLeft, bottomRight);
+            }
+            catch
+            {
+                return SystemParameters.WorkArea;
+            }
+        }
+
+        private static Forms.Screen GetScreenForWindow(Window window)
+        {
+            if (window == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var handle = new WindowInteropHelper(window).Handle;
+                if (handle != IntPtr.Zero)
+                {
+                    return Forms.Screen.FromHandle(handle);
+                }
+
+                if (!double.IsNaN(window.Left) && !double.IsNaN(window.Top))
+                {
+                    var px = GetTransformToDevice(window);
+                    if (px != null)
+                    {
+                        var point = px.Value.Transform(new Point(window.Left + 8, window.Top + 8));
+                        return Forms.Screen.FromPoint(new System.Drawing.Point(
+                            (int)Math.Round(point.X),
+                            (int)Math.Round(point.Y)));
+                    }
+
+                    return Forms.Screen.FromPoint(new System.Drawing.Point(
+                        (int)Math.Round(window.Left + 8),
+                        (int)Math.Round(window.Top + 8)));
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        private static Matrix? GetTransformFromDevice(Window window)
+        {
+            var source = GetPresentationSource(window);
+            if (source == null || source.CompositionTarget == null)
+            {
+                return null;
+            }
+
+            return source.CompositionTarget.TransformFromDevice;
+        }
+
+        private static Matrix? GetTransformToDevice(Window window)
+        {
+            var source = GetPresentationSource(window);
+            if (source == null || source.CompositionTarget == null)
+            {
+                return null;
+            }
+
+            return source.CompositionTarget.TransformToDevice;
+        }
+
+        private static PresentationSource GetPresentationSource(Window window)
+        {
+            if (window == null)
+            {
+                return null;
+            }
+
+            var source = PresentationSource.FromVisual(window);
+            if (source != null)
+            {
+                return source;
+            }
+
+            try
+            {
+                var handle = new WindowInteropHelper(window).Handle;
+                if (handle != IntPtr.Zero)
+                {
+                    return HwndSource.FromHwnd(handle);
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
         private static TextBlock Label(string value)
         {
             var block = new TextBlock
@@ -945,24 +1406,6 @@ namespace MetaDataIAPlugin
             };
             MetadataTrustUi.SetResource(block, TextBlock.ForegroundProperty, "TextBrush");
             return block;
-        }
-
-        private static UIElement SummaryLine(string label, string value)
-        {
-            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
-            var title = new TextBlock { Text = label, FontSize = 14, FontWeight = FontWeights.SemiBold };
-            MetadataTrustUi.SetResource(title, TextBlock.ForegroundProperty, "TextBrush");
-            var body = new TextBlock
-            {
-                Text = value ?? string.Empty,
-                FontSize = 14,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 4, 0, 0)
-            };
-            MetadataTrustUi.SetResource(body, TextBlock.ForegroundProperty, "TextBrush");
-            panel.Children.Add(title);
-            panel.Children.Add(body);
-            return panel;
         }
 
         private static void AddFieldCheck(Panel panel, string text, Func<bool> get, Action<bool> set)

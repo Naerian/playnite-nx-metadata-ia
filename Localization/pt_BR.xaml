@@ -57,9 +57,12 @@
     <sys:String x:Key="MTDA_LocalFallbackHelp">Para que isso funcione, o LM Studio deve estar com seu servidor local habilitado ou o Ollama deve estar rodando com o modelo baixado. A chave API está vazia para provedores locais.</sys:String>
     <sys:String x:Key="MTDA_OutputLanguage">Idioma de saída</sys:String>
     <sys:String x:Key="MTDA_Tone">Tom</sys:String>
-    <sys:String x:Key="MTDA_Length">Comprimento</sys:String>
-    <sys:String x:Key="MTDA_LengthHelp">O comprimento global também orienta quantos itens são retornados nas listas. Para texto, o comprimento por token permite ajustar cada bloco: para sinopse, Curto=1 parágrafo, Médio=2, Longo=3 e Extra longo=4-5.</sys:String>
-    <sys:String x:Key="MTDA_LengthPerToken">Comprimento por token</sys:String>
+    <sys:String x:Key="MTDA_Length">Comprimento padrão</sys:String>
+    <sys:String x:Key="MTDA_LengthHelp">Usado em listas e como valor padrão quando um bloco não o substitui.</sys:String>
+    <sys:String x:Key="MTDA_LengthPerToken">Comprimentos por bloco</sys:String>
+    <sys:String x:Key="MTDA_LengthPerTokenHelp">Ative Substituir só nos blocos que devem ignorar o comprimento padrão. Para sinopse: Curto=1 parágrafo, Médio=2, Longo=3, Extra longo=4–5.</sys:String>
+    <sys:String x:Key="MTDA_LengthColumn">Comprimento</sys:String>
+    <sys:String x:Key="MTDA_LengthOverride">Substituir</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadata">Metadados atuais</sys:String>
     <sys:String x:Key="MTDA_CurrentMetadataHelp">Usar como contexto permite que a IA considere os dados existentes sem necessariamente copiá-los. Normalize tenta corrigir e unificar os metadados atuais. Ignore não envia esses detalhes para a IA.</sys:String>
     <sys:String x:Key="MTDA_OfficialStoreContext">Usar fontes oficiais como contexto da IA</sys:String>
