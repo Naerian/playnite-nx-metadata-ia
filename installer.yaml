@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.12
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-21
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.12/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_12.pext
+    Changelog:
+      - "Use Playnite values no longer competes with canonical/local vocabulary hints: locked fields only receive the real Playnite library list."
+      - "Clearer AI instructions: output language for unlocked fields; exact Playnite spellings for locked fields; no post-choice language rewriting."
+      - "Added offline vocabulary behavior tests covering no EN↔ES remapping and Prefer Existing filtering."
   - Version: 1.4.11
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-21

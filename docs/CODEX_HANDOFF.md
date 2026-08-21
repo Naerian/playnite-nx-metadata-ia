@@ -18,15 +18,15 @@ important decisions for the Playnite extension.
 
 ## Current Release State
 
-- Latest released version: `1.4.11`
-- Latest release tag: `v1.4.11`
-- Latest release commit: see tag `v1.4.11`
+- Latest released version: `1.4.12`
+- Latest release tag: `v1.4.12`
+- Latest release commit: see tag `v1.4.12`
 - Current package name:
-  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_11.pext`
+  `MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_12.pext`
 - Release page:
-  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.11
-- Public package SHA-256 verified for v1.4.11:
-  `0AB8F5D930CB27BC7AA7CA6DD303E752EED963D1FC241D0B86EE147BE8D292FC`
+  https://github.com/Naerian/playnite-nx-metadata-ia/releases/tag/v1.4.12
+- Public package SHA-256 verified for v1.4.12:
+  `F0584AB6ED7EEEF8D4A8410142A6B360B8538FEB12AFF77E001C32201E891F80`
 - UI reference for other plugins: `docs/SETTINGS-UI-GUIDE.md`
 - Settings design system (Figma):
   https://www.figma.com/design/0ilhUvo6xBoEkEldkdP3Wh/Narian-Plugins-%E2%80%94-Settings-Design-System

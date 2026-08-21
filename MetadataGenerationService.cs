@@ -620,7 +620,9 @@ namespace MetaDataIAPlugin
         {
             return "You are a careful video game metadata editor for Playnite. " +
                    "Return only valid JSON, without markdown. " +
-                   "Use the requested output language for every user-facing value, including lists, tags, genres, categories, features, age ratings, regions and link names. " +
+                   "Use the requested output language (targetLanguage / targetLanguageName) for every user-facing value, including descriptions and free-form list labels, unless a field is locked by playniteLibraryVocabulary. " +
+                   "When playniteLibraryVocabulary lists values for a field, that list is the only allowed vocabulary for that field: copy those exact spellings, do not translate them, and skip items that do not fit. " +
+                   "Never rewrite list labels from one natural language into another after choosing them. " +
                    "Your job is to normalize and structure provided facts, not to invent missing metadata. " +
                    "Prioritize factual accuracy over filling every field. If a fact is uncertain, leave that field empty.";
         }
@@ -644,9 +646,9 @@ namespace MetaDataIAPlugin
             context["maxDevelopers"] = settings.MaxDevelopers;
             context["maxPublishers"] = settings.MaxPublishers;
             context["companyPolicy"] = "developers must contain only the main credited developer studio for the base game. publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty.";
-            context["canonicalTerms"] = BuildCanonicalTerms();
+            context["canonicalTerms"] = ExcludePreferExistingFields(BuildCanonicalTerms());
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
-            context["localVocabulary"] = settings.GetVocabularyTerms(settings.Language);
+            context["localVocabulary"] = ExcludePreferExistingFields(settings.GetVocabularyTerms(settings.Language));
             context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
@@ -774,8 +776,8 @@ namespace MetaDataIAPlugin
                    "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
                    "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
-                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games. If both are empty for a field, create stable terms directly in the requested language and reuse the same wording consistently. " +
-                   "If playniteLibraryVocabulary is present for a field, you MUST pick only values from that exact list for that field (same spelling). Do not invent new wording, do not translate those library names, and omit the field item when nothing in the list fits. " +
+                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games when those fields are not locked. If both are empty for a field and playniteLibraryVocabulary does not lock it, create stable terms directly in the requested output language and reuse the same wording consistently. " +
+                   "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. Locked fields override localVocabulary and canonicalTerms. " +
                    "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
@@ -783,7 +785,7 @@ namespace MetaDataIAPlugin
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
                    "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
-                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
+                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
@@ -1053,6 +1055,42 @@ namespace MetaDataIAPlugin
                 case "zh-tw": return "Traditional Chinese";
                 default: return string.IsNullOrWhiteSpace(code) ? "Spanish" : code;
             }
+        }
+
+        private Dictionary<string, List<string>> ExcludePreferExistingFields(Dictionary<string, List<string>> vocabulary)
+        {
+            if (vocabulary == null || vocabulary.Count == 0)
+            {
+                return vocabulary;
+            }
+
+            var filtered = new Dictionary<string, List<string>>(vocabulary, StringComparer.OrdinalIgnoreCase);
+            if (settings.PreferExistingGenres)
+            {
+                filtered.Remove("genres");
+            }
+
+            if (settings.PreferExistingTags)
+            {
+                filtered.Remove("tags");
+            }
+
+            if (settings.PreferExistingFeatures)
+            {
+                filtered.Remove("features");
+            }
+
+            if (settings.PreferExistingCategories)
+            {
+                filtered.Remove("categories");
+            }
+
+            if (settings.PreferExistingAgeRatings)
+            {
+                filtered.Remove("ageRatings");
+            }
+
+            return filtered.Count == 0 ? null : filtered;
         }
 
         private Dictionary<string, List<string>> BuildPlayniteLibraryVocabulary()
