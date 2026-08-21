@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.11
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-21
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.11/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_11.pext
+    Changelog:
+      - "Removed post-process language remapping of genres, tags, features and categories (for example Action was being rewritten to Accion even when Output language was English)."
+      - "Generated list values now keep the wording returned for the selected output language; the plugin only cleans and deduplicates them."
+      - "Use Playnite values no longer uses translation alias tables: it asks the model to pick from your existing Playnite names and filters to exact/normalized matches only."
   - Version: 1.4.10
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-21

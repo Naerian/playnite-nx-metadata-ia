@@ -647,6 +647,7 @@ namespace MetaDataIAPlugin
             context["canonicalTerms"] = BuildCanonicalTerms();
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
             context["localVocabulary"] = settings.GetVocabularyTerms(settings.Language);
+            context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
             context["categoryPrefix"] = settings.CategoryPrefix;
@@ -774,6 +775,7 @@ namespace MetaDataIAPlugin
                    "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
                    "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games. If both are empty for a field, create stable terms directly in the requested language and reuse the same wording consistently. " +
+                   "If playniteLibraryVocabulary is present for a field, you MUST pick only values from that exact list for that field (same spelling). Do not invent new wording, do not translate those library names, and omit the field item when nothing in the list fits. " +
                    "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
@@ -1051,6 +1053,42 @@ namespace MetaDataIAPlugin
                 case "zh-tw": return "Traditional Chinese";
                 default: return string.IsNullOrWhiteSpace(code) ? "Spanish" : code;
             }
+        }
+
+        private Dictionary<string, List<string>> BuildPlayniteLibraryVocabulary()
+        {
+            if (playniteApi == null || playniteApi.Database == null)
+            {
+                return null;
+            }
+
+            var vocabulary = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (settings.PreferExistingGenres)
+            {
+                vocabulary["genres"] = Names(playniteApi.Database.Genres);
+            }
+
+            if (settings.PreferExistingTags)
+            {
+                vocabulary["tags"] = Names(playniteApi.Database.Tags);
+            }
+
+            if (settings.PreferExistingFeatures)
+            {
+                vocabulary["features"] = Names(playniteApi.Database.Features);
+            }
+
+            if (settings.PreferExistingCategories)
+            {
+                vocabulary["categories"] = Names(playniteApi.Database.Categories);
+            }
+
+            if (settings.PreferExistingAgeRatings)
+            {
+                vocabulary["ageRatings"] = Names(playniteApi.Database.AgeRatings);
+            }
+
+            return vocabulary.Count == 0 ? null : vocabulary;
         }
 
         private Dictionary<string, List<string>> BuildCanonicalTerms()

@@ -9,11 +9,11 @@ namespace MetaDataIAPlugin
 {
     /// <summary>
     /// Maps AI-proposed names onto names that already exist in the Playnite library
-    /// (exact, normalized, or shared alias group). Used when PreferExisting* is enabled.
+    /// (exact or diacritic/punctuation-normalized match). Used when PreferExisting* is enabled.
     /// </summary>
     public static class LibraryNameMatching
     {
-        public static List<string> MapToExisting(IEnumerable<string> proposed, IEnumerable<string> knownNames, Dictionary<string, string> aliases)
+        public static List<string> MapToExisting(IEnumerable<string> proposed, IEnumerable<string> knownNames)
         {
             var known = (knownNames ?? Enumerable.Empty<string>())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -30,7 +30,7 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                var match = FindExisting(name.Trim(), known, aliases);
+                var match = FindExisting(name.Trim(), known);
                 if (match == null || !seen.Add(match))
                 {
                     continue;
@@ -42,7 +42,7 @@ namespace MetaDataIAPlugin
             return mapped;
         }
 
-        public static string FindExisting(string proposed, IEnumerable<string> knownNames, Dictionary<string, string> aliases)
+        public static string FindExisting(string proposed, IEnumerable<string> knownNames)
         {
             if (string.IsNullOrWhiteSpace(proposed))
             {
@@ -60,65 +60,7 @@ namespace MetaDataIAPlugin
             }
 
             var proposedKey = NormalizeKey(proposed);
-            var byKey = known.FirstOrDefault(x => string.Equals(NormalizeKey(x), proposedKey, StringComparison.Ordinal));
-            if (byKey != null)
-            {
-                return byKey;
-            }
-
-            var proposedGroup = AliasGroup(proposed, aliases);
-            var byAlias = known.FirstOrDefault(x => string.Equals(AliasGroup(x, aliases), proposedGroup, StringComparison.Ordinal));
-            if (byAlias != null)
-            {
-                return byAlias;
-            }
-
-            return null;
-        }
-
-        public static Dictionary<string, string> AliasesForField(string field)
-        {
-            if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase))
-            {
-                return AiMetadataResult.GenreAliases;
-            }
-
-            if (string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase))
-            {
-                return AiMetadataResult.TagAliases;
-            }
-
-            if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
-            {
-                return AiMetadataResult.FeatureAliases;
-            }
-
-            if (string.Equals(field, "categories", StringComparison.OrdinalIgnoreCase))
-            {
-                return AiMetadataResult.CategoryAliases;
-            }
-
-            if (string.Equals(field, "ageRatings", StringComparison.OrdinalIgnoreCase))
-            {
-                return AiMetadataResult.AgeRatingAliases;
-            }
-
-            return null;
-        }
-
-        private static string AliasGroup(string value, Dictionary<string, string> aliases)
-        {
-            var key = NormalizeKey(value);
-            if (aliases != null)
-            {
-                string canonical;
-                if (aliases.TryGetValue(key, out canonical))
-                {
-                    return NormalizeKey(canonical);
-                }
-            }
-
-            return key;
+            return known.FirstOrDefault(x => string.Equals(NormalizeKey(x), proposedKey, StringComparison.Ordinal));
         }
 
         internal static string NormalizeKey(string value)

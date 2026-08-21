@@ -153,7 +153,7 @@ namespace MetaDataIAPlugin
             var generated = Clean(generatedValues).Take(Math.Max(1, maxItems)).ToList();
             if (existingOnly)
             {
-                generated = LibraryNameMatching.MapToExisting(generated, knownValues, LibraryNameMatching.AliasesForField(field));
+                generated = LibraryNameMatching.MapToExisting(generated, knownValues);
             }
 
             List<string> after;

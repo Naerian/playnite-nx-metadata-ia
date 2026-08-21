@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Security;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
@@ -99,34 +97,17 @@ namespace MetaDataIAPlugin
             RecommendedFor = Clean(RecommendedFor);
             Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
                 .Select(CleanFeature)
-                .Select(x => Canonicalize(x, FeatureAliases))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(settings.MaxFeatures)
                 .ToList();
-            Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty)
-                .Select(x => Canonicalize(x, GenreAliases))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(settings.MaxGenres)
-                .ToList();
-            Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix)
-                .Select(x => CanonicalizePrefixed(x, settings.TagPrefix, TagAliases))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(settings.MaxTags)
-                .ToList();
+            Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty);
+            Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix);
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
             Publishers = CleanList(Publishers, settings.MaxPublishers, blacklist, string.Empty);
-            AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty)
-                .Select(x => Canonicalize(x, AgeRatingAliases))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(settings.MaxAgeRatings)
-                .ToList();
+            AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty);
             Regions = CleanList(Regions, settings.MaxRegions, blacklist, string.Empty);
-            Categories = CleanList(Categories, settings.MaxCategories, blacklist, settings.CategoryPrefix)
-                .Select(x => CanonicalizePrefixed(x, settings.CategoryPrefix, CategoryAliases))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(settings.MaxCategories)
-                .ToList();
+            Categories = CleanList(Categories, settings.MaxCategories, blacklist, settings.CategoryPrefix);
             Links = CleanLinks(Links, settings.MaxLinks);
             ReleaseDate = Clean(ReleaseDate);
             Series = CleanList(Series, settings.MaxSeries, blacklist, string.Empty);
@@ -549,154 +530,6 @@ namespace MetaDataIAPlugin
         private static string EscapeHtml(string value)
         {
             return SecurityElement.Escape(value) ?? string.Empty;
-        }
-
-        private static string CanonicalizePrefixed(string value, string prefix, Dictionary<string, string> aliases)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            if (string.IsNullOrWhiteSpace(prefix) || !value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                return Canonicalize(value, aliases);
-            }
-
-            var withoutPrefix = value.Substring(prefix.Length);
-            return prefix + Canonicalize(withoutPrefix, aliases);
-        }
-
-        private static string Canonicalize(string value, Dictionary<string, string> aliases)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var key = LibraryNameMatching.NormalizeKey(value);
-            string canonical;
-            return aliases.TryGetValue(key, out canonical) ? canonical : value.Trim();
-        }
-
-        internal static readonly Dictionary<string, string> GenreAliases = BuildAliases(new Dictionary<string, string[]>
-        {
-            { "Accion", new[] { "accion", "action" } },
-            { "Aventura", new[] { "aventura", "adventure" } },
-            { "RPG", new[] { "rpg", "rol", "juego de rol", "role playing", "role playing game" } },
-            { "Estrategia", new[] { "estrategia", "strategy", "tactica", "tactico", "tacticos" } },
-            { "Simulacion", new[] { "simulacion", "simulador", "simulation", "simulator" } },
-            { "Deportes", new[] { "deportes", "sports", "sport" } },
-            { "Carreras", new[] { "carreras", "conduccion", "racing", "driving" } },
-            { "Lucha", new[] { "lucha", "fighting", "peleas", "brawler" } },
-            { "Plataformas", new[] { "plataformas", "platformer", "platform", "saltos" } },
-            { "Puzzle", new[] { "puzzle", "puzle", "puzzles", "rompecabezas" } },
-            { "Disparos", new[] { "shooter", "shooters", "disparos", "tiros", "fps", "tps", "disparos en primera persona", "disparos enemigos" } },
-            { "Terror", new[] { "terror", "horror", "miedo" } },
-            { "Supervivencia", new[] { "supervivencia", "survival" } },
-            { "Sigilo", new[] { "sigilo", "stealth" } },
-            { "Roguelike", new[] { "roguelike", "roguelite", "rogue like", "rogue lite" } },
-            { "Mundo abierto", new[] { "mundo abierto", "open world" } },
-            { "Metroidvania", new[] { "metroidvania" } },
-            { "Novela visual", new[] { "novela visual", "visual novel" } },
-            { "Ritmo", new[] { "ritmo", "rhythm", "musical" } },
-            { "Indie", new[] { "indie", "independiente" } }
-        });
-
-        internal static readonly Dictionary<string, string> TagAliases = BuildAliases(new Dictionary<string, string[]>
-        {
-            { "Un jugador", new[] { "un jugador", "single player", "singleplayer", "solo", "para un jugador" } },
-            { "Multijugador", new[] { "multijugador", "multiplayer" } },
-            { "Cooperativo", new[] { "cooperativo", "co op", "coop", "cooperative" } },
-            { "Cooperativo online", new[] { "cooperativo online", "online co op", "online coop", "co op online" } },
-            { "Cooperativo local", new[] { "cooperativo local", "local co op", "local coop", "co op local" } },
-            { "Competitivo", new[] { "competitivo", "competitive" } },
-            { "Deduccion social", new[] { "deduccion social", "social deduction", "deducción social" } },
-            { "Exploracion", new[] { "exploracion", "exploración", "exploration" } },
-            { "Construccion", new[] { "construccion", "construcción", "building", "construction" } },
-            { "Gestion", new[] { "gestion", "gestión", "management" } },
-            { "Crafteo", new[] { "crafteo", "crafting", "fabricacion", "fabricación" } },
-            { "Historia profunda", new[] { "historia profunda", "story rich", "narrativa profunda" } },
-            { "Narrativo", new[] { "narrativo", "narrative" } },
-            { "Dificil", new[] { "dificil", "difícil", "hard", "challenging", "desafiante" } },
-            { "Casual", new[] { "casual" } },
-            { "Retro", new[] { "retro" } },
-            { "Pixel art", new[] { "pixel art", "pixelart" } },
-            { "Ciencia ficcion", new[] { "ciencia ficcion", "ciencia ficción", "sci fi", "science fiction" } },
-            { "Fantasia", new[] { "fantasia", "fantasía", "fantasy" } },
-            { "Sandbox", new[] { "sandbox" } },
-            { "Procedural", new[] { "procedural", "generacion procedural", "generación procedural" } },
-            { "Action", new[] { "action", "accion", "acción" } },
-            { "Combat", new[] { "combat", "combate" } },
-            { "Racing", new[] { "racing", "carreras" } },
-            { "Post-apocalyptic", new[] { "post apocalyptic", "postapocalyptic", "post apocalipsis", "postapocalipsis" } }
-        });
-
-        internal static readonly Dictionary<string, string> FeatureAliases = BuildAliases(new Dictionary<string, string[]>
-        {
-            { "Un jugador", new[] { "un jugador", "single player", "singleplayer", "para un jugador" } },
-            { "Multijugador online", new[] { "multijugador online", "online multiplayer", "multijugador en linea", "multijugador en línea" } },
-            { "Multijugador local", new[] { "multijugador local", "local multiplayer" } },
-            { "Cooperativo online", new[] { "cooperativo online", "online co op", "online coop" } },
-            { "Cooperativo local", new[] { "cooperativo local", "local co op", "local coop" } },
-            { "Pantalla dividida", new[] { "pantalla dividida", "split screen", "splitscreen" } },
-            { "Soporte mando", new[] { "soporte mando", "mando", "controller support", "compatible con mando", "soporte de mando" } },
-            { "Logros", new[] { "logros", "achievements", "steam achievements" } },
-            { "Guardado en la nube", new[] { "guardado en la nube", "cloud saves", "steam cloud", "guardado cloud" } },
-            { "Cromos de Steam", new[] { "cromos de steam", "steam trading cards", "trading cards" } },
-            { "Compatibilidad Steam Deck", new[] { "steam deck", "steam deck verified", "compatibilidad steam deck" } },
-            { "Juego cruzado", new[] { "juego cruzado", "cross play", "crossplay" } },
-            { "Editor de niveles", new[] { "editor de niveles", "level editor" } },
-            { "Modos PvP", new[] { "pvp", "modos pvp" } },
-            { "Modos PvE", new[] { "pve", "modos pve" } },
-            { "Compras integradas", new[] { "compras integradas", "in app purchases", "microtransacciones", "microtransactions" } }
-        });
-
-        internal static readonly Dictionary<string, string> CategoryAliases = BuildAliases(new Dictionary<string, string[]>
-        {
-            { "Pendientes", new[] { "pendiente", "pendientes", "por jugar", "backlog" } },
-            { "Completados", new[] { "completado", "completados", "terminado", "terminados", "finished", "completed" } },
-            { "Abandonados", new[] { "abandonado", "abandonados", "dropped" } },
-            { "Para jugar en cooperativo", new[] { "cooperativo", "para cooperativo", "para jugar en coop", "para jugar en cooperativo" } },
-            { "Para jugar rapido", new[] { "partidas rapidas", "para jugar rapido", "sesiones cortas", "quick play" } },
-            { "Para sesiones largas", new[] { "sesiones largas", "para sesiones largas" } },
-            { "Relax", new[] { "relax", "relajante", "chill" } },
-            { "Retos", new[] { "reto", "retos", "desafio", "desafios", "desafío", "desafíos" } },
-            { "Narrativos", new[] { "narrativo", "narrativos", "historia", "story" } },
-            { "Multijugador", new[] { "multijugador", "multiplayer" } },
-            { "Indie", new[] { "indie", "independiente" } },
-            { "Retro", new[] { "retro" } },
-            { "Emulacion", new[] { "emulacion", "emulación", "emulation" } }
-        });
-
-        internal static readonly Dictionary<string, string> AgeRatingAliases = BuildAliases(new Dictionary<string, string[]>
-        {
-            { "ESRB E", new[] { "esrb e", "esrb everyone", "everyone", "rated e", "e for everyone" } },
-            { "ESRB E10+", new[] { "esrb e10", "esrb e10+", "e10", "everyone 10", "esrb everyone 10" } },
-            { "ESRB T", new[] { "esrb t", "teen", "esrb teen" } },
-            { "ESRB M", new[] { "esrb m", "mature", "esrb mature" } },
-            { "ESRB AO", new[] { "esrb ao", "adults only", "esrb adults only" } },
-            { "ESRB RP", new[] { "esrb rp", "rating pending" } },
-            { "PEGI 3", new[] { "pegi 3", "pegi3" } },
-            { "PEGI 7", new[] { "pegi 7", "pegi7" } },
-            { "PEGI 12", new[] { "pegi 12", "pegi12" } },
-            { "PEGI 16", new[] { "pegi 16", "pegi16" } },
-            { "PEGI 18", new[] { "pegi 18", "pegi18" } }
-        });
-
-        private static Dictionary<string, string> BuildAliases(Dictionary<string, string[]> source)
-        {
-            var result = new Dictionary<string, string>();
-            foreach (var pair in source)
-            {
-                result[LibraryNameMatching.NormalizeKey(pair.Key)] = pair.Key;
-                foreach (var alias in pair.Value)
-                {
-                    result[LibraryNameMatching.NormalizeKey(alias)] = pair.Key;
-                }
-            }
-
-            return result;
         }
 
         private static List<string> ParseSimilarGamesText(string text)
