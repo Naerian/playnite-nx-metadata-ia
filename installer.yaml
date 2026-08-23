@@ -5,7 +5,7 @@ Packages:
     ReleaseDate: 2026-08-23
     PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.13/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_13.pext
     Changelog:
-      - "Fixed Download Metadata crash Can not convert Object to String when Wikidata returned match as an object instead of a string (reported with PAYDAY 3)."
+      - "Fixed Download Metadata crash Can not convert Object to String when Wikidata returned match as an object instead of a string."
       - "Hardened Wikidata/VNDB JSON parsing so object-shaped fields are read safely via text/value properties."
       - "Ensured TLS 1.2 is enabled for Wikidata and VNDB HTTPS requests on older .NET hosts."
   - Version: 1.4.12
