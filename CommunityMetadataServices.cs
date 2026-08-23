@@ -31,22 +31,22 @@ namespace MetaDataIAPlugin
             };
             var response = await PostJsonAsync(Endpoint, request, cancellationToken).ConfigureAwait(false);
             var item = response == null ? null : response["results"].OfType<JObject>()
-                .FirstOrDefault(x => Exact(game.Name, (string)x["title"], (string)x["alttitle"]));
+                .FirstOrDefault(x => Exact(game.Name, TokenText(x["title"]), TokenText(x["alttitle"])));
             if (item == null) return null;
 
-            var id = (string)item["id"];
+            var id = TokenText(item["id"]);
             return new OfficialStoreMetadata
             {
                 SourceName = MetaDataIASettings.SourceVndb,
                 StoreUrl = string.IsNullOrWhiteSpace(id) ? string.Empty : "https://vndb.org/" + id,
-                Title = (string)item["title"],
-                Description = StripVndbMarkup((string)item["description"]),
+                Title = TokenText(item["title"]),
+                Description = StripVndbMarkup(TokenText(item["description"])),
                 Developers = Names(item.SelectTokens("developers[*].name")),
                 // VNDB tags are useful factual context for the model, but are not
                 // automatically treated as Playnite tags. Features is the existing
                 // structured-context channel for that supplemental information.
                 Features = Names(item.SelectTokens("tags[*].name")).Take(12).ToList(),
-                ReleaseDate = (string)item["released"],
+                ReleaseDate = TokenText(item["released"]),
                 Links = string.IsNullOrWhiteSpace(id) ? new List<Link>() : new List<Link> { new Link("VNDB", "https://vndb.org/" + id) },
                 IsExactMatch = true
             };
@@ -54,6 +54,7 @@ namespace MetaDataIAPlugin
 
         private static async Task<JObject> PostJsonAsync(string url, object payload, CancellationToken cancellationToken)
         {
+            EnsureTls12();
             using (var client = new WebClient())
             {
                 client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -68,6 +69,19 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private static void EnsureTls12()
+        {
+            try
+            {
+                // Explicit numeric flags keep TLS 1.2 available on older .NET 4.x hosts.
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
+            }
+            catch
+            {
+                // Ignore if the host runtime already restricts protocol changes.
+            }
+        }
+
         private static string StripVndbMarkup(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return string.Empty;
@@ -76,7 +90,7 @@ namespace MetaDataIAPlugin
 
         private static List<string> Names(IEnumerable<JToken> values)
         {
-            return (values ?? Enumerable.Empty<JToken>()).Select(x => (string)x).Where(x => !string.IsNullOrWhiteSpace(x))
+            return (values ?? Enumerable.Empty<JToken>()).Select(TokenText).Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
@@ -90,6 +104,30 @@ namespace MetaDataIAPlugin
         {
             return new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
         }
+
+        // Newtonsoft throws "Can not convert Object to String" on (string)JObject.
+        private static string TokenText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null || token.Type == JTokenType.Undefined)
+            {
+                return null;
+            }
+
+            if (token.Type == JTokenType.String || token.Type == JTokenType.Integer ||
+                token.Type == JTokenType.Float || token.Type == JTokenType.Boolean ||
+                token.Type == JTokenType.Guid || token.Type == JTokenType.Uri ||
+                token.Type == JTokenType.Date)
+            {
+                return token.ToString();
+            }
+
+            if (token.Type == JTokenType.Object)
+            {
+                return TokenText(token["text"]) ?? TokenText(token["value"]) ?? TokenText(token["name"]) ?? TokenText(token["id"]);
+            }
+
+            return null;
+        }
     }
 
     internal sealed class WikidataMetadataService
@@ -100,9 +138,10 @@ namespace MetaDataIAPlugin
         {
             if (game == null || string.IsNullOrWhiteSpace(game.Name)) return null;
             var search = await GetJsonAsync(Api + "?action=wbsearchentities&format=json&language=en&type=item&limit=10&search=" + Uri.EscapeDataString(game.Name.Trim()), cancellationToken).ConfigureAwait(false);
+            // wbsearchentities returns match as an object { type, language, text }, not a string.
             var result = search == null ? null : search["search"].OfType<JObject>()
-                .FirstOrDefault(x => Exact(game.Name, (string)x["label"], (string)x["match"]));
-            var id = result == null ? null : (string)result["id"];
+                .FirstOrDefault(x => Exact(game.Name, TokenText(x["label"]), TokenText(x["match"]), TokenText(x.SelectToken("match.text"))));
+            var id = result == null ? null : TokenText(result["id"]);
             if (string.IsNullOrWhiteSpace(id)) return null;
 
             var entityRoot = await GetJsonAsync(Api + "?action=wbgetentities&format=json&props=labels|descriptions|claims&languages=en|es&ids=" + Uri.EscapeDataString(id), cancellationToken).ConfigureAwait(false);
@@ -131,6 +170,7 @@ namespace MetaDataIAPlugin
 
         private static async Task<JObject> GetJsonAsync(string url, CancellationToken cancellationToken)
         {
+            EnsureTls12();
             using (var client = new WebClient())
             {
                 client.Headers[HttpRequestHeader.UserAgent] = "MetadataAIPlugin/1.0 (Playnite metadata plugin)";
@@ -139,6 +179,19 @@ namespace MetaDataIAPlugin
                 {
                     return JObject.Parse(await client.DownloadStringTaskAsync(url).ConfigureAwait(false));
                 }
+            }
+        }
+
+        private static void EnsureTls12()
+        {
+            try
+            {
+                // Explicit numeric flags keep TLS 1.2 available on older .NET 4.x hosts.
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
+            }
+            catch
+            {
+                // Ignore if the host runtime already restricts protocol changes.
             }
         }
 
@@ -163,7 +216,7 @@ namespace MetaDataIAPlugin
         private static IEnumerable<string> EntityIds(JObject entity, string property)
         {
             return (entity == null ? Enumerable.Empty<JToken>() : entity.SelectTokens("claims." + property + "[*].mainsnak.datavalue.value.id"))
-                .Select(x => (string)x).Where(x => !string.IsNullOrWhiteSpace(x));
+                .Select(TokenText).Where(x => !string.IsNullOrWhiteSpace(x));
         }
 
         private static List<string> LabelValues(JObject entity, string property, Dictionary<string, string> labels)
@@ -174,23 +227,31 @@ namespace MetaDataIAPlugin
 
         private static string FirstTimeClaim(JObject entity, string property)
         {
-            var value = entity == null ? null : entity.SelectTokens("claims." + property + "[*].mainsnak.datavalue.value.time").Select(x => (string)x).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            var value = entity == null
+                ? null
+                : entity.SelectTokens("claims." + property + "[*].mainsnak.datavalue.value.time")
+                    .Select(TokenText)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.TrimStart('+').Split('T')[0];
         }
 
         private static string FirstStringClaim(JObject entity, string property)
         {
-            return entity == null ? string.Empty : entity.SelectTokens("claims." + property + "[*].mainsnak.datavalue.value").Select(x => (string)x).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            return entity == null
+                ? string.Empty
+                : entity.SelectTokens("claims." + property + "[*].mainsnak.datavalue.value")
+                    .Select(TokenText)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
         }
 
         private static string Label(JObject entity, string language)
         {
-            return entity == null ? null : (string)entity.SelectToken("labels." + language + ".value");
+            return entity == null ? null : TokenText(entity.SelectToken("labels." + language + ".value"));
         }
 
         private static string Description(JObject entity, string language)
         {
-            return entity == null ? null : (string)entity.SelectToken("descriptions." + language + ".value");
+            return entity == null ? null : TokenText(entity.SelectToken("descriptions." + language + ".value"));
         }
 
         private static bool Exact(string title, params string[] candidates)
@@ -202,6 +263,32 @@ namespace MetaDataIAPlugin
         private static string Normalize(string value)
         {
             return new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+        }
+
+        // Newtonsoft throws "Can not convert Object to String" on (string)JObject.
+        // Wikidata often returns objects for match / datavalue.value.
+        private static string TokenText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null || token.Type == JTokenType.Undefined)
+            {
+                return null;
+            }
+
+            if (token.Type == JTokenType.String || token.Type == JTokenType.Integer ||
+                token.Type == JTokenType.Float || token.Type == JTokenType.Boolean ||
+                token.Type == JTokenType.Guid || token.Type == JTokenType.Uri ||
+                token.Type == JTokenType.Date)
+            {
+                return token.ToString();
+            }
+
+            if (token.Type == JTokenType.Object)
+            {
+                return TokenText(token["text"]) ?? TokenText(token["value"]) ?? TokenText(token["name"]) ??
+                       TokenText(token["id"]) ?? TokenText(token["time"]);
+            }
+
+            return null;
         }
     }
 }
