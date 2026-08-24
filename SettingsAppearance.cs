@@ -214,7 +214,6 @@ namespace MetaDataIAPlugin
             ApplyBrushes(root.Resources, palette);
             root.Background = BrushOf(palette.Bg);
             root.SetValue(TextElement.ForegroundProperty, BrushOf(palette.Text));
-            ApplyHostChrome(root, palette);
         }
 
         /// <summary>

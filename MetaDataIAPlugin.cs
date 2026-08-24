@@ -63,6 +63,7 @@ namespace MetaDataIAPlugin
     {
         private static readonly ILogger logger = LogManager.GetLogger();
         private readonly MetaDataIASettingsViewModel settings;
+        private bool openingStandaloneSettings;
         private readonly MetadataHistoryService history;
         private readonly MetadataMaintenanceStateService maintenanceState;
 
@@ -291,7 +292,20 @@ namespace MetaDataIAPlugin
 
         public override UserControl GetSettingsView(bool firstRunSettings)
         {
-            return new MetaDataIASettingsView();
+            return new MetaDataIASettingsView(openingStandaloneSettings);
+        }
+
+        private bool OpenStandaloneSettingsView()
+        {
+            openingStandaloneSettings = true;
+            try
+            {
+                return OpenSettingsView();
+            }
+            finally
+            {
+                openingStandaloneSettings = false;
+            }
         }
 
         public override IEnumerable<TopPanelItem> GetTopPanelItems()
@@ -302,7 +316,7 @@ namespace MetaDataIAPlugin
                 Title = tooltip,
                 Icon = new MetadataAiTopPanelControl(tooltip),
                 Visible = !IsFullscreenMode,
-                Activated = () => OpenSettingsView()
+                Activated = () => OpenStandaloneSettingsView()
             };
         }
 
@@ -536,7 +550,7 @@ namespace MetaDataIAPlugin
                 {
                     Description = Loc("MTDA_MenuSettings", "Settings"),
                     MenuSection = MenuRoot,
-                    Action = actionArgs => OpenSettingsView()
+                    Action = actionArgs => OpenStandaloneSettingsView()
                 };
             }
         }
@@ -758,7 +772,7 @@ namespace MetaDataIAPlugin
                 if (!silent)
                 {
                     PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
-                    OpenSettingsView();
+                    OpenStandaloneSettingsView();
                 }
                 return;
             }
@@ -1276,7 +1290,7 @@ namespace MetaDataIAPlugin
             if (!activeSettings.IsMediaConfigured)
             {
                 PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorNoMediaSources", "There are no configured or available media sources."), PluginTitle);
-                OpenSettingsView();
+                OpenStandaloneSettingsView();
                 return;
             }
 
@@ -4352,7 +4366,7 @@ namespace MetaDataIAPlugin
             }
 
             PlayniteApi.Dialogs.ShowErrorMessage(Loc("MTDA_ErrorConfigureBeforeGenerate", "Configure the endpoint, model and API key for Metadata AI before generating metadata."), PluginTitle);
-            OpenSettingsView();
+            OpenStandaloneSettingsView();
             return false;
         }
 

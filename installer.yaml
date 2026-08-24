@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.14
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-08-24
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.14/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_14.pext
+    Changelog:
+      - "Appearance presets now stay inside the Metadata AI panel when settings are opened from Playnite's shared Add-ons window."
+      - "Playnite's Add-ons navigation, window chrome, and Save/Cancel controls keep the active Playnite theme."
+      - "Standalone settings opened from the Top Panel or plugin menus still apply the selected preset to the entire window."
   - Version: 1.4.13
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-23

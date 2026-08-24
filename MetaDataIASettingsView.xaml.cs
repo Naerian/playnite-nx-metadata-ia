@@ -42,6 +42,7 @@ namespace MetaDataIAPlugin
         private string lastProviderTestDetails;
         private string lastMediaTestDetails;
         private bool? providerTestSucceeded;
+        private readonly bool themeStandaloneWindow;
 
         private sealed class TestOperationState
         {
@@ -66,7 +67,13 @@ namespace MetaDataIAPlugin
         private Window hostWindow;
 
         public MetaDataIASettingsView()
+            : this(false)
         {
+        }
+
+        public MetaDataIASettingsView(bool themeStandaloneWindow)
+        {
+            this.themeStandaloneWindow = themeStandaloneWindow;
             InitializeComponent();
             ProviderModelComboBox.ItemsSource = providerModelIds;
             MoveNavigationItem(LibrarySectionNavigation, FieldsNavigationItem, 0);
@@ -122,18 +129,11 @@ namespace MetaDataIAPlugin
                 ? viewModel.Settings.AppearancePreset
                 : SettingsAppearance.Midnight;
             SettingsAppearance.Apply(this, preset);
+            if (themeStandaloneWindow)
+            {
+                SettingsAppearance.ApplyWindow(Window.GetWindow(this), preset);
+            }
             RefreshAppearancePresetChips();
-            // Host Save/Cancel + window chrome exist outside this control; paint after layout.
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                var palette = SettingsAppearance.GetPalette(preset);
-                SettingsAppearance.ApplyHostChrome(this, palette);
-            }), DispatcherPriority.Loaded);
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                var palette = SettingsAppearance.GetPalette(preset);
-                SettingsAppearance.ApplyHostChrome(this, palette);
-            }), DispatcherPriority.ApplicationIdle);
         }
 
         private void BuildAppearancePresetChips()
