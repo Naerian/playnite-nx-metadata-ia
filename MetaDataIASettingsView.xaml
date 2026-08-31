@@ -1193,11 +1193,11 @@
                         <TextBlock Text="{DynamicResource MTDA_TabTemplates}" Style="{StaticResource TabHeaderLabel}"/>
                     </StackPanel>
                 </TabItem.Header>
-                <Grid>
+                <Grid x:Name="TemplatesLayout">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="7*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition x:Name="TemplateEditorColumn" Width="*"/>
+                        <ColumnDefinition x:Name="TemplateTokensSpacer" Width="0"/>
+                        <ColumnDefinition x:Name="TemplateTokensColumn" Width="0"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -1205,6 +1205,15 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.ColumnSpan="3" Style="{StaticResource SettingsCard}">
+                    <DockPanel LastChildFill="True">
+                            <Button x:Name="ToggleTokensButton"
+                                    DockPanel.Dock="Right"
+                                    MinWidth="120"
+                                    Padding="12,6"
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="{DynamicResource MTDA_ShowTokens}"
+                                    Click="ToggleTemplateTokens_OnClick"/>
                     <StackPanel Orientation="Horizontal">
                             <ComboBox ItemsSource="{Binding Settings.Templates}"
                                       SelectedItem="{Binding SelectedTemplate}"
@@ -1236,6 +1245,7 @@
                                 <Viewbox Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="M20,11 A8.1,8.1 0 0 0 4.5,9 M4,5 L4,9 L8,9 M4,13 A8.1,8.1 0 0 0 19.5,15 M20,19 L20,15 L16,15" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Viewbox>
                             </Button>
                     </StackPanel>
+                    </DockPanel>
                     </Border>
 
                     <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsCard}" Margin="0,0,0,0" VerticalAlignment="Stretch">
@@ -1272,22 +1282,33 @@
                                  VerticalAlignment="Stretch"
                                  MinHeight="420"
                                  Margin="0,0,0,8"/>
-                        <StackPanel Grid.Row="3">
-                            <Expander Header="{DynamicResource MTDA_TemplateHtmlHelpTitle}"
-                                      Style="{StaticResource SettingsExpander}"
-                                      IsExpanded="False">
-                                <TextBlock Text="{DynamicResource MTDA_TemplateHtmlHelp}"
-                                           Style="{StaticResource HintText}"
-                                           Foreground="{DynamicResource TextBrush}"
-                                           Margin="0,8,0,0"
-                                           TextWrapping="Wrap"/>
-                            </Expander>
-                        </StackPanel>
+                        <Expander Grid.Row="3"
+                                  Margin="0,8,0,0"
+                                  HorizontalAlignment="Stretch"
+                                  HorizontalContentAlignment="Stretch"
+                                  IsExpanded="False"
+                                  Cursor="Hand">
+                            <Expander.Header>
+                                <TextBlock Text="{DynamicResource MTDA_TemplateHtmlHelpTitle}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Narian.Accent}"/>
+                            </Expander.Header>
+                            <TextBlock Text="{DynamicResource MTDA_TemplateHtmlHelp}"
+                                       Style="{StaticResource HintText}"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       Margin="0,8,0,0"
+                                       TextWrapping="Wrap"/>
+                        </Expander>
                     </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" Grid.Column="2"
-                                  VerticalScrollBarVisibility="Auto"
+                    <Border x:Name="TemplateTokensPanel"
+                            Grid.Row="1" Grid.Column="2"
+                            Style="{StaticResource SettingsCard}"
+                            Visibility="Collapsed"
+                            VerticalAlignment="Stretch">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalAlignment="Stretch">
                                 <Grid Margin="0">
@@ -1406,6 +1427,7 @@
                                     <Border Grid.Row="24" Grid.Column="2" Style="{StaticResource TokenReferenceCell}"><TextBlock Text="{DynamicResource MTDA_TokenRecommendedSysReqHelp}" Style="{StaticResource TokenHelpText}"/></Border>
                                 </Grid>
                             </ScrollViewer>
+                    </Border>
                 </Grid>
             </TabItem>
 

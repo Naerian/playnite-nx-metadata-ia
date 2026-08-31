@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">テンプレート内容</sys:String>
     <sys:String x:Key="MTDA_TemplateName">テンプレート名</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">テンプレート内で HTML を使用できます。 Playnite は &lt;p&gt;、&lt;h3&gt;、&lt;ul&gt;、&lt;li&gt;、&lt;br/&gt; などのタグをレンダリングするため、説明が詰め込まれたように見えません。</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">トークンを表示</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">トークンを隠す</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">説明に使用できるトークン</sys:String>
     <sys:String x:Key="MTDA_Token">トークン</sys:String>
     <sys:String x:Key="MTDA_Reference">参照</sys:String>

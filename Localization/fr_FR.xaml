@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">Contenu du modèle</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nom du modèle</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Vous pouvez utiliser HTML dans le modèle. Playnite affiche des balises telles que &lt;p&gt;, &lt;h3&gt;, &lt;ul&gt;, &lt;li&gt; et &lt;br/&gt;, de sorte que la description n'apparaisse pas encombrée.</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Afficher les jetons</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Masquer les jetons</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Jetons disponibles pour la description</sys:String>
     <sys:String x:Key="MTDA_Token">Jeton</sys:String>
     <sys:String x:Key="MTDA_Reference">Référence</sys:String>

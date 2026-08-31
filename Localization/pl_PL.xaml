@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">Zawartość szablonu</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nazwa szablonu</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Mozesz uzywac HTML w szablonie. Playnite renderuje znaczniki takie jak &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; i &amp;lt;br/&amp;gt;, dzieki czemu opis nie jest zbity.</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Pokaz tokeny</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Ukryj tokeny</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Tokeny dostepne w opisie</sys:String>
     <sys:String x:Key="MTDA_Token">Token</sys:String>
     <sys:String x:Key="MTDA_Reference">Odniesienie</sys:String>

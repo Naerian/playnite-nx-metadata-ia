@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">模板内容</sys:String>
     <sys:String x:Key="MTDA_TemplateName">模板名称</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">您可以在模板中使用 HTML。 Playnite 呈现 &lt;p&gt;、&lt;h3&gt;、&lt;ul&gt;、&lt;li&gt; 和 &lt;br/&gt; 等标签，因此描述不会显得拥挤在一起。</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">查看标记</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">隐藏标记</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">可用于描述的标记</sys:String>
     <sys:String x:Key="MTDA_Token">令牌</sys:String>
     <sys:String x:Key="MTDA_Reference">参考</sys:String>

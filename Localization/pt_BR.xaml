@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">Conteúdo do modelo</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Nome do modelo</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Você pode usar HTML no modelo. Playnite renderiza tags como &lt;p&gt;, &lt;h3&gt;, &lt;ul&gt;, &lt;li&gt; e &lt;br/&gt;, para que a descrição não apareça amontoada.</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Ver tokens</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Ocultar tokens</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Tokens disponíveis para a descrição</sys:String>
     <sys:String x:Key="MTDA_Token">Token</sys:String>
     <sys:String x:Key="MTDA_Reference">Referência</sys:String>

@@ -110,6 +110,8 @@
     <sys:String x:Key="MTDA_TemplateName">Template name</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">You can use HTML in the template. Playnite renders tags such as &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; and &amp;lt;br/&amp;gt;, so the description does not appear crammed together.</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelpTitle">HTML formatting help</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">View tokens</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Hide tokens</sys:String>
     <sys:String x:Key="MTDA_LocalizeDefaultTemplates">Use output language</sys:String>
     <sys:String x:Key="MTDA_LocalizeDefaultTemplatesHelp">Updates only untouched default templates to the selected output language. Custom and modified templates are preserved.</sys:String>
     <sys:String x:Key="MTDA_RestoreAllTemplatesHelp">Replaces every template with the localized factory defaults. Custom templates are removed and modified defaults are reset.</sys:String>

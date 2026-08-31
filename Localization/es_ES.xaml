@@ -110,6 +110,8 @@
     <sys:String x:Key="MTDA_TemplateName">Nombre de plantilla</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Puedes usar HTML en la plantilla. Playnite renderiza etiquetas como &amp;lt;p&amp;gt;, &amp;lt;h3&amp;gt;, &amp;lt;ul&amp;gt;, &amp;lt;li&amp;gt; y &amp;lt;br/&amp;gt;, asi la descripcion no queda apelotonada.</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelpTitle">Ayuda de formato HTML</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Ver tokens</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Ocultar tokens</sys:String>
     <sys:String x:Key="MTDA_LocalizeDefaultTemplates">Usar idioma de salida</sys:String>
     <sys:String x:Key="MTDA_LocalizeDefaultTemplatesHelp">Actualiza solo las plantillas predeterminadas sin modificar al idioma de salida seleccionado. Las personalizadas o modificadas se conservan.</sys:String>
     <sys:String x:Key="MTDA_RestoreAllTemplatesHelp">Sustituye todas las plantillas por las predeterminadas localizadas. Las personalizadas se eliminan y las predeterminadas modificadas se restablecen.</sys:String>

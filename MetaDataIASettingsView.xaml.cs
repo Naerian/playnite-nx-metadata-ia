@@ -456,6 +456,18 @@ namespace MetaDataIAPlugin
             FillSelectedContentHosts();
         }
 
+        private void ToggleTemplateTokens_OnClick(object sender, RoutedEventArgs e)
+        {
+            var show = TemplateTokensPanel.Visibility != Visibility.Visible;
+            TemplateTokensPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            TemplateTokensSpacer.Width = show ? new GridLength(16) : new GridLength(0);
+            TemplateEditorColumn.Width = show ? new GridLength(3, GridUnitType.Star) : new GridLength(1, GridUnitType.Star);
+            TemplateTokensColumn.Width = show ? new GridLength(2, GridUnitType.Star) : new GridLength(0);
+            ToggleTokensButton.Content = show
+                ? Loc("MTDA_HideTokens", "Hide tokens")
+                : Loc("MTDA_ShowTokens", "View tokens");
+        }
+
         private void ExpanderChevronButton_OnClick(object sender, RoutedEventArgs e)
         {
             for (var parent = VisualTreeHelper.GetParent(sender as DependencyObject);

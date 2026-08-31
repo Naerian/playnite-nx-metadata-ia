@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">Содержимое шаблона</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Имя шаблона</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">В шаблоне можно использовать HTML. Playnite отображает такие теги, как &lt;p&gt;, &lt;h3&gt;, &lt;ul&gt;, &lt;li&gt; и &lt;br/&gt;, поэтому описание не выглядит скученным.</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Показать токены</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Скрыть токены</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Токены, доступные для описания</sys:String>
     <sys:String x:Key="MTDA_Token">Токен</sys:String>
     <sys:String x:Key="MTDA_Reference">Ссылка</sys:String>

@@ -107,6 +107,8 @@
     <sys:String x:Key="MTDA_TemplateContent">Vorlageninhalt</sys:String>
     <sys:String x:Key="MTDA_TemplateName">Vorlagenname</sys:String>
     <sys:String x:Key="MTDA_TemplateHtmlHelp">Sie können HTML in der Vorlage verwenden. Playnite rendert Tags wie &lt;p&gt;, &lt;h3&gt;, &lt;ul&gt;, &lt;li&gt; und &lt;br/&gt;, sodass die Beschreibung nicht zusammengepfercht erscheint.</sys:String>
+    <sys:String x:Key="MTDA_ShowTokens">Tokens anzeigen</sys:String>
+    <sys:String x:Key="MTDA_HideTokens">Tokens ausblenden</sys:String>
     <sys:String x:Key="MTDA_DescriptionTokensTitle">Für die Beschreibung verfügbare Token</sys:String>
     <sys:String x:Key="MTDA_Token">Token</sys:String>
     <sys:String x:Key="MTDA_Reference">Referenz</sys:String>
