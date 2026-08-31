@@ -92,6 +92,7 @@
     </Compile>
     <Compile Include="PluginLocalization.cs" />
     <Compile Include="SortingNameService.cs" />
+    <Compile Include="SystemRequirementsLocalization.cs" />
     <Compile Include="SecretProtectionService.cs" />
     <Compile Include="SeriesOrderLookupService.cs" />
     <Compile Include="SettingsAppearance.cs" />

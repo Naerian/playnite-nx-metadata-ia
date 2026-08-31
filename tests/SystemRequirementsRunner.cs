@@ -14,6 +14,10 @@ internal static class SystemRequirementsRunner
         Test_SysReqTokens_RenderAsBoldList();
         Test_BareSysReqTokens_InUserTemplate();
         Test_EmptySysReqKeepsVisiblePlaceholder();
+        Test_SysReqLocalization_AcceptsTranslatedBoilerplate();
+        Test_SysReqLocalization_RejectsDroppedSku();
+        Test_SysReqLocalization_ParsesJson();
+        Test_SysReqLocalization_AcceptsAnyWordingIfFactsHold();
         Console.WriteLine();
         Console.WriteLine(failures == 0 ? "ALL PASSED" : failures + " FAILED");
         return failures == 0 ? 0 : 1;
@@ -128,6 +132,91 @@ internal static class SystemRequirementsRunner
         Pass("empty sys req keeps visible localized placeholder");
     }
 
+    private static void Test_SysReqLocalization_AcceptsTranslatedBoilerplate()
+    {
+        var source =
+            "OS: Windows 10 or later 64-bit (latest update)\n" +
+            "Processor: Intel Core i5-6600K or AMD Ryzen R5 1600 processor\n" +
+            "Memory: 12 GB RAM\n" +
+            "Graphics: NVIDIA GeForce GTX 1050 Ti or AMD Radeon RX 580 or Intel Arc A380\n" +
+            "DirectX: Version 12\n" +
+            "Network: Broadband Internet connection";
+        var localized =
+            "SO: Windows 10 o posterior de 64 bits (última actualización)\n" +
+            "Procesador: Intel Core i5-6600K o procesador AMD Ryzen R5 1600\n" +
+            "Memoria: 12 GB de RAM\n" +
+            "Gráficos: NVIDIA GeForce GTX 1050 Ti, AMD Radeon RX 580 o Intel Arc A380\n" +
+            "DirectX: Versión 12\n" +
+            "Red: Conexión de banda ancha a Internet";
+        var accepted = InvokeAccept(source, localized, "es");
+        AssertContains("os", accepted, "o posterior");
+        AssertContains("sku", accepted, "i5-6600K");
+        AssertContains("gtx", accepted, "GTX 1050");
+        Pass("localized sys req boilerplate is accepted");
+    }
+
+    private static void Test_SysReqLocalization_RejectsDroppedSku()
+    {
+        var source = "Graphics: NVIDIA GeForce GTX 1050 Ti or AMD Radeon RX 580";
+        var localized = "Gráficos: NVIDIA GeForce o AMD Radeon";
+        var accepted = InvokeAccept(source, localized, "es");
+        AssertFalse("dropped SKU rejected", !string.IsNullOrWhiteSpace(accepted));
+        Pass("dropped hardware facts are rejected");
+    }
+
+    private static void Test_SysReqLocalization_ParsesJson()
+    {
+        var method = typeof(SystemRequirementsLocalization).GetMethod(
+            "TryParseResponse",
+            BindingFlags.Public | BindingFlags.Static);
+        if (method == null)
+        {
+            Fail("TryParseResponse not found");
+            return;
+        }
+
+        var args = new object[]
+        {
+            "```json\n{\"minimumSystemRequirements\":\"SO: Windows 10\",\"recommendedSystemRequirements\":\"SO: Windows 11\"}\n```",
+            null,
+            null
+        };
+        var ok = (bool)method.Invoke(null, args);
+        AssertFalse("parsed", !ok);
+        AssertContains("min", args[1] as string, "Windows 10");
+        AssertContains("rec", args[2] as string, "Windows 11");
+        Pass("sys req localization JSON parse");
+    }
+
+    private static void Test_SysReqLocalization_AcceptsAnyWordingIfFactsHold()
+    {
+        var source = "SO: Windows 10 or later 64-bit (latest update)\nProcesador: Intel Core i5-6600K or AMD Ryzen R5 1600 processor";
+        var copied = InvokeAccept(source, source, "es");
+        AssertContains("identity copy keeps facts", copied, "i5-6600K");
+
+        var german =
+            "Betriebssystem: Windows 10 oder neuer, 64-Bit (aktuelles Update)\n" +
+            "Prozessor: Intel Core i5-6600K oder AMD Ryzen R5 1600";
+        var acceptedGerman = InvokeAccept(source, german, "de");
+        AssertContains("german sku", acceptedGerman, "i5-6600K");
+        AssertContains("german or", acceptedGerman, "oder");
+        Pass("wording is not a hardcoded English checklist");
+    }
+
+    private static string InvokeAccept(string source, string localized, string language)
+    {
+        var method = typeof(SystemRequirementsLocalization).GetMethod(
+            "AcceptOrEmpty",
+            BindingFlags.Public | BindingFlags.Static);
+        if (method == null)
+        {
+            Fail("AcceptOrEmpty not found");
+            return string.Empty;
+        }
+
+        return method.Invoke(null, new object[] { source, localized, language }) as string ?? string.Empty;
+    }
+
     private static void AssertContains(string name, string haystack, string needle)
     {
         if (haystack == null || haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) < 0)
@@ -138,7 +227,11 @@ internal static class SystemRequirementsRunner
 
     private static void AssertFalse(string name, bool condition)
     {
-        if (condition) Fail(name);
+        if (condition)
+        {
+            Fail(name);
+            return;
+        }
     }
 
     private static void Pass(string name)

@@ -148,6 +148,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
             return result;
         }
@@ -405,6 +406,324 @@ namespace MetaDataIAPlugin
             var language = settings == null ? "en" : settings.Language;
             result.MinimumSystemRequirements = OfficialStoreDataService.NormalizeSystemRequirementsText(result.MinimumSystemRequirements, language);
             result.RecommendedSystemRequirements = OfficialStoreDataService.NormalizeSystemRequirementsText(result.RecommendedSystemRequirements, language);
+        }
+
+        private void PreferStoreSystemRequirements(AiMetadataResult result)
+        {
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null)
+                .ToList();
+            if (sources.Count == 0)
+            {
+                return;
+            }
+
+            var minimum = sources.Select(x => x.MinimumSystemRequirements).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            if (!string.IsNullOrWhiteSpace(minimum))
+            {
+                result.MinimumSystemRequirements = minimum;
+            }
+
+            var recommended = sources.Select(x => x.RecommendedSystemRequirements).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            if (!string.IsNullOrWhiteSpace(recommended))
+            {
+                result.RecommendedSystemRequirements = recommended;
+            }
+
+            NormalizeResultSystemRequirements(result);
+        }
+
+        private async Task LocalizeSystemRequirementsAsync(AiMetadataResult result, Game game, CancellationToken cancellationToken)
+        {
+            if (result == null || game == null)
+            {
+                return;
+            }
+
+            if (!TemplateNeedsSystemRequirements(ExtractTemplateTokens(settings.ResolveTemplate(game))))
+            {
+                return;
+            }
+
+            PreferStoreSystemRequirements(result);
+            NormalizeResultSystemRequirements(result);
+
+            var language = settings == null ? "en" : settings.Language;
+            try
+            {
+                if (SystemRequirementsLocalization.IsEnglishOutput(language))
+                {
+                    return;
+                }
+
+                var sourceMinimum = result.MinimumSystemRequirements ?? string.Empty;
+                var sourceRecommended = result.RecommendedSystemRequirements ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(sourceMinimum) && string.IsNullOrWhiteSpace(sourceRecommended))
+                {
+                    return;
+                }
+
+                if (!await TryLocalizeSystemRequirementsOnceAsync(result, sourceMinimum, sourceRecommended, language, false, cancellationToken).ConfigureAwait(false))
+                {
+                    await TryLocalizeSystemRequirementsOnceAsync(result, sourceMinimum, sourceRecommended, language, true, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                result.RefreshDescription(settings, game);
+            }
+        }
+
+        private async Task<bool> TryLocalizeSystemRequirementsOnceAsync(
+            AiMetadataResult result,
+            string sourceMinimum,
+            string sourceRecommended,
+            string language,
+            bool retry,
+            CancellationToken cancellationToken)
+        {
+            string content;
+            try
+            {
+                var userPrompt = BuildSystemRequirementsLocalizationUserPrompt(sourceMinimum, sourceRecommended, language);
+                if (retry)
+                {
+                    userPrompt += "\n\nThe previous attempt copied the source text. Rewrite every user-facing phrase into " +
+                                  TargetLanguageName(language) +
+                                  ". Do not copy the source wording. Keep every product name, SKU and number unchanged.";
+                }
+
+                content = await SendConstrainedPromptAsync(
+                    BuildSystemRequirementsLocalizationSystemPrompt(),
+                    userPrompt,
+                    1024,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                ClearUnlocalizedSystemRequirements(result, sourceMinimum, sourceRecommended, language);
+                return false;
+            }
+
+            string localizedMinimum;
+            string localizedRecommended;
+            if (!SystemRequirementsLocalization.TryParseResponse(content, out localizedMinimum, out localizedRecommended))
+            {
+                ClearUnlocalizedSystemRequirements(result, sourceMinimum, sourceRecommended, language);
+                return false;
+            }
+
+            result.MinimumSystemRequirements = string.IsNullOrWhiteSpace(sourceMinimum)
+                ? string.Empty
+                : SystemRequirementsLocalization.AcceptOrEmpty(sourceMinimum, localizedMinimum, language);
+            result.RecommendedSystemRequirements = string.IsNullOrWhiteSpace(sourceRecommended)
+                ? string.Empty
+                : SystemRequirementsLocalization.AcceptOrEmpty(sourceRecommended, localizedRecommended, language);
+
+            var minimumOk = string.IsNullOrWhiteSpace(sourceMinimum) || !string.IsNullOrWhiteSpace(result.MinimumSystemRequirements);
+            var recommendedOk = string.IsNullOrWhiteSpace(sourceRecommended) || !string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements);
+            if (!minimumOk || !recommendedOk)
+            {
+                result.MinimumSystemRequirements = sourceMinimum;
+                result.RecommendedSystemRequirements = sourceRecommended;
+                return false;
+            }
+
+            var copiedSource = (!string.IsNullOrWhiteSpace(sourceMinimum) &&
+                                SystemRequirementsLocalization.IsSameRequirementText(sourceMinimum, result.MinimumSystemRequirements)) ||
+                               (!string.IsNullOrWhiteSpace(sourceRecommended) &&
+                                SystemRequirementsLocalization.IsSameRequirementText(sourceRecommended, result.RecommendedSystemRequirements));
+            if (copiedSource && !retry && !SystemRequirementsLocalization.IsEnglishOutput(language))
+            {
+                result.MinimumSystemRequirements = sourceMinimum;
+                result.RecommendedSystemRequirements = sourceRecommended;
+                return false;
+            }
+
+            SyncSystemRequirementProvenance(result);
+            return true;
+        }
+
+        private static void ClearUnlocalizedSystemRequirements(AiMetadataResult result, string sourceMinimum, string sourceRecommended, string language)
+        {
+            if (!SystemRequirementsLocalization.IsEnglishOutput(language))
+            {
+                if (!string.IsNullOrWhiteSpace(sourceMinimum))
+                {
+                    result.MinimumSystemRequirements = string.Empty;
+                }
+
+                if (!string.IsNullOrWhiteSpace(sourceRecommended))
+                {
+                    result.RecommendedSystemRequirements = string.Empty;
+                }
+            }
+
+            SyncSystemRequirementProvenance(result);
+        }
+
+        private static void SyncSystemRequirementProvenance(AiMetadataResult result)
+        {
+            if (result == null || result.Provenance == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(result.MinimumSystemRequirements))
+            {
+                result.Provenance.RemoveAll(x => string.Equals(x.Field, "min_sys_req", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements))
+            {
+                result.Provenance.RemoveAll(x => string.Equals(x.Field, "recommended_sys_req", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        private string BuildSystemRequirementsLocalizationSystemPrompt()
+        {
+            var languageName = TargetLanguageName(settings.Language);
+            return "You localize PC game system requirement lists. " +
+                   "Output language: " + languageName + " (" + settings.Language + "). " +
+                   "Return only a JSON object with minimumSystemRequirements and recommendedSystemRequirements. " +
+                   "Each value must be plain text, one requirement per line, in the form Label: value. " +
+                   "Translate labels and any leftover English connecting phrases into that language. " +
+                   "Keep hardware names, product names, SKUs and all numbers unchanged. " +
+                   "Do not add, remove or reorder lines. Do not invent specs. Do not use HTML or markdown.";
+        }
+
+        private string BuildSystemRequirementsLocalizationUserPrompt(string minimum, string recommended, string language)
+        {
+            return "Localize these store system requirements into " + TargetLanguageName(language) +
+                   ". Keep the same line count and the same facts.\n\n" +
+                   "minimumSystemRequirements:\n" + (minimum ?? string.Empty) + "\n\n" +
+                   "recommendedSystemRequirements:\n" + (recommended ?? string.Empty);
+        }
+
+        private async Task<string> SendConstrainedPromptAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
+        {
+            if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
+            {
+                return await SendAnthropicTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
+            }
+
+            return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<string> SendOpenAICompatibleTextAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
+        {
+            var request = JObject.FromObject(new
+            {
+                model = settings.Model,
+                max_tokens = maxTokens,
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = userPrompt }
+                }
+            });
+            if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
+            {
+                request["temperature"] = 0.0;
+            }
+
+            using (var client = new HttpClient())
+            using (var message = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint))
+            {
+                client.Timeout = TimeSpan.FromMinutes(2);
+                if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+                {
+                    message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
+                }
+
+                message.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                HttpResponseMessage response;
+                try
+                {
+                    response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    throw CreateConnectionException(new TimeoutException("The provider request timed out."));
+                }
+                catch (HttpRequestException ex)
+                {
+                    throw CreateConnectionException(ex);
+                }
+
+                ProviderUsageService.CaptureResponseHeaders(settings, response);
+                var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw CreateProviderException((int)response.StatusCode, responseText);
+                }
+
+                return ExtractAssistantContent(responseText);
+            }
+        }
+
+        private async Task<string> SendAnthropicTextAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
+        {
+            var request = new
+            {
+                model = settings.Model,
+                max_tokens = maxTokens,
+                temperature = 0.0,
+                system = systemPrompt,
+                messages = new[]
+                {
+                    new { role = "user", content = userPrompt }
+                }
+            };
+
+            using (var client = new HttpClient())
+            using (var message = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint))
+            {
+                client.Timeout = TimeSpan.FromMinutes(2);
+                if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+                {
+                    message.Headers.Add("x-api-key", settings.ApiKey);
+                }
+
+                message.Headers.Add("anthropic-version", "2023-06-01");
+                message.Content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                HttpResponseMessage response;
+                try
+                {
+                    response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    throw CreateConnectionException(new TimeoutException("The provider request timed out."));
+                }
+                catch (HttpRequestException ex)
+                {
+                    throw CreateConnectionException(ex);
+                }
+
+                ProviderUsageService.CaptureResponseHeaders(settings, response);
+                var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw CreateProviderException((int)response.StatusCode, responseText);
+                }
+
+                return ExtractAnthropicContent(responseText);
+            }
         }
 
         private static void DetectListConflict(AiMetadataResult result, string field, IEnumerable<OfficialStoreMetadata> sources, Func<OfficialStoreMetadata, List<string>> selector)
@@ -725,6 +1044,7 @@ namespace MetaDataIAPlugin
                 var content = ExtractAnthropicContent(responseText);
                 var result = ParseResult(content);
                 PrepareResult(result, game);
+                await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
                 await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
                 return result;
             }
@@ -936,7 +1256,7 @@ namespace MetaDataIAPlugin
                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
                    "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
                    "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
-                   "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, return minimumSystemRequirements and recommendedSystemRequirements as plain text: one requirement per line in the form Label: value. Translate and normalize every user-facing word (labels and boilerplate such as or later, 64-bit, latest update, processor, broadband) into the requested output language. Keep hardware and product names unchanged. Copy only facts present in officialStoreContext.minimumSystemRequirements / recommendedSystemRequirements; never invent specs. If a store list is missing, return an empty string for that field. " +
+                   "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, leave minimumSystemRequirements and recommendedSystemRequirements as empty strings. The plugin copies store facts and localizes those lines in a dedicated step. Do not invent hardware specs. " +
                    "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
                    "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
                    "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
@@ -1187,8 +1507,13 @@ namespace MetaDataIAPlugin
         {
             switch ((code ?? string.Empty).Trim().ToLowerInvariant())
             {
-                case "es": return "Spanish";
-                case "en": return "English";
+                case "es":
+                case "es-es":
+                case "es-mx":
+                case "es-ar": return "Spanish";
+                case "en":
+                case "en-us":
+                case "en-gb": return "English";
                 case "pl": return "Polish";
                 case "fr": return "French";
                 case "de": return "German";

@@ -117,6 +117,11 @@ namespace MetaDataIAPlugin
             Series = CleanList(Series, settings.MaxSeries, blacklist, string.Empty);
             AddReliableSourceLinks(game, settings);
             EnsureFeatureFallback(settings, game);
+            RefreshDescription(settings, game);
+        }
+
+        public void RefreshDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
+        {
             Description = BuildDescription(settings, game);
         }
 
