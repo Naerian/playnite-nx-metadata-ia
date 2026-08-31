@@ -11,3 +11,4 @@ obj/
 *.log
 TestResults/
 dist/
+.release-notes.md

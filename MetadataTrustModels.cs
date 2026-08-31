@@ -58,6 +58,7 @@ namespace MetaDataIAPlugin
         public MediaPreviewOption Option { get; set; }
         public MetaDataIASettings Settings { get; set; }
         public bool IsSelected { get; set; }
+        public bool IsUserChosen { get; set; }
 
         public MediaSimulationChange()
         {

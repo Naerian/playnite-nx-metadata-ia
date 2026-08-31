@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <sys:String x:Key="MTDA_PluginName">Metadata AI</sys:String>
@@ -164,6 +164,8 @@
     <sys:String x:Key="MTDA_Cover">Portada</sys:String>
     <sys:String x:Key="MTDA_Icon">Icono</sys:String>
     <sys:String x:Key="MTDA_Background">Fondo</sys:String>
+    <sys:String x:Key="MTDA_FieldMinSysReq">Requisitos mínimos del sistema</sys:String>
+    <sys:String x:Key="MTDA_FieldRecommendedSysReq">Requisitos recomendados del sistema</sys:String>
     <sys:String x:Key="MTDA_ActiveSources">Fuentes activas</sys:String>
     <sys:String x:Key="MTDA_SourceSteamOfficial">Steam oficial: portadas y heroes de biblioteca cuando el juego se puede asociar a Steam</sys:String>
     <sys:String x:Key="MTDA_SourceSteamScreenshots">Capturas oficiales de Steam como fondos alternativos</sys:String>
@@ -285,6 +287,7 @@ Comprueba la API key, asegúrate de que pertenece al proveedor seleccionado y vu
     <sys:String x:Key="MTDA_ErrorProviderConnection">No se pudo conectar con el proveedor configurado.
 
 Comprueba la URL del endpoint, tu conexión a internet y si el servicio está disponible.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderTimeout">La petición agotó el tiempo de espera o se interrumpió antes de terminar. Revisa la conexión y el proveedor de IA e inténtalo de nuevo.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderGeneric">El proveedor de IA devolvió un error ({0}).
 
 Verifique el proveedor configurado, el punto final, el modelo y la clave API. Si el problema continúa, pruebe con otro modelo o con un proveedor local.</sys:String>
@@ -320,6 +323,7 @@ Puedes esperar unos minutos, probar otro modelo o cambiar a otro proveedor.</sys
     <sys:String x:Key="MTDA_MediaInfoSize">Tamaño</sys:String>
     <sys:String x:Key="MTDA_MediaInfoStyle">Estilo</sys:String>
     <sys:String x:Key="MTDA_MediaPickerTitle">Elige medios</sys:String>
+    <sys:String x:Key="MTDA_MediaPickerTools">Recorte e imagen personalizada</sys:String>
     <sys:String x:Key="MTDA_MediaSearchTerms">Términos de búsqueda</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormat">Resolución de candidatos</sys:String>
     <sys:String x:Key="MTDA_MediaSearchFormatHelp">Elige qué resolución de candidatos mostrar. No cambia el formato de salida global guardado.</sys:String>
@@ -449,32 +453,36 @@ Iconos: {3}
 Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_TestProviderInstruction">Prueba de conexión: responde con el mínimo texto posible.</sys:String>
     <sys:String x:Key="MTDA_TestProviderSuccess">El proveedor responde correctamente.</sys:String>
-    <sys:String x:Key="MTDA_TokenAgeRatingsHelp">Calificaciones de edad.</sys:String>
-    <sys:String x:Key="MTDA_TokenCategoriesHelp">Categorías generadas.</sys:String>
-    <sys:String x:Key="MTDA_TokenDevelopersHelp">Desarrolladores.</sys:String>
-    <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Longitud estimada cuando se pueda inferir.</sys:String>
-    <sys:String x:Key="MTDA_TokenFeaturesHelp">Lista de características principales.</sys:String>
-    <sys:String x:Key="MTDA_TokenFeature1Help">Primera característica de la lista generada.</sys:String>
-    <sys:String x:Key="MTDA_TokenFeature2Help">Segunda característica de la lista generada.</sys:String>
-    <sys:String x:Key="MTDA_TokenFeatureNHelp">Característica individual por posición. Sustituye N por 1, 2, 3… Puedes añadir tantas como quieras; si se generaron menos, el hueco queda vacío.</sys:String>
-    <sys:String x:Key="MTDA_TokenGameplayHelp">Cómo se juega y el bucle principal del juego.</sys:String>
-    <sys:String x:Key="MTDA_TokenGenresHelp">Géneros generados.</sys:String>
-    <sys:String x:Key="MTDA_TokenNotesHelp">Notas editoriales adicionales.</sys:String>
-    <sys:String x:Key="MTDA_TokenPerspectiveHelp">Perspectiva/cámara o vista principal.</sys:String>
-    <sys:String x:Key="MTDA_TokenPlayModesHelp">Modos de juego conocidos.</sys:String>
-    <sys:String x:Key="MTDA_TokenPremiseHelp">Premisa narrativa o concepto principal.</sys:String>
-    <sys:String x:Key="MTDA_TokenPublishersHelp">Editores/empresas.</sys:String>
-    <sys:String x:Key="MTDA_TokenRecommendedForHelp">Tipo de jugador que puede disfrutarlo.</sys:String>
-    <sys:String x:Key="MTDA_TokenRegionsHelp">Regiones.</sys:String>
-    <sys:String x:Key="MTDA_TokenSettingHelp">Entorno o mundo.</sys:String>
-    <sys:String x:Key="MTDA_TokenShortHelp">Breve resumen del juego.</sys:String>
-    <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Juegos similares o referencias útiles.</sys:String>
-    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Primer juego similar de la lista generada.</sys:String>
-    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Segundo juego similar de la lista generada.</sys:String>
-    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Juego similar individual por posición. Sustituye N por 1, 2, 3… Puedes añadir tantos como quieras; si se generaron menos, el hueco queda vacío.</sys:String>
-    <sys:String x:Key="MTDA_TokenSynopsisHelp">Sinopsis general.</sys:String>
-    <sys:String x:Key="MTDA_TokenTagsHelp">Etiquetas generadas.</sys:String>
-    <sys:String x:Key="MTDA_TokenToneHelp">Tono: serio, humorístico, oscuro, relajado, etc.</sys:String>
+    <sys:String x:Key="MTDA_TokenAgeRatingsHelp">Calificaciones de edad (ESRB, PEGI, etc.) cuando hay fuentes fiables.</sys:String>
+    <sys:String x:Key="MTDA_TokenCategoriesHelp">Categorías de la biblioteca de Playnite para agrupar (p. ej. etiquetas de backlog), no tags de tienda.</sys:String>
+    <sys:String x:Key="MTDA_TokenDevelopersHelp">Nombres de estudios desarrolladores incluidos en la plantilla de descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenEstimatedLengthHelp">Duración aproximada cuando se puede inferir del contexto disponible. Vacío si no hay una estimación fiable.</sys:String>
+    <sys:String x:Key="MTDA_TokenFeaturesHelp">Lista principal de características para la descripción (normalmente como viñetas).</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature1Help">Primera característica de la lista generada (igual que {feature_1}).</sys:String>
+    <sys:String x:Key="MTDA_TokenFeature2Help">Segunda característica de la lista generada (igual que {feature_2}).</sys:String>
+    <sys:String x:Key="MTDA_TokenFeatureNHelp">Inserta una característica por índice de la lista. Sustituye N por 1, 2, 3… Los tokens de más quedan vacíos si hay menos elementos.</sys:String>
+    <sys:String x:Key="MTDA_TokenGameplayHelp">Cómo se juega: bucle principal, sistemas, sensación de controles y qué hace realmente el jugador.</sys:String>
+    <sys:String x:Key="MTDA_TokenGenresHelp">Nombres de géneros generados para la plantilla de descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenNotesHelp">Notas editoriales extra que no encajan en el resto de campos de la descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenPerspectiveHelp">Estilo de cámara o vista (primera persona, tercera persona, isométrica, scroll lateral, cenital, etc.).</sys:String>
+    <sys:String x:Key="MTDA_TokenPlayModesHelp">Modos de juego conocidos: un jugador, cooperativo local/online, multijugador competitivo, campaña, etc.</sys:String>
+    <sys:String x:Key="MTDA_TokenPremiseHelp">Premisa narrativa o concepto principal del juego, sin destripar toda la trama.</sys:String>
+    <sys:String x:Key="MTDA_TokenPublishersHelp">Nombres de editores o empresas incluidos en la plantilla de descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenRecommendedForHelp">Para qué tipo de jugador es el juego (gustos o público). No son requisitos de hardware: usa {recommended_sys_req} para eso.</sys:String>
+    <sys:String x:Key="MTDA_TokenRegionsHelp">Regiones asociadas al juego cuando aportan algo a la descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenSettingHelp">Mundo, lugar o ambientación donde ocurre el juego (época, planeta, ciudad, reino de fantasía, etc.).</sys:String>
+    <sys:String x:Key="MTDA_TokenShortHelp">Resumen editorial breve de qué es el juego. Suele ser una o pocas frases. La longitud se puede anular en Avanzado.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGamesHelp">Bloque de texto libre sobre juegos comparables. Para nombres sueltos en lista, usa {similar_game_N}.</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame1Help">Primer juego similar de la lista generada (igual que {similar_game_1}).</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGame2Help">Segundo juego similar de la lista generada (igual que {similar_game_2}).</sys:String>
+    <sys:String x:Key="MTDA_TokenSimilarGameNHelp">Inserta un juego similar por índice. Sustituye N por 1, 2, 3… Los tokens de más quedan vacíos si hay menos nombres.</sys:String>
+    <sys:String x:Key="MTDA_TokenSynopsisHelp">Sinopsis más larga con premisa, contexto y estructura. Puede ocupar varios párrafos según la longitud de Sinopsis.</sys:String>
+    <sys:String x:Key="MTDA_TokenTagsHelp">Nombres de etiquetas generadas para la plantilla de descripción.</sys:String>
+    <sys:String x:Key="MTDA_TokenMinSysReqHelp">Requisitos mínimos de PC copiados de los datos de Steam. No los inventa la IA. Vacío si Steam no tiene datos o no se puede emparejar el juego.</sys:String>
+    <sys:String x:Key="MTDA_TokenRecommendedSysReqHelp">Requisitos recomendados de PC desde Steam. No los inventa la IA. Vacío si no hay datos. Distinto de {recommendedFor} (público objetivo).</sys:String>
+    <sys:String x:Key="MTDA_SysReqMinimumEmpty">Steam no publicó requisitos mínimos de PC para este juego.</sys:String>
+    <sys:String x:Key="MTDA_SysReqRecommendedEmpty">Steam no publicó requisitos recomendados de PC para este juego.</sys:String>
+    <sys:String x:Key="MTDA_TokenToneHelp">Tono emocional de la experiencia (por ejemplo serio, humorístico, oscuro, tenso o relajado).</sys:String>
     <sys:String x:Key="MTDA_Unknown">Desconocido</sys:String>
     <sys:String x:Key="MTDA_Yes">Sí</sys:String>
     <sys:String x:Key="MTDA_TemplateShort">Corta</sys:String>
@@ -635,6 +643,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SimulationApplyMedia">Aplicar este cambio multimedia</sys:String>
     <sys:String x:Key="MTDA_SimulationChooseMedia">Elegir {0}</sys:String>
     <sys:String x:Key="MTDA_SimulationChangeMedia">Cambiar selección</sys:String>
+    <sys:String x:Key="MTDA_SimulationUserChosen">Usuario</sys:String>
     <sys:String x:Key="MTDA_SimulationWorthApplying">Merece la pena aplicar</sys:String>
     <sys:String x:Key="MTDA_SimulationReviewRecommended">Se recomienda revisar</sys:String>
     <sys:String x:Key="MTDA_SimulationKeepCurrent">Es más seguro conservar los datos actuales</sys:String>
@@ -652,6 +661,8 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SimulationReasonEmptyResult">el valor propuesto está vacío</sys:String>
     <sys:String x:Key="MTDA_SimulationReasonReplacesExisting">sustituye información existente y conviene revisarlo</sys:String>
     <sys:String x:Key="MTDA_HistoryTitle">Historial de Metadata AI</sys:String>
+    <sys:String x:Key="MTDA_HistorySidebarTitle">Historial de cambios</sys:String>
+    <sys:String x:Key="MTDA_HistoryLastAction">Última acción: {0}</sys:String>
     <sys:String x:Key="MTDA_HistoryEmpty">Todavía no hay cambios de Metadata AI registrados.</sys:String>
     <sys:String x:Key="MTDA_HistoryClear">Borrar historial</sys:String>
     <sys:String x:Key="MTDA_HistoryUndo">Deshacer operación seleccionada</sys:String>
@@ -687,6 +698,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_ProvenanceConfidenceHigh">Alta</sys:String>
     <sys:String x:Key="MTDA_ProvenanceConfidenceMedium">Media</sys:String>
     <sys:String x:Key="MTDA_ProvenanceConfidenceLow">Baja; se recomienda revisar</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceConfidenceLowBadge">Baja</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSourceExisting">Metadatos existentes de Playnite</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSourceLocalRule">Regla local de Metadata AI</sys:String>
     <sys:String x:Key="MTDA_ProvenanceSourceAiProvider">Proveedor de IA</sys:String>
@@ -1005,4 +1017,42 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableWikidata">Activar Wikidata como respaldo opcional de metadatos factuales</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Probar IGN</sys:String>
     <sys:String x:Key="MTDA_ExpandSectionHint">Despliega para configurar esta sección.</sys:String>
+    <sys:String x:Key="MTDA_NotePrefix">Nota: </sys:String>
+    <sys:String x:Key="MTDA_OfficialSteamCdn">CDN oficial de Steam</sys:String>
+    <sys:String x:Key="MTDA_EnableSteamOfficialCovers">Activar Steam oficial para portadas y héroes</sys:String>
+    <sys:String x:Key="MTDA_EnableSteamOfficialScreenshots">Activar capturas oficiales de Steam como fondos alternativos</sys:String>
+    <sys:String x:Key="MTDA_EnableSteamGridDb">Activar SteamGridDB para portadas, iconos y héroes</sys:String>
+    <sys:String x:Key="MTDA_EnableSteamGridDbBackgroundGrids">Activar grids horizontales de SteamGridDB como fondos si no hay héroes suficientes</sys:String>
+    <sys:String x:Key="MTDA_SteamGridDbApiKey">Clave API de SteamGridDB</sys:String>
+    <sys:String x:Key="MTDA_PsnStoreHelp">PlayStation Store usa la tienda web pública para obtener portadas, fondos y descripción oficial. No requiere API key, pero puede variar por región o por cambios de Sony.</sys:String>
+    <sys:String x:Key="MTDA_EnablePsnStore">Activar PlayStation Store como fuente de portadas y fondos</sys:String>
+    <sys:String x:Key="MTDA_TestPsnStore">Probar PlayStation Store</sys:String>
+    <sys:String x:Key="MTDA_XboxStoreHelp">Xbox Store usa el catálogo público de Microsoft Store para obtener box art, pósters, super hero art, capturas y descripción oficial.</sys:String>
+    <sys:String x:Key="MTDA_EnableXboxStore">Activar Xbox Store como fuente de portadas y fondos</sys:String>
+    <sys:String x:Key="MTDA_TestXboxStore">Probar Xbox Store</sys:String>
+    <sys:String x:Key="MTDA_EpicStoreHelp">Epic Store se usa como fuente auxiliar si el juego ya tiene enlace de Epic o la tienda expone datos públicos. La web puede bloquear consultas automáticas, así que se omite si no responde limpiamente.</sys:String>
+    <sys:String x:Key="MTDA_EnableEpicStore">Activar Epic Store como fuente auxiliar</sys:String>
+    <sys:String x:Key="MTDA_TestEpicStore">Probar Epic Store</sys:String>
+    <sys:String x:Key="MTDA_EnableRawg">Activar RAWG como fuente de imagen principal y capturas</sys:String>
+    <sys:String x:Key="MTDA_RawgApiKey">Clave API de RAWG</sys:String>
+    <sys:String x:Key="MTDA_ScreenScraperUserName">Usuario de ScreenScraper</sys:String>
+    <sys:String x:Key="MTDA_ScreenScraperPassword">Contraseña de ScreenScraper</sys:String>
+    <sys:String x:Key="MTDA_ScreenScraperDeveloperId">ID de desarrollador de ScreenScraper</sys:String>
+    <sys:String x:Key="MTDA_ScreenScraperDeveloperPassword">Contraseña de desarrollador de ScreenScraper</sys:String>
+    <sys:String x:Key="MTDA_GiantBombApiKey">Clave API de Giant Bomb</sys:String>
+    <sys:String x:Key="MTDA_EnableMobyGames">Activar MobyGames como fuente de portadas y capturas históricas</sys:String>
+    <sys:String x:Key="MTDA_MobyGamesApiKey">Clave API de MobyGames</sys:String>
+    <sys:String x:Key="MTDA_TheGamesDbApiKey">Clave API de TheGamesDB</sys:String>
+    <sys:String x:Key="MTDA_EnableIgdb">Activar IGDB como fuente de portadas, artworks y capturas</sys:String>
+    <sys:String x:Key="MTDA_IgdbClientId">Client ID de IGDB</sys:String>
+    <sys:String x:Key="MTDA_IgdbClientSecret">Client Secret de IGDB</sys:String>
+    <sys:String x:Key="MTDA_ErrorNoLogoData">No se devolvió ningún dato de logo.</sys:String>
+    <sys:String x:Key="MTDA_ErrorEmlNotInstalled">Extra Metadata Loader no está instalado.</sys:String>
+    <sys:String x:Key="MTDA_ErrorIgdbTokenUnavailable">El token de acceso de IGDB no está disponible.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceMethodCatalog">Consulta de catálogo</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailCatalogOrdered">Se emparejó el juego IGDB {0} y se ordenaron los juegos base por su primera fecha de lanzamiento.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailCatalogNoOrder">Se emparejó la colección IGDB del juego, pero no había un ordinal seguro entre sus lanzamientos base.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailOrdinalTitle">Generado localmente a partir de un ordinal explícito en el título del juego.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailSeriesFromTitle">Derivado del título numerado sin inventar un nombre de serie.</sys:String>
+    <sys:String x:Key="MTDA_ProvenanceDetailLocalOrdinalOrSeries">Generado localmente solo cuando el título contiene un ordinal explícito o hay evidencia local segura de serie.</sys:String>
 </ResourceDictionary>

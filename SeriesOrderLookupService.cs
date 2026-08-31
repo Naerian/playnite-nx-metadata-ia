@@ -353,7 +353,7 @@ namespace MetaDataIAPlugin
             var accessToken = await EnsureAccessTokenAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                throw new InvalidOperationException("IGDB access token is unavailable.");
+                throw new InvalidOperationException(Loc("MTDA_ErrorIgdbTokenUnavailable", "IGDB access token is unavailable."));
             }
 
             await RequestGate.WaitAsync(cancellationToken).ConfigureAwait(false);

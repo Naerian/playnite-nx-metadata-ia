@@ -1,3 +1,4 @@
+using Playnite.SDK;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using System;
@@ -26,11 +27,155 @@ namespace MetaDataIAPlugin
 {
     internal static class MetadataTrustUi
     {
-        public static void ApplyWindowTheme(Window window)
+        public enum BadgeKind
         {
-            SetResource(window, FrameworkElement.StyleProperty, "StandardWindowStyle");
-            SetResource(window, Control.BackgroundProperty, "StandardWindowBackgroundBrush");
-            SetResource(window, Control.ForegroundProperty, "TextBrush");
+            Neutral,
+            Muted,
+            Success,
+            Warning,
+            Accent
+        }
+
+        public static Window CreateHostWindow(IPlayniteAPI api, WindowCreationOptions options = null)
+        {
+            if (api != null)
+            {
+                try
+                {
+                    return api.Dialogs.CreateWindow(options ?? new WindowCreationOptions
+                    {
+                        ShowMinimizeButton = true,
+                        ShowMaximizeButton = true,
+                        ShowCloseButton = true
+                    });
+                }
+                catch
+                {
+                }
+            }
+
+            return new Window();
+        }
+
+        public static Window CreatePluginDialog(
+            IPlayniteAPI api,
+            string title,
+            string appearancePreset,
+            double width,
+            double height,
+            double minWidth,
+            double minHeight,
+            WindowStartupLocation startupLocation = WindowStartupLocation.CenterOwner)
+        {
+            var window = CreateHostWindow(api);
+            window.Title = title ?? string.Empty;
+            window.Width = width;
+            window.Height = height;
+            window.MinWidth = minWidth;
+            window.MinHeight = minHeight;
+            window.ShowInTaskbar = false;
+            ApplyWindowTheme(window, appearancePreset);
+            var owner = api == null || api.Dialogs == null ? null : api.Dialogs.GetCurrentAppWindow();
+            if (startupLocation == WindowStartupLocation.CenterOwner && owner != null)
+            {
+                window.Owner = owner;
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            return window;
+        }
+
+        public static void SetDialogContent(Window window, UIElement content, string appearancePreset)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            window.Content = content;
+            ApplyWindowTheme(window, appearancePreset);
+        }
+
+        public static void ApplyWindowTheme(Window window, string appearancePreset = null, bool playniteChrome = true)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            var preset = SettingsAppearance.Normalize(
+                string.IsNullOrWhiteSpace(appearancePreset) ? SettingsAppearance.Midnight : appearancePreset);
+            var usePlayniteChrome = playniteChrome && window.WindowStyle != WindowStyle.None;
+            var playniteHost = IsPlayniteWindowBase(window);
+            SettingsAppearance.ApplyWindow(window, preset, true, !playniteHost);
+        }
+
+        public static void ApplyPlayniteWindowChrome(Window window)
+        {
+        }
+
+        private static bool IsPlayniteWindowBase(Window window)
+        {
+            for (var type = window == null ? null : window.GetType(); type != null; type = type.BaseType)
+            {
+                if (string.Equals(type.Name, "WindowBase", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static void StyleContentTabs(TabControl tabs)
+        {
+            if (tabs == null)
+            {
+                return;
+            }
+
+            tabs.Background = Brushes.Transparent;
+            tabs.BorderThickness = new Thickness(0);
+            try
+            {
+                tabs.SetResourceReference(FrameworkElement.StyleProperty, "NarianTopTabs");
+            }
+            catch
+            {
+            }
+        }
+
+        public static Border CreateFramelessDialogShell(UIElement child)
+        {
+            var shell = new Border
+            {
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(24, 20, 24, 20),
+                SnapsToDevicePixels = true,
+                Child = child
+            };
+            SetResource(shell, Border.BorderBrushProperty, "Narian.Border");
+            SetResource(shell, Border.BackgroundProperty, "Narian.Bg");
+            return shell;
+        }
+
+        public static void PrepareFramelessDialog(Window window, string appearancePreset)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            window.WindowStyle = WindowStyle.None;
+            window.ResizeMode = ResizeMode.NoResize;
+            window.ShowInTaskbar = false;
+            window.SnapsToDevicePixels = true;
+            ApplyWindowTheme(window, appearancePreset, false);
         }
 
         public static void SetResource(FrameworkElement element, DependencyProperty property, string key)
@@ -43,6 +188,600 @@ namespace MetaDataIAPlugin
             try { element.SetResourceReference(property, key); } catch { }
         }
 
+        public static void ApplySeparatorBrush(Border border)
+        {
+            if (border == null)
+            {
+                return;
+            }
+
+            SetResource(border, Border.BorderBrushProperty, "Narian.Border");
+        }
+
+        public static void ApplyCardChrome(Border card)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            SetResource(card, Border.BackgroundProperty, "Narian.Surface");
+            SetResource(card, Border.BorderBrushProperty, "Narian.Border");
+            card.CornerRadius = new CornerRadius(4);
+            card.SnapsToDevicePixels = true;
+            ApplyTextBrush(card);
+        }
+
+        public static void ApplyPageBackground(FrameworkElement element)
+        {
+            if (element == null)
+            {
+                return;
+            }
+
+            if (!TrySetResource(element, Panel.BackgroundProperty, "Narian.Bg") &&
+                !TrySetResource(element, Control.BackgroundProperty, "Narian.Bg"))
+            {
+                SetResource(element, Panel.BackgroundProperty, "WindowBackgroundBrush");
+            }
+        }
+
+        public static void ApplyHoverBackground(Border border)
+        {
+            if (border == null)
+            {
+                return;
+            }
+
+            if (!TrySetResource(border, Border.BackgroundProperty, "Narian.Hover"))
+            {
+                SetResource(border, Border.BackgroundProperty, "ControlBackgroundBrush");
+            }
+        }
+
+        public static void ApplySelectedChrome(Border border, bool selected)
+        {
+            if (border == null)
+            {
+                return;
+            }
+
+            if (selected)
+            {
+                border.BorderThickness = new Thickness(2);
+                if (!TrySetResource(border, Border.BorderBrushProperty, "Narian.Accent"))
+                {
+                    SetResource(border, Border.BorderBrushProperty, "HighlightGlyphBrush");
+                }
+            }
+            else
+            {
+                border.BorderThickness = new Thickness(1);
+                ApplySeparatorBrush(border);
+            }
+        }
+
+        public static Grid CreatePageShell(out StackPanel headerHost, out Grid bodyHost, out Border footerBar, Thickness? margin = null, string appearancePreset = null)
+        {
+            var root = new Grid { Margin = margin ?? new Thickness(16) };
+            SettingsAppearance.ApplyPresetResources(root.Resources, appearancePreset);
+            ApplyPageBackground(root);
+            ApplyTextBrush(root);
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            headerHost = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+            root.Children.Add(headerHost);
+
+            bodyHost = new Grid();
+            Grid.SetRow(bodyHost, 1);
+            root.Children.Add(bodyHost);
+
+            footerBar = new Border
+            {
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Padding = new Thickness(0, 16, 0, 0),
+                Margin = new Thickness(0, 16, 0, 0)
+            };
+            ApplySeparatorBrush(footerBar);
+            Grid.SetRow(footerBar, 2);
+            root.Children.Add(footerBar);
+            return root;
+        }
+
+        public static UIElement PageIntro(string title, string subtitle = null)
+        {
+            var stack = new StackPanel();
+            stack.Children.Add(SectionHeader(title, 20, new Thickness(0, 0, 0, 8)));
+            if (!string.IsNullOrWhiteSpace(subtitle))
+            {
+                var line = Hint(subtitle, new Thickness(0, 0, 0, 0));
+                line.Opacity = 0.78;
+                stack.Children.Add(line);
+            }
+
+            return stack;
+        }
+
+        public static TextBlock FieldLabel(string text)
+        {
+            var label = Text(text, false);
+            label.FontSize = 14;
+            label.Margin = new Thickness(0, 0, 0, 4);
+            return label;
+        }
+
+        public static Border ElevatedCard(UIElement child, Thickness? margin = null, Thickness? padding = null)
+        {
+            var border = new Border
+            {
+                Child = child,
+                BorderThickness = new Thickness(1),
+                Padding = padding ?? new Thickness(16, 12, 16, 12),
+                Margin = margin ?? new Thickness(0, 0, 0, 16)
+            };
+            ApplyCardChrome(border);
+            return border;
+        }
+
+        public static Border ContentCard(UIElement child, Thickness? margin = null)
+        {
+            return ElevatedCard(child, margin ?? new Thickness(0), new Thickness(16));
+        }
+
+        public static void StylePrimaryButton(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.IsDefault = true;
+            button.MinWidth = 120;
+            button.Height = 36;
+            button.MinHeight = 36;
+            button.Padding = new Thickness(14, 0, 14, 0);
+            button.FontSize = 14;
+            button.Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
+        public static void StyleSecondaryButton(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.IsDefault = false;
+            button.MinWidth = 100;
+            button.Height = 36;
+            button.MinHeight = 36;
+            button.Padding = new Thickness(14, 0, 14, 0);
+            button.FontSize = 14;
+            button.Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
+        public static DockPanel CreateFooterContent(UIElement left = null, params Button[] rightButtons)
+        {
+            var dock = new DockPanel { LastChildFill = true };
+            if (left != null)
+            {
+                left.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+                DockPanel.SetDock(left, Dock.Left);
+                dock.Children.Add(left);
+            }
+
+            var actions = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            if (rightButtons != null)
+            {
+                for (var i = 0; i < rightButtons.Length; i++)
+                {
+                    var button = rightButtons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (i < rightButtons.Length - 1)
+                    {
+                        button.Margin = new Thickness(0, 0, 8, 0);
+                    }
+
+                    actions.Children.Add(button);
+                }
+            }
+
+            dock.Children.Add(actions);
+            return dock;
+        }
+
+        public static void StyleListBox(ListBox list)
+        {
+            if (list == null)
+            {
+                return;
+            }
+
+            list.BorderThickness = new Thickness(0);
+            list.Padding = new Thickness(0);
+            list.Background = Brushes.Transparent;
+            list.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+            list.SnapsToDevicePixels = true;
+        }
+
+        public static Border ListRow(UIElement content, Thickness? padding = null)
+        {
+            var row = new Border
+            {
+                Child = content,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = padding ?? new Thickness(8, 10, 8, 10),
+                Background = Brushes.Transparent,
+                SnapsToDevicePixels = true
+            };
+            ApplySeparatorBrush(row);
+            return row;
+        }
+
+        public static Grid SplitPanes(UIElement left, UIElement right, double leftWidth = 320, double gap = 16)
+        {
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = leftWidth > 0 ? new GridLength(leftWidth) : new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(gap) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(leftWidth > 0 ? 1 : 2, GridUnitType.Star), MinWidth = 240 });
+            grid.Children.Add(left);
+            Grid.SetColumn(right, 2);
+            grid.Children.Add(right);
+            return grid;
+        }
+
+        public static Border MediaFrame(double width, double height, UIElement child = null, bool showBorder = true)
+        {
+            var frame = new Border
+            {
+                Width = width,
+                Height = height,
+                BorderThickness = showBorder ? new Thickness(1) : new Thickness(0),
+                CornerRadius = new CornerRadius(showBorder ? 4 : 0),
+                Padding = showBorder ? new Thickness(2) : new Thickness(0),
+                ClipToBounds = true,
+                SnapsToDevicePixels = true,
+                Child = child,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Background = Brushes.Transparent
+            };
+            if (showBorder)
+            {
+                if (!TrySetResource(frame, Border.BackgroundProperty, "Narian.Surface"))
+                {
+                    SetResource(frame, Border.BackgroundProperty, "ControlBackgroundBrush");
+                }
+
+                ApplySeparatorBrush(frame);
+            }
+
+            return frame;
+        }
+
+        public static Expander ToolsExpander(string header, UIElement content)
+        {
+            var title = Text(header ?? string.Empty, false);
+            title.FontSize = 14;
+            title.FontWeight = FontWeights.SemiBold;
+            SetResource(title, TextBlock.ForegroundProperty, "Narian.Accent");
+            var expander = new Expander
+            {
+                Header = title,
+                IsExpanded = false,
+                Margin = new Thickness(0, 8, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Cursor = Cursors.Hand,
+                Content = content
+            };
+            ApplyTextBrush(expander);
+            return expander;
+        }
+
+        public static Border VerticalRule()
+        {
+            var rule = new Border
+            {
+                Width = 1,
+                BorderThickness = new Thickness(1, 0, 0, 0),
+                Margin = new Thickness(16, 0, 16, 0),
+                SnapsToDevicePixels = true,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            ApplySeparatorBrush(rule);
+            return rule;
+        }
+
+        public static Border BlockSeparator(Thickness? margin = null)
+        {
+            var line = new Border
+            {
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Margin = margin ?? new Thickness(0, 16, 0, 16),
+                Padding = new Thickness(0),
+                Background = Brushes.Transparent,
+                SnapsToDevicePixels = true,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            ApplySeparatorBrush(line);
+            return line;
+        }
+
+        public static Border EmptyState(string message)
+        {
+            return SummaryCard(
+                Hint(message ?? string.Empty, new Thickness(0)),
+                new Thickness(0));
+        }
+
+        /// <summary>Overview-style tile (Resumen SummaryCard): surface + border + 16,12 padding.</summary>
+        public static Border SummaryCard(UIElement child, Thickness? margin = null, Thickness? padding = null)
+        {
+            var border = new Border
+            {
+                Child = child,
+                BorderThickness = new Thickness(1),
+                Padding = padding ?? new Thickness(16, 12, 16, 12),
+                Margin = margin ?? new Thickness(0, 0, 0, 16),
+                CornerRadius = new CornerRadius(4),
+                SnapsToDevicePixels = true
+            };
+            ApplyCardChrome(border);
+            return border;
+        }
+
+        /// <summary>Accent title + bottom border, matching SummaryTitleSeparator.</summary>
+        public static Border SummaryCardHeader(string title, UIElement trailing = null)
+        {
+            var titleBlock = Text(title, false);
+            titleBlock.FontSize = 14;
+            titleBlock.FontWeight = FontWeights.SemiBold;
+            titleBlock.VerticalAlignment = VerticalAlignment.Center;
+            if (!TrySetAccentForeground(titleBlock))
+            {
+                SetResource(titleBlock, TextBlock.ForegroundProperty, "TextBrush");
+            }
+
+            UIElement headerContent;
+            if (trailing == null)
+            {
+                headerContent = titleBlock;
+            }
+            else
+            {
+                var dock = new DockPanel { LastChildFill = true };
+                trailing.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+                DockPanel.SetDock(trailing, Dock.Right);
+                dock.Children.Add(trailing);
+                dock.Children.Add(titleBlock);
+                headerContent = dock;
+            }
+
+            var header = new Border
+            {
+                Child = headerContent,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 8),
+                Background = Brushes.Transparent,
+                SnapsToDevicePixels = true
+            };
+            ApplySeparatorBrush(header);
+            return header;
+        }
+
+        /// <summary>Advanced-tab left rail: filled surface, no outer border, accent section title.</summary>
+        public static Grid CreateSidebarLayout(string sidebarTitle, UIElement sidebarBody, UIElement mainContent, double sidebarWidth = 268)
+        {
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(sidebarWidth) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var rail = new Border
+            {
+                Padding = new Thickness(8),
+                CornerRadius = new CornerRadius(4),
+                BorderThickness = new Thickness(0),
+                SnapsToDevicePixels = true,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            SetResource(rail, Border.BackgroundProperty, "Narian.Surface");
+
+            var dock = new DockPanel { LastChildFill = true };
+            var title = SectionHeader(sidebarTitle ?? string.Empty, 20, new Thickness(8, 4, 8, 12));
+            DockPanel.SetDock(title, Dock.Top);
+            dock.Children.Add(title);
+            dock.Children.Add(sidebarBody ?? new Border());
+            rail.Child = dock;
+            grid.Children.Add(rail);
+
+            if (mainContent != null)
+            {
+                Grid.SetColumn(mainContent, 2);
+                grid.Children.Add(mainContent);
+            }
+
+            return grid;
+        }
+
+        public static void ApplyNavItemChrome(Border item, bool selected)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            item.CornerRadius = new CornerRadius(4);
+            item.BorderThickness = new Thickness(0);
+            item.Padding = new Thickness(16, 8, 16, 8);
+            item.MinHeight = 44;
+            item.Margin = new Thickness(0, 0, 0, 6);
+            item.Cursor = System.Windows.Input.Cursors.Hand;
+            item.SnapsToDevicePixels = true;
+
+            if (selected)
+            {
+                if (!TrySetResource(item, Border.BackgroundProperty, "Narian.Selected"))
+                {
+                    SetResource(item, Border.BackgroundProperty, "ControlBackgroundBrush");
+                }
+            }
+            else
+            {
+                item.Background = Brushes.Transparent;
+            }
+        }
+
+        public static void StyleCardListBox(ListBox list)
+        {
+            StyleListBox(list);
+            if (list == null)
+            {
+                return;
+            }
+
+            var style = new Style(typeof(ListBoxItem));
+            style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 0)));
+            style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            style.Setters.Add(new Setter(Control.FocusVisualStyleProperty, null));
+            var template = new ControlTemplate(typeof(ListBoxItem));
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+            template.VisualTree = presenter;
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+            list.ItemContainerStyle = style;
+        }
+
+        public static Border Badge(string value, BadgeKind kind = BadgeKind.Neutral)
+        {
+            var label = Text(value, false);
+            label.FontSize = 12;
+            label.FontWeight = FontWeights.SemiBold;
+            label.VerticalAlignment = VerticalAlignment.Center;
+            label.TextAlignment = TextAlignment.Center;
+
+            var badge = new Border
+            {
+                Child = label,
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 2, 8, 2),
+                MinHeight = 22,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 2),
+                SnapsToDevicePixels = true
+            };
+
+            string backgroundKey = "Narian.BadgeBg";
+            string foregroundKey = "TextBrush";
+            switch (kind)
+            {
+                case BadgeKind.Muted:
+                    backgroundKey = "Narian.BadgeMutedBg";
+                    foregroundKey = "Narian.TextMuted";
+                    break;
+                case BadgeKind.Success:
+                    backgroundKey = "Narian.BadgeSuccessBg";
+                    foregroundKey = "PositiveRatingBrush";
+                    break;
+                case BadgeKind.Warning:
+                    backgroundKey = "Narian.BadgeWarningBg";
+                    foregroundKey = "WarningBrush";
+                    break;
+                case BadgeKind.Accent:
+                    backgroundKey = "Narian.BadgeBg";
+                    foregroundKey = "Narian.Accent";
+                    break;
+            }
+
+            SetResource(badge, Border.BackgroundProperty, backgroundKey);
+            SetResource(label, TextBlock.ForegroundProperty, foregroundKey);
+
+            return badge;
+        }
+
+        public static FrameworkElement SelectionMark()
+        {
+            var mark = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M1,6 L4.5,9.5 L11,2"),
+                StrokeThickness = 2.2,
+                Stretch = Stretch.Uniform,
+                Width = 14,
+                Height = 12,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                StrokeLineJoin = PenLineJoin.Round,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 10, 12, 0),
+                IsHitTestVisible = false,
+                Visibility = Visibility.Collapsed,
+                SnapsToDevicePixels = true
+            };
+            if (!TrySetResource(mark, System.Windows.Shapes.Shape.StrokeProperty, "Narian.Accent"))
+            {
+                SetResource(mark, System.Windows.Shapes.Shape.StrokeProperty, "HighlightGlyphBrush");
+            }
+
+            return mark;
+        }
+
+        public static Border SectionHeader(string title, double fontSize = 20)
+        {
+            return SectionHeader(title, fontSize, new Thickness(0, 0, 0, 8));
+        }
+
+        public static Border SectionHeader(string title, double fontSize, Thickness margin)
+        {
+            var heading = Text(title);
+            heading.FontSize = fontSize;
+            heading.FontWeight = FontWeights.SemiBold;
+            if (!TrySetResource(heading, TextBlock.ForegroundProperty, "Narian.Accent"))
+            {
+                SetResource(heading, TextBlock.ForegroundProperty, "HighlightGlyphBrush");
+            }
+
+            var header = new Border
+            {
+                Child = heading,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(0, 0, 0, 8),
+                Margin = margin,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = Brushes.Transparent
+            };
+            ApplySeparatorBrush(header);
+            return header;
+        }
+
+        public static Border CardTitleHeader(string title, double fontSize = 14)
+        {
+            return SectionHeader(title, fontSize, new Thickness(0, 0, 0, 8));
+        }
+
+        public static Border CardTitleHeader(string title, double fontSize, Thickness margin)
+        {
+            return SectionHeader(title, fontSize, margin);
+        }
+
         public static TextBlock Hint(string text, Thickness margin)
         {
             var block = new TextBlock
@@ -50,10 +789,15 @@ namespace MetaDataIAPlugin
                 Text = text,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 12,
+                FontStyle = FontStyles.Italic,
                 Opacity = 1,
                 Margin = margin
             };
-            SetResource(block, TextBlock.ForegroundProperty, "GlyphBrush");
+            if (!TrySetResource(block, TextBlock.ForegroundProperty, "Narian.TextMuted"))
+            {
+                SetResource(block, TextBlock.ForegroundProperty, "GlyphBrush");
+            }
+
             return block;
         }
 
@@ -64,21 +808,19 @@ namespace MetaDataIAPlugin
                 Child = child,
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(16),
-                Margin = margin,
-                CornerRadius = new CornerRadius(4),
-                SnapsToDevicePixels = true
+                Margin = margin
             };
-            SetResource(border, Border.BackgroundProperty, "ControlBackgroundBrush");
-            if (!TrySetResource(border, Border.BorderBrushProperty, "Narian.Border"))
-            {
-                SetResource(border, Border.BorderBrushProperty, "GlyphBrush");
-            }
-
-            ApplyTextBrush(border);
+            ApplyCardChrome(border);
             return border;
         }
 
-        private static bool TrySetResource(FrameworkElement element, DependencyProperty property, string key)
+        public static bool TrySetAccentForeground(TextBlock block)
+        {
+            return TrySetResource(block, TextBlock.ForegroundProperty, "Narian.Accent") ||
+                   TrySetResource(block, TextBlock.ForegroundProperty, "HighlightGlyphBrush");
+        }
+
+        public static bool TrySetResource(FrameworkElement element, DependencyProperty property, string key)
         {
             if (element == null || string.IsNullOrWhiteSpace(key))
             {
@@ -87,11 +829,6 @@ namespace MetaDataIAPlugin
 
             try
             {
-                if (element.TryFindResource(key) == null)
-                {
-                    return false;
-                }
-
                 element.SetResourceReference(property, key);
                 return true;
             }
@@ -104,32 +841,15 @@ namespace MetaDataIAPlugin
         public static FrameworkElement Section(string title, UIElement content, Thickness margin)
         {
             var stack = new StackPanel { Margin = margin };
-            var heading = Text(title);
-            heading.FontWeight = FontWeights.SemiBold;
-            var header = new Border
-            {
-                Child = heading,
-                BorderThickness = new Thickness(0, 0, 0, 1),
-                Padding = new Thickness(0, 0, 0, 6),
-                Margin = new Thickness(0, 0, 0, 10)
-            };
-            SetResource(header, Border.BorderBrushProperty, "GlyphBrush");
-            stack.Children.Add(header);
+            stack.Children.Add(SectionHeader(title, 16, new Thickness(0, 0, 0, 10)));
 
             var body = new Border
             {
                 Child = content,
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(16),
-                CornerRadius = new CornerRadius(4),
-                SnapsToDevicePixels = true
+                Padding = new Thickness(16)
             };
-            SetResource(body, Border.BackgroundProperty, "ControlBackgroundBrush");
-            if (!TrySetResource(body, Border.BorderBrushProperty, "Narian.Border"))
-            {
-                SetResource(body, Border.BorderBrushProperty, "GlyphBrush");
-            }
-            ApplyTextBrush(body);
+            ApplyCardChrome(body);
             stack.Children.Add(body);
             return stack;
         }
@@ -214,6 +934,8 @@ namespace MetaDataIAPlugin
                 case "cover": return plugin.Loc("MTDA_Cover", "Cover");
                 case "icon": return plugin.Loc("MTDA_Icon", "Icon");
                 case "background": return plugin.Loc("MTDA_Background", "Background");
+                case "min_sys_req": return plugin.Loc("MTDA_FieldMinSysReq", "Minimum system requirements");
+                case "recommended_sys_req": return plugin.Loc("MTDA_FieldRecommendedSysReq", "Recommended system requirements");
                 default: return field;
             }
         }
@@ -224,8 +946,34 @@ namespace MetaDataIAPlugin
             if (string.Equals(method, "ai-normalized", StringComparison.OrdinalIgnoreCase)) return plugin.Loc("MTDA_ProvenanceMethodNormalized", "AI normalized");
             if (string.Equals(method, "generated-from-identity", StringComparison.OrdinalIgnoreCase)) return plugin.Loc("MTDA_ProvenanceMethodIdentity", "Generated from game identity");
             if (string.Equals(method, "deterministic", StringComparison.OrdinalIgnoreCase)) return plugin.Loc("MTDA_ProvenanceMethodDeterministic", "Local deterministic rule");
+            if (string.Equals(method, "catalog lookup", StringComparison.OrdinalIgnoreCase)) return plugin.Loc("MTDA_ProvenanceMethodCatalog", "Catalog lookup");
             if (string.Equals(method, "downloaded-media", StringComparison.OrdinalIgnoreCase)) return plugin.Loc("MTDA_ProvenanceMethodMedia", "Downloaded media");
             return method;
+        }
+
+        public static Border ConfidenceBadge(MetaDataIAPlugin plugin, string confidence)
+        {
+            var kind = BadgeKind.Muted;
+            if (string.Equals(confidence, "high", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = BadgeKind.Success;
+            }
+            else if (string.Equals(confidence, "medium", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = BadgeKind.Accent;
+            }
+            else if (string.Equals(confidence, "low", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = BadgeKind.Warning;
+            }
+
+            var label = string.Equals(confidence, "low", StringComparison.OrdinalIgnoreCase)
+                ? plugin.Loc("MTDA_ProvenanceConfidenceLowBadge", "Low")
+                : Confidence(plugin, confidence);
+            var badge = Badge(label, kind);
+            badge.Margin = new Thickness(0, 4, 0, 0);
+            badge.HorizontalAlignment = HorizontalAlignment.Left;
+            return badge;
         }
 
         public static string Confidence(MetaDataIAPlugin plugin, string confidence)
@@ -264,6 +1012,12 @@ namespace MetaDataIAPlugin
                 return string.Empty;
             }
 
+            var known = KnownProvenanceDetail(plugin, item.Detail);
+            if (!string.IsNullOrWhiteSpace(known))
+            {
+                return known;
+            }
+
             if (string.Equals(item.Method, "trusted-context", StringComparison.OrdinalIgnoreCase))
             {
                 return plugin.Loc("MTDA_ProvenanceDetailTrusted", "The value was constrained by trusted source context.");
@@ -292,6 +1046,64 @@ namespace MetaDataIAPlugin
             }
 
             return item.Detail ?? string.Empty;
+        }
+
+        private static string KnownProvenanceDetail(MetaDataIAPlugin plugin, string detail)
+        {
+            if (string.IsNullOrWhiteSpace(detail))
+            {
+                return string.Empty;
+            }
+
+            var igdbMatch = Regex.Match(detail, @"^Matched IGDB game (\d+) and ordered the base games by their first release date\.$");
+            if (igdbMatch.Success)
+            {
+                return string.Format(
+                    plugin.Loc("MTDA_ProvenanceDetailCatalogOrdered", "Matched IGDB game {0} and ordered the base games by their first release date."),
+                    igdbMatch.Groups[1].Value);
+            }
+
+            if (string.Equals(detail, "Matched the game's IGDB collection, but no safe base-game ordinal was available.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailCatalogNoOrder", "Matched the game's IGDB collection, but no safe base-game ordinal was available.");
+            }
+
+            if (string.Equals(detail, "Generated locally from an explicit ordinal in the game title.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailOrdinalTitle", "Generated locally from an explicit ordinal in the game title.");
+            }
+
+            if (string.Equals(detail, "Derived from the numbered game title without inventing a series name.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailSeriesFromTitle", "Derived from the numbered game title without inventing a series name.");
+            }
+
+            if (string.Equals(detail, "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailLocalOrdinalOrSeries", "Generated locally only when the title contains an explicit ordinal or there is safe local series evidence.");
+            }
+
+            if (string.Equals(detail, "The value was constrained by trusted source context.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailTrusted", "The value was constrained by trusted source context.");
+            }
+
+            if (string.Equals(detail, "The source was supplied as factual context and the AI normalized it.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailNormalizedOfficial", "The source was supplied as factual context and the AI normalized it.");
+            }
+
+            if (string.Equals(detail, "Current library metadata was supplied as context and normalized by the AI.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailNormalizedExisting", "Current library metadata was supplied as context and normalized by the AI.");
+            }
+
+            if (string.Equals(detail, "No field-specific trusted source was available. Review this value before applying it.", StringComparison.Ordinal))
+            {
+                return plugin.Loc("MTDA_ProvenanceDetailIdentity", "No field-specific trusted source was available. Review this value before applying it.");
+            }
+
+            return string.Empty;
         }
     }
 
@@ -1424,8 +2236,9 @@ namespace MetaDataIAPlugin
         }
     }
 
-    public sealed class SimulationWindow : Window
+    public sealed class SimulationWindow
     {
+        private readonly Window window;
         private readonly MetaDataIAPlugin plugin;
         private readonly IList<MetadataSimulationResult> results;
         private readonly MetaDataIASettings activeSettings;
@@ -1446,24 +2259,21 @@ namespace MetaDataIAPlugin
             this.results = results ?? new List<MetadataSimulationResult>();
             this.activeSettings = activeSettings;
             singleGame = this.results.Count == 1 && this.results[0].Game != null;
-            Title = plugin.Loc("MTDA_MenuSimulateChanges", "Preview and choose Metadata AI changes");
-            Width = 1040;
-            Height = 760;
-            MinWidth = 780;
-            MinHeight = 540;
-            ShowInTaskbar = false;
-            MetadataTrustUi.ApplyWindowTheme(this);
-            var owner = plugin.Api.Dialogs.GetCurrentAppWindow();
-            if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            window = MetadataTrustUi.CreatePluginDialog(
+                plugin.Api,
+                plugin.Loc("MTDA_MenuSimulateChanges", "Preview and choose Metadata AI changes"),
+                plugin.GetAppearancePreset(),
+                1080,
+                760,
+                820,
+                560);
 
-            var root = new Grid { Margin = new Thickness(18) };
-            MetadataTrustUi.ApplyTextBrush(root);
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var intro = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
-            intro.Children.Add(BuildWindowHeader());
-            root.Children.Add(intro);
+            StackPanel headerHost;
+            Grid bodyHost;
+            Border footerBar;
+            var root = MetadataTrustUi.CreatePageShell(out headerHost, out bodyHost, out footerBar, null, plugin.GetAppearancePreset());
+
+            headerHost.Children.Add(BuildWindowHeader());
 
             UIElement bodyContent;
             if (singleGame)
@@ -1473,45 +2283,50 @@ namespace MetaDataIAPlugin
                     Content = BuildGameContent(this.results[0], false),
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                     HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                    HorizontalContentAlignment = HorizontalAlignment.Stretch
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    Padding = new Thickness(0, 0, 4, 0)
                 };
             }
             else
             {
                 bodyContent = BuildMultiGameLayout();
             }
-            Grid.SetRow(bodyContent, 1);
-            root.Children.Add(bodyContent);
+            bodyHost.Children.Add(bodyContent);
 
-            var footer = new Grid { Margin = new Thickness(0, 14, 0, 0) };
-            footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             selectionSummary.TextWrapping = TextWrapping.Wrap;
             selectionSummary.VerticalAlignment = VerticalAlignment.Center;
-            selectionSummary.Margin = new Thickness(2, 0, 16, 0);
-            MetadataTrustUi.SetResource(selectionSummary, TextBlock.ForegroundProperty, "TextBrush");
-            footer.Children.Add(selectionSummary);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            selectionSummary.Margin = new Thickness(0, 0, 16, 0);
+            if (!MetadataTrustUi.TrySetResource(selectionSummary, TextBlock.ForegroundProperty, "Narian.TextMuted"))
+            {
+                MetadataTrustUi.SetResource(selectionSummary, TextBlock.ForegroundProperty, "GlyphBrush");
+            }
+            selectionSummary.FontSize = 12;
+            selectionSummary.FontStyle = FontStyles.Italic;
+
             applyButton.Content = plugin.Loc("MTDA_SimulationApplySelected", "Apply selected changes");
+            MetadataTrustUi.StylePrimaryButton(applyButton);
             applyButton.MinWidth = 190;
-            applyButton.Margin = new Thickness(0, 0, 8, 0);
-            applyButton.Click += (s, e) => { ApplyRequested = true; DialogResult = true; };
-            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 100 };
-            close.Click += (s, e) => DialogResult = false;
-            buttons.Children.Add(applyButton);
-            buttons.Children.Add(close);
-            Grid.SetColumn(buttons, 1);
-            footer.Children.Add(buttons);
-            Grid.SetRow(footer, 2);
-            root.Children.Add(footer);
-            Content = root;
+            applyButton.Click += (s, e) => { ApplyRequested = true; window.DialogResult = true; };
+            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close") };
+            MetadataTrustUi.StyleSecondaryButton(close);
+            close.Click += (s, e) => window.DialogResult = false;
+            footerBar.Child = MetadataTrustUi.CreateFooterContent(selectionSummary, applyButton, close);
+            MetadataTrustUi.SetDialogContent(window, root, plugin.GetAppearancePreset());
             UpdateSelectionState();
+        }
+
+        public Window Owner { get { return window.Owner; } }
+
+        public bool? ShowDialog()
+        {
+            return window.ShowDialog();
         }
 
         private UIElement BuildWindowHeader()
         {
             var header = new Grid();
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = singleGame ? new GridLength(112) : new GridLength(0) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = singleGame ? new GridLength(96) : new GridLength(0) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = singleGame ? new GridLength(16) : new GridLength(0) });
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             if (singleGame)
             {
@@ -1520,87 +2335,95 @@ namespace MetaDataIAPlugin
 
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             var titleValue = singleGame ? results[0].Game.Name : plugin.Loc("MTDA_MenuSimulateChanges", "Preview and choose Metadata AI changes");
-            var title = MetadataTrustUi.Text(titleValue);
-            title.FontSize = 24;
-            title.FontWeight = FontWeights.SemiBold;
-            text.Children.Add(title);
-            if (singleGame)
+            text.Children.Add(MetadataTrustUi.SectionHeader(titleValue, 20, new Thickness(0, 0, 0, 8)));
+            text.Children.Add(MetadataTrustUi.Hint(
+                plugin.Loc("MTDA_SimulationHelp", "No changes have been written. Applying will reuse these generated results without calling the AI provider again."),
+                new Thickness(0, 0, 0, 0)));
+            if (singleGame && results[0].Changes != null && results[0].Changes.Count > 0)
             {
-                var subtitle = MetadataTrustUi.Text(plugin.Loc("MTDA_MenuSimulateChanges", "Preview and choose Metadata AI changes"));
-                subtitle.FontSize = 14;
-                subtitle.Opacity = 0.78;
-                subtitle.Margin = new Thickness(0, 3, 0, 0);
-                text.Children.Add(subtitle);
+                var verdict = MetadataTrustUi.Text(GameRecommendation(results[0]));
+                verdict.FontSize = 14;
+                verdict.FontWeight = FontWeights.SemiBold;
+                verdict.Margin = new Thickness(0, 10, 0, 0);
+                MetadataTrustUi.SetResource(verdict, TextBlock.ForegroundProperty, "Narian.Accent");
+                text.Children.Add(verdict);
+                text.Children.Add(MetadataTrustUi.Hint(GameRecommendationDetails(results[0]), new Thickness(0, 4, 0, 0)));
             }
-
-            text.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SimulationHelp", "No changes have been written. Applying will reuse these generated results without calling the AI provider again."), new Thickness(0, 8, 0, 0)));
-            text.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SimulationRecommendationHelp", "Recommendations are calculated locally from completeness, provenance, confidence, and possible information loss. They do not call the AI provider again and cannot replace your own review."), new Thickness(0, 4, 0, 0)));
-            Grid.SetColumn(text, 1);
+            Grid.SetColumn(text, 2);
             header.Children.Add(text);
             return header;
         }
 
         private UIElement BuildMultiGameLayout()
         {
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            gameList.BorderThickness = new Thickness(0);
-            gameList.Padding = new Thickness(0, 0, 12, 0);
-            gameList.HorizontalContentAlignment = HorizontalAlignment.Stretch;
-            gameList.SelectionChanged += (s, e) => ShowSelectedSimulationGame();
+            MetadataTrustUi.StyleCardListBox(gameList);
+            gameList.SelectionChanged += (s, e) =>
+            {
+                foreach (ListBoxItem row in gameList.Items)
+                {
+                    var chrome = row.Content as Border;
+                    if (chrome != null) MetadataTrustUi.ApplyNavItemChrome(chrome, ReferenceEquals(row, gameList.SelectedItem));
+                }
+                ShowSelectedSimulationGame();
+            };
             foreach (var item in results)
             {
                 gameList.Items.Add(BuildSimulationGameItem(item));
             }
-            grid.Children.Add(gameList);
 
-            var separator = new Border { BorderThickness = new Thickness(1, 0, 0, 0) };
-            MetadataTrustUi.SetResource(separator, Border.BorderBrushProperty, "GlyphBrush");
-            Grid.SetColumn(separator, 1);
-            grid.Children.Add(separator);
-
-            multiGameContent.Margin = new Thickness(14, 0, 0, 0);
             multiGameContent.HorizontalContentAlignment = HorizontalAlignment.Stretch;
-            Grid.SetColumn(multiGameContent, 2);
-            grid.Children.Add(multiGameContent);
+            var main = new ScrollViewer
+            {
+                Content = multiGameContent,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Padding = new Thickness(0, 0, 4, 0)
+            };
+            var layout = MetadataTrustUi.CreateSidebarLayout(
+                plugin.Loc("MTDA_SimulationGames", "Games"),
+                gameList,
+                main,
+                268);
             if (gameList.Items.Count > 0) gameList.SelectedIndex = 0;
-            return grid;
+            return layout;
         }
 
         private ListBoxItem BuildSimulationGameItem(MetadataSimulationResult item)
         {
-            var grid = new Grid { Margin = new Thickness(0, 3, 0, 3) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.Children.Add(BuildGameNavigationArtwork(item == null ? null : item.Game));
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             var name = MetadataTrustUi.Text(item == null || item.Game == null ? plugin.Loc("MTDA_Unknown", "Unknown") : item.Game.Name);
             name.FontWeight = FontWeights.SemiBold;
+            name.FontSize = 14;
             name.TextTrimming = TextTrimming.CharacterEllipsis;
             text.Children.Add(name);
             var changeCount = item == null || item.Changes == null ? 0 : item.Changes.Count;
             text.Children.Add(MetadataTrustUi.Hint(
-                string.Format(plugin.Loc("MTDA_SimulationChangesCount", "{0} change(s)"), changeCount) + "  |  " + GameRecommendation(item),
-                new Thickness(0, 3, 0, 0)));
-            Grid.SetColumn(text, 1);
+                string.Format(plugin.Loc("MTDA_SimulationChangesCount", "{0} change(s)"), changeCount) + "  ·  " + GameRecommendation(item),
+                new Thickness(0, 2, 0, 0)));
+            Grid.SetColumn(text, 2);
             grid.Children.Add(text);
-            var row = new Border { Child = grid, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(4, 5, 4, 8) };
-            MetadataTrustUi.SetResource(row, Border.BorderBrushProperty, "GlyphBrush");
-            return new ListBoxItem { Content = row, Tag = item, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Stretch };
+            var chrome = new Border { Child = grid };
+            MetadataTrustUi.ApplyNavItemChrome(chrome, false);
+            return new ListBoxItem
+            {
+                Content = chrome,
+                Tag = item,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
+            };
         }
 
         private UIElement BuildGameNavigationArtwork(Game game)
         {
-            var frame = new Border { Width = 48, Height = 58, Padding = new Thickness(2), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left };
-            MetadataTrustUi.SetResource(frame, Border.BorderBrushProperty, "GlyphBrush");
             var path = ResolveGameMediaPath(game, MediaKind.Cover);
             if (string.IsNullOrWhiteSpace(path)) path = ResolveGameMediaPath(game, MediaKind.Icon);
             var image = CreatePreviewImage(path, false, 64);
-            if (image != null) frame.Child = image;
-            return frame;
+            return MetadataTrustUi.MediaFrame(40, 48, image);
         }
 
         private void ShowSelectedSimulationGame()
@@ -1612,34 +2435,16 @@ namespace MetaDataIAPlugin
                 multiGameContent.Content = null;
                 return;
             }
-            multiGameContent.Content = new ScrollViewer
-            {
-                Content = BuildGameContent(item, true),
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
-            };
+            multiGameContent.Content = BuildGameContent(item, true);
             UpdateSelectionState();
         }
 
         private UIElement BuildGameArtwork(Game game)
         {
-            var frame = new Border
-            {
-                Width = 96,
-                Height = 112,
-                Padding = new Thickness(2),
-                BorderThickness = new Thickness(1),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top
-            };
-            MetadataTrustUi.SetResource(frame, Border.BackgroundProperty, "ControlBackgroundBrush");
-            MetadataTrustUi.SetResource(frame, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
             var path = ResolveGameMediaPath(game, MediaKind.Cover);
             if (string.IsNullOrWhiteSpace(path)) path = ResolveGameMediaPath(game, MediaKind.Icon);
             var image = CreatePreviewImage(path, false, 92);
-            if (image != null) frame.Child = image;
-            return frame;
+            return MetadataTrustUi.MediaFrame(84, 100, image, showBorder: false);
         }
 
         private UIElement BuildGame(MetadataSimulationResult item)
@@ -1663,21 +2468,41 @@ namespace MetaDataIAPlugin
         {
             var panel = new StackPanel();
             var hasMetadataChanges = item.Changes != null && item.Changes.Count > 0;
+            var hasMedia = item.MediaChanges != null && item.MediaChanges.Count > 0;
             if (!string.IsNullOrWhiteSpace(item.Error))
             {
                 panel.Children.Add(MetadataTrustUi.Text(item.Error));
             }
-            else if (!hasMetadataChanges)
+            else if (!hasMetadataChanges && !hasMedia)
             {
                 panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SimulationNoChanges", "No changes would be made with the current apply rules."), new Thickness(0)));
             }
-            else
+            else if (showGameContext)
             {
                 var verdict = MetadataTrustUi.Text(GameRecommendation(item));
-                verdict.FontSize = 16;
+                verdict.FontSize = 14;
                 verdict.FontWeight = FontWeights.SemiBold;
+                MetadataTrustUi.SetResource(verdict, TextBlock.ForegroundProperty, "Narian.Accent");
                 panel.Children.Add(verdict);
-                panel.Children.Add(MetadataTrustUi.Hint(GameRecommendationDetails(item), new Thickness(0, 3, 0, 10)));
+                panel.Children.Add(MetadataTrustUi.Hint(GameRecommendationDetails(item), new Thickness(0, 4, 0, 12)));
+            }
+
+            if (hasMetadataChanges || hasMedia)
+            {
+                var gameActions = new WrapPanel { Margin = new Thickness(0, 0, 0, 16) };
+                var gameRecommended = new Button { Content = plugin.Loc("MTDA_SimulationRecommendedOnly", "Recommended only"), MinWidth = 135, Margin = new Thickness(0, 0, 8, 0) };
+                MetadataTrustUi.StyleSecondaryButton(gameRecommended);
+                gameRecommended.Click += (s, e) => SetGameSelection(item, change => string.Equals(change.Recommendation, MetadataChangeRecommendationService.Recommended, StringComparison.OrdinalIgnoreCase), true);
+                var gameAll = new Button { Content = plugin.Loc("MTDA_SimulationSelectAll", "Select all"), MinWidth = 95, Margin = new Thickness(0, 0, 8, 0) };
+                MetadataTrustUi.StyleSecondaryButton(gameAll);
+                gameAll.Click += (s, e) => SetGameSelection(item, true);
+                var gameNone = new Button { Content = plugin.Loc("MTDA_SimulationSelectNone", "Select none"), MinWidth = 95 };
+                MetadataTrustUi.StyleSecondaryButton(gameNone);
+                gameNone.Click += (s, e) => SetGameSelection(item, false);
+                gameActions.Children.Add(gameRecommended);
+                gameActions.Children.Add(gameAll);
+                gameActions.Children.Add(gameNone);
+                panel.Children.Add(gameActions);
             }
 
             if (singleGame && !showGameContext)
@@ -1687,92 +2512,73 @@ namespace MetaDataIAPlugin
 
             if (hasMetadataChanges)
             {
-                var metadataContent = new StackPanel();
-                var gameActions = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) };
-                var gameCheck = new CheckBox
+                var metadataContent = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+                for (var index = 0; index < item.Changes.Count; index++)
                 {
-                    Content = plugin.Loc("MTDA_SimulationApplyGame", "Apply metadata changes for this game"),
-                    IsThreeState = true,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 18, 0)
-                };
-                gameCheck.Checked += (s, e) => SetGameSelection(item, true);
-                gameCheck.Unchecked += (s, e) => SetGameSelection(item, false);
-                gameSelectors[item] = gameCheck;
-                gameActions.Children.Add(gameCheck);
-                var gameRecommended = new Button { Content = plugin.Loc("MTDA_SimulationRecommendedOnly", "Recommended only"), MinWidth = 135, Margin = new Thickness(0, 0, 8, 0) };
-                gameRecommended.Click += (s, e) => SetGameSelection(item, change => string.Equals(change.Recommendation, MetadataChangeRecommendationService.Recommended, StringComparison.OrdinalIgnoreCase));
-                var gameAll = new Button { Content = plugin.Loc("MTDA_SimulationSelectAll", "Select all"), MinWidth = 95, Margin = new Thickness(0, 0, 8, 0) };
-                gameAll.Click += (s, e) => SetGameSelection(item, true);
-                var gameNone = new Button { Content = plugin.Loc("MTDA_SimulationSelectNone", "Select none"), MinWidth = 95 };
-                gameNone.Click += (s, e) => SetGameSelection(item, false);
-                gameActions.Children.Add(gameRecommended);
-                gameActions.Children.Add(gameAll);
-                gameActions.Children.Add(gameNone);
-                metadataContent.Children.Add(gameActions);
-
-                foreach (var change in item.Changes)
-                {
-                    metadataContent.Children.Add(BuildChange(item, change));
+                    var changeBlock = BuildChange(item, item.Changes[index]);
+                    if (index > 0)
+                    {
+                        var spaced = changeBlock as FrameworkElement;
+                        if (spaced != null) spaced.Margin = new Thickness(0, 20, 0, 0);
+                    }
+                    metadataContent.Children.Add(changeBlock);
                 }
-
-                panel.Children.Add(BuildPlainSection(
-                    plugin.Loc("MTDA_SimulationMetadataTitle", "Metadata changes"),
-                    metadataContent,
-                    new Thickness(0, 4, 0, 0)));
+                panel.Children.Add(metadataContent);
             }
             return panel;
         }
 
         private UIElement BuildMediaSection(MetadataSimulationResult item)
         {
-            var grid = new UniformGrid { Columns = 3 };
+            var grid = new Grid { Margin = new Thickness(0, 0, 0, 16) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var column = 0;
             foreach (var kind in new[] { MediaKind.Cover, MediaKind.Icon, MediaKind.Background })
             {
-                var card = new Border { Margin = new Thickness(5), MinWidth = 220 };
-                mediaCards[kind] = card;
-                RefreshMediaCard(item, kind, card);
-                grid.Children.Add(card);
+                if (column > 0)
+                {
+                    var rule = MetadataTrustUi.VerticalRule();
+                    Grid.SetColumn(rule, column - 1);
+                    grid.Children.Add(rule);
+                }
+
+                var host = new Border
+                {
+                    MinWidth = 0,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(0)
+                };
+                mediaCards[kind] = host;
+                RefreshMediaCard(item, kind, host);
+                Grid.SetColumn(host, column);
+                grid.Children.Add(host);
+                column += 2;
             }
 
-            return BuildPlainSection(
-                plugin.Loc("MTDA_SimulationMediaTitle", "Media preview"),
-                grid,
-                new Thickness(0, 4, 0, 18));
-        }
-
-        private UIElement BuildPlainSection(string title, UIElement content, Thickness margin)
-        {
-            var stack = new StackPanel { Margin = margin };
-            var heading = MetadataTrustUi.Text(title);
-            heading.FontSize = 17;
-            heading.FontWeight = FontWeights.SemiBold;
-            var header = new Border
-            {
-                Child = heading,
-                BorderThickness = new Thickness(0, 0, 0, 1),
-                Padding = new Thickness(0, 0, 0, 7),
-                Margin = new Thickness(0, 0, 0, 12)
-            };
-            MetadataTrustUi.SetResource(header, Border.BorderBrushProperty, "GlyphBrush");
-            stack.Children.Add(header);
-            stack.Children.Add(content);
-            return stack;
+            return grid;
         }
 
         private void RefreshMediaCard(MetadataSimulationResult item, MediaKind kind, Border host)
         {
             var selected = (item.MediaChanges ?? new List<MediaSimulationChange>()).FirstOrDefault(x => x.Kind == kind);
             var content = new StackPanel();
-            var title = MetadataTrustUi.Text(MediaKindLabel(kind));
-            title.FontSize = 15;
-            title.FontWeight = FontWeights.SemiBold;
-            title.Margin = new Thickness(0, 0, 0, 8);
-            content.Children.Add(title);
+            UIElement userBadge = null;
+            if (selected != null && selected.IsUserChosen)
+            {
+                userBadge = MetadataTrustUi.Badge(plugin.Loc("MTDA_SimulationUserChosen", "User"), MetadataTrustUi.BadgeKind.Accent);
+                userBadge.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 0, 0, 0));
+            }
+            content.Children.Add(MetadataTrustUi.SummaryCardHeader(MediaKindLabel(kind), userBadge));
 
-            var comparison = new Grid();
+            var comparison = new Grid { Margin = new Thickness(0, 4, 0, 0) };
             comparison.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            comparison.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+            comparison.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
             comparison.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             comparison.Children.Add(BuildMediaPreview(
                 plugin.Loc("MTDA_SimulationCurrentMedia", "Current"),
@@ -1821,45 +2627,47 @@ namespace MetaDataIAPlugin
                 Content = selected == null
                     ? string.Format(plugin.Loc("MTDA_SimulationChooseMedia", "Choose {0}"), MediaKindLabel(kind).ToLowerInvariant())
                     : plugin.Loc("MTDA_SimulationChangeMedia", "Change selection"),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Padding = new Thickness(10, 7, 10, 7)
+                HorizontalAlignment = HorizontalAlignment.Left
             };
+            MetadataTrustUi.StyleSecondaryButton(choose);
             choose.Click += (s, e) =>
             {
-                var selection = plugin.SelectMediaForSimulation(item.Game, kind, activeSettings, this);
+                var selection = plugin.SelectMediaForSimulation(item.Game, kind, activeSettings, window);
                 if (selection == null) return;
+                if (item.MediaChanges == null) item.MediaChanges = new List<MediaSimulationChange>();
                 var previous = item.MediaChanges.FirstOrDefault(x => x.Kind == kind);
                 if (previous != null) item.MediaChanges.Remove(previous);
+                selection.IsUserChosen = true;
+                selection.IsSelected = true;
                 item.MediaChanges.Add(selection);
                 RefreshMediaCard(item, kind, host);
                 UpdateSelectionState();
             };
             content.Children.Add(choose);
-            host.Child = MetadataTrustUi.Card(content, new Thickness(0));
+            host.Child = content;
+            host.Padding = new Thickness(0);
+            host.BorderThickness = new Thickness(0);
+            host.Background = Brushes.Transparent;
+            host.Margin = new Thickness(0);
         }
 
         private UIElement BuildMediaPreview(string label, string source, bool remote, MediaKind kind)
         {
             var panel = new StackPanel();
-            var heading = MetadataTrustUi.Text(label);
-            heading.FontWeight = FontWeights.SemiBold;
-            heading.Opacity = remote ? 1 : 0.72;
-            panel.Children.Add(heading);
-            var frame = new Border
-            {
-                Height = 116,
-                Margin = new Thickness(0, 5, 0, 0),
-                Padding = new Thickness(3),
-                BorderThickness = new Thickness(1)
-            };
-            MetadataTrustUi.SetResource(frame, Border.BackgroundProperty, "StandardWindowBackgroundBrush");
-            MetadataTrustUi.SetResource(frame, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
+            panel.Children.Add(MetadataTrustUi.CardTitleHeader(label, 14, new Thickness(0, 0, 0, 8)));
             var image = CreatePreviewImage(source, remote, kind == MediaKind.Background ? 260 : 150);
-            frame.Child = image != null
-                ? (UIElement)image
-                : MetadataTrustUi.Hint(plugin.Loc("MTDA_None", "None"), new Thickness(6));
-            panel.Children.Add(frame);
-            return panel;
+            if (image != null)
+            {
+                image.Height = 116;
+                image.Margin = new Thickness(0, 0, 0, 0);
+                panel.Children.Add(image);
+            }
+            else
+            {
+                panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_None", "None"), new Thickness(0)));
+            }
+
+            return MetadataTrustUi.SummaryCard(panel, new Thickness(0), new Thickness(12, 10, 12, 10));
         }
 
         private Image CreatePreviewImage(string source, bool remote, int decodeWidth)
@@ -1867,13 +2675,27 @@ namespace MetaDataIAPlugin
             if (string.IsNullOrWhiteSpace(source)) return null;
             try
             {
+                Uri uri;
+                if (!Uri.TryCreate(source, UriKind.Absolute, out uri))
+                {
+                    if (!Uri.TryCreate(source, UriKind.RelativeOrAbsolute, out uri))
+                    {
+                        return null;
+                    }
+                }
+
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.DecodePixelWidth = decodeWidth;
+                bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache | BitmapCreateOptions.IgnoreColorProfile;
                 bitmap.CacheOption = remote ? BitmapCacheOption.OnDemand : BitmapCacheOption.OnLoad;
-                bitmap.UriSource = new Uri(source, remote ? UriKind.Absolute : UriKind.Absolute);
+                bitmap.UriSource = uri;
                 bitmap.EndInit();
-                if (!remote) bitmap.Freeze();
+                if (!remote)
+                {
+                    bitmap.Freeze();
+                }
+
                 return new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Stretch };
             }
             catch
@@ -1909,22 +2731,17 @@ namespace MetaDataIAPlugin
 
         private UIElement BuildChange(MetadataSimulationResult item, MetadataChangeItem change)
         {
-            var card = new Border
-            {
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(3),
-                Margin = new Thickness(0, 0, 0, 14)
-            };
-            MetadataTrustUi.SetResource(card, Border.BackgroundProperty, "ControlBackgroundBrush");
-            MetadataTrustUi.SetResource(card, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
-
             var panel = new StackPanel();
-            card.Child = panel;
-            var header = new Grid { Margin = new Thickness(14, 11, 14, 10) };
+
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 0) };
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var identity = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var identity = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
             var selector = new CheckBox
             {
                 IsChecked = change.IsSelected,
@@ -1936,37 +2753,53 @@ namespace MetaDataIAPlugin
             selector.Unchecked += (s, e) => ChangeSelection(item, change, false);
             fieldSelectors[change] = selector;
             identity.Children.Add(selector);
+
             var fieldTitle = MetadataTrustUi.Text(MetadataTrustUi.FieldName(plugin, change.Field));
-            fieldTitle.FontSize = 16;
+            fieldTitle.FontSize = 14;
             fieldTitle.FontWeight = FontWeights.SemiBold;
+            fieldTitle.VerticalAlignment = VerticalAlignment.Center;
+            if (!MetadataTrustUi.TrySetAccentForeground(fieldTitle))
+            {
+                MetadataTrustUi.SetResource(fieldTitle, TextBlock.ForegroundProperty, "TextBrush");
+            }
+
             identity.Children.Add(fieldTitle);
             header.Children.Add(identity);
 
-            var recommendation = new StackPanel { MaxWidth = 500, Margin = new Thickness(20, 0, 0, 0) };
+            var recommendation = new StackPanel { MaxWidth = 420, Margin = new Thickness(20, 0, 0, 0) };
             recommendation.HorizontalAlignment = HorizontalAlignment.Right;
+            recommendation.VerticalAlignment = VerticalAlignment.Center;
             recommendation.Children.Add(BuildRecommendationBadge(change));
-            var recommendationReason = MetadataTrustUi.Hint(FormatSentence(RecommendationReason(change)), new Thickness(0, 5, 0, 0));
-            recommendationReason.TextAlignment = TextAlignment.Right;
-            recommendation.Children.Add(recommendationReason);
             Grid.SetColumn(recommendation, 1);
             header.Children.Add(recommendation);
 
-            var headerBorder = new Border { Child = header, BorderThickness = new Thickness(0, 0, 0, 1) };
-            MetadataTrustUi.SetResource(headerBorder, Border.BorderBrushProperty, "GlyphBrush");
+            var headerBorder = new Border
+            {
+                Child = header,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 8),
+                Background = Brushes.Transparent,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            MetadataTrustUi.ApplySeparatorBrush(headerBorder);
             panel.Children.Add(headerBorder);
+
+            var recommendationReason = MetadataTrustUi.Hint(FormatSentence(RecommendationReason(change)), new Thickness(0, 0, 0, 0));
+            recommendationReason.HorizontalAlignment = HorizontalAlignment.Right;
+            recommendationReason.TextAlignment = TextAlignment.Right;
+            panel.Children.Add(recommendationReason);
 
             if (change.Conflict != null && change.Conflict.Values != null && change.Conflict.Values.Count > 1)
             {
                 var conflictText = string.Join(Environment.NewLine, change.Conflict.Values.Select(x => "- " + MetadataTrustUi.ProvenanceSource(plugin, x.Source) + ": " + x.Value));
                 var conflict = MetadataTrustUi.Text(plugin.Loc("MTDA_SourceConflictTitle", "Trusted sources disagree") + Environment.NewLine + conflictText);
                 conflict.TextWrapping = TextWrapping.Wrap;
-                var conflictBorder = new Border { Child = conflict, Padding = new Thickness(14, 10, 14, 10), BorderThickness = new Thickness(0, 0, 0, 1) };
-                MetadataTrustUi.SetResource(conflictBorder, Border.BackgroundProperty, "NotificationBackgroundBrush");
-                MetadataTrustUi.SetResource(conflictBorder, Border.BorderBrushProperty, "GlyphBrush");
-                panel.Children.Add(conflictBorder);
+                conflict.Margin = new Thickness(0, 10, 0, 0);
+                panel.Children.Add(conflict);
             }
 
-            var values = new Grid { Margin = new Thickness(14, 13, 14, 12) };
+            var values = new Grid { Margin = new Thickness(0, 12, 0, 0) };
             values.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             values.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
             values.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1978,16 +2811,13 @@ namespace MetaDataIAPlugin
 
             if (change.Provenance != null)
             {
-                var provenance = MetadataTrustUi.Hint(
+                panel.Children.Add(MetadataTrustUi.Hint(
                     plugin.Loc("MTDA_ProvenanceSource", "Source") + ": " + MetadataTrustUi.ProvenanceSource(plugin, change.Provenance.Source) +
                     "  |  " + plugin.Loc("MTDA_ProvenanceConfidence", "Confidence") + ": " + MetadataTrustUi.Confidence(plugin, change.Provenance.Confidence),
-                    new Thickness(14, 8, 14, 9));
-                var provenanceBorder = new Border { Child = provenance, BorderThickness = new Thickness(0, 1, 0, 0) };
-                MetadataTrustUi.SetResource(provenanceBorder, Border.BorderBrushProperty, "GlyphBrush");
-                panel.Children.Add(provenanceBorder);
+                    new Thickness(0, 10, 0, 0)));
             }
 
-            return card;
+            return panel;
         }
 
         private void ChangeSelection(MetadataSimulationResult item, MetadataChangeItem change, bool selected)
@@ -2012,18 +2842,40 @@ namespace MetaDataIAPlugin
 
         private void SetGameSelection(MetadataSimulationResult item, bool selected)
         {
-            SetGameSelection(item, change => selected);
+            SetGameSelection(item, change => selected, selected);
         }
 
         private void SetGameSelection(MetadataSimulationResult item, Func<MetadataChangeItem, bool> selector)
         {
-            if (updatingSelection || item == null || item.Changes == null) return;
+            SetGameSelection(item, selector, true);
+        }
+
+        private void SetGameSelection(MetadataSimulationResult item, Func<MetadataChangeItem, bool> selector, bool mediaSelected)
+        {
+            if (updatingSelection || item == null) return;
             updatingSelection = true;
-            foreach (var change in item.Changes)
+            if (item.Changes != null)
             {
-                change.IsSelected = selector(change);
-                CheckBox box;
-                if (fieldSelectors.TryGetValue(change, out box)) box.IsChecked = change.IsSelected;
+                foreach (var change in item.Changes)
+                {
+                    change.IsSelected = selector(change);
+                    CheckBox box;
+                    if (fieldSelectors.TryGetValue(change, out box)) box.IsChecked = change.IsSelected;
+                }
+            }
+
+            if (item.MediaChanges != null)
+            {
+                foreach (var media in item.MediaChanges)
+                {
+                    if (media == null || media.Option == null) continue;
+                    media.IsSelected = mediaSelected;
+                }
+            }
+
+            foreach (var pair in mediaCards)
+            {
+                RefreshMediaCard(item, pair.Key, pair.Value);
             }
             updatingSelection = false;
             UpdateSelectionState();
@@ -2083,24 +2935,14 @@ namespace MetaDataIAPlugin
 
         private UIElement BuildRecommendationBadge(MetadataChangeItem change)
         {
-            var label = MetadataTrustUi.Text(RecommendationBadgeLabel(change), false);
-            label.Foreground = Brushes.White;
-            label.FontWeight = FontWeights.SemiBold;
-            label.VerticalAlignment = VerticalAlignment.Center;
-            var badge = new Border
-            {
-                Child = label,
-                Padding = new Thickness(9, 3, 9, 3),
-                CornerRadius = new CornerRadius(3),
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-
-            badge.Background = new SolidColorBrush(
-                string.Equals(change.Recommendation, MetadataChangeRecommendationService.Recommended, StringComparison.OrdinalIgnoreCase)
-                    ? Color.FromRgb(38, 126, 68)
-                    : string.Equals(change.Recommendation, MetadataChangeRecommendationService.KeepCurrent, StringComparison.OrdinalIgnoreCase)
-                        ? Color.FromRgb(76, 96, 122)
-                        : Color.FromRgb(166, 108, 0));
+            var kind = string.Equals(change.Recommendation, MetadataChangeRecommendationService.Recommended, StringComparison.OrdinalIgnoreCase)
+                ? MetadataTrustUi.BadgeKind.Success
+                : string.Equals(change.Recommendation, MetadataChangeRecommendationService.KeepCurrent, StringComparison.OrdinalIgnoreCase)
+                    ? MetadataTrustUi.BadgeKind.Muted
+                    : MetadataTrustUi.BadgeKind.Warning;
+            var badge = MetadataTrustUi.Badge(RecommendationBadgeLabel(change), kind);
+            badge.HorizontalAlignment = HorizontalAlignment.Right;
+            badge.Margin = new Thickness(0);
             return badge;
         }
 
@@ -2143,18 +2985,16 @@ namespace MetaDataIAPlugin
         private UIElement BuildValuePanel(string label, string value, bool muted)
         {
             var panel = new StackPanel { MinHeight = 82 };
-            var heading = MetadataTrustUi.Text(label);
-            heading.FontWeight = FontWeights.SemiBold;
-            heading.Opacity = muted ? 0.72 : 1;
-            panel.Children.Add(heading);
+            panel.Children.Add(MetadataTrustUi.CardTitleHeader(label, 14, new Thickness(0, 0, 0, 8)));
             var text = MetadataTrustUi.Text(string.IsNullOrWhiteSpace(value) ? plugin.Loc("MTDA_None", "None") : value);
-            text.Margin = new Thickness(0, 4, 0, 0);
-            text.Opacity = muted ? 0.72 : 1;
+            text.Margin = new Thickness(0, 0, 0, 0);
+            if (muted)
+            {
+                text.Opacity = 0.82;
+            }
+
             panel.Children.Add(text);
-            var border = new Border { Child = panel, Padding = new Thickness(11), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(2) };
-            MetadataTrustUi.SetResource(border, Border.BackgroundProperty, "StandardWindowBackgroundBrush");
-            MetadataTrustUi.SetResource(border, Border.BorderBrushProperty, "DetailsViewBannerPanelBorderBrush");
-            return border;
+            return MetadataTrustUi.SummaryCard(panel, new Thickness(0), new Thickness(16, 12, 16, 12));
         }
 
         private static string FormatPreview(string value)
@@ -2171,8 +3011,9 @@ namespace MetaDataIAPlugin
         }
     }
 
-    public sealed class HistoryWindow : Window
+    public sealed class HistoryWindow
     {
+        private readonly Window window;
         private readonly MetaDataIAPlugin plugin;
         private readonly MetadataHistoryService history;
         private readonly ListBox list = new ListBox();
@@ -2205,82 +3046,83 @@ namespace MetaDataIAPlugin
                     ? string.Format(plugin.Loc("MTDA_HistoryGameTitle", "Metadata AI history - {0}"), gameNameFilter)
                     : string.Format(plugin.Loc("MTDA_HistorySelectedTitle", "Metadata AI history - {0} selected games"), gameIdFilter.Count)
                 : plugin.Loc("MTDA_HistoryTitle", "Metadata AI history");
-            Title = windowTitle;
-            Width = 1080;
-            Height = 720;
-            MinWidth = 820;
-            MinHeight = 540;
-            ShowInTaskbar = false;
-            MetadataTrustUi.ApplyWindowTheme(this);
-            var owner = plugin.Api.Dialogs.GetCurrentAppWindow();
-            if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            window = MetadataTrustUi.CreatePluginDialog(
+                plugin.Api,
+                windowTitle,
+                plugin.GetAppearancePreset(),
+                1100,
+                740,
+                860,
+                560);
 
-            var root = new Grid { Margin = new Thickness(18) };
-            MetadataTrustUi.ApplyTextBrush(root);
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var title = MetadataTrustUi.Text(windowTitle);
-            title.FontSize = 22;
-            title.FontWeight = FontWeights.SemiBold;
-            var titleBorder = new Border { Child = title, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 8), Margin = new Thickness(0, 0, 0, 14) };
-            MetadataTrustUi.SetResource(titleBorder, Border.BorderBrushProperty, "GlyphBrush");
-            root.Children.Add(titleBorder);
+            StackPanel headerHost;
+            Grid bodyHost;
+            Border footerBar;
+            var root = MetadataTrustUi.CreatePageShell(out headerHost, out bodyHost, out footerBar, new Thickness(16), plugin.GetAppearancePreset());
+            // Title lives in the Advanced-style sidebar; keep page header minimal.
+            headerHost.Margin = new Thickness(0);
+            headerHost.Visibility = Visibility.Collapsed;
 
-            var body = new Grid();
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            list.HorizontalContentAlignment = HorizontalAlignment.Stretch;
-            list.BorderThickness = new Thickness(0);
-            list.Padding = new Thickness(0, 0, 12, 0);
-            list.SelectionChanged += (s, e) => ShowOperation(SelectedOperation());
-            body.Children.Add(list);
-            var separator = new Border { BorderThickness = new Thickness(1, 0, 0, 0) };
-            MetadataTrustUi.SetResource(separator, Border.BorderBrushProperty, "GlyphBrush");
-            Grid.SetColumn(separator, 1);
-            body.Children.Add(separator);
-            var detailsScroll = new ScrollViewer { Content = details, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(14, 0, 4, 0) };
-            Grid.SetColumn(detailsScroll, 2);
-            body.Children.Add(detailsScroll);
-            Grid.SetRow(body, 1);
-            root.Children.Add(body);
+            MetadataTrustUi.StyleCardListBox(list);
+            list.SelectionChanged += (s, e) =>
+            {
+                foreach (ListBoxItem row in list.Items)
+                {
+                    var chrome = row.Content as Border;
+                    if (chrome != null) MetadataTrustUi.ApplyNavItemChrome(chrome, ReferenceEquals(row, list.SelectedItem));
+                }
+                ShowOperation(SelectedOperation());
+            };
+
+            var detailsScroll = new ScrollViewer
+            {
+                Content = details,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Padding = new Thickness(0, 0, 4, 0)
+            };
+            bodyHost.Children.Add(MetadataTrustUi.CreateSidebarLayout(
+                plugin.Loc("MTDA_HistorySidebarTitle", "Change history"),
+                list,
+                detailsScroll,
+                268));
 
             statusText.TextWrapping = TextWrapping.Wrap;
             statusText.Visibility = Visibility.Collapsed;
-            statusText.Margin = new Thickness(2, 12, 2, 0);
+            statusText.Margin = new Thickness(0, 0, 16, 0);
             MetadataTrustUi.SetResource(statusText, TextBlock.ForegroundProperty, "TextBrush");
-            Grid.SetRow(statusText, 2);
-            root.Children.Add(statusText);
+            statusText.VerticalAlignment = VerticalAlignment.Center;
 
-            var buttons = new Grid { Margin = new Thickness(0, 14, 0, 0) };
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var clear = new Button { Content = plugin.Loc("MTDA_HistoryClear", "Clear history"), MinWidth = 130 };
+            var clear = new Button { Content = plugin.Loc("MTDA_HistoryClear", "Clear history") };
+            MetadataTrustUi.StyleSecondaryButton(clear);
+            clear.MinWidth = 130;
+            clear.Margin = new Thickness(0, 0, 8, 0);
             clear.Click += (s, e) => ClearHistory();
             clear.Visibility = HasGameFilter ? Visibility.Collapsed : Visibility.Visible;
-            buttons.Children.Add(clear);
             undoAllButton.Content = plugin.Loc("MTDA_HistoryUndoAllSelected", "Undo all selected history");
+            MetadataTrustUi.StylePrimaryButton(undoAllButton);
             undoAllButton.MinWidth = 225;
-            undoAllButton.Margin = new Thickness(0, 0, 8, 0);
             undoAllButton.Click += (s, e) => UndoSelectedOperation();
             undoAllButton.Visibility = HasGameFilter ? Visibility.Collapsed : Visibility.Visible;
-            Grid.SetColumn(undoAllButton, 2);
-            buttons.Children.Add(undoAllButton);
-            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 100 };
-            close.Click += (s, e) => DialogResult = false;
-            Grid.SetColumn(close, 3);
-            buttons.Children.Add(close);
-            Grid.SetRow(buttons, 3);
-            root.Children.Add(buttons);
-            Content = root;
+            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close") };
+            MetadataTrustUi.StyleSecondaryButton(close);
+            close.Click += (s, e) => window.DialogResult = false;
+
+            var leftFooter = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            leftFooter.Children.Add(clear);
+            leftFooter.Children.Add(statusText);
+            footerBar.Child = MetadataTrustUi.CreateFooterContent(leftFooter, undoAllButton, close);
+            MetadataTrustUi.SetDialogContent(window, root, plugin.GetAppearancePreset());
             ReloadOperations(null);
         }
 
+        public bool? ShowDialog()
+        {
+            return window.ShowDialog();
+        }
+
         private MetadataHistoryOperation SelectedOperation()
+
         {
             var selected = list.SelectedItem as ListBoxItem;
             return selected == null ? null : selected.Tag as MetadataHistoryOperation;
@@ -2299,16 +3141,23 @@ namespace MetaDataIAPlugin
 
             foreach (var operation in operations)
             {
-                var panel = new StackPanel { Margin = new Thickness(2, 2, 2, 8) };
+                var panel = new StackPanel();
                 var kind = MetadataTrustUi.Text(operation.Kind);
                 kind.FontWeight = FontWeights.SemiBold;
+                kind.FontSize = 14;
                 panel.Children.Add(kind);
                 var operationGames = operation.Games ?? new List<MetadataHistoryGameEntry>();
                 var relevantCount = HasGameFilter ? operationGames.Count(x => gameIdFilter.Contains(x.GameId)) : operationGames.Count;
-                panel.Children.Add(MetadataTrustUi.Hint(operation.CreatedAt.ToString("g") + "  |  " + string.Format(plugin.Loc("MTDA_HistoryGamesCount", "{0} game(s)"), relevantCount), new Thickness(0, 3, 0, 0)));
-                var row = new Border { Child = panel, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(7, 5, 7, 5) };
-                MetadataTrustUi.SetResource(row, Border.BorderBrushProperty, "GlyphBrush");
-                list.Items.Add(new ListBoxItem { Content = row, Tag = operation, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Stretch });
+                panel.Children.Add(MetadataTrustUi.Hint(operation.CreatedAt.ToString("g") + "  ·  " + string.Format(plugin.Loc("MTDA_HistoryGamesCount", "{0} game(s)"), relevantCount), new Thickness(0, 2, 0, 0)));
+                var chrome = new Border { Child = panel };
+                MetadataTrustUi.ApplyNavItemChrome(chrome, false);
+                list.Items.Add(new ListBoxItem
+                {
+                    Content = chrome,
+                    Tag = operation,
+                    Padding = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch
+                });
             }
 
             var match = preferredId.HasValue
@@ -2330,19 +3179,14 @@ namespace MetaDataIAPlugin
                         ? string.Format(plugin.Loc("MTDA_HistoryGameEmpty", "There is no recorded Metadata AI history for {0}."), gameNameFilter)
                         : plugin.Loc("MTDA_HistorySelectedEmpty", "There is no recorded Metadata AI history for the selected games.")
                     : plugin.Loc("MTDA_HistoryEmpty", "There are no recorded Metadata AI changes yet.");
-                details.Children.Add(MetadataTrustUi.Hint(emptyText, new Thickness(0)));
+                details.Children.Add(MetadataTrustUi.SummaryCard(MetadataTrustUi.Hint(emptyText, new Thickness(0)), new Thickness(0)));
                 return;
             }
 
-            var title = MetadataTrustUi.Text(operation.Kind);
-            title.FontSize = 18;
-            title.FontWeight = FontWeights.SemiBold;
-            var operationHeader = new StackPanel();
-            operationHeader.Children.Add(title);
-            operationHeader.Children.Add(MetadataTrustUi.Hint(operation.CreatedAt.ToString("F"), new Thickness(0, 3, 0, 0)));
-            var operationBorder = new Border { Child = operationHeader, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 9), Margin = new Thickness(0, 0, 0, 14) };
-            MetadataTrustUi.SetResource(operationBorder, Border.BorderBrushProperty, "GlyphBrush");
-            details.Children.Add(operationBorder);
+            var operationHeader = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+            operationHeader.Children.Add(MetadataTrustUi.SectionHeader(operation.Kind, 20, new Thickness(0, 0, 0, 8)));
+            operationHeader.Children.Add(MetadataTrustUi.Hint(operation.CreatedAt.ToString("F"), new Thickness(0, 0, 0, 0)));
+            details.Children.Add(operationHeader);
             var entries = operation.Games ?? new List<MetadataHistoryGameEntry>();
             if (HasGameFilter)
             {
@@ -2365,10 +3209,7 @@ namespace MetaDataIAPlugin
             grid.Children.Add(image);
 
             var info = new StackPanel();
-            var name = MetadataTrustUi.Text(entry.GameName);
-            name.FontWeight = FontWeights.SemiBold;
-            name.FontSize = 15;
-            info.Children.Add(name);
+            info.Children.Add(MetadataTrustUi.SectionHeader(entry.GameName ?? string.Empty, 14, new Thickness(0, 0, 0, 8)));
             var fields = string.Join(", ", (entry.ChangedFields ?? new List<string>()).Select(x => MetadataTrustUi.FieldName(plugin, x)));
             info.Children.Add(MetadataTrustUi.Text(plugin.Loc("MTDA_HistoryChangedFields", "Changed fields") + ": " + fields));
             var sources = (entry.Provenance ?? new List<MetadataFieldProvenance>())
@@ -2381,12 +3222,14 @@ namespace MetaDataIAPlugin
                 info.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_ProvenanceSource", "Source") + ": " + string.Join(", ", sources), new Thickness(0, 4, 0, 0)));
             }
 
-            var undoGame = new Button { Content = plugin.Loc("MTDA_HistoryUndoGame", "Undo this game"), MinWidth = 150, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 0) };
+            var undoGame = new Button { Content = plugin.Loc("MTDA_HistoryUndoGame", "Undo this game"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 0) };
+            MetadataTrustUi.StyleSecondaryButton(undoGame);
+            undoGame.MinWidth = 150;
             undoGame.Click += (s, e) => UndoGame(operation, entry);
             info.Children.Add(undoGame);
             Grid.SetColumn(info, 2);
             grid.Children.Add(info);
-            return MetadataTrustUi.Card(grid, new Thickness(0, 0, 0, 10));
+            return MetadataTrustUi.SummaryCard(grid, new Thickness(0, 0, 0, 16));
         }
 
         private UIElement BuildGameImage(Guid gameId)
@@ -2464,13 +3307,16 @@ namespace MetaDataIAPlugin
 
         private bool Confirm(string message)
         {
-            return new MetadataConfirmationWindow(plugin, this, message).ShowDialog() == true;
+            return new MetadataConfirmationWindow(plugin, window, message).ShowDialog() == true;
         }
 
         private void SetStatus(string message, bool isError)
         {
-            statusText.Text = message ?? string.Empty;
-            statusText.Visibility = Visibility.Visible;
+            var body = message ?? string.Empty;
+            statusText.Text = string.IsNullOrWhiteSpace(body)
+                ? string.Empty
+                : string.Format(plugin.Loc("MTDA_HistoryLastAction", "Last action: {0}"), body);
+            statusText.Visibility = string.IsNullOrWhiteSpace(body) ? Visibility.Collapsed : Visibility.Visible;
             statusText.FontWeight = isError ? FontWeights.SemiBold : FontWeights.Normal;
             statusText.Opacity = isError ? 1 : 0.82;
         }
@@ -2481,34 +3327,48 @@ namespace MetaDataIAPlugin
         public MetadataConfirmationWindow(MetaDataIAPlugin plugin, Window owner, string message)
         {
             Title = plugin.Loc("MTDA_PluginName", "Metadata AI");
-            Width = 560;
+            Width = 480;
             SizeToContent = SizeToContent.Height;
-            MinHeight = 190;
-            ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = false;
+            MinHeight = 180;
             Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            MetadataTrustUi.ApplyWindowTheme(this);
+            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner;
+            MetadataTrustUi.PrepareFramelessDialog(this, plugin.GetAppearancePreset());
 
-            var root = new Grid { Margin = new Thickness(20) };
+            var root = new Grid();
             MetadataTrustUi.ApplyTextBrush(root);
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var heading = MetadataTrustUi.Text(plugin.Loc("MTDA_PluginName", "Metadata AI"));
+            heading.FontSize = 20;
+            heading.FontWeight = FontWeights.SemiBold;
+            heading.Margin = new Thickness(0, 0, 0, 10);
+            MetadataTrustUi.SetResource(heading, TextBlock.ForegroundProperty, "Narian.Accent");
+            root.Children.Add(heading);
             var text = MetadataTrustUi.Text(message);
             text.FontSize = 14;
             text.Margin = new Thickness(0, 0, 0, 20);
+            Grid.SetRow(text, 1);
             root.Children.Add(text);
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var yes = new Button { Content = plugin.Loc("MTDA_Yes", "Yes"), MinWidth = 100, Margin = new Thickness(0, 0, 8, 0) };
+            var yes = new Button { Content = plugin.Loc("MTDA_Yes", "Yes"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            MetadataTrustUi.StylePrimaryButton(yes);
             yes.Click += (s, e) => DialogResult = true;
-            var cancel = new Button { Content = plugin.Loc("MTDA_Cancel", "Cancel"), MinWidth = 100 };
+            var cancel = new Button { Content = plugin.Loc("MTDA_Cancel", "Cancel"), MinWidth = 110 };
+            MetadataTrustUi.StyleSecondaryButton(cancel);
             cancel.Click += (s, e) => DialogResult = false;
             buttons.Children.Add(yes);
             buttons.Children.Add(cancel);
-            Grid.SetRow(buttons, 1);
+            Grid.SetRow(buttons, 2);
             root.Children.Add(buttons);
-            Content = root;
+            Content = MetadataTrustUi.CreateFramelessDialogShell(root);
+            PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key != Key.Escape) return;
+                e.Handled = true;
+                DialogResult = false;
+            };
         }
     }
 
@@ -2517,28 +3377,72 @@ namespace MetaDataIAPlugin
         public MetadataNoticeWindow(MetaDataIAPlugin plugin, Window owner, string message)
         {
             Title = plugin.Loc("MTDA_PluginName", "Metadata AI");
-            Width = 560;
+            Width = 480;
             SizeToContent = SizeToContent.Height;
-            MinHeight = 170;
-            ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = false;
+            MinHeight = 180;
             Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            MetadataTrustUi.ApplyWindowTheme(this);
+            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner;
+            MetadataTrustUi.PrepareFramelessDialog(this, plugin.GetAppearancePreset());
 
-            var root = new Grid { Margin = new Thickness(20) };
+            var root = new Grid();
             MetadataTrustUi.ApplyTextBrush(root);
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var heading = MetadataTrustUi.Text(plugin.Loc("MTDA_PluginName", "Metadata AI"));
+            heading.FontSize = 20;
+            heading.FontWeight = FontWeights.SemiBold;
+            heading.Margin = new Thickness(0, 0, 0, 10);
+            MetadataTrustUi.SetResource(heading, TextBlock.ForegroundProperty, "Narian.Accent");
+            root.Children.Add(heading);
             var text = MetadataTrustUi.Text(message);
             text.FontSize = 14;
             text.Margin = new Thickness(0, 0, 0, 20);
+            Grid.SetRow(text, 1);
             root.Children.Add(text);
             var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 110, HorizontalAlignment = HorizontalAlignment.Right };
-            close.Click += (s, e) => DialogResult = true;
-            Grid.SetRow(close, 1);
+            MetadataTrustUi.StyleSecondaryButton(close);
+            close.Click += (s, e) => Close();
+            Grid.SetRow(close, 2);
             root.Children.Add(close);
-            Content = root;
+            Content = MetadataTrustUi.CreateFramelessDialogShell(root);
+            PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key != Key.Escape) return;
+                e.Handled = true;
+                Close();
+            };
+        }
+
+        public void ShowUntilClosed()
+        {
+            var owner = Owner;
+            var ownerHitTestVisible = owner == null || owner.IsHitTestVisible;
+            var frame = new DispatcherFrame();
+            EventHandler closed = null;
+            closed = (s, e) =>
+            {
+                Closed -= closed;
+                frame.Continue = false;
+            };
+            Closed += closed;
+            try
+            {
+                if (owner != null && owner.IsVisible)
+                {
+                    owner.IsHitTestVisible = false;
+                }
+
+                Show();
+                Dispatcher.PushFrame(frame);
+            }
+            finally
+            {
+                if (owner != null && owner.IsVisible)
+                {
+                    owner.IsHitTestVisible = ownerHitTestVisible;
+                }
+            }
         }
     }
 
@@ -2565,37 +3469,78 @@ namespace MetaDataIAPlugin
             this.operation = operation;
             operationOwner = owner;
             Title = plugin.Loc("MTDA_PluginName", "Metadata AI");
-            Width = 520;
+            Width = 480;
             SizeToContent = SizeToContent.Height;
             MinHeight = 180;
             ResizeMode = ResizeMode.NoResize;
+            WindowStyle = WindowStyle.None;
             ShowInTaskbar = false;
-            // Do not create a WPF owner relationship here. Some Playnite desktop
-            // themes keep its modal dimming layer alive after an owned progress
-            // window closes. operationOwner is still used to block interaction.
-            WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            MetadataTrustUi.ApplyWindowTheme(this);
+            SnapsToDevicePixels = true;
+            MetadataTrustUi.ApplyWindowTheme(this, plugin.GetAppearancePreset(), false);
+            if (owner != null)
+            {
+                Owner = owner;
+                WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {
+                WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
 
-            var root = new Grid { Margin = new Thickness(20) };
+            var shell = new Border
+            {
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(24, 20, 24, 20),
+                SnapsToDevicePixels = true
+            };
+            MetadataTrustUi.SetResource(shell, Border.BorderBrushProperty, "Narian.Border");
+            MetadataTrustUi.SetResource(shell, Border.BackgroundProperty, "Narian.Bg");
+
+            var root = new Grid();
             MetadataTrustUi.ApplyTextBrush(root);
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var title = MetadataTrustUi.Text(plugin.Loc("MTDA_PluginName", "Metadata AI"));
+            title.FontSize = 20;
+            title.FontWeight = FontWeights.SemiBold;
+            title.Margin = new Thickness(0, 0, 0, 10);
+            MetadataTrustUi.SetResource(title, TextBlock.ForegroundProperty, "Narian.Accent");
+            root.Children.Add(title);
+
             messageText = MetadataTrustUi.Text(message);
             messageText.FontSize = 14;
             messageText.Margin = new Thickness(0, 0, 0, 16);
+            Grid.SetRow(messageText, 1);
             root.Children.Add(messageText);
-            var progress = new ProgressBar { IsIndeterminate = true, Height = 8, Margin = new Thickness(0, 0, 0, 18) };
-            Grid.SetRow(progress, 1);
+
+            var progress = new ProgressBar { IsIndeterminate = true, Height = 8, Margin = new Thickness(0, 0, 0, 22) };
+            Grid.SetRow(progress, 2);
             root.Children.Add(progress);
+
             cancelButton.Content = plugin.Loc("MTDA_Cancel", "Cancel");
             cancelButton.MinWidth = 110;
             cancelButton.HorizontalAlignment = HorizontalAlignment.Right;
+            MetadataTrustUi.StyleSecondaryButton(cancelButton);
             cancelButton.Click += (s, e) => { Cancelled = true; cancelButton.IsEnabled = false; cancellation.Cancel(); };
-            Grid.SetRow(cancelButton, 2);
+            Grid.SetRow(cancelButton, 3);
             root.Children.Add(cancelButton);
-            Content = root;
+            shell.Child = root;
+            Content = shell;
 
+            PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Escape)
+                {
+                    e.Handled = true;
+                    Cancelled = true;
+                    cancelButton.IsEnabled = false;
+                    cancellation.Cancel();
+                }
+            };
             Loaded += RunOperation;
             Closing += (s, e) =>
             {
@@ -2731,8 +3676,10 @@ namespace MetaDataIAPlugin
         public IEnumerable<MetadataFieldProvenance> Provenance { get; set; }
     }
 
-    public sealed class ProvenanceWindow : Window
+    public sealed class ProvenanceWindow
     {
+        private readonly Window window;
+
         public ProvenanceWindow(MetaDataIAPlugin plugin, string gameName, IEnumerable<MetadataFieldProvenance> provenance)
             : this(plugin, new[] { new ProvenanceGameGroup { GameName = gameName, Provenance = provenance } })
         {
@@ -2745,52 +3692,49 @@ namespace MetaDataIAPlugin
             var titleValue = multiple
                 ? string.Format(plugin.Loc("MTDA_ProvenanceSelectedTitle", "Metadata provenance - {0} selected games"), groups.Count)
                 : plugin.Loc("MTDA_ProvenanceTitle", "Metadata provenance") + " - " + (groups.FirstOrDefault() == null ? string.Empty : groups[0].GameName);
-            Title = titleValue;
-            Width = 820;
-            Height = 650;
-            MinWidth = 640;
-            MinHeight = 440;
-            ShowInTaskbar = false;
-            MetadataTrustUi.ApplyWindowTheme(this);
-            var owner = plugin.Api.Dialogs.GetCurrentAppWindow();
-            if (owner != null) { Owner = owner; WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+            window = MetadataTrustUi.CreatePluginDialog(
+                plugin.Api,
+                titleValue,
+                plugin.GetAppearancePreset(),
+                820,
+                650,
+                640,
+                440);
 
-            var root = new Grid { Margin = new Thickness(18) };
-            MetadataTrustUi.ApplyTextBrush(root);
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var title = MetadataTrustUi.Text(titleValue);
-            title.FontSize = 21;
-            title.FontWeight = FontWeights.SemiBold;
-            title.Margin = new Thickness(0, 0, 0, 14);
-            root.Children.Add(title);
+            StackPanel headerHost;
+            Grid bodyHost;
+            Border footerBar;
+            var root = MetadataTrustUi.CreatePageShell(out headerHost, out bodyHost, out footerBar, null, plugin.GetAppearancePreset());
+            headerHost.Children.Add(MetadataTrustUi.PageIntro(titleValue));
 
             var stack = new StackPanel();
             foreach (var group in groups)
             {
                 if (multiple)
                 {
-                    var gameTitle = MetadataTrustUi.Text(group.GameName);
-                    gameTitle.FontSize = 18;
-                    gameTitle.FontWeight = FontWeights.SemiBold;
-                    var gameHeader = new Border { Child = gameTitle, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 7), Margin = new Thickness(0, 4, 0, 12) };
-                    MetadataTrustUi.SetResource(gameHeader, Border.BorderBrushProperty, "GlyphBrush");
-                    stack.Children.Add(gameHeader);
+                    stack.Children.Add(MetadataTrustUi.SectionHeader(group.GameName, 16, new Thickness(0, 4, 0, 12)));
                 }
                 foreach (var item in group.Provenance ?? Enumerable.Empty<MetadataFieldProvenance>())
                 {
                     stack.Children.Add(BuildEntry(plugin, item));
                 }
             }
-            var scroll = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-            Grid.SetRow(scroll, 1);
-            root.Children.Add(scroll);
-            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close"), MinWidth = 100, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
-            close.Click += (s, e) => Close();
-            Grid.SetRow(close, 2);
-            root.Children.Add(close);
-            Content = root;
+            bodyHost.Children.Add(new ScrollViewer
+            {
+                Content = stack,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            });
+            var close = new Button { Content = plugin.Loc("MTDA_Close", "Close") };
+            MetadataTrustUi.StyleSecondaryButton(close);
+            close.Click += (s, e) => window.Close();
+            footerBar.Child = MetadataTrustUi.CreateFooterContent(null, close);
+            MetadataTrustUi.SetDialogContent(window, root, plugin.GetAppearancePreset());
+        }
+
+        public bool? ShowDialog()
+        {
+            return window.ShowDialog();
         }
 
         private static UIElement BuildEntry(MetaDataIAPlugin plugin, MetadataFieldProvenance item)
@@ -2806,7 +3750,7 @@ namespace MetaDataIAPlugin
             Grid.SetColumn(method, 2);
             facts.Children.Add(method);
             panel.Children.Add(facts);
-            panel.Children.Add(BuildFact(plugin.Loc("MTDA_ProvenanceConfidence", "Confidence"), MetadataTrustUi.Confidence(plugin, item.Confidence), new Thickness(0, 9, 0, 0)));
+            panel.Children.Add(BuildConfidence(plugin, item.Confidence));
             panel.Children.Add(MetadataTrustUi.Hint(MetadataTrustUi.ProvenanceExplanation(plugin, item), new Thickness(0, 9, 0, 0)));
             if (string.Equals(item.Method, "downloaded-media", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.Detail))
             {
@@ -2825,6 +3769,17 @@ namespace MetaDataIAPlugin
             var content = MetadataTrustUi.Text(value);
             content.Margin = new Thickness(0, 2, 0, 0);
             panel.Children.Add(content);
+            return panel;
+        }
+
+        private static UIElement BuildConfidence(MetaDataIAPlugin plugin, string confidence)
+        {
+            var panel = new StackPanel { Margin = new Thickness(0, 9, 0, 0) };
+            var heading = MetadataTrustUi.Text(plugin.Loc("MTDA_ProvenanceConfidence", "Confidence"));
+            heading.FontWeight = FontWeights.SemiBold;
+            heading.Opacity = 0.76;
+            panel.Children.Add(heading);
+            panel.Children.Add(MetadataTrustUi.ConfidenceBadge(plugin, confidence));
             return panel;
         }
     }

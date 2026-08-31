@@ -27,6 +27,8 @@ namespace MetaDataIAPlugin
         public string AgeRating { get; set; }
         public string ReleaseDate { get; set; }
         public List<string> Series { get; set; }
+        public string MinimumSystemRequirements { get; set; }
+        public string RecommendedSystemRequirements { get; set; }
         public bool IsExactMatch { get; set; }
 
         public OfficialStoreMetadata()
@@ -51,7 +53,9 @@ namespace MetaDataIAPlugin
                    Links.Count > 0 ||
                    !string.IsNullOrWhiteSpace(AgeRating) ||
                    !string.IsNullOrWhiteSpace(ReleaseDate) ||
-                   Series.Count > 0;
+                   Series.Count > 0 ||
+                   !string.IsNullOrWhiteSpace(MinimumSystemRequirements) ||
+                   !string.IsNullOrWhiteSpace(RecommendedSystemRequirements);
         }
     }
 
@@ -76,14 +80,20 @@ namespace MetaDataIAPlugin
         public const string SourceEpicStore = "Epic Store";
         public const string SourceEsrb = "ESRB";
 
-        private static readonly HttpClient Client = new HttpClient();
+        private static readonly HttpClient Client = CreateClient();
         private readonly MetaDataIASettings settings;
+
+        private static HttpClient CreateClient()
+        {
+            return new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        }
 
         static OfficialStoreDataService()
         {
             try
             {
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                // Explicit numeric flags keep TLS 1.2 available on older .NET 4.x hosts.
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
             }
             catch
             {
@@ -107,7 +117,10 @@ namespace MetaDataIAPlugin
                 }
                 catch (OperationCanceledException)
                 {
-                    throw;
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
                 }
                 catch
                 {
@@ -144,7 +157,10 @@ namespace MetaDataIAPlugin
             }
             catch (OperationCanceledException)
             {
-                throw;
+                if (cancelToken.IsCancellationRequested)
+                {
+                    throw;
+                }
             }
             catch
             {
@@ -245,12 +261,8 @@ namespace MetaDataIAPlugin
                 return null;
             }
 
-            var url = "https://store.steampowered.com/api/appdetails?appids=" + Uri.EscapeDataString(appId) +
-                      "&l=" + Uri.EscapeDataString(GetStoreLanguage()) +
-                      "&cc=" + Uri.EscapeDataString(GetCountryCode());
-            var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
-            var data = json[appId] == null ? null : json[appId]["data"] as JObject;
-            if (data == null)
+            var data = await GetSteamAppDataAsync(appId, cancelToken).ConfigureAwait(false);
+            if (data == null || IsNonGameSteamApp(data))
             {
                 return null;
             }
@@ -264,8 +276,53 @@ namespace MetaDataIAPlugin
                 Genres = ReadNameArray(data["genres"]),
                 Developers = ReadStringArray(data["developers"]),
                 Publishers = ReadStringArray(data["publishers"]),
-                ReleaseDate = data["release_date"] == null ? string.Empty : NormalizeReleaseDate((string)data["release_date"]["date"])
+                ReleaseDate = data["release_date"] == null ? string.Empty : NormalizeReleaseDate((string)data["release_date"]["date"]),
+                MinimumSystemRequirements = ReadPcRequirement(data["pc_requirements"], "minimum"),
+                RecommendedSystemRequirements = ReadPcRequirement(data["pc_requirements"], "recommended")
             };
+        }
+
+        private async Task<JObject> GetSteamAppDataAsync(string appId, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(appId))
+            {
+                return null;
+            }
+
+            var url = "https://store.steampowered.com/api/appdetails?appids=" + Uri.EscapeDataString(appId) +
+                      "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage()) +
+                      "&cc=" + Uri.EscapeDataString(GetCountryCode());
+            var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
+            var entry = json[appId] as JObject;
+            if (entry == null)
+            {
+                return null;
+            }
+
+            var success = entry["success"];
+            if (success != null && success.Type == JTokenType.Boolean && !(bool)success)
+            {
+                return null;
+            }
+
+            return entry["data"] as JObject;
+        }
+
+        private static bool IsNonGameSteamApp(JObject data)
+        {
+            if (data == null)
+            {
+                return true;
+            }
+
+            var type = ((string)data["type"] ?? string.Empty).Trim().ToLowerInvariant();
+            if (type == "music" || type == "video" || type == "hardware" || type == "advertising")
+            {
+                return true;
+            }
+
+            var name = (string)data["name"] ?? string.Empty;
+            return Regex.IsMatch(name, @"\b(soundtrack|ost|original\s+sound\s+track)\b", RegexOptions.IgnoreCase);
         }
 
         private async Task<List<OfficialMediaCandidate>> GetPsnMediaCandidatesAsync(Game game, MediaKind kind, CancellationToken cancelToken)
@@ -718,11 +775,34 @@ namespace MetaDataIAPlugin
 
         private async Task<string> ResolveSteamAppIdAsync(Game game, CancellationToken cancelToken)
         {
-            if (game != null && game.Source != null &&
-                game.Source.Name.IndexOf("steam", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                !string.IsNullOrWhiteSpace(game.GameId))
+            if (game != null && IsSteamLibrarySource(game) &&
+                !string.IsNullOrWhiteSpace(game.GameId) &&
+                Regex.IsMatch(game.GameId.Trim(), @"^\d+$"))
             {
-                return game.GameId;
+                return game.GameId.Trim();
+            }
+
+            var linkedId = ExtractSteamAppIdFromGame(game);
+            if (!string.IsNullOrWhiteSpace(linkedId))
+            {
+                return linkedId;
+            }
+
+            // Numeric GameId is often the Steam AppID even when Source is missing/renamed.
+            // Validate against the store title so GOG/other numeric IDs are not reused blindly.
+            if (game != null &&
+                !string.IsNullOrWhiteSpace(game.GameId) &&
+                Regex.IsMatch(game.GameId.Trim(), @"^\d{3,}$"))
+            {
+                var candidateId = game.GameId.Trim();
+                var data = await GetSteamAppDataAsync(candidateId, cancelToken).ConfigureAwait(false);
+                if (data != null &&
+                    !IsNonGameSteamApp(data) &&
+                    (string.IsNullOrWhiteSpace(game.Name) ||
+                     IsReliableStoreTitleMatch(game.Name, (string)data["name"])))
+                {
+                    return candidateId;
+                }
             }
 
             if (game == null || string.IsNullOrWhiteSpace(game.Name))
@@ -732,22 +812,129 @@ namespace MetaDataIAPlugin
 
             foreach (var title in BuildTitleAliases(game.Name))
             {
-                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) + "&cc=" + Uri.EscapeDataString(GetCountryCode()) + "&l=" + Uri.EscapeDataString(GetStoreLanguage());
+                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) +
+                          "&cc=" + Uri.EscapeDataString(GetCountryCode()) +
+                          "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage());
                 var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
                 var items = json["items"] as JArray;
                 var matches = (items ?? new JArray())
                     .OfType<JObject>()
                     .Select(x => new StoreSearchMatch { Id = ((int?)x["id"] ?? 0).ToString(), Title = (string)x["name"] })
-                    .Where(x => x.Id != "0")
+                    .Where(x => x.Id != "0" && !IsNonGameSteamSearchTitle(x.Title))
                     .ToList();
                 var selected = PickBestMatch(title, matches);
                 if (selected != null)
                 {
-                    return selected.Id;
+                    var data = await GetSteamAppDataAsync(selected.Id, cancelToken).ConfigureAwait(false);
+                    if (data != null && !IsNonGameSteamApp(data))
+                    {
+                        return selected.Id;
+                    }
                 }
             }
 
             return null;
+        }
+
+        private static bool IsSteamLibrarySource(Game game)
+        {
+            if (game == null)
+            {
+                return false;
+            }
+
+            var sourceName = game.Source == null ? string.Empty : game.Source.Name ?? string.Empty;
+            if (sourceName.IndexOf("steam", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            // Playnite Steam library plugin id (stable across installs).
+            return string.Equals(
+                game.PluginId.ToString(),
+                "cb91dfc9-b977-43bf-8e70-55f46e410fab",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsNonGameSteamSearchTitle(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return true;
+            }
+
+            return Regex.IsMatch(
+                title,
+                @"\b(soundtrack|ost|original\s+sound\s+track|trailer|demo|playtest|dedicated\s+server)\b",
+                RegexOptions.IgnoreCase);
+        }
+
+        private static string ExtractSteamAppIdFromGame(Game game)
+        {
+            if (game == null)
+            {
+                return null;
+            }
+
+            if (game.Links != null)
+            {
+                foreach (var link in game.Links)
+                {
+                    if (link == null)
+                    {
+                        continue;
+                    }
+
+                    var fromUrl = ExtractSteamAppIdFromText(link.Url);
+                    if (!string.IsNullOrWhiteSpace(fromUrl))
+                    {
+                        return fromUrl;
+                    }
+
+                    var fromName = ExtractSteamAppIdFromText(link.Name);
+                    if (!string.IsNullOrWhiteSpace(fromName))
+                    {
+                        return fromName;
+                    }
+                }
+            }
+
+            return ExtractSteamAppIdFromText(game.GameId);
+        }
+
+        private static string ExtractSteamAppIdFromText(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var match = Regex.Match(
+                value,
+                @"(?:store\.steampowered\.com/app/|steamcommunity\.com/app/|steamdb\.info/app/|steam://(?:run|rungameid|openurl)/|apps/steam/|/steam/apps/)(\d{3,})",
+                RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
+        public async Task<OfficialStoreMetadata> TryGetSteamContextAsync(Game game, CancellationToken cancelToken)
+        {
+            try
+            {
+                return await GetSteamMetadataAsync(game, cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                if (cancelToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static StoreSearchMatch PickBestMatch(string gameName, List<StoreSearchMatch> matches)
@@ -807,11 +994,66 @@ namespace MetaDataIAPlugin
             return language.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "en";
         }
 
+        private string GetSteamStoreLanguage()
+        {
+            var code = (GetStoreLanguage() ?? "en").Trim().ToLowerInvariant();
+            switch (code)
+            {
+                case "es": return "spanish";
+                case "en": return "english";
+                case "de": return "german";
+                case "fr": return "french";
+                case "it": return "italian";
+                case "pt": return "portuguese";
+                case "br": return "brazilian";
+                case "ru": return "russian";
+                case "ja": return "japanese";
+                case "ko": return "koreana";
+                case "zh": return "schinese";
+                case "pl": return "polish";
+                case "tr": return "turkish";
+                case "nl": return "dutch";
+                case "sv": return "swedish";
+                case "no": return "norwegian";
+                case "da": return "danish";
+                case "fi": return "finnish";
+                case "cs": return "czech";
+                case "hu": return "hungarian";
+                case "ro": return "romanian";
+                case "th": return "thai";
+                case "vi": return "vietnamese";
+                case "uk": return "ukrainian";
+                default: return string.IsNullOrWhiteSpace(code) ? "english" : code;
+            }
+        }
+
         private string GetCountryCode()
         {
             var language = settings == null ? "en" : settings.Language ?? "en";
             var parts = language.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Length > 1 ? parts[1].ToLowerInvariant() : "us";
+            if (parts.Length > 1)
+            {
+                return parts[1].ToLowerInvariant();
+            }
+
+            var lang = parts.Length > 0 ? parts[0].ToLowerInvariant() : "en";
+            switch (lang)
+            {
+                case "es": return "es";
+                case "en": return "us";
+                case "de": return "de";
+                case "fr": return "fr";
+                case "it": return "it";
+                case "pt": return "br";
+                case "br": return "br";
+                case "ru": return "ru";
+                case "ja": return "jp";
+                case "ko": return "kr";
+                case "zh": return "cn";
+                case "pl": return "pl";
+                case "tr": return "tr";
+                default: return "us";
+            }
         }
 
         private string GetPsnCulture()
@@ -848,6 +1090,101 @@ namespace MetaDataIAPlugin
             }
 
             return match.Success ? WebUtility.HtmlDecode(match.Groups["value"].Value) : null;
+        }
+
+        private string ReadPcRequirement(JToken requirements, string key)
+        {
+            if (requirements == null || requirements.Type != JTokenType.Object || string.IsNullOrWhiteSpace(key))
+            {
+                return string.Empty;
+            }
+
+            return FormatSystemRequirements((string)requirements[key], GetStoreLanguage());
+        }
+
+        internal static string FormatSystemRequirements(string html)
+        {
+            return FormatSystemRequirements(html, "en");
+        }
+
+        internal static string FormatSystemRequirements(string html, string language)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var text = WebUtility.HtmlDecode(html);
+            text = Regex.Replace(text, @"</li\s*>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"</p\s*>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, @"<[^>]+>", " ");
+            var lines = Regex.Split(text.Replace("\r", string.Empty), @"\n+")
+                .Select(x => Regex.Replace(x ?? string.Empty, @"\s+", " ").Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(StripSystemRequirementHeading)
+                .Select(x => NormalizeSystemRequirementLine(x, language))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            return string.Join("\n", lines);
+        }
+
+        internal static string NormalizeSystemRequirementsText(string value, string language)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var lines = Regex.Split(value.Replace("\r", string.Empty), @"\n+")
+                .Select(x => NormalizeSystemRequirementLine(x, language))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            return string.Join("\n", lines);
+        }
+
+        private static string NormalizeSystemRequirementLine(string line, string language)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return string.Empty;
+            }
+
+            line = WebUtility.HtmlDecode(line).Trim();
+            line = line.Replace("\u00a0", " ");
+            line = Regex.Replace(line, @"[•·∙]+", " ");
+            line = Regex.Replace(line, @"\s+", " ").Trim();
+            var separator = line.IndexOf(':');
+            if (separator <= 0 || separator >= line.Length - 1)
+            {
+                return line.Trim(' ', '*', '-', '–');
+            }
+
+            var rawLabel = line.Substring(0, separator).Trim();
+            var detail = line.Substring(separator + 1).Trim().TrimStart('*', ' ');
+            rawLabel = Regex.Replace(rawLabel, @"[\s\*†‡※]+$", string.Empty).Trim();
+            rawLabel = rawLabel.Trim('*', ' ');
+            if (string.IsNullOrWhiteSpace(rawLabel) || string.IsNullOrWhiteSpace(detail))
+            {
+                return line.Trim(' ', '*', '-', '–');
+            }
+
+            return rawLabel + ": " + detail;
+        }
+
+        private static string StripSystemRequirementHeading(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return string.Empty;
+            }
+
+            var stripped = Regex.Replace(
+                line.Trim(),
+                @"^(Minimum|Recommended|M[ií]nimo|Recomendado|Minimale|Empfohlen|Minimi|Raccomandati)\s*:?\s*",
+                string.Empty,
+                RegexOptions.IgnoreCase);
+            return stripped.Trim();
         }
 
         private static string CleanHtml(string value)
@@ -1110,14 +1447,35 @@ namespace MetaDataIAPlugin
             using (var request = new HttpRequestMessage(HttpMethod.Get, url))
             {
                 request.Headers.UserAgent.ParseAdd("MetaDataIAPlugin/1.0");
-                using (var response = await Client.SendAsync(request, cancelToken).ConfigureAwait(false))
+                // Helps Steam appdetails succeed for age-gated titles in some regions.
+                if (url.IndexOf("steampowered.com", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    if (!response.IsSuccessStatusCode)
+                    request.Headers.TryAddWithoutValidation(
+                        "Cookie",
+                        "birthtime=0; lastagecheckage=1-January-1990; mature_content=1; wants_mature_content=1");
+                }
+
+                try
+                {
+                    using (var response = await Client.SendAsync(request, cancelToken).ConfigureAwait(false))
                     {
-                        return string.Empty;
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            return string.Empty;
+                        }
+
+                        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        throw;
                     }
 
-                    return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    // HttpClient timeouts surface as TaskCanceledException; treat as empty store data.
+                    return string.Empty;
                 }
             }
         }

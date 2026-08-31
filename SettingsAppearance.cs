@@ -222,20 +222,41 @@ namespace MetaDataIAPlugin
         /// </summary>
         public static void ApplyWindow(Window window, string preset)
         {
+            ApplyWindow(window, preset, true);
+        }
+
+        public static void ApplyWindow(Window window, string preset, bool paintWindowSurface)
+        {
+            ApplyWindow(window, preset, paintWindowSurface, true);
+        }
+
+        public static void ApplyWindow(Window window, string preset, bool paintWindowSurface, bool mergeControlStyles)
+        {
             if (window == null)
             {
                 return;
             }
 
             var palette = GetPalette(preset);
-            EnsureChromeResources(window.Resources);
+            if (mergeControlStyles)
+            {
+                EnsureChromeResources(window.Resources);
+            }
             ApplyBrushes(window.Resources, palette);
             var bg = BrushOf(palette.Bg);
             var text = BrushOf(palette.Text);
-            window.Background = bg;
             window.Foreground = text;
             window.SetValue(TextElement.ForegroundProperty, text);
-            TrySetWindowTitleBarTheme(window, palette.IsLight);
+            window.Background = bg;
+            window.BorderBrush = BrushOf(palette.Border);
+            ApplyNativeFrame(window, palette);
+            EventHandler sourceInitialized = null;
+            sourceInitialized = (s, e) =>
+            {
+                window.SourceInitialized -= sourceInitialized;
+                ApplyNativeFrame(window, palette);
+            };
+            window.SourceInitialized += sourceInitialized;
 
             var contentControl = window.Content as Control;
             if (contentControl != null)
@@ -262,7 +283,28 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private static void EnsureChromeResources(ResourceDictionary resources)
+        public static void RefreshPlayniteTitleBar(Window window)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            TryPaintWindowTitleTexts(window, window.Content as DependencyObject, window.Foreground);
+        }
+
+        public static void ApplyPresetResources(ResourceDictionary resources, string preset)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            EnsureChromeResources(resources);
+            ApplyBrushes(resources, GetPalette(Normalize(preset)));
+        }
+
+        public static void EnsureChromeResources(ResourceDictionary resources)
         {
             if (resources == null)
             {
@@ -317,7 +359,8 @@ namespace MetaDataIAPlugin
 
             window.Background = bg;
             window.Foreground = text;
-            TrySetWindowTitleBarTheme(window, palette.IsLight);
+            window.BorderBrush = border;
+            ApplyNativeFrame(window, palette);
             TryPaintWindowTitleTexts(window, settingsRoot, text);
 
             var contentControl = window.Content as Control;
@@ -457,6 +500,8 @@ namespace MetaDataIAPlugin
             SetBrush(resources, "ControlHoverBackgroundBrush", palette.Hover);
             SetBrush(resources, "HoverBrush", palette.Hover);
             SetBrush(resources, "PopupBackgroundBrush", palette.Bg);
+            SetBrush(resources, "WindowBackgroundBrush", palette.Bg);
+            SetBrush(resources, "StandardWindowBackgroundBrush", palette.Bg);
             SetBrush(resources, "PositiveRatingBrush", palette.Success);
             SetBrush(resources, "WarningBrush", palette.Warning);
 
@@ -632,25 +677,40 @@ namespace MetaDataIAPlugin
             button.Background = primary ? (Brush)state[2] : (Brush)state[1];
         }
 
-        private static void TrySetWindowTitleBarTheme(Window window, bool lightChrome)
+        private static void ApplyNativeFrame(Window window, Palette palette)
         {
+            if (window == null || palette == null)
+            {
+                return;
+            }
+
             try
             {
                 var helper = new System.Windows.Interop.WindowInteropHelper(window);
-                var hwnd = helper.EnsureHandle();
+                var hwnd = helper.Handle != IntPtr.Zero ? helper.Handle : helper.EnsureHandle();
                 if (hwnd == IntPtr.Zero)
                 {
                     return;
                 }
 
-                // DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Win10 1903+)
-                var useDark = lightChrome ? 0 : 1;
+                var useDark = palette.IsLight ? 0 : 1;
+                DwmSetWindowAttribute(hwnd, 19, ref useDark, sizeof(int));
                 DwmSetWindowAttribute(hwnd, 20, ref useDark, sizeof(int));
+                var caption = ToColorRef(palette.Bg);
+                var border = ToColorRef(palette.Border);
+                var text = ToColorRef(palette.Text);
+                DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int));
+                DwmSetWindowAttribute(hwnd, 34, ref border, sizeof(int));
+                DwmSetWindowAttribute(hwnd, 36, ref text, sizeof(int));
             }
             catch
             {
-                // Title bar theming is best-effort across Windows builds.
             }
+        }
+
+        private static int ToColorRef(Color color)
+        {
+            return color.R | (color.G << 8) | (color.B << 16);
         }
 
         private static void TryPaintWindowTitleTexts(Window window, DependencyObject settingsRoot, Brush text)

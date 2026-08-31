@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -12,6 +13,8 @@ namespace MetaDataIAPlugin
         private static IPlayniteAPI playniteApi;
         private static readonly ILogger logger = LogManager.GetLogger();
         private static ResourceDictionary englishFallbackResources;
+        private static readonly Dictionary<string, ResourceDictionary> languageResources =
+            new Dictionary<string, ResourceDictionary>(StringComparer.OrdinalIgnoreCase);
 
         public static void Initialize(IPlayniteAPI api)
         {
@@ -30,11 +33,26 @@ namespace MetaDataIAPlugin
                 : value;
         }
 
+        public static string GetStringForLanguage(string key, string language, string fallback = null)
+        {
+            var resources = LoadLanguageResources(language);
+            if (resources != null && resources.Contains(key))
+            {
+                var localized = resources[key];
+                if (localized != null && !string.IsNullOrWhiteSpace(localized.ToString()))
+                {
+                    return localized.ToString();
+                }
+            }
+
+            return GetString(key, fallback);
+        }
+
         private static void EnsureEnglishFallbackResources()
         {
             try
             {
-                englishFallbackResources = LoadEnglishFallbackResources();
+                englishFallbackResources = LoadLocalizationFile("en_US.xaml");
                 if (englishFallbackResources == null || Application.Current == null || Application.Current.Resources == null)
                 {
                     return;
@@ -59,15 +77,51 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private static ResourceDictionary LoadEnglishFallbackResources()
+        private static ResourceDictionary LoadLanguageResources(string language)
+        {
+            var fileName = LocalizationFileName(language);
+            ResourceDictionary cached;
+            if (languageResources.TryGetValue(fileName, out cached))
+            {
+                return cached;
+            }
+
+            var loaded = LoadLocalizationFile(fileName);
+            languageResources[fileName] = loaded;
+            return loaded;
+        }
+
+        private static string LocalizationFileName(string language)
+        {
+            var code = (language ?? string.Empty).Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault() ?? string.Empty;
+            code = code.Trim().ToLowerInvariant();
+            switch (code)
+            {
+                case "es": return "es_ES.xaml";
+                case "de": return "de_DE.xaml";
+                case "fr": return "fr_FR.xaml";
+                case "it": return "it_IT.xaml";
+                case "pt":
+                case "br": return "pt_BR.xaml";
+                case "ru": return "ru_RU.xaml";
+                case "pl": return "pl_PL.xaml";
+                case "ja": return "ja_JP.xaml";
+                case "ko": return "ko_KR.xaml";
+                case "zh": return "zh_CN.xaml";
+                default: return "en_US.xaml";
+            }
+        }
+
+        private static ResourceDictionary LoadLocalizationFile(string fileName)
         {
             var assemblyDirectory = Path.GetDirectoryName(typeof(PluginLocalization).Assembly.Location);
-            if (string.IsNullOrWhiteSpace(assemblyDirectory))
+            if (string.IsNullOrWhiteSpace(assemblyDirectory) || string.IsNullOrWhiteSpace(fileName))
             {
                 return null;
             }
 
-            var path = Path.Combine(assemblyDirectory, "Localization", "en_US.xaml");
+            var path = Path.Combine(assemblyDirectory, "Localization", fileName);
             if (!File.Exists(path))
             {
                 return null;
@@ -77,6 +131,11 @@ namespace MetaDataIAPlugin
             {
                 return XamlReader.Load(stream) as ResourceDictionary;
             }
+        }
+
+        private static ResourceDictionary LoadEnglishFallbackResources()
+        {
+            return LoadLocalizationFile("en_US.xaml");
         }
 
         private static string GetEnglishFallbackString(string key)

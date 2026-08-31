@@ -638,4 +638,75 @@
         </Setter>
     </Style>
 
+    <Style x:Key="NarianTopTabItem" TargetType="TabItem">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="MinWidth" Value="148"/>
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="ClipToBounds" Value="False"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Grid ClipToBounds="False" TextElement.Foreground="{TemplateBinding Foreground}">
+                        <Rectangle x:Name="TabFill" RadiusX="4" RadiusY="4" Fill="Transparent"/>
+                        <ContentPresenter x:Name="Header" ContentSource="Header"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Margin="16,8"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource Narian.Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="TabFill" Property="Fill" Value="{DynamicResource Narian.Selected}"/>
+                            <Setter TargetName="Header" Property="TextElement.FontWeight" Value="SemiBold"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Narian.Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="NarianTopTabs" TargetType="TabControl">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource NarianTopTabItem}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Background="{DynamicResource Narian.Surface}" CornerRadius="4"
+                                Padding="6" ClipToBounds="False"
+                                BorderThickness="0"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <WrapPanel x:Name="HeaderPanel" IsItemsHost="True"/>
+                        </Border>
+                        <Grid Grid.Row="1" Margin="0,16,0,0" Background="Transparent">
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              ContentSource="SelectedContent"
+                                              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                        </Grid>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

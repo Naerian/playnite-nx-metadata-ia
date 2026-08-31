@@ -192,6 +192,15 @@ namespace MetaDataIAPlugin
                 {
                     response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    throw CreateConnectionException(new TimeoutException("The provider request timed out."));
+                }
                 catch (HttpRequestException ex)
                 {
                     throw CreateConnectionException(ex);
@@ -215,6 +224,7 @@ namespace MetaDataIAPlugin
         {
             ApplyStrictFactualGuard(result, game);
             ApplyTrustedFactualFields(result, game);
+            EnsureSystemRequirements(result, game);
             result.Normalize(settings, game);
             ApplyStrictFactualGuard(result, game);
             AttachProvenance(result, game);
@@ -287,6 +297,114 @@ namespace MetaDataIAPlugin
             }
 
             result.Series = ResolveKnownSeries(result.Series, game, settings.MaxSeries);
+
+            ApplyOfficialSystemRequirements(result);
+        }
+
+        private void EnsureSystemRequirements(AiMetadataResult result, Game game)
+        {
+            if (result == null || game == null)
+            {
+                return;
+            }
+
+            ApplyOfficialSystemRequirements(result);
+            if (!TemplateNeedsSystemRequirements(ExtractTemplateTokens(settings.ResolveTemplate(game))))
+            {
+                NormalizeResultSystemRequirements(result);
+                return;
+            }
+
+            var needsMinimum = string.IsNullOrWhiteSpace(result.MinimumSystemRequirements);
+            var needsRecommended = string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements);
+            if (!needsMinimum && !needsRecommended)
+            {
+                NormalizeResultSystemRequirements(result);
+                return;
+            }
+
+            OfficialStoreMetadata steam = null;
+            try
+            {
+                steam = new OfficialStoreDataService(settings)
+                    .TryGetSteamContextAsync(game, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+            catch
+            {
+                steam = null;
+            }
+
+            if (steam == null)
+            {
+                return;
+            }
+
+            if (needsMinimum && !string.IsNullOrWhiteSpace(steam.MinimumSystemRequirements))
+            {
+                result.MinimumSystemRequirements = steam.MinimumSystemRequirements;
+            }
+
+            if (needsRecommended && !string.IsNullOrWhiteSpace(steam.RecommendedSystemRequirements))
+            {
+                result.RecommendedSystemRequirements = steam.RecommendedSystemRequirements;
+            }
+
+            NormalizeResultSystemRequirements(result);
+
+            if (officialContextForCurrentRequest == null)
+            {
+                officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
+            }
+
+            if (!officialContextForCurrentRequest.Any(x =>
+                    x != null &&
+                    string.Equals(x.SourceName, OfficialStoreDataService.SourceSteamOfficial, StringComparison.OrdinalIgnoreCase) &&
+                    (!string.IsNullOrWhiteSpace(x.MinimumSystemRequirements) || !string.IsNullOrWhiteSpace(x.RecommendedSystemRequirements))))
+            {
+                steam.IsExactMatch = true;
+                officialContextForCurrentRequest.Add(steam);
+            }
+        }
+
+        private void ApplyOfficialSystemRequirements(AiMetadataResult result)
+        {
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null)
+                .ToList();
+            if (sources.Count == 0)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(result.MinimumSystemRequirements))
+            {
+                result.MinimumSystemRequirements = sources
+                    .Select(x => x.MinimumSystemRequirements)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements))
+            {
+                result.RecommendedSystemRequirements = sources
+                    .Select(x => x.RecommendedSystemRequirements)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty;
+            }
+
+            NormalizeResultSystemRequirements(result);
+        }
+
+        private void NormalizeResultSystemRequirements(AiMetadataResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            var language = settings == null ? "en" : settings.Language;
+            result.MinimumSystemRequirements = OfficialStoreDataService.NormalizeSystemRequirementsText(result.MinimumSystemRequirements, language);
+            result.RecommendedSystemRequirements = OfficialStoreDataService.NormalizeSystemRequirementsText(result.RecommendedSystemRequirements, language);
         }
 
         private static void DetectListConflict(AiMetadataResult result, string field, IEnumerable<OfficialStoreMetadata> sources, Func<OfficialStoreMetadata, List<string>> selector)
@@ -340,6 +458,22 @@ namespace MetaDataIAPlugin
             AddLinksProvenance(result, game);
             AddTextProvenance(result, game, "releaseDate", result.ReleaseDate, x => x.ReleaseDate, game != null && game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty);
             AddListProvenance(result, game, "series", result.Series, x => x.Series, ExistingNames(game == null ? null : game.Series));
+            if (!string.IsNullOrWhiteSpace(result.MinimumSystemRequirements))
+            {
+                result.Provenance.Add(BuildProvenance(
+                    "min_sys_req",
+                    FindOfficialSource(x => !string.IsNullOrWhiteSpace(x.MinimumSystemRequirements)),
+                    false,
+                    false));
+            }
+            if (!string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements))
+            {
+                result.Provenance.Add(BuildProvenance(
+                    "recommended_sys_req",
+                    FindOfficialSource(x => !string.IsNullOrWhiteSpace(x.RecommendedSystemRequirements)),
+                    false,
+                    false));
+            }
 
             if (settings.GenerateSortingName)
             {
@@ -474,7 +608,27 @@ namespace MetaDataIAPlugin
                 return !string.IsNullOrWhiteSpace(result.Description);
             }
 
+            var generativeTokens = requestedTokens
+                .Where(token => !IsStoreFilledDescriptionToken(token))
+                .ToList();
+            if (generativeTokens.Count > 0)
+            {
+                return generativeTokens.Any(token => HasDescriptionTokenContent(result, token));
+            }
+
             return requestedTokens.Any(token => HasDescriptionTokenContent(result, token));
+        }
+
+        private static bool IsStoreFilledDescriptionToken(string token)
+        {
+            switch ((token ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "min_sys_req":
+                case "recommended_sys_req":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static bool HasDescriptionTokenContent(AiMetadataResult result, string token)
@@ -493,6 +647,8 @@ namespace MetaDataIAPlugin
                 case "similargames": return !string.IsNullOrWhiteSpace(result.SimilarGames);
                 case "notes": return !string.IsNullOrWhiteSpace(result.Notes);
                 case "recommendedfor": return !string.IsNullOrWhiteSpace(result.RecommendedFor);
+                case "min_sys_req": return !string.IsNullOrWhiteSpace(result.MinimumSystemRequirements);
+                case "recommended_sys_req": return !string.IsNullOrWhiteSpace(result.RecommendedSystemRequirements);
                 case "features": return result.Features != null && result.Features.Count > 0;
                 case "similargameslist":
                     return (result.SimilarGamesList != null && result.SimilarGamesList.Count > 0) ||
@@ -542,6 +698,15 @@ namespace MetaDataIAPlugin
                 try
                 {
                     response = await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    throw CreateConnectionException(new TimeoutException("The provider request timed out."));
                 }
                 catch (HttpRequestException ex)
                 {
@@ -657,7 +822,8 @@ namespace MetaDataIAPlugin
             context["requestedDescriptionTokens"] = requestedTokens;
             var trustedContextEnabled = settings.UseOfficialStoreContext ||
                                         settings.UseOriginIntegrationAsAiContext ||
-                                        settings.UseOriginIntegrationForFactualMetadata;
+                                        settings.UseOriginIntegrationForFactualMetadata ||
+                                        TemplateNeedsSystemRequirements(requestedTokens);
             context["officialStoreContextEnabled"] = trustedContextEnabled;
             officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
@@ -692,7 +858,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.UseOfficialStoreContext || NeedsTrustedEnrichment())
+            if (settings.UseOfficialStoreContext || NeedsTrustedEnrichment() || TemplateNeedsSystemRequirements(requestedTokens))
             {
                 var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
                 officialContextForCurrentRequest.AddRange(officialContext);
@@ -754,6 +920,8 @@ namespace MetaDataIAPlugin
                     regions = x.Regions,
                     releaseDate = x.ReleaseDate,
                     series = x.Series,
+                    minimumSystemRequirements = x.MinimumSystemRequirements,
+                    recommendedSystemRequirements = x.RecommendedSystemRequirements,
                     links = x.Links.Select(link => new { name = link.Name, url = link.Url }).ToList()
                 }).ToList();
             }
@@ -768,6 +936,7 @@ namespace MetaDataIAPlugin
                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
                    "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
                    "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
+                   "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, return minimumSystemRequirements and recommendedSystemRequirements as plain text: one requirement per line in the form Label: value. Translate and normalize every user-facing word (labels and boilerplate such as or later, 64-bit, latest update, processor, broadband) into the requested output language. Keep hardware and product names unchanged. Copy only facts present in officialStoreContext.minimumSystemRequirements / recommendedSystemRequirements; never invent specs. If a store list is missing, return an empty string for that field. " +
                    "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
                    "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
                    "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
@@ -792,7 +961,7 @@ namespace MetaDataIAPlugin
                    "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
                    "If fieldsToGenerate.series is true, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
                    "Respond with this exact JSON object shape: " +
-                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"similarGamesList\":[],\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[]} " +
+                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"similarGamesList\":[],\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[],\"minimumSystemRequirements\":\"\",\"recommendedSystemRequirements\":\"\"} " +
                    "Context: " + JsonConvert.SerializeObject(context);
         }
 
@@ -877,12 +1046,20 @@ namespace MetaDataIAPlugin
             fields["links"] = settings.GenerateLinks;
             fields["releaseDate"] = settings.GenerateReleaseDate;
             fields["series"] = settings.GenerateSeries;
+            fields["minimumSystemRequirements"] = ContainsToken(requestedTokens, "min_sys_req");
+            fields["recommendedSystemRequirements"] = ContainsToken(requestedTokens, "recommended_sys_req");
             return fields;
         }
 
         private static bool ContainsToken(IList<string> tokens, string name)
         {
             return tokens != null && tokens.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool TemplateNeedsSystemRequirements(IList<string> requestedTokens)
+        {
+            return ContainsToken(requestedTokens, "min_sys_req") ||
+                   ContainsToken(requestedTokens, "recommended_sys_req");
         }
 
         private List<string> BuildKnownSeriesCandidates(Game game)
@@ -1362,7 +1539,9 @@ namespace MetaDataIAPlugin
                 Categories = List(json, "categories"),
                 ReleaseDate = Text(json, "releaseDate"),
                 Series = List(json, "series", "franchise"),
-                Links = Links(json, "links")
+                Links = Links(json, "links"),
+                MinimumSystemRequirements = Text(json, "minimumSystemRequirements", "min_sys_req"),
+                RecommendedSystemRequirements = Text(json, "recommendedSystemRequirements", "recommended_sys_req")
             };
         }
 
@@ -1412,7 +1591,9 @@ namespace MetaDataIAPlugin
                 Categories = LooseList(content, "categories"),
                 ReleaseDate = LooseText(content, "releaseDate"),
                 Series = LooseList(content, "series", "franchise"),
-                Links = new List<AiMetadataLink>()
+                Links = new List<AiMetadataLink>(),
+                MinimumSystemRequirements = LooseText(content, "minimumSystemRequirements", "min_sys_req"),
+                RecommendedSystemRequirements = LooseText(content, "recommendedSystemRequirements", "recommended_sys_req")
             };
         }
 
@@ -1421,7 +1602,7 @@ namespace MetaDataIAPlugin
             "short", "synopsis", "premise", "gameplay", "tone", "setting", "perspective", "playModes",
             "estimatedLength", "similarGames", "similarGamesList", "notes", "features", "recommendedFor", "genres", "tags",
             "developers", "publishers", "ageRatings", "ageRating", "regions", "region", "categories",
-            "releaseDate", "series", "franchise", "links"
+            "releaseDate", "series", "franchise", "links", "minimumSystemRequirements", "recommendedSystemRequirements", "min_sys_req", "recommended_sys_req"
         };
 
         private static string LooseText(string content, params string[] names)
@@ -1905,12 +2086,12 @@ namespace MetaDataIAPlugin
                 responseText);
         }
 
-        private static Exception CreateConnectionException(HttpRequestException ex)
+        private static Exception CreateConnectionException(Exception ex)
         {
             return new AiProviderException(
-                Loc("MTDA_ErrorProviderConnection", "Could not connect to the configured provider.\n\nCheck that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.\n\nBrief detail: ") + SanitizeForUser(ex.Message),
+                Loc("MTDA_ErrorProviderConnection", "Could not connect to the configured provider.\n\nCheck that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.\n\nBrief detail: ") + SanitizeForUser(ex == null ? string.Empty : ex.Message),
                 true,
-                ex.ToString());
+                ex == null ? string.Empty : ex.ToString());
         }
 
         private bool NeedsTrustedEnrichment()

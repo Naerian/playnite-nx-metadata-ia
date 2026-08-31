@@ -40,6 +40,8 @@ namespace MetaDataIAPlugin
         public string Notes { get; set; }
         public List<string> Features { get; set; }
         public string RecommendedFor { get; set; }
+        public string MinimumSystemRequirements { get; set; }
+        public string RecommendedSystemRequirements { get; set; }
         public List<string> Genres { get; set; }
         public List<string> Tags { get; set; }
         public List<string> Developers { get; set; }
@@ -95,6 +97,8 @@ namespace MetaDataIAPlugin
             }
             Notes = Clean(Notes);
             RecommendedFor = Clean(RecommendedFor);
+            MinimumSystemRequirements = CleanSystemRequirements(MinimumSystemRequirements);
+            RecommendedSystemRequirements = CleanSystemRequirements(RecommendedSystemRequirements);
             Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
                 .Select(CleanFeature)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -193,6 +197,8 @@ namespace MetaDataIAPlugin
         private string BuildDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
             var template = settings.ResolveTemplate(game) ?? string.Empty;
+            // Normalize fullwidth braces that sometimes appear after copy/paste.
+            template = template.Replace('｛', '{').Replace('｝', '}');
             var description = Regex.Replace(template, @"\{feature_N\}", "{feature_1}", RegexOptions.IgnoreCase);
             description = Regex.Replace(description, @"\{similar_game_N\}", "{similar_game_1}", RegexOptions.IgnoreCase);
 
@@ -208,6 +214,8 @@ namespace MetaDataIAPlugin
             description = ReplaceHtmlTextToken(description, "similarGames", SimilarGames);
             description = ReplaceHtmlTextToken(description, "notes", Notes);
             description = ReplaceHtmlTextToken(description, "recommendedFor", RecommendedFor);
+            description = ReplaceSystemRequirementToken(description, "min_sys_req", MinimumSystemRequirements, settings);
+            description = ReplaceSystemRequirementToken(description, "recommended_sys_req", RecommendedSystemRequirements, settings);
 
             description = ReplaceHtmlListToken(description, "genres", Genres);
             description = ReplaceHtmlListToken(description, "tags", Tags);
@@ -236,6 +244,102 @@ namespace MetaDataIAPlugin
             description = Regex.Replace(description, @"\{similar_game_\d+\}", string.Empty, RegexOptions.IgnoreCase);
 
             return description.Trim();
+        }
+
+        private static string ReplaceSystemRequirementToken(string template, string token, string value, MetaDataIASettings settings)
+        {
+            var tokenPattern = Regex.Escape("{" + token + "}");
+            var language = settings == null ? null : settings.Language;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                // Playnite's HTML description view often collapses empty <h3>/<p> blocks, so
+                // leave an explicit placeholder when Steam has no requirements for the game.
+                var placeholder = "<p><em>" + EscapeHtml(EmptySystemRequirementsPlaceholder(token, language)) + "</em></p>";
+                var withParagraph = Regex.Replace(
+                    template,
+                    @"<p\b[^>]*>\s*" + tokenPattern + @"\s*</p>",
+                    match => placeholder,
+                    RegexOptions.IgnoreCase);
+                withParagraph = Regex.Replace(
+                    withParagraph,
+                    @"(?m)^\s*" + tokenPattern + @"\s*$",
+                    match => placeholder,
+                    RegexOptions.IgnoreCase);
+                return Regex.Replace(
+                    withParagraph,
+                    tokenPattern,
+                    match => EscapeHtml(EmptySystemRequirementsPlaceholder(token, language)),
+                    RegexOptions.IgnoreCase);
+            }
+
+            var listHtml = FormatSystemRequirementsHtml(OfficialStoreDataService.NormalizeSystemRequirementsText(value, language));
+            var withList = Regex.Replace(
+                template,
+                @"<p\b[^>]*>\s*" + tokenPattern + @"\s*</p>",
+                match => listHtml,
+                RegexOptions.IgnoreCase);
+            withList = Regex.Replace(
+                withList,
+                @"(?m)^\s*" + tokenPattern + @"\s*$",
+                match => listHtml,
+                RegexOptions.IgnoreCase);
+            return Regex.Replace(withList, tokenPattern, match => listHtml, RegexOptions.IgnoreCase);
+        }
+
+        private static string FormatSystemRequirementsHtml(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var items = Regex.Split(value.Replace("\r", string.Empty), @"\n+")
+                .Select(x => (x ?? string.Empty).Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(FormatSystemRequirementListItem)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            return items.Count == 0
+                ? string.Empty
+                : "<ul>\n" + string.Join("\n", items) + "\n</ul>";
+        }
+
+        private static string FormatSystemRequirementListItem(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return string.Empty;
+            }
+
+            var separator = line.IndexOf(':');
+            if (separator <= 0 || separator >= line.Length - 1)
+            {
+                return "<li>" + EscapeHtml(line.Trim()) + "</li>";
+            }
+
+            var label = line.Substring(0, separator).Trim();
+            var detail = line.Substring(separator + 1).Trim();
+            if (string.IsNullOrWhiteSpace(label) || string.IsNullOrWhiteSpace(detail))
+            {
+                return "<li>" + EscapeHtml(line.Trim()) + "</li>";
+            }
+
+            return "<li><strong>" + EscapeHtml(label) + ":</strong> " + EscapeHtml(detail) + "</li>";
+        }
+
+        private static string EmptySystemRequirementsPlaceholder(string token, string language)
+        {
+            var recommended = string.Equals(token, "recommended_sys_req", StringComparison.OrdinalIgnoreCase);
+            return recommended
+                ? PluginLocalization.GetStringForLanguage(
+                    "MTDA_SysReqRecommendedEmpty",
+                    language,
+                    "No recommended PC system requirements were found on Steam for this game.")
+                : PluginLocalization.GetStringForLanguage(
+                    "MTDA_SysReqMinimumEmpty",
+                    language,
+                    "No minimum PC system requirements were found on Steam for this game.");
         }
 
         private static string ReplaceHtmlTextToken(string template, string token, string value)
@@ -337,6 +441,20 @@ namespace MetaDataIAPlugin
             return EscapeHtml(value.Replace("\r", string.Empty).Trim())
                 .Replace("\n\n", "<br/><br/>")
                 .Replace("\n", "<br/>");
+        }
+
+        private static string CleanSystemRequirements(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var lines = Regex.Split(value.Replace("\r", string.Empty), @"\n+")
+                .Select(x => (x ?? string.Empty).Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            return string.Join("\n", lines);
         }
 
         private static string Clean(string value)
