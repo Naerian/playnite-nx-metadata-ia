@@ -107,6 +107,12 @@ namespace MetaDataIAPlugin
 
         public async Task<List<OfficialStoreMetadata>> GetOfficialContextsAsync(Game game, CancellationToken cancelToken)
         {
+            List<OfficialStoreMetadata> cached;
+            if (OfficialStoreContextCache.TryGetOfficial(game, GetStoreLanguage(), out cached))
+            {
+                return cached;
+            }
+
             var result = new List<OfficialStoreMetadata>();
             foreach (var source in GetOfficialContextSourceOrder(game))
             {
@@ -133,6 +139,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
+            OfficialStoreContextCache.SetOfficial(game, GetStoreLanguage(), result);
             return result;
         }
 
@@ -255,6 +262,12 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetSteamMetadataAsync(Game game, CancellationToken cancelToken)
         {
+            OfficialStoreMetadata cached;
+            if (OfficialStoreContextCache.TryGetSteam(game, GetStoreLanguage(), out cached))
+            {
+                return cached;
+            }
+
             var appId = await ResolveSteamAppIdAsync(game, cancelToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(appId))
             {
@@ -267,7 +280,7 @@ namespace MetaDataIAPlugin
                 return null;
             }
 
-            return new OfficialStoreMetadata
+            var metadata = new OfficialStoreMetadata
             {
                 SourceName = SourceSteamOfficial,
                 StoreUrl = "https://store.steampowered.com/app/" + appId,
@@ -280,6 +293,8 @@ namespace MetaDataIAPlugin
                 MinimumSystemRequirements = ReadPcRequirement(data["pc_requirements"], "minimum"),
                 RecommendedSystemRequirements = ReadPcRequirement(data["pc_requirements"], "recommended")
             };
+            OfficialStoreContextCache.SetSteam(game, GetStoreLanguage(), metadata);
+            return metadata;
         }
 
         private async Task<JObject> GetSteamAppDataAsync(string appId, CancellationToken cancelToken)

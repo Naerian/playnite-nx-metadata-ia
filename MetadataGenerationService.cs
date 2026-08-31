@@ -155,10 +155,15 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
         {
+            return await SendOpenAICompatibleRequestAsync(userPrompt, SupportsJsonObjectResponse(), cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, bool jsonObject, CancellationToken cancellationToken)
+        {
             var request = JObject.FromObject(new
             {
                 model = settings.Model,
-                max_tokens = 4096,
+                max_tokens = ResolveCompletionMaxTokens(),
                 messages = new[]
                 {
                     new
@@ -176,6 +181,11 @@ namespace MetaDataIAPlugin
             if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
             {
                 request["temperature"] = 0.0;
+            }
+
+            if (jsonObject)
+            {
+                request["response_format"] = JObject.FromObject(new { type = "json_object" });
             }
 
             using (var client = new HttpClient())
@@ -213,6 +223,11 @@ namespace MetaDataIAPlugin
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    if (jsonObject && (int)response.StatusCode == 400)
+                    {
+                        return await SendOpenAICompatibleRequestAsync(userPrompt, false, cancellationToken).ConfigureAwait(false);
+                    }
+
                     throw CreateProviderException((int)response.StatusCode, responseText);
                 }
 
@@ -611,10 +626,10 @@ namespace MetaDataIAPlugin
                 return await SendAnthropicTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
             }
 
-            return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
+            return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, SupportsJsonObjectResponse(), cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> SendOpenAICompatibleTextAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
+        private async Task<string> SendOpenAICompatibleTextAsync(string systemPrompt, string userPrompt, int maxTokens, bool jsonObject, CancellationToken cancellationToken)
         {
             var request = JObject.FromObject(new
             {
@@ -629,6 +644,11 @@ namespace MetaDataIAPlugin
             if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
             {
                 request["temperature"] = 0.0;
+            }
+
+            if (jsonObject)
+            {
+                request["response_format"] = JObject.FromObject(new { type = "json_object" });
             }
 
             using (var client = new HttpClient())
@@ -664,6 +684,11 @@ namespace MetaDataIAPlugin
                 var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
+                    if (jsonObject && (int)response.StatusCode == 400)
+                    {
+                        return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, false, cancellationToken).ConfigureAwait(false);
+                    }
+
                     throw CreateProviderException((int)response.StatusCode, responseText);
                 }
 
@@ -989,7 +1014,7 @@ namespace MetaDataIAPlugin
             var request = new
             {
                 model = settings.Model,
-                max_tokens = 4096,
+                max_tokens = ResolveCompletionMaxTokens(),
                 temperature = 0.0,
                 system = BuildSystemPrompt(),
                 messages = new[]
@@ -1109,7 +1134,40 @@ namespace MetaDataIAPlugin
                    "When playniteLibraryVocabulary lists values for a field, that list is the only allowed vocabulary for that field: copy those exact spellings, do not translate them, and skip items that do not fit. " +
                    "Never rewrite list labels from one natural language into another after choosing them. " +
                    "Your job is to normalize and structure provided facts, not to invent missing metadata. " +
-                   "Prioritize factual accuracy over filling every field. If a fact is uncertain, leave that field empty.";
+                   "Prioritize factual accuracy over filling every field. If a fact is uncertain, leave that field empty. " +
+                   "Respond with a JSON object that contains only the keys listed in jsonShape. Do not add keys that are absent from jsonShape. " +
+                   "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms or the provided game identity. similarGamesList is the exception: when those tokens are requested, comparable well-known game names are allowed even if they are not listed in officialStoreContext. " +
+                   "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative: do not guess developers, publishers, age ratings, regions, links, release-specific features, platform capabilities or store-specific claims. Leave uncertain fields empty. " +
+                   "Respect tone, length, tokenLengths, blacklist and prefixes. " +
+                   "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
+                   "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
+                   "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
+                   "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
+                   "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, do not return minimumSystemRequirements or recommendedSystemRequirements. The plugin copies store facts and localizes those lines in a dedicated step. Do not invent hardware specs. " +
+                   "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
+                   "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
+                   "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
+                   "Inside JSON strings, never use raw line breaks; always use escaped \\n or \\n\\n. " +
+                   "Each paragraph must be substantial, not a single sentence, except fields configured as Short. " +
+                   "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
+                   "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
+                   "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
+                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games when those fields are not locked. If both are empty for a field and playniteLibraryVocabulary does not lock it, create stable terms directly in the requested output language and reuse the same wording consistently. " +
+                   "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. Locked fields override localVocabulary and canonicalTerms. " +
+                   "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
+                   "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
+                   "If fieldsToGenerate includes links, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
+                   "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
+                   "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
+                   "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
+                   "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
+                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
+                   "Developers must contain only the main credited developer studio for the base game. Publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty. " +
+                   "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
+                   "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
+                   "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
+                   "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
+                   "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant.";
         }
 
         private async Task<string> BuildUserPromptAsync(Game game, CancellationToken cancellationToken)
@@ -1127,10 +1185,13 @@ namespace MetaDataIAPlugin
             context["tokenLengths"] = BuildTokenLengths();
             context["strictCompanyAgeRegion"] = settings.StrictCompanyAgeRegion;
             var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
-            context["fieldsToGenerate"] = BuildFieldsToGenerate(requestedTokens);
+            var fieldsToGenerate = BuildFieldsToGenerate(requestedTokens);
+            context["fieldsToGenerate"] = fieldsToGenerate
+                .Where(x => x.Value)
+                .ToDictionary(x => x.Key, x => true, StringComparer.OrdinalIgnoreCase);
+            context["jsonShape"] = BuildJsonShape(requestedTokens, fieldsToGenerate);
             context["maxDevelopers"] = settings.MaxDevelopers;
             context["maxPublishers"] = settings.MaxPublishers;
-            context["companyPolicy"] = "developers must contain only the main credited developer studio for the base game. publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty.";
             context["canonicalTerms"] = ExcludePreferExistingFields(BuildCanonicalTerms());
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
             context["localVocabulary"] = ExcludePreferExistingFields(settings.GetVocabularyTerms(settings.Language));
@@ -1246,42 +1307,8 @@ namespace MetaDataIAPlugin
                 }).ToList();
             }
 
-            return "Generate normalized metadata for this game. " +
-                   "The requested output language is " + TargetLanguageName(settings.Language) + " (" + settings.Language + "). Every generated value must be in that language unless it is a proper noun, company name, official rating name, URL or platform/store brand. " +
-                   "Respect fieldsToGenerate: if a field is false, return an empty string or empty array for that field. " +
-                   "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms or the provided game identity. similarGamesList is the exception: when those tokens are requested, comparable well-known game names are allowed even if they are not listed in officialStoreContext. " +
-                   "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative: do not guess developers, publishers, age ratings, regions, links, release-specific features, platform capabilities or store-specific claims. Leave uncertain fields empty. " +
-                   "Respect tone, length, tokenLengths, blacklist and prefixes. " +
-                   "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
-                   "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
-                   "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
-                   "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
-                   "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, leave minimumSystemRequirements and recommendedSystemRequirements as empty strings. The plugin copies store facts and localizes those lines in a dedicated step. Do not invent hardware specs. " +
-                   "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
-                   "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
-                   "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
-                   "Inside JSON strings, never use raw line breaks; always use escaped \\n or \\n\\n. " +
-                   "Each paragraph must be substantial, not a single sentence, except fields configured as Short. " +
-                   "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
-                   "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
-                   "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
-                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games when those fields are not locked. If both are empty for a field and playniteLibraryVocabulary does not lock it, create stable terms directly in the requested output language and reuse the same wording consistently. " +
-                   "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. Locked fields override localVocabulary and canonicalTerms. " +
-                   "If fieldsToGenerate.features is true, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
-                   "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
-                   "If fieldsToGenerate.links is true, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
-                   "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
-                   "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
-                   "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
-                   "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
-                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
-                   "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
-                   "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
-                   "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
-                   "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
-                   "If fieldsToGenerate.series is true, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
-                   "Respond with this exact JSON object shape: " +
-                   "{\"short\":\"\",\"synopsis\":\"\",\"premise\":\"\",\"gameplay\":\"\",\"tone\":\"\",\"setting\":\"\",\"perspective\":\"\",\"playModes\":\"\",\"estimatedLength\":\"\",\"similarGames\":\"\",\"similarGamesList\":[],\"notes\":\"\",\"features\":[],\"recommendedFor\":\"\",\"genres\":[],\"tags\":[],\"developers\":[],\"publishers\":[],\"ageRatings\":[],\"regions\":[],\"categories\":[],\"releaseDate\":\"\",\"series\":[],\"links\":[],\"minimumSystemRequirements\":\"\",\"recommendedSystemRequirements\":\"\"} " +
+            return "Generate normalized metadata for this game. The requested output language is " +
+                   TargetLanguageName(settings.Language) + " (" + settings.Language + "). " +
                    "Context: " + JsonConvert.SerializeObject(context);
         }
 
@@ -1369,6 +1396,104 @@ namespace MetaDataIAPlugin
             fields["minimumSystemRequirements"] = ContainsToken(requestedTokens, "min_sys_req");
             fields["recommendedSystemRequirements"] = ContainsToken(requestedTokens, "recommended_sys_req");
             return fields;
+        }
+
+        private static string BuildJsonShape(IList<string> requestedTokens, Dictionary<string, bool> fields)
+        {
+            var parts = new List<string>();
+            AddShapeKey(parts, requestedTokens, "short", "\"\"");
+            AddShapeKey(parts, requestedTokens, "synopsis", "\"\"");
+            AddShapeKey(parts, requestedTokens, "premise", "\"\"");
+            AddShapeKey(parts, requestedTokens, "gameplay", "\"\"");
+            AddShapeKey(parts, requestedTokens, "tone", "\"\"");
+            AddShapeKey(parts, requestedTokens, "setting", "\"\"");
+            AddShapeKey(parts, requestedTokens, "perspective", "\"\"");
+            AddShapeKey(parts, requestedTokens, "playModes", "\"\"");
+            AddShapeKey(parts, requestedTokens, "estimatedLength", "\"\"");
+            AddShapeKey(parts, requestedTokens, "similarGames", "\"\"");
+            AddShapeKey(parts, requestedTokens, "notes", "\"\"");
+            AddShapeKey(parts, requestedTokens, "recommendedFor", "\"\"");
+            if (ContainsToken(requestedTokens, "similarGames") ||
+                ContainsToken(requestedTokens, "similarGamesList") ||
+                requestedTokens.Any(IsIndexedSimilarGameToken))
+            {
+                parts.Add("\"similarGamesList\":[]");
+            }
+
+            if (FieldEnabled(fields, "features") || ContainsToken(requestedTokens, "features") || requestedTokens.Any(IsIndexedFeatureToken))
+            {
+                parts.Add("\"features\":[]");
+            }
+
+            AddFieldShape(parts, fields, "genres", "[]");
+            AddFieldShape(parts, fields, "tags", "[]");
+            AddFieldShape(parts, fields, "developers", "[]");
+            AddFieldShape(parts, fields, "publishers", "[]");
+            AddFieldShape(parts, fields, "ageRatings", "[]");
+            AddFieldShape(parts, fields, "regions", "[]");
+            AddFieldShape(parts, fields, "categories", "[]");
+            AddFieldShape(parts, fields, "links", "[]");
+            AddFieldShape(parts, fields, "releaseDate", "\"\"");
+            AddFieldShape(parts, fields, "series", "[]");
+            if (parts.Count == 0)
+            {
+                parts.Add("\"short\":\"\"");
+            }
+
+            return "{" + string.Join(",", parts) + "}";
+        }
+
+        private static void AddShapeKey(List<string> parts, IList<string> requestedTokens, string token, string emptyJson)
+        {
+            if (ContainsToken(requestedTokens, token))
+            {
+                parts.Add("\"" + token + "\":" + emptyJson);
+            }
+        }
+
+        private static void AddFieldShape(List<string> parts, Dictionary<string, bool> fields, string name, string emptyJson)
+        {
+            if (FieldEnabled(fields, name))
+            {
+                parts.Add("\"" + name + "\":" + emptyJson);
+            }
+        }
+
+        private static bool FieldEnabled(Dictionary<string, bool> fields, string name)
+        {
+            bool enabled;
+            return fields != null && fields.TryGetValue(name, out enabled) && enabled;
+        }
+
+        private int ResolveCompletionMaxTokens()
+        {
+            var lengths = new[]
+            {
+                NormalizeLengthForPrompt(settings.Length),
+                ResolveTokenLength(settings.OverrideSynopsisLength, settings.SynopsisLength),
+                ResolveTokenLength(settings.OverrideShortLength, settings.ShortLength)
+            };
+            if (lengths.Any(x => string.Equals(x, "Extra long", StringComparison.OrdinalIgnoreCase)))
+            {
+                return 4096;
+            }
+
+            if (lengths.Any(x => string.Equals(x, "Long", StringComparison.OrdinalIgnoreCase)))
+            {
+                return 3072;
+            }
+
+            return 2560;
+        }
+
+        private bool SupportsJsonObjectResponse()
+        {
+            var preset = settings.ProviderPreset;
+            return preset == MetaDataIASettings.ProviderOpenAI ||
+                   preset == MetaDataIASettings.ProviderGemini ||
+                   preset == MetaDataIASettings.ProviderGroq ||
+                   preset == MetaDataIASettings.ProviderMistral ||
+                   preset == MetaDataIASettings.ProviderCerebras;
         }
 
         private static bool ContainsToken(IList<string> tokens, string name)

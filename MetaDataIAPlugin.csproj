@@ -74,6 +74,7 @@
     <Compile Include="MetadataTrustWindows.cs" />
     <Compile Include="MediaGenerationService.cs" />
     <Compile Include="MediaStorageCleanupService.cs" />
+    <Compile Include="OfficialStoreContextCache.cs" />
     <Compile Include="OfficialStoreDataService.cs" />
     <Compile Include="PlayniteIntegrationService.cs" />
     <Compile Include="ProviderUsageService.cs" />

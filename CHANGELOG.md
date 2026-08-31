@@ -1,7 +1,8 @@
 # Changelog
 
 ## 1.4.16 — unpublished
-- System requirements are copied from the store, then localized in a dedicated AI pass (labels and boilerplate only). The description HTML is rebuilt after that pass. Invalid or failed localization leaves a placeholder instead of English store text.
+- System requirements are copied from the store, then localized in a dedicated AI pass. The description HTML is rebuilt after that pass.
+- Faster metadata generation: session cache for store context, smaller per-game prompts, JSON object mode on supported cloud providers, and generous max_tokens by length.
 
 ## 1.4.15 — 2026-08-31
 - System requirement tokens {min_sys_req} / {recommended_sys_req} filled from Steam pc_requirements (not AI).
