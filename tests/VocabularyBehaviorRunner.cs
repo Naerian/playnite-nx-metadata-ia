@@ -47,7 +47,7 @@ internal static class VocabularyBehaviorRunner
         result.Normalize(settings, new Game { Name = "Test Game" });
 
         AssertEqual("en genres stay English", "Action, Adventure, Racing", Join(result.Genres));
-        AssertEqual("en tags stay English", "Multiplayer, Single-player, Post-apocalyptic", Join(result.Tags));
+        AssertEqual("en tags stay English and field-safe", "Multiplayer, Post-apocalyptic", Join(result.Tags));
     }
 
     private static void Test_NoLanguageRemap_SpanishOutputKeepsSpanish()

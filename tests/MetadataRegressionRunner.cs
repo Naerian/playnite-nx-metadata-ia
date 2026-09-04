@@ -120,16 +120,16 @@ internal static class MetadataRegressionRunner
             {
                 SourceName = OfficialStoreDataService.SourceSteamOfficial,
                 IsExactMatch = true,
-                Links = new List<AiMetadataLink> { new AiMetadataLink("Steam", "https://store.steampowered.com/app/1") }
+                Links = new List<Link> { new Link("Steam", "https://store.steampowered.com/app/1") }
             },
             new OfficialStoreMetadata
             {
                 SourceName = OfficialStoreDataService.SourceXboxStore,
                 IsExactMatch = true,
-                Links = new List<AiMetadataLink>
+                Links = new List<Link>
                 {
-                    new AiMetadataLink("Xbox", "https://www.xbox.com/games/1"),
-                    new AiMetadataLink("Duplicate", "https://store.steampowered.com/app/1")
+                    new Link("Xbox", "https://www.xbox.com/games/1"),
+                    new Link("Duplicate", "https://store.steampowered.com/app/1")
                 }
             });
         var result = CreateResult(new[] { "Single Player" });
