@@ -64,6 +64,7 @@
     <Compile Include="AiProviderException.cs" />
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
+    <Compile Include="SeriesTagConsistencyService.cs" />
     <Compile Include="MetadataHistoryService.cs" />
     <Compile Include="IgdbMetadataContextService.cs" />
     <Compile Include="IgnDataService.cs" />

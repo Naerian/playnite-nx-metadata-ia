@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
 {
@@ -308,6 +309,40 @@ namespace MetaDataIAPlugin
         private string coverCropAnchor = CropAnchorCenter;
         private string backgroundCropAnchor = CropAnchorCenter;
         private string processedImageQuality = ImageQualityBalanced;
+
+        private static readonly string[] CanonicalFeatureVocabulary =
+        {
+            "Single Player",
+            "Controller Support",
+            "Local Co-Op",
+            "Online Co-Op",
+            "Local Multiplayer",
+            "Online Multiplayer",
+            "Split Screen",
+            "PvP",
+            "Cross-Platform Multiplayer",
+            "VR",
+            "HDR",
+            "Ultrawide",
+            "Ray Tracing"
+        };
+
+        private static readonly Dictionary<string, string> CanonicalFeatureAliases =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Single-player", "Single Player" },
+                { "Single player", "Single Player" },
+                { "Controller support", "Controller Support" },
+                { "Local co-op", "Local Co-Op" },
+                { "Online co-op", "Online Co-Op" },
+                { "Local multiplayer", "Local Multiplayer" },
+                { "Online multiplayer", "Online Multiplayer" },
+                { "Split screen", "Split Screen" },
+                { "PvP modes", "PvP" },
+                { "Cross-play", "Cross-Platform Multiplayer" },
+                { "Cross-platform play", "Cross-Platform Multiplayer" },
+                { "Cross-platform multiplayer", "Cross-Platform Multiplayer" }
+            };
         private bool mediaRepairOnlyWhenBetter = true;
         private bool mediaMinimumQualityEnabled = true;
         private int mediaMinimumCoverWidth = 600;
@@ -783,6 +818,17 @@ namespace MetaDataIAPlugin
                     ? DefaultMediumTemplate
                     : active.Template;
             }
+
+            SanitizeVocabularyMemory();
+        }
+
+        private void SanitizeVocabularyMemory()
+        {
+            var normalized = FormatVocabularyMemory(ParseVocabularyMemory());
+            if (!string.Equals(VocabularyMemory ?? string.Empty, normalized, StringComparison.Ordinal))
+            {
+                VocabularyMemory = normalized;
+            }
         }
 
         private void EnsureMediaDefaults(bool existingSettings)
@@ -1077,7 +1123,7 @@ namespace MetaDataIAPlugin
                     byField[field] = new List<string>();
                 }
 
-                byField[field].AddRange(SplitVocabularyValues(value));
+                byField[field].AddRange(FilterVocabularyTerms(field, SplitVocabularyValues(value)));
             }
 
             return result;
@@ -1097,9 +1143,7 @@ namespace MetaDataIAPlugin
                         continue;
                     }
 
-                    var clean = terms
-                        .Where(x => !string.IsNullOrWhiteSpace(x))
-                        .Select(x => x.Trim())
+                    var clean = FilterVocabularyTerms(field, terms)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase)
                         .Take(200)
@@ -1122,15 +1166,116 @@ namespace MetaDataIAPlugin
                 byField[field] = new List<string>();
             }
 
-            byField[field].AddRange((terms ?? Enumerable.Empty<string>())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x.Trim()));
+            byField[field].AddRange(FilterVocabularyTerms(field, terms));
 
             byField[field] = byField[field]
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(maxItems)
                 .ToList();
+        }
+
+        private static IEnumerable<string> FilterVocabularyTerms(string field, IEnumerable<string> terms)
+        {
+            var values = terms ?? Enumerable.Empty<string>();
+            foreach (var raw in values)
+            {
+                var value = raw == null ? string.Empty : raw.Trim();
+                if (!IsReusableVocabularyTerm(value))
+                {
+                    continue;
+                }
+
+                if (IsConsoleMarketingTerm(value))
+                {
+                    continue;
+                }
+
+                if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
+                {
+                    string canonical;
+                    if (TryNormalizeCanonicalFeature(value, out canonical))
+                    {
+                        yield return canonical;
+                    }
+
+                    continue;
+                }
+
+                // These are feature labels, not tags or genres. Keeping them
+                // out here also cleans memories written by older versions.
+                if ((string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase)) &&
+                    IsCanonicalFeatureOrAlias(value))
+                {
+                    continue;
+                }
+
+                yield return value;
+            }
+        }
+
+        public static List<string> GetValidatedVocabularyTerms(string field, IEnumerable<string> terms)
+        {
+            return FilterVocabularyTerms(field, terms).ToList();
+        }
+
+        private static bool IsReusableVocabularyTerm(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 64 ||
+                value.IndexOfAny(new[] { '\r', '\n', '<', '>' }) >= 0 ||
+                value.IndexOf("http", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                value.IndexOfAny(new[] { '.', '?', '!', ':' }) >= 0)
+            {
+                return false;
+            }
+
+            var words = value.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length > 5)
+            {
+                return false;
+            }
+
+            var lower = value.ToLowerInvariant();
+            return !Regex.IsMatch(
+                lower,
+                @"(^|\s)(this|the|a|an|game|you|can|is|are|offers|features|allows|experience|players)(\s|$)");
+        }
+
+        private static bool IsConsoleMarketingTerm(string value)
+        {
+            var normalized = value.ToLowerInvariant();
+            return normalized.Contains("xbox") ||
+                   normalized.Contains("playstation") ||
+                   normalized.Contains("play anywhere") ||
+                   normalized.Contains("optimized for") ||
+                   normalized.Contains("pc game pad") ||
+                   normalized.Contains("4k ultra hd") ||
+                   normalized.Contains("series x|s") ||
+                   normalized.Contains("series x s");
+        }
+
+        private static bool IsCanonicalFeatureOrAlias(string value)
+        {
+            string canonical;
+            return TryNormalizeCanonicalFeature(value, out canonical);
+        }
+
+        public static bool TryNormalizeCanonicalFeature(string value, out string canonical)
+        {
+            canonical = null;
+            var normalized = value == null ? string.Empty : value.Trim();
+            normalized = Regex.Replace(normalized, @"^[-\s]+", string.Empty);
+            string alias;
+            if (CanonicalFeatureAliases.TryGetValue(normalized, out alias))
+            {
+                canonical = alias;
+                return true;
+            }
+
+            canonical = CanonicalFeatureVocabulary.FirstOrDefault(x =>
+                string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase));
+            return canonical != null;
         }
 
         private static IEnumerable<string> SplitVocabularyValues(string value)

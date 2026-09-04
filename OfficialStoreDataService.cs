@@ -110,7 +110,7 @@ namespace MetaDataIAPlugin
             List<OfficialStoreMetadata> cached;
             if (OfficialStoreContextCache.TryGetOfficial(game, GetStoreLanguage(), out cached))
             {
-                return cached;
+                return FilterEnabledMetadataSources(cached);
             }
 
             var result = new List<OfficialStoreMetadata>();
@@ -139,12 +139,62 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            OfficialStoreContextCache.SetOfficial(game, GetStoreLanguage(), result);
-            return result;
+            var enabledResult = FilterEnabledMetadataSources(result);
+            OfficialStoreContextCache.SetOfficial(game, GetStoreLanguage(), enabledResult);
+            return enabledResult;
+        }
+
+        /// <summary>
+        /// The source check is shared by all official metadata callers. The
+        /// source checkboxes are also used by the media picker, but they are
+        /// authoritative for the matching metadata sources shown in the UI.
+        /// </summary>
+        public bool IsMetadataSourceEnabled(string sourceName)
+        {
+            var normalizedSourceName = (sourceName ?? string.Empty).Trim();
+            if (string.Equals(normalizedSourceName, SourceSteamOfficial, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalizedSourceName, "Steam Official", StringComparison.OrdinalIgnoreCase))
+            {
+                return settings == null || settings.MediaUseSteamOfficial;
+            }
+
+            if (string.Equals(normalizedSourceName, SourceXboxStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings == null || settings.MediaUseXboxStore;
+            }
+
+            if (string.Equals(normalizedSourceName, SourcePsnStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings == null || settings.MediaUsePsnStore;
+            }
+
+            if (string.Equals(normalizedSourceName, SourceEpicStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings == null || settings.MediaUseEpicStore;
+            }
+
+            // ESRB has no separate source toggle in the UI.
+            return true;
+        }
+
+        private List<OfficialStoreMetadata> FilterEnabledMetadataSources(IEnumerable<OfficialStoreMetadata> values)
+        {
+            return (values ?? Enumerable.Empty<OfficialStoreMetadata>())
+                .Where(x => x != null && IsMetadataSourceEnabled(x.SourceName))
+                .ToList();
         }
 
         public async Task<List<OfficialMediaCandidate>> GetMediaCandidatesAsync(Game game, MediaKind kind, string source, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(source) &&
+                (string.Equals(source, SourceSteamOfficial, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(source, SourceXboxStore, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(source, SourcePsnStore, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(source, SourceEpicStore, StringComparison.OrdinalIgnoreCase)))
+            {
+                return new List<OfficialMediaCandidate>();
+            }
+
             try
             {
                 if (string.Equals(source, SourcePsnStore, StringComparison.OrdinalIgnoreCase))
@@ -178,6 +228,11 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetMetadataAsync(Game game, string source, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(source))
+            {
+                return null;
+            }
+
             if (string.Equals(source, SourceSteamOfficial, StringComparison.OrdinalIgnoreCase))
             {
                 return await GetSteamMetadataAsync(game, cancelToken).ConfigureAwait(false);
@@ -222,7 +277,7 @@ namespace MetaDataIAPlugin
             AddUnique(order, SourcePsnStore);
             AddUnique(order, SourceEpicStore);
             AddUnique(order, SourceEsrb);
-            return order;
+            return order.Where(IsMetadataSourceEnabled).ToList();
         }
 
         private static void AddSourceForName(List<string> order, string value)
@@ -262,6 +317,11 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetSteamMetadataAsync(Game game, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(SourceSteamOfficial))
+            {
+                return null;
+            }
+
             OfficialStoreMetadata cached;
             if (OfficialStoreContextCache.TryGetSteam(game, GetStoreLanguage(), out cached))
             {
@@ -350,6 +410,11 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetPsnMetadataAsync(Game game, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(SourcePsnStore))
+            {
+                return null;
+            }
+
             var result = await ResolvePsnStoreUrlAsync(game, cancelToken).ConfigureAwait(false);
             if (result == null || string.IsNullOrWhiteSpace(result.Url))
             {
@@ -582,6 +647,11 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetXboxMetadataAsync(Game game, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(SourceXboxStore))
+            {
+                return null;
+            }
+
             var product = await GetXboxProductSummaryAsync(game, cancelToken).ConfigureAwait(false);
             if (product == null)
             {
@@ -725,6 +795,11 @@ namespace MetaDataIAPlugin
 
         private async Task<OfficialStoreMetadata> GetEpicMetadataAsync(Game game, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(SourceEpicStore))
+            {
+                return null;
+            }
+
             var direct = GetFirstLink(game, "store.epicgames.com", "epicgames.com/store");
             if (string.IsNullOrWhiteSpace(direct))
             {
@@ -933,6 +1008,11 @@ namespace MetaDataIAPlugin
 
         public async Task<OfficialStoreMetadata> TryGetSteamContextAsync(Game game, CancellationToken cancelToken)
         {
+            if (!IsMetadataSourceEnabled(SourceSteamOfficial))
+            {
+                return null;
+            }
+
             try
             {
                 return await GetSteamMetadataAsync(game, cancelToken).ConfigureAwait(false);

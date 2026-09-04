@@ -255,7 +255,7 @@ namespace MetaDataIAPlugin
 
             result.Conflicts = new List<MetadataFieldConflict>();
             var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null && x.IsExactMatch)
+                .Where(x => IsUsableOfficialContext(x) && x.IsExactMatch)
                 .ToList();
 
             DetectListConflict(result, "developers", sources, x => x.Developers);
@@ -271,11 +271,10 @@ namespace MetaDataIAPlugin
                 if (genres.Count > 0) result.Genres = genres.Take(settings.MaxGenres).ToList();
             }
 
-            if (settings.GenerateFeatures)
-            {
-                var features = FirstOfficialList(x => x.Features);
-                if (features.Count > 0) result.Features = features.Take(settings.MaxFeatures).ToList();
-            }
+            // Official feature labels are evidence for the model, not the
+            // final value. Store capabilities such as "4K Ultra HD" or
+            // "Xbox Play Anywhere" must never overwrite AI-normalized
+            // feature labels.
 
             if (settings.GenerateLinks)
             {
@@ -342,10 +341,14 @@ namespace MetaDataIAPlugin
             OfficialStoreMetadata steam = null;
             try
             {
-                steam = new OfficialStoreDataService(settings)
-                    .TryGetSteamContextAsync(game, CancellationToken.None)
-                    .GetAwaiter()
-                    .GetResult();
+                var officialStores = new OfficialStoreDataService(settings);
+                if (officialStores.IsMetadataSourceEnabled(OfficialStoreDataService.SourceSteamOfficial))
+                {
+                    steam = officialStores
+                        .TryGetSteamContextAsync(game, CancellationToken.None)
+                        .GetAwaiter()
+                        .GetResult();
+                }
             }
             catch
             {
@@ -375,7 +378,7 @@ namespace MetaDataIAPlugin
             }
 
             if (!officialContextForCurrentRequest.Any(x =>
-                    x != null &&
+                    IsUsableOfficialContext(x) &&
                     string.Equals(x.SourceName, OfficialStoreDataService.SourceSteamOfficial, StringComparison.OrdinalIgnoreCase) &&
                     (!string.IsNullOrWhiteSpace(x.MinimumSystemRequirements) || !string.IsNullOrWhiteSpace(x.RecommendedSystemRequirements))))
             {
@@ -387,7 +390,7 @@ namespace MetaDataIAPlugin
         private void ApplyOfficialSystemRequirements(AiMetadataResult result)
         {
             var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null)
+                .Where(IsUsableOfficialContext)
                 .ToList();
             if (sources.Count == 0)
             {
@@ -426,7 +429,7 @@ namespace MetaDataIAPlugin
         private void PreferStoreSystemRequirements(AiMetadataResult result)
         {
             var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null)
+                .Where(IsUsableOfficialContext)
                 .ToList();
             if (sources.Count == 0)
             {
@@ -873,7 +876,7 @@ namespace MetaDataIAPlugin
         private OfficialStoreMetadata FindOfficialSource(Func<OfficialStoreMetadata, bool> hasField)
         {
             return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null && hasField(x))
+                .Where(x => IsUsableOfficialContext(x) && hasField(x))
                 .OrderByDescending(x => x.IsExactMatch)
                 .FirstOrDefault();
         }
@@ -881,10 +884,36 @@ namespace MetaDataIAPlugin
         private List<AiMetadataLink> FirstOfficialLinks()
         {
             return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null && x.IsExactMatch && x.Links != null && x.Links.Any(link => link != null && !string.IsNullOrWhiteSpace(link.Url)))
-                .Select(x => x.Links.Where(link => link != null && !string.IsNullOrWhiteSpace(link.Url))
-                    .Select(link => new AiMetadataLink { Name = link.Name, Url = link.Url }).ToList())
-                .FirstOrDefault() ?? new List<AiMetadataLink>();
+                .Where(x => IsUsableOfficialContext(x) && x.IsExactMatch && x.Links != null && x.Links.Any(link => link != null && !string.IsNullOrWhiteSpace(link.Url)))
+                .SelectMany(x => x.Links)
+                .Where(link => link != null && !string.IsNullOrWhiteSpace(link.Url))
+                .Select(link => NormalizeOfficialLink(link))
+                .Where(link => link != null)
+                .GroupBy(link => link.Url, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Take(Math.Max(1, settings.MaxLinks))
+                .ToList();
+        }
+
+        private static AiMetadataLink NormalizeOfficialLink(Link link)
+        {
+            if (link == null || string.IsNullOrWhiteSpace(link.Url))
+            {
+                return null;
+            }
+
+            Uri uri;
+            if (!Uri.TryCreate(link.Url.Trim(), UriKind.Absolute, out uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                return null;
+            }
+
+            return new AiMetadataLink
+            {
+                Name = link.Name,
+                Url = uri.AbsoluteUri
+            };
         }
 
         private MetadataFieldProvenance BuildProvenance(string field, OfficialStoreMetadata official, bool hasExisting, bool editorial)
@@ -1154,12 +1183,14 @@ namespace MetaDataIAPlugin
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
                    "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games when those fields are not locked. If both are empty for a field and playniteLibraryVocabulary does not lock it, create stable terms directly in the requested output language and reuse the same wording consistently. " +
                    "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. Locked fields override localVocabulary and canonicalTerms. " +
-                   "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
+                   "If fieldsToGenerate includes features, features should contain 2 to " + settings.MaxFeatures + " concrete features when the game supports them, not generic phrases; do not invent extra features just to reach a count. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate includes links, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
-                   "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
+                   "For features, use source and platforms as context only when reasonably certain about one of the canonical feature labels, especially controller support, local/online multiplayer, VR, HDR, ultrawide or ray tracing. " +
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
+                   "For English output, use only these canonical feature labels when they apply: Single Player, Controller Support, Local Co-Op, Online Co-Op, Local Multiplayer, Online Multiplayer, Split Screen, PvP, Cross-Platform Multiplayer, VR, HDR, Ultrawide and Ray Tracing. Never use console or store-marketing capability labels as features. " +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
+                   "Genres must stay broad and normalized: return only a few durable genre families, not store subgenres, platform capabilities, marketing labels or descriptive sentences. " +
                    "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
                    "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "Developers must contain only the main credited developer studio for the base game. Publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty. " +
@@ -1167,7 +1198,10 @@ namespace MetaDataIAPlugin
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
                    "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
-                   "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant.";
+                   "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
+                   "Tags use a two-level taxonomy: primary game-type and classification tags begin with exactly '- ' (hyphen followed by one space), while secondary tags are unprefixed. Preserve that distinction and never emit both a prefixed and unprefixed form of the same tag. " +
+                   "When seriesLibraryContext or seriesBaseline is present, use the local sibling games to infer an established core classification baseline. Preserve primary game-type tags and perspective when they genuinely apply, and do not randomly omit a defining primary tag supported by the sibling consensus. Treat seriesBaseline as a conservative consensus hint, not a command to copy every sibling tag: game-specific settings or mechanics may remain specific to the current game. Spin-offs or entries with genuinely different gameplay override the baseline, while remasters, ports and enhanced editions normally inherit the underlying game's core tag taxonomy. " +
+                   "seriesLibraryContext and seriesBaseline come from other games in the local Playnite library, even when existingMetadataMode is Ignore. They are not official-store evidence and must not be used to invent features or replace the current game's generated features.";
         }
 
         private async Task<string> BuildUserPromptAsync(Game game, CancellationToken cancellationToken)
@@ -1201,6 +1235,20 @@ namespace MetaDataIAPlugin
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
             context["requestedDescriptionTokens"] = requestedTokens;
+
+            // This is deliberately built from the local Playnite database only.
+            // It remains independent of ExistingMetadataMode and every
+            // official/community enrichment switch.
+            var seriesLibraryContext = SeriesTagConsistencyService.Build(playniteApi, game);
+            if (seriesLibraryContext != null)
+            {
+                context["seriesLibraryContext"] = seriesLibraryContext;
+                if (seriesLibraryContext.Baseline != null)
+                {
+                    context["seriesBaseline"] = seriesLibraryContext.Baseline;
+                }
+            }
+
             var trustedContextEnabled = settings.UseOfficialStoreContext ||
                                         settings.UseOriginIntegrationAsAiContext ||
                                         settings.UseOriginIntegrationForFactualMetadata ||
@@ -1242,7 +1290,7 @@ namespace MetaDataIAPlugin
             if (settings.UseOfficialStoreContext || NeedsTrustedEnrichment() || TemplateNeedsSystemRequirements(requestedTokens))
             {
                 var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
-                officialContextForCurrentRequest.AddRange(officialContext);
+                officialContextForCurrentRequest.AddRange(officialContext.Where(IsUsableOfficialContext));
             }
 
             if (ShouldUseTrustedEnrichment(game) && HasMissingTrustedEvidence())
@@ -1286,7 +1334,7 @@ namespace MetaDataIAPlugin
 
             if (officialContextForCurrentRequest.Count > 0)
             {
-                context["officialStoreContext"] = officialContextForCurrentRequest.Select(x => new
+                context["officialStoreContext"] = officialContextForCurrentRequest.Where(IsUsableOfficialContext).Select(x => new
                 {
                     source = x.SourceName,
                     exactMatch = x.IsExactMatch,
@@ -1730,22 +1778,22 @@ namespace MetaDataIAPlugin
             var vocabulary = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             if (settings.PreferExistingGenres)
             {
-                vocabulary["genres"] = Names(playniteApi.Database.Genres);
+                vocabulary["genres"] = MetaDataIASettings.GetValidatedVocabularyTerms("genres", Names(playniteApi.Database.Genres));
             }
 
             if (settings.PreferExistingTags)
             {
-                vocabulary["tags"] = Names(playniteApi.Database.Tags);
+                vocabulary["tags"] = MetaDataIASettings.GetValidatedVocabularyTerms("tags", Names(playniteApi.Database.Tags));
             }
 
             if (settings.PreferExistingFeatures)
             {
-                vocabulary["features"] = Names(playniteApi.Database.Features);
+                vocabulary["features"] = MetaDataIASettings.GetValidatedVocabularyTerms("features", Names(playniteApi.Database.Features));
             }
 
             if (settings.PreferExistingCategories)
             {
-                vocabulary["categories"] = Names(playniteApi.Database.Categories);
+                vocabulary["categories"] = MetaDataIASettings.GetValidatedVocabularyTerms("categories", Names(playniteApi.Database.Categories));
             }
 
             if (settings.PreferExistingAgeRatings)
@@ -1797,8 +1845,8 @@ namespace MetaDataIAPlugin
                         "tags",
                         new List<string>
                         {
-                            "Single-player", "Multiplayer", "Co-op", "Online co-op", "Local co-op",
-                            "Competitive", "PvP", "PvE", "Social deduction", "Exploration", "Building",
+                             "Multiplayer", "Co-op",
+                            "Competitive", "PvE", "Social deduction", "Exploration", "Building",
                             "Management", "Crafting", "Deep story", "Narrative", "Comedy", "Difficult",
                             "Casual", "Retro", "Anime", "Pixel art", "Science fiction", "Fantasy", "Cyberpunk",
                             "Post-apocalyptic", "Sandbox", "Procedural"
@@ -1808,10 +1856,9 @@ namespace MetaDataIAPlugin
                         "features",
                         new List<string>
                         {
-                            "Single-player", "Online multiplayer", "Local multiplayer", "Online co-op",
-                            "Local co-op", "Split screen", "Controller support", "Achievements",
-                            "Cloud saves", "Steam trading cards", "Steam Deck compatibility",
-                            "Cross-play", "Level editor", "PvP modes", "PvE modes", "In-app purchases"
+                            "Single Player", "Controller Support", "Local Co-Op", "Online Co-Op",
+                            "Local Multiplayer", "Online Multiplayer", "Split Screen", "PvP",
+                            "Cross-Platform Multiplayer", "VR", "HDR", "Ultrawide", "Ray Tracing"
                         }
                     },
                     {
@@ -2560,6 +2607,7 @@ namespace MetaDataIAPlugin
         {
             return game != null &&
                    NeedsTrustedEnrichment() &&
+                   settings.MediaUseIgdb &&
                    !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                    (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
         }
@@ -2567,7 +2615,7 @@ namespace MetaDataIAPlugin
         private bool HasMissingTrustedEvidence()
         {
             var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null && x.IsExactMatch)
+                .Where(x => IsUsableOfficialContext(x) && x.IsExactMatch)
                 .ToList();
             if (sources.Count == 0) return true;
 
@@ -2585,7 +2633,7 @@ namespace MetaDataIAPlugin
         {
             if (result == null ||
                 !(settings.UseOfficialStoreContext || settings.UseOriginIntegrationForFactualMetadata ||
-                  (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>()).Any(x => x != null && x.IsExactMatch)) ||
+                  (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>()).Any(x => IsUsableOfficialContext(x) && x.IsExactMatch)) ||
                 !settings.StrictCompanyAgeRegion)
             {
                 return;
@@ -2619,9 +2667,15 @@ namespace MetaDataIAPlugin
         private List<string> FirstOfficialList(Func<OfficialStoreMetadata, List<string>> selector)
         {
             return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(IsUsableOfficialContext)
                 .Select(selector)
                 .Where(x => x != null && x.Any(y => !string.IsNullOrWhiteSpace(y)))
                 .FirstOrDefault() ?? new List<string>();
+        }
+
+        private bool IsUsableOfficialContext(OfficialStoreMetadata value)
+        {
+            return value != null && new OfficialStoreDataService(settings).IsMetadataSourceEnabled(value.SourceName);
         }
 
         private static List<string> ResolveStrictField(List<string> officialValues, List<string> existingValues, string existingMetadataMode, int maxItems)

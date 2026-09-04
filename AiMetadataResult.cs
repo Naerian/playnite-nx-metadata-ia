@@ -99,12 +99,7 @@ namespace MetaDataIAPlugin
             RecommendedFor = Clean(RecommendedFor);
             MinimumSystemRequirements = CleanSystemRequirements(MinimumSystemRequirements);
             RecommendedSystemRequirements = CleanSystemRequirements(RecommendedSystemRequirements);
-            Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
-                .Select(CleanFeature)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(settings.MaxFeatures)
-                .ToList();
+            Features = NormalizeFeatures(Features, settings, blacklist).Take(settings.MaxFeatures).ToList();
             Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty);
             Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix);
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
@@ -176,27 +171,63 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            AddFallback(fallback, Gameplay);
-            AddFallback(fallback, PlayModes);
-            AddFallback(fallback, Perspective);
-            AddFallback(fallback, Setting);
-            fallback.AddRange(Genres);
-            fallback.AddRange(Tags);
-
-            Features = fallback
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+            Features = NormalizeFeatures(fallback, settings, Enumerable.Empty<string>())
                 .Take(Math.Max(1, settings.MaxFeatures))
                 .ToList();
         }
 
-        private static void AddFallback(List<string> values, string value)
+        private static IEnumerable<string> NormalizeFeatures(
+            IEnumerable<string> values,
+            MetaDataIASettings settings,
+            IEnumerable<string> blacklist)
         {
-            if (!string.IsNullOrWhiteSpace(value))
+            var cleaned = CleanList(values, int.MaxValue, blacklist, string.Empty)
+                .Select(CleanFeature)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Where(x => !IsConsoleMarketingFeature(x))
+                .Where(x => !LooksLikeFeatureProse(x));
+
+            if (settings == null || string.IsNullOrWhiteSpace(settings.Language) ||
+                !settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
             {
-                values.Add(value);
+                return cleaned.Distinct(StringComparer.OrdinalIgnoreCase);
             }
+
+            return cleaned
+                .Select(x =>
+                {
+                    string canonical;
+                    return MetaDataIASettings.TryNormalizeCanonicalFeature(x, out canonical) ? canonical : null;
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static bool IsConsoleMarketingFeature(string value)
+        {
+            var normalized = (value ?? string.Empty).ToLowerInvariant();
+            return normalized.Contains("xbox") ||
+                   normalized.Contains("playstation") ||
+                   normalized.Contains("play anywhere") ||
+                   normalized.Contains("optimized for") ||
+                   normalized.Contains("pc game pad") ||
+                   normalized.Contains("4k ultra hd") ||
+                   normalized.Contains("series x|s") ||
+                   normalized.Contains("series x s");
+        }
+
+        private static bool LooksLikeFeatureProse(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 64 ||
+                value.IndexOfAny(new[] { '\r', '\n', '<', '>', '.', '?', '!', ':' }) >= 0)
+            {
+                return true;
+            }
+
+            var words = value.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            return words.Length > 5 || Regex.IsMatch(
+                value.ToLowerInvariant(),
+                @"(^|\s)(this|the|a|an|game|you|can|is|are|offers|features|allows|experience|players)(\s|$)");
         }
 
         private string BuildDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
