@@ -100,7 +100,7 @@ namespace MetaDataIAPlugin
             MinimumSystemRequirements = CleanSystemRequirements(MinimumSystemRequirements);
             RecommendedSystemRequirements = CleanSystemRequirements(RecommendedSystemRequirements);
             Features = NormalizeFeatures(Features, settings, blacklist).Take(settings.MaxFeatures).ToList();
-            Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty);
+            Genres = NormalizeGenres(Genres, settings, blacklist).Take(settings.MaxGenres).ToList();
             Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix);
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
             Publishers = CleanList(Publishers, settings.MaxPublishers, blacklist, string.Empty);
@@ -200,6 +200,23 @@ namespace MetaDataIAPlugin
                     return MetaDataIASettings.TryNormalizeCanonicalFeature(x, out canonical) ? canonical : null;
                 })
                 .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static IEnumerable<string> NormalizeGenres(
+            IEnumerable<string> values,
+            MetaDataIASettings settings,
+            IEnumerable<string> blacklist)
+        {
+            var cleaned = CleanList(values, int.MaxValue, blacklist, string.Empty);
+            if (settings == null || string.IsNullOrWhiteSpace(settings.Language) ||
+                !settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            {
+                return cleaned;
+            }
+
+            return cleaned
+                .SelectMany(MetaDataIASettings.NormalizeCanonicalGenres)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 

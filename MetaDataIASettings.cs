@@ -327,6 +327,22 @@ namespace MetaDataIAPlugin
             "Ray Tracing"
         };
 
+        private static readonly string[] CanonicalGenreVocabulary =
+        {
+            "Action",
+            "Adventure",
+            "RPG",
+            "Strategy",
+            "Simulation",
+            "Shooter",
+            "Racing",
+            "Sports",
+            "Fighting",
+            "Puzzle",
+            "Platformer",
+            "Horror"
+        };
+
         private static readonly Dictionary<string, string> CanonicalFeatureAliases =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -342,6 +358,35 @@ namespace MetaDataIAPlugin
                 { "Cross-play", "Cross-Platform Multiplayer" },
                 { "Cross-platform play", "Cross-Platform Multiplayer" },
                 { "Cross-platform multiplayer", "Cross-Platform Multiplayer" }
+            };
+
+        private static readonly Dictionary<string, string[]> CanonicalGenreAliases =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Action-Adventure", new[] { "Action", "Adventure" } },
+                { "Action & Adventure", new[] { "Action", "Adventure" } },
+                { "Action Adventure", new[] { "Action", "Adventure" } },
+                { "Action RPG", new[] { "Action", "RPG" } },
+                { "Action Role-Playing", new[] { "Action", "RPG" } },
+                { "Action Role-Playing Game", new[] { "Action", "RPG" } },
+                { "Role-Playing", new[] { "RPG" } },
+                { "Role-Playing Game", new[] { "RPG" } },
+                { "Role Playing", new[] { "RPG" } },
+                { "RPG Game", new[] { "RPG" } },
+                { "First-Person Shooter", new[] { "Shooter" } },
+                { "Third-Person Shooter", new[] { "Shooter" } },
+                { "FPS", new[] { "Shooter" } },
+                { "TPS", new[] { "Shooter" } },
+                { "Turn-Based Strategy", new[] { "Strategy" } },
+                { "Real-Time Strategy", new[] { "Strategy" } },
+                { "Strategy Game", new[] { "Strategy" } },
+                { "Racing Game", new[] { "Racing" } },
+                { "Sports Game", new[] { "Sports" } },
+                { "Fighting Game", new[] { "Fighting" } },
+                { "Puzzle Game", new[] { "Puzzle" } },
+                { "Platform Game", new[] { "Platformer" } },
+                { "Horror Game", new[] { "Horror" } },
+                { "Survival Horror", new[] { "Horror" } }
             };
         private bool mediaRepairOnlyWhenBetter = true;
         private bool mediaMinimumQualityEnabled = true;
@@ -1045,9 +1090,7 @@ namespace MetaDataIAPlugin
 
             return result.ToDictionary(
                 x => x.Key,
-                x => x.Value
-                    .Where(v => !string.IsNullOrWhiteSpace(v))
-                    .Select(v => v.Trim())
+                x => FilterVocabularyTerms(x.Key, x.Value, code)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Take(200)
                     .ToList(),
@@ -1070,10 +1113,10 @@ namespace MetaDataIAPlugin
                 all[code] = byField;
             }
 
-            AddVocabularyTerms(byField, "genres", result.Genres, 120);
-            AddVocabularyTerms(byField, "tags", result.Tags, 200);
-            AddVocabularyTerms(byField, "features", result.Features, 200);
-            AddVocabularyTerms(byField, "categories", result.Categories, 120);
+            AddVocabularyTerms(byField, "genres", result.Genres, 120, code);
+            AddVocabularyTerms(byField, "tags", result.Tags, 200, code);
+            AddVocabularyTerms(byField, "features", result.Features, 200, code);
+            AddVocabularyTerms(byField, "categories", result.Categories, 120, code);
             VocabularyMemory = FormatVocabularyMemory(all);
         }
 
@@ -1123,7 +1166,7 @@ namespace MetaDataIAPlugin
                     byField[field] = new List<string>();
                 }
 
-                byField[field].AddRange(FilterVocabularyTerms(field, SplitVocabularyValues(value)));
+                byField[field].AddRange(FilterVocabularyTerms(field, SplitVocabularyValues(value), language));
             }
 
             return result;
@@ -1143,7 +1186,7 @@ namespace MetaDataIAPlugin
                         continue;
                     }
 
-                    var clean = FilterVocabularyTerms(field, terms)
+                    var clean = FilterVocabularyTerms(field, terms, language)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase)
                         .Take(200)
@@ -1159,14 +1202,14 @@ namespace MetaDataIAPlugin
             return string.Join("\n", lines);
         }
 
-        private static void AddVocabularyTerms(Dictionary<string, List<string>> byField, string field, IEnumerable<string> terms, int maxItems)
+        private static void AddVocabularyTerms(Dictionary<string, List<string>> byField, string field, IEnumerable<string> terms, int maxItems, string language)
         {
             if (!byField.ContainsKey(field))
             {
                 byField[field] = new List<string>();
             }
 
-            byField[field].AddRange(FilterVocabularyTerms(field, terms));
+            byField[field].AddRange(FilterVocabularyTerms(field, terms, language));
 
             byField[field] = byField[field]
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -1175,7 +1218,7 @@ namespace MetaDataIAPlugin
                 .ToList();
         }
 
-        private static IEnumerable<string> FilterVocabularyTerms(string field, IEnumerable<string> terms)
+        private static IEnumerable<string> FilterVocabularyTerms(string field, IEnumerable<string> terms, string language)
         {
             var values = terms ?? Enumerable.Empty<string>();
             foreach (var raw in values)
@@ -1191,7 +1234,17 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) && IsEnglishLanguage(language))
+                {
+                    foreach (var genre in NormalizeCanonicalGenres(value))
+                    {
+                        yield return genre;
+                    }
+
+                    continue;
+                }
+
+                if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase) && IsEnglishLanguage(language))
                 {
                     string canonical;
                     if (TryNormalizeCanonicalFeature(value, out canonical))
@@ -1215,9 +1268,15 @@ namespace MetaDataIAPlugin
             }
         }
 
-        public static List<string> GetValidatedVocabularyTerms(string field, IEnumerable<string> terms)
+        public static List<string> GetValidatedVocabularyTerms(string field, IEnumerable<string> terms, string language = null)
         {
-            return FilterVocabularyTerms(field, terms).ToList();
+            return FilterVocabularyTerms(field, terms, language).ToList();
+        }
+
+        private static bool IsEnglishLanguage(string language)
+        {
+            return !string.IsNullOrWhiteSpace(language) &&
+                   language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsReusableVocabularyTerm(string value)
@@ -1259,6 +1318,62 @@ namespace MetaDataIAPlugin
         {
             string canonical;
             return TryNormalizeCanonicalFeature(value, out canonical);
+        }
+
+        public static List<string> NormalizeCanonicalGenres(string value)
+        {
+            var result = new List<string>();
+            foreach (var part in Regex.Split(value == null ? string.Empty : value.Trim(), @"\s*[,;]\s*"))
+            {
+                AddCanonicalGenreValues(result, part);
+            }
+
+            return result
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static void AddCanonicalGenreValues(List<string> result, string value)
+        {
+            var normalized = Regex.Replace((value ?? string.Empty).Trim(), @"\s+", " ");
+            if (normalized.Length == 0)
+            {
+                return;
+            }
+
+            string[] alias;
+            if (CanonicalGenreAliases.TryGetValue(normalized, out alias))
+            {
+                result.AddRange(alias);
+                return;
+            }
+
+            var canonical = CanonicalGenreVocabulary.FirstOrDefault(x =>
+                string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase));
+            if (canonical != null)
+            {
+                result.Add(canonical);
+                return;
+            }
+
+            var withoutGameSuffix = Regex.Replace(normalized, @"\s+games?$", string.Empty, RegexOptions.IgnoreCase);
+            if (!string.Equals(withoutGameSuffix, normalized, StringComparison.Ordinal) &&
+                CanonicalGenreVocabulary.Any(x => string.Equals(x, withoutGameSuffix, StringComparison.OrdinalIgnoreCase)))
+            {
+                result.Add(CanonicalGenreVocabulary.First(x => string.Equals(x, withoutGameSuffix, StringComparison.OrdinalIgnoreCase)));
+                return;
+            }
+
+            var components = Regex.Split(normalized, @"\s*(?:&|\+|/|\band\b)\s*", RegexOptions.IgnoreCase)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            if (components.Count > 1)
+            {
+                foreach (var component in components)
+                {
+                    AddCanonicalGenreValues(result, component);
+                }
+            }
         }
 
         public static bool TryNormalizeCanonicalFeature(string value, out string canonical)

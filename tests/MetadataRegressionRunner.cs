@@ -95,14 +95,16 @@ internal static class MetadataRegressionRunner
         {
             SourceName = OfficialStoreDataService.SourceXboxStore,
             IsExactMatch = true,
-            Genres = new List<string> { "Action" },
+            Genres = new List<string> { "Action & adventure" },
             Features = new List<string> { "4K Ultra HD", "Xbox Play Anywhere" }
         });
         var result = CreateResult(new[] { "Single Player", "Controller Support" });
-        result.Genres = new List<string> { "Action-Adventure" };
+        result.Genres = new List<string> { "Action", "Adventure" };
         ApplyTrustedFactualFields(service, result);
+        result.Normalize(settings, null);
 
-        AssertEqual("trusted genre remains available", "Action", Join(result.Genres));
+        AssertEqual("AI genres remain normalized", "Action, Adventure", Join(result.Genres));
+        AssertNotContains("raw official genre taxonomy is not returned", result.Genres, "Action & adventure");
         AssertEqual("genres do not contaminate features", "Single Player, Controller Support", Join(result.Features));
     }
 
@@ -159,7 +161,7 @@ internal static class MetadataRegressionRunner
         settings.VocabularyMemory = string.Empty;
         settings.LearnVocabulary("en", new AiMetadataResult
         {
-            Genres = new List<string> { "Action", "This is a complete free-form sentence" },
+            Genres = new List<string> { "Action & adventure", "Survival Horror", "This is a complete free-form sentence" },
             Tags = new List<string> { "Combat", "Controller Support", "This game is excellent" },
             Features = new List<string> { "Single Player", "HDR", "Exploration", "Xbox Play Anywhere", "A complete feature sentence" },
             Categories = new List<string>()
@@ -167,6 +169,9 @@ internal static class MetadataRegressionRunner
 
         var terms = settings.GetVocabularyTerms("en");
         AssertContains("genres learn genres", terms["genres"], "Action");
+        AssertContains("genres expand compound taxonomy", terms["genres"], "Adventure");
+        AssertContains("genres normalize survival horror", terms["genres"], "Horror");
+        AssertNotContains("genres reject raw compound taxonomy", terms["genres"], "Action & adventure");
         AssertNotContains("genres reject prose", terms["genres"], "This is a complete free-form sentence");
         AssertContains("tags learn tags", terms["tags"], "Combat");
         AssertNotContains("tags reject feature value", terms["tags"], "Controller Support");
