@@ -244,7 +244,7 @@ The main sections are:
 - **Templates**: saved HTML templates and available description tokens.
 - **Media**: media API keys, enabled media sources, source priority, media formats, and selection preferences.
 - **Import**: automatic processing for newly imported games.
-- **Fields**: per-field generation and apply rules, plus the optional taxonomy preset. Flexible keeps general Genre, Feature, and Tag behavior with safety checks; Controlled uses the editable controlled vocabularies and primary-Tag prefix; Custom lets you choose each convention independently. Existing settings from the earlier controlled behavior are migrated to preserve it, while fresh installations start Flexible.
+- **Fields**: per-field generation and apply rules, plus the optional taxonomy preset. Flexible keeps general Genre, Feature, and Tag behavior with safety checks; Controlled uses the editable controlled vocabularies and primary-Tag prefix; Custom lets you choose each convention independently. Legacy settings without an explicit taxonomy preset remain Flexible; saved Controlled or Custom presets are preserved.
 - **Rules**: automatic template selection by game type, platform, or source.
 - **Maintenance**: reopen the setup assistant, run the library audit and selective media repair, export or import configuration backups, scan for obsolete unreferenced media, and inspect or undo the last 20 Metadata AI operations. API credentials are protected with Windows DPAPI for the current user, both in Playnite's stored settings and in exported backups.
 

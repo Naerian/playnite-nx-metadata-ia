@@ -21,7 +21,12 @@ internal static class MetadataRegressionRunner
         Test_FlexibleUsersAreNotForcedIntoControlledGenres();
         Test_ControlledFeaturesCanBeCustomized();
         Test_PrimaryTagClassificationIsOptionalAndConfigurable();
-        Test_LegacySettingsMigrateToControlledTaxonomy();
+        Test_FreshInstallDefaultsToFlexibleTaxonomy();
+        Test_OldEnglishInstallDefaultsToFlexibleTaxonomy();
+        Test_OldNonEnglishInstallDefaultsToFlexibleTaxonomy();
+        Test_ExplicitControlledPresetIsPreserved();
+        Test_ExplicitCustomPresetIsPreserved();
+        Test_LanguageChangesDoNotChangeTaxonomyPreset();
         Test_EmptyFeaturesDoNotBorrowGenresOrTags();
         Test_OfficialLinksMergeAcrossSources();
         Test_VocabularyIsFieldSafeAndTermOnly();
@@ -162,17 +167,100 @@ internal static class MetadataRegressionRunner
         AssertNotContains("custom controlled Features reject values outside the list", result.Features, "Single Player");
     }
 
-    private static void Test_LegacySettingsMigrateToControlledTaxonomy()
+    private static void Test_FreshInstallDefaultsToFlexibleTaxonomy()
+    {
+        var settings = new MetaDataIASettings { Language = "en" };
+        settings.EnsureDefaults(false);
+
+        AssertEqual("fresh install defaults to Flexible", MetaDataIASettings.TaxonomyFlexible, settings.TaxonomyPreset);
+        AssertTrue("fresh install leaves controlled Genres off", !settings.UseControlledGenreVocabulary);
+        AssertTrue("fresh install leaves controlled Features off", !settings.UseControlledFeatureVocabulary);
+        AssertTrue("fresh install leaves primary Tags off", !settings.UsePrimaryTagClassification);
+    }
+
+    private static void Test_OldEnglishInstallDefaultsToFlexibleTaxonomy()
     {
         var settings = new MetaDataIASettings { Language = "en" };
         settings.EnsureDefaults(true);
 
-        AssertTrue("legacy settings enable controlled Genres", settings.UseControlledGenreVocabulary);
-        AssertTrue("legacy settings enable controlled Features", settings.UseControlledFeatureVocabulary);
-        AssertTrue("legacy settings enable primary Tags", settings.UsePrimaryTagClassification);
-        AssertEqual("legacy settings retain primary Tag prefix", "- ", settings.PrimaryTagPrefix);
-        AssertContains("legacy settings retain controlled Genre vocabulary", settings.GetControlledVocabularyTerms("genres", "en"), "Action");
-        AssertContains("legacy settings retain controlled Feature vocabulary", settings.GetControlledVocabularyTerms("features", "en"), "Controller Support");
+        AssertEqual("old English install defaults to Flexible", MetaDataIASettings.TaxonomyFlexible, settings.TaxonomyPreset);
+        AssertTrue("old English install does not infer controlled Genres", !settings.UseControlledGenreVocabulary);
+        AssertTrue("old English install does not infer controlled Features", !settings.UseControlledFeatureVocabulary);
+        AssertTrue("old English install does not infer primary Tags", !settings.UsePrimaryTagClassification);
+    }
+
+    private static void Test_OldNonEnglishInstallDefaultsToFlexibleTaxonomy()
+    {
+        var settings = new MetaDataIASettings { Language = "es" };
+        settings.EnsureDefaults(true);
+
+        AssertEqual("old non-English install defaults to Flexible", MetaDataIASettings.TaxonomyFlexible, settings.TaxonomyPreset);
+        AssertTrue("old non-English install leaves controlled Genres off", !settings.UseControlledGenreVocabulary);
+        AssertTrue("old non-English install leaves controlled Features off", !settings.UseControlledFeatureVocabulary);
+        AssertTrue("old non-English install leaves primary Tags off", !settings.UsePrimaryTagClassification);
+    }
+
+    private static void Test_ExplicitControlledPresetIsPreserved()
+    {
+        var settings = new MetaDataIASettings
+        {
+            Language = "en",
+            TaxonomyPreset = MetaDataIASettings.TaxonomyControlled
+        };
+        settings.EnsureDefaults(true);
+
+        AssertEqual("explicit Controlled preset is preserved", MetaDataIASettings.TaxonomyControlled, settings.TaxonomyPreset);
+        AssertTrue("explicit Controlled preset enables controlled Genres", settings.UseControlledGenreVocabulary);
+        AssertTrue("explicit Controlled preset enables controlled Features", settings.UseControlledFeatureVocabulary);
+        AssertTrue("explicit Controlled preset enables primary Tags", settings.UsePrimaryTagClassification);
+        AssertEqual("explicit Controlled preset retains primary Tag prefix", "- ", settings.PrimaryTagPrefix);
+    }
+
+    private static void Test_ExplicitCustomPresetIsPreserved()
+    {
+        var settings = new MetaDataIASettings
+        {
+            Language = "en",
+            TaxonomyPreset = MetaDataIASettings.TaxonomyCustom,
+            UseControlledGenreVocabulary = true,
+            UseControlledFeatureVocabulary = false,
+            UsePrimaryTagClassification = true,
+            ControlledGenreVocabulary = "Action\nMetroidvania",
+            ControlledFeatureVocabulary = "Achievements\nCloud Saves",
+            PrimaryTagPrefix = "Core: "
+        };
+        settings.EnsureDefaults(true);
+
+        AssertEqual("explicit Custom preset is preserved", MetaDataIASettings.TaxonomyCustom, settings.TaxonomyPreset);
+        AssertTrue("Custom preset preserves controlled Genre choice", settings.UseControlledGenreVocabulary);
+        AssertTrue("Custom preset preserves flexible Feature choice", !settings.UseControlledFeatureVocabulary);
+        AssertTrue("Custom preset preserves primary Tag choice", settings.UsePrimaryTagClassification);
+        AssertEqual("Custom preset preserves primary Tag prefix", "Core: ", settings.PrimaryTagPrefix);
+        AssertContains("Custom preset preserves Genre vocabulary", settings.GetControlledVocabularyTerms("genres", "en"), "Metroidvania");
+        AssertContains("Custom preset preserves Feature vocabulary", settings.GetControlledVocabularyTerms("features", "en"), "Cloud Saves");
+    }
+
+    private static void Test_LanguageChangesDoNotChangeTaxonomyPreset()
+    {
+        var controlled = new MetaDataIASettings
+        {
+            Language = "en",
+            TaxonomyPreset = MetaDataIASettings.TaxonomyControlled
+        };
+        controlled.EnsureDefaults(true);
+        controlled.Language = "es";
+        controlled.EnsureDefaults(true);
+        AssertEqual("changing language preserves Controlled preset", MetaDataIASettings.TaxonomyControlled, controlled.TaxonomyPreset);
+
+        var custom = new MetaDataIASettings
+        {
+            Language = "es",
+            TaxonomyPreset = MetaDataIASettings.TaxonomyCustom
+        };
+        custom.EnsureDefaults(true);
+        custom.Language = "en";
+        custom.EnsureDefaults(true);
+        AssertEqual("changing language preserves Custom preset", MetaDataIASettings.TaxonomyCustom, custom.TaxonomyPreset);
     }
 
     private static void Test_PrimaryTagClassificationIsOptionalAndConfigurable()

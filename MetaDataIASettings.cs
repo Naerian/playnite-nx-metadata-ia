@@ -932,7 +932,7 @@ namespace MetaDataIAPlugin
             EnsureTextLengthDefaults();
             EnsureCompanyLimitDefaults();
             EnsureSafeDefaults();
-            EnsureTaxonomyDefaults(existingSettings);
+            EnsureTaxonomyDefaults();
             EnsureMediaDefaults(existingSettings);
 
             if (Templates == null || Templates.Count == 0)
@@ -961,15 +961,16 @@ namespace MetaDataIAPlugin
             SanitizeVocabularyMemory();
         }
 
-        private void EnsureTaxonomyDefaults(bool existingSettings)
+        private void EnsureTaxonomyDefaults()
         {
             if (!TaxonomySettingsMigrated)
             {
-                // Settings saved by the previous branch already had the
-                // controlled English behavior. Preserve that behavior when
-                // the new switches are introduced. New installations start
-                // flexible so the plugin does not impose one user's taxonomy.
-                if (existingSettings && IsEnglishLanguage(Language))
+                // Missing taxonomy fields mean a public/legacy installation,
+                // not an installation using one particular language. Keep
+                // those users flexible. Only an explicitly persisted preset
+                // is allowed to select a controlled migration path.
+                var persistedPreset = NormalizeTaxonomyPreset(taxonomyPreset);
+                if (string.Equals(persistedPreset, TaxonomyControlled, StringComparison.OrdinalIgnoreCase))
                 {
                     taxonomyPreset = TaxonomyControlled;
                     useControlledGenreVocabulary = true;
@@ -977,12 +978,12 @@ namespace MetaDataIAPlugin
                     usePrimaryTagClassification = true;
                     primaryTagPrefix = "- ";
                 }
+                else if (string.Equals(persistedPreset, TaxonomyCustom, StringComparison.OrdinalIgnoreCase))
+                {
+                    taxonomyPreset = TaxonomyCustom;
+                }
                 else
                 {
-                    // The earlier strict taxonomy was English-only. Keep
-                    // existing non-English installations on their previous
-                    // flexible behavior instead of filtering their localized
-                    // labels through an English preset.
                     taxonomyPreset = TaxonomyFlexible;
                     useControlledGenreVocabulary = false;
                     useControlledFeatureVocabulary = false;
