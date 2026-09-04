@@ -18,6 +18,10 @@ internal static class MetadataRegressionRunner
         Test_DisabledXboxCannotContributeMetadata();
         Test_OfficialFeaturesNeverReplaceAiFeatures();
         Test_GenresAndFeaturesCanBeGeneratedTogether();
+        Test_FlexibleUsersAreNotForcedIntoControlledGenres();
+        Test_ControlledFeaturesCanBeCustomized();
+        Test_PrimaryTagClassificationIsOptionalAndConfigurable();
+        Test_LegacySettingsMigrateToControlledTaxonomy();
         Test_EmptyFeaturesDoNotBorrowGenresOrTags();
         Test_OfficialLinksMergeAcrossSources();
         Test_VocabularyIsFieldSafeAndTermOnly();
@@ -81,6 +85,11 @@ internal static class MetadataRegressionRunner
         var rawResult = CreateResult(new[] { "4K Ultra HD", "Action-Adventure", "Exploration", "Xbox Play Anywhere" });
         rawResult.Normalize(settings, null);
         AssertEqual("raw feature labels are rejected during normalization", string.Empty, Join(rawResult.Features));
+
+        var crossFieldResult = CreateResult(new[] { "Single Player" });
+        crossFieldResult.Tags = new List<string> { "Controller Support", "Combat" };
+        crossFieldResult.Normalize(settings, null);
+        AssertEqual("feature labels do not leak into Tags", "Combat", Join(crossFieldResult.Tags));
     }
 
     private static void Test_GenresAndFeaturesCanBeGeneratedTogether()
@@ -88,6 +97,8 @@ internal static class MetadataRegressionRunner
         var settings = CreateSettings();
         settings.GenerateGenres = true;
         settings.GenerateFeatures = true;
+        settings.UseControlledGenreVocabulary = true;
+        settings.UseControlledFeatureVocabulary = true;
         settings.MediaUseXboxStore = true;
 
         var service = new MetadataGenerationService(settings);
@@ -106,6 +117,79 @@ internal static class MetadataRegressionRunner
         AssertEqual("AI genres remain normalized", "Action, Adventure", Join(result.Genres));
         AssertNotContains("raw official genre taxonomy is not returned", result.Genres, "Action & adventure");
         AssertEqual("genres do not contaminate features", "Single Player, Controller Support", Join(result.Features));
+    }
+
+    private static void Test_FlexibleUsersAreNotForcedIntoControlledGenres()
+    {
+        var settings = CreateSettings();
+        settings.UseControlledGenreVocabulary = false;
+        var result = CreateResult(new[] { "Achievements" });
+        result.Genres = new List<string> { "Metroidvania" };
+
+        result.Normalize(settings, null);
+
+        AssertEqual("fresh settings use flexible taxonomy", MetaDataIASettings.TaxonomyFlexible, settings.TaxonomyPreset);
+        AssertEqual("flexible Genres preserve general labels", "Metroidvania", Join(result.Genres));
+        AssertEqual("flexible Features allow normal labels", "Achievements", Join(result.Features));
+
+        settings.TaxonomyPreset = MetaDataIASettings.TaxonomyControlled;
+        AssertTrue("controlled preset enables controlled Genres", settings.UseControlledGenreVocabulary);
+        AssertTrue("controlled preset enables controlled Features", settings.UseControlledFeatureVocabulary);
+        AssertTrue("controlled preset enables primary Tags", settings.UsePrimaryTagClassification);
+        settings.TaxonomyPreset = MetaDataIASettings.TaxonomyFlexible;
+        AssertTrue("flexible preset disables controlled Genres", !settings.UseControlledGenreVocabulary);
+        AssertTrue("flexible preset disables primary Tags", !settings.UsePrimaryTagClassification);
+
+        settings.UseControlledGenreVocabulary = true;
+        settings.ControlledGenreVocabulary = "Action\nMetroidvania";
+        var custom = CreateResult(new[] { "Achievements" });
+        custom.Genres = new List<string> { "Metroidvania", "Horror" };
+        custom.Normalize(settings, null);
+        AssertEqual("custom controlled Genres use the editable list", "Metroidvania", Join(custom.Genres));
+    }
+
+    private static void Test_ControlledFeaturesCanBeCustomized()
+    {
+        var settings = CreateSettings();
+        settings.UseControlledFeatureVocabulary = true;
+        settings.ControlledFeatureVocabulary = "Achievements\nCloud Saves\n4K\nWorkshop";
+        var result = CreateResult(new[] { "Achievements", "Cloud Saves", "4K", "Single Player", "Exploration" });
+
+        result.Normalize(settings, null);
+
+        AssertEqual("custom controlled Features are accepted", "Achievements, Cloud Saves, 4K", Join(result.Features));
+        AssertNotContains("custom controlled Features reject tag values", result.Features, "Exploration");
+        AssertNotContains("custom controlled Features reject values outside the list", result.Features, "Single Player");
+    }
+
+    private static void Test_LegacySettingsMigrateToControlledTaxonomy()
+    {
+        var settings = new MetaDataIASettings { Language = "en" };
+        settings.EnsureDefaults(true);
+
+        AssertTrue("legacy settings enable controlled Genres", settings.UseControlledGenreVocabulary);
+        AssertTrue("legacy settings enable controlled Features", settings.UseControlledFeatureVocabulary);
+        AssertTrue("legacy settings enable primary Tags", settings.UsePrimaryTagClassification);
+        AssertEqual("legacy settings retain primary Tag prefix", "- ", settings.PrimaryTagPrefix);
+        AssertContains("legacy settings retain controlled Genre vocabulary", settings.GetControlledVocabularyTerms("genres", "en"), "Action");
+        AssertContains("legacy settings retain controlled Feature vocabulary", settings.GetControlledVocabularyTerms("features", "en"), "Controller Support");
+    }
+
+    private static void Test_PrimaryTagClassificationIsOptionalAndConfigurable()
+    {
+        var settings = CreateSettings();
+        settings.UsePrimaryTagClassification = false;
+        var flexible = CreateResult(new[] { "Single Player" });
+        flexible.Tags = new List<string> { "FPS" };
+        flexible.Normalize(settings, null);
+        AssertEqual("disabled primary classification keeps normal Tags", "FPS", Join(flexible.Tags));
+
+        settings.UsePrimaryTagClassification = true;
+        settings.PrimaryTagPrefix = "Core: ";
+        var controlled = CreateResult(new[] { "Single Player" });
+        controlled.Tags = new List<string> { "- FPS" };
+        controlled.Normalize(settings, null);
+        AssertEqual("primary classification uses configured prefix", "Core: FPS", Join(controlled.Tags));
     }
 
     private static void Test_OfficialLinksMergeAcrossSources()
@@ -158,11 +242,14 @@ internal static class MetadataRegressionRunner
     {
         var settings = CreateSettings();
         settings.Language = "en";
+        settings.UseControlledGenreVocabulary = true;
+        settings.UseControlledFeatureVocabulary = true;
+        settings.ControlledFeatureVocabulary = "Single Player\nHDR\nAchievements";
         settings.VocabularyMemory = string.Empty;
         settings.LearnVocabulary("en", new AiMetadataResult
         {
             Genres = new List<string> { "Action & adventure", "Survival Horror", "This is a complete free-form sentence" },
-            Tags = new List<string> { "Combat", "Controller Support", "This game is excellent" },
+            Tags = new List<string> { "Combat", "Controller Support", "Achievements", "This game is excellent" },
             Features = new List<string> { "Single Player", "HDR", "Exploration", "Xbox Play Anywhere", "A complete feature sentence" },
             Categories = new List<string>()
         });
@@ -175,6 +262,7 @@ internal static class MetadataRegressionRunner
         AssertNotContains("genres reject prose", terms["genres"], "This is a complete free-form sentence");
         AssertContains("tags learn tags", terms["tags"], "Combat");
         AssertNotContains("tags reject feature value", terms["tags"], "Controller Support");
+        AssertNotContains("tags reject configured feature value", terms["tags"], "Achievements");
         AssertNotContains("tags reject prose", terms["tags"], "This game is excellent");
         AssertContains("features learn canonical values", terms["features"], "Single Player");
         AssertContains("features learn canonical graphics value", terms["features"], "HDR");
@@ -184,7 +272,7 @@ internal static class MetadataRegressionRunner
 
     private static MetaDataIASettings CreateSettings()
     {
-        return new MetaDataIASettings
+        var settings = new MetaDataIASettings
         {
             Language = "en",
             GenerateGenres = true,
@@ -197,6 +285,8 @@ internal static class MetadataRegressionRunner
             MediaUseSteamOfficial = true,
             MediaUseXboxStore = false
         };
+        settings.EnsureDefaults(false);
+        return settings;
     }
 
     private static AiMetadataResult CreateResult(IEnumerable<string> features)

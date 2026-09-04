@@ -101,7 +101,7 @@ namespace MetaDataIAPlugin
             RecommendedSystemRequirements = CleanSystemRequirements(RecommendedSystemRequirements);
             Features = NormalizeFeatures(Features, settings, blacklist).Take(settings.MaxFeatures).ToList();
             Genres = NormalizeGenres(Genres, settings, blacklist).Take(settings.MaxGenres).ToList();
-            Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix);
+            Tags = NormalizeTags(Tags, settings, blacklist);
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
             Publishers = CleanList(Publishers, settings.MaxPublishers, blacklist, string.Empty);
             AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty);
@@ -185,21 +185,16 @@ namespace MetaDataIAPlugin
                 .Select(CleanFeature)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Where(x => !IsConsoleMarketingFeature(x))
-                .Where(x => !LooksLikeFeatureProse(x));
+                .Where(x => !LooksLikeFeatureProse(x))
+                .Where(x => !MetaDataIASettings.IsObviousFeatureContamination(x));
 
-            if (settings == null || string.IsNullOrWhiteSpace(settings.Language) ||
-                !settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            if (settings == null || !settings.UseControlledFeatureVocabulary)
             {
                 return cleaned.Distinct(StringComparer.OrdinalIgnoreCase);
             }
 
-            return cleaned
-                .Select(x =>
-                {
-                    string canonical;
-                    return MetaDataIASettings.TryNormalizeCanonicalFeature(x, out canonical) ? canonical : null;
-                })
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+            return settings
+                .NormalizeConfiguredFeatures(cleaned, settings.Language)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 
@@ -209,15 +204,69 @@ namespace MetaDataIAPlugin
             IEnumerable<string> blacklist)
         {
             var cleaned = CleanList(values, int.MaxValue, blacklist, string.Empty);
-            if (settings == null || string.IsNullOrWhiteSpace(settings.Language) ||
-                !settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+            if (settings == null || !settings.UseControlledGenreVocabulary)
             {
-                return cleaned;
+                return cleaned
+                    .Where(x => !LooksLikeStructuredProse(x))
+                    .Where(x => !MetaDataIASettings.IsObviousGenreContamination(x))
+                    .Where(x => settings == null || !settings.IsConfiguredFeatureValue(x, settings.Language));
             }
 
             return cleaned
-                .SelectMany(MetaDataIASettings.NormalizeCanonicalGenres)
+                .SelectMany(x => settings.NormalizeConfiguredGenres(x, settings.Language))
                 .Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static List<string> NormalizeTags(
+            IEnumerable<string> values,
+            MetaDataIASettings settings,
+            IEnumerable<string> blacklist)
+        {
+            var cleaned = CleanList(values, settings.MaxTags, blacklist, string.Empty)
+                .Where(x => !LooksLikeStructuredProse(x))
+                .Where(x => !MetaDataIASettings.IsObviousFeatureLabel(x))
+                .Where(x => !settings.IsConfiguredFeatureValue(x, settings.Language))
+                .Select(x => AddPrefix(x, settings.TagPrefix));
+            if (!settings.UsePrimaryTagClassification)
+            {
+                return cleaned.ToList();
+            }
+
+            var prefix = string.IsNullOrWhiteSpace(settings.PrimaryTagPrefix) ? "- " : settings.PrimaryTagPrefix;
+            return cleaned
+                .Select(x => NormalizePrimaryTagPrefix(x, prefix))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static string NormalizePrimaryTagPrefix(string value, string prefix)
+        {
+            var normalized = (value ?? string.Empty).Trim();
+            if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return prefix + normalized.Substring(prefix.Length).Trim();
+            }
+
+            if (normalized.StartsWith("-", StringComparison.Ordinal))
+            {
+                return prefix + Regex.Replace(normalized, @"^[-\s]+", string.Empty);
+            }
+
+            return normalized;
+        }
+
+        private static bool LooksLikeStructuredProse(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 64 ||
+                value.IndexOfAny(new[] { '\r', '\n', '<', '>', '.', '?', '!', ':' }) >= 0)
+            {
+                return true;
+            }
+
+            var words = value.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            return words.Length > 5 || Regex.IsMatch(
+                value.ToLowerInvariant(),
+                @"(^|\s)(this|the|a|an|game|you|can|is|are|offers|features|allows|experience|players)(\s|$)");
         }
 
         private static bool IsConsoleMarketingFeature(string value)

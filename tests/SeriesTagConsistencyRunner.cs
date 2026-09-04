@@ -20,6 +20,8 @@ internal static class SeriesTagConsistencyRunner
         Test_EmptySiblingMetadataFallsBack();
         Test_GameSpecificSecondaryTagsRemainInContextButNotBaseline();
         Test_FeaturesDoNotBecomeSeriesTags();
+        Test_UnprefixedTagsInferCoreTags();
+        Test_CustomPrimaryPrefixIsRespected();
 
         Console.WriteLine();
         if (failures == 0)
@@ -105,6 +107,42 @@ internal static class SeriesTagConsistencyRunner
         AssertContains("feature stays scoped to sibling context", context.RelatedGames[0].Features, "Xbox Live");
     }
 
+    private static void Test_UnprefixedTagsInferCoreTags()
+    {
+        var context = SeriesTagConsistencyService.Build(
+            "Test Series",
+            new[]
+            {
+                GameWithGenres("Part I", new[] { "Action", "Shooter" }, "Third-Person Shooter", "Combat", "Third Person"),
+                GameWithGenres("Part II", new[] { "Action", "Shooter" }, "Third-Person Shooter", "Combat", "Third Person")
+            },
+            new SeriesTagConsistencyOptions
+            {
+                UsePrimaryTagClassification = false
+            });
+
+        AssertContains("unprefixed core tag is inferred", context.Baseline.PrimaryTags, "Third-Person Shooter");
+        AssertNotContains("disabled primary classification does not add a prefix", context.Baseline.PrimaryTags, "- Third-Person Shooter");
+    }
+
+    private static void Test_CustomPrimaryPrefixIsRespected()
+    {
+        var context = SeriesTagConsistencyService.Build(
+            "Test Series",
+            new[]
+            {
+                Game("Part I", "Core: Shooter", "Combat", "Third Person"),
+                Game("Part II", "Core: Shooter", "Combat", "Third Person")
+            },
+            new SeriesTagConsistencyOptions
+            {
+                UsePrimaryTagClassification = true,
+                PrimaryTagPrefix = "Core: "
+            });
+
+        AssertContains("custom primary prefix is preserved", context.Baseline.PrimaryTags, "Core: Shooter");
+    }
+
     private static SeriesLibraryContext Build(params SeriesTagConsistencyService.SeriesTagGameSnapshot[] games)
     {
         var context = SeriesTagConsistencyService.Build("Test Series", games);
@@ -121,6 +159,13 @@ internal static class SeriesTagConsistencyRunner
             Name = name,
             Tags = tags.ToList()
         };
+    }
+
+    private static SeriesTagConsistencyService.SeriesTagGameSnapshot GameWithGenres(string name, IEnumerable<string> genres, params string[] tags)
+    {
+        var game = Game(name, tags);
+        game.Genres = genres.ToList();
+        return game;
     }
 
     private static SeriesTagConsistencyService.SeriesTagGameSnapshot GameWithFeatures(

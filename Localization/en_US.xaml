@@ -223,6 +223,17 @@
     <sys:String x:Key="MTDA_SortingLinksHelp">Sorting name is calculated locally: it detects sequels with 2/3, II/III or v2/v3 and generates values like Base name 01, 02, 03. Links try to use official URLs; if the game comes from Steam and has an AppId, the store URL is added reliably.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Tag prefix</sys:String>
     <sys:String x:Key="MTDA_TagPrefixHelp">If you enter a prefix, it is added before each new tag. Example: AI: Open world.</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyTitle">Metadata taxonomy</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyPresetLabel">Taxonomy preset</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyPresetHelp">Flexible keeps general Playnite labels with generic safety checks. Controlled uses the editable Genre and Feature lists. Custom lets you combine those lists and the primary Tag convention as needed.</sys:String>
+    <sys:String x:Key="MTDA_UseControlledGenres">Use controlled Genre vocabulary</sys:String>
+    <sys:String x:Key="MTDA_ControlledGenresHelp">One Genre per line. When enabled, generated Genres must match this list; official/store Genres remain evidence only.</sys:String>
+    <sys:String x:Key="MTDA_UseControlledFeatures">Use controlled Feature vocabulary</sys:String>
+    <sys:String x:Key="MTDA_ControlledFeaturesHelp">One Feature per line. When enabled, generated Features must match this list. Prose, cross-field labels and inappropriate store marketing values are always rejected.</sys:String>
+    <sys:String x:Key="MTDA_UsePrimaryTagClassification">Use primary Tag classification</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagClassificationHelp">When enabled, the configured prefix marks strong primary/core Tag evidence and series consistency uses it as a signal. When disabled, Tags remain normal unprefixed Playnite values.</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagPrefix">Primary Tag prefix</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagPrefixHelp">Used only when primary Tag classification is enabled. Example: -  or Core: .</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Category prefix</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Useful to group categories created by the plugin. Example: Meta: Action.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Term blacklist</sys:String>

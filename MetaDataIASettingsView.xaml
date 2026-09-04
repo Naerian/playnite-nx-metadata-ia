@@ -2175,6 +2175,50 @@
                         <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                                 <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_TaxonomyTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_TaxonomyPresetLabel}"/>
+                                <ComboBox ItemsSource="{Binding Settings.TaxonomyPresetOptions}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding Settings.TaxonomyPreset}"
+                                          Margin="0,4,0,4"/>
+                                <TextBlock Text="{DynamicResource MTDA_TaxonomyPresetHelp}" Style="{StaticResource HintText}" Margin="0,0,0,8"/>
+
+                                <CheckBox Content="{DynamicResource MTDA_UseControlledGenres}"
+                                          IsChecked="{Binding Settings.UseControlledGenreVocabulary}"
+                                          Margin="0,0,0,4"/>
+                                <TextBlock Text="{DynamicResource MTDA_ControlledGenresHelp}" Style="{StaticResource HintText}"/>
+                                <TextBox Text="{Binding Settings.ControlledGenreVocabulary, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="86"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Margin="0,4,0,8"/>
+
+                                <CheckBox Content="{DynamicResource MTDA_UseControlledFeatures}"
+                                          IsChecked="{Binding Settings.UseControlledFeatureVocabulary}"
+                                          Margin="0,0,0,4"/>
+                                <TextBlock Text="{DynamicResource MTDA_ControlledFeaturesHelp}" Style="{StaticResource HintText}"/>
+                                <TextBox Text="{Binding Settings.ControlledFeatureVocabulary, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="86"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Margin="0,4,0,8"/>
+
+                                <CheckBox Content="{DynamicResource MTDA_UsePrimaryTagClassification}"
+                                          IsChecked="{Binding Settings.UsePrimaryTagClassification}"
+                                          Margin="0,0,0,4"/>
+                                <TextBlock Text="{DynamicResource MTDA_PrimaryTagClassificationHelp}" Style="{StaticResource HintText}"/>
+                                <TextBlock Text="{DynamicResource MTDA_PrimaryTagPrefix}" Margin="0,6,0,0"/>
+                                <TextBox Text="{Binding Settings.PrimaryTagPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
+                                <TextBlock Text="{DynamicResource MTDA_PrimaryTagPrefixHelp}" Style="{StaticResource HintText}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_FieldAccuracyNotesTitle}" Style="{StaticResource SectionHeaderText}"/>
                                 </Border>
                                 <TextBlock Text="{DynamicResource MTDA_DeveloperPublisherAccuracyNote}"

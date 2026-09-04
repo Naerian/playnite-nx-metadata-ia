@@ -49,6 +49,17 @@ namespace MetaDataIAPlugin
         }
     }
 
+    public sealed class SeriesTagConsistencyOptions
+    {
+        public bool UsePrimaryTagClassification { get; set; }
+        public string PrimaryTagPrefix { get; set; }
+
+        public SeriesTagConsistencyOptions()
+        {
+            PrimaryTagPrefix = "- ";
+        }
+    }
+
     public sealed class SeriesLibraryContext
     {
         [JsonProperty("seriesName")]
@@ -92,6 +103,20 @@ namespace MetaDataIAPlugin
 
         public static SeriesLibraryContext Build(IPlayniteAPI playniteApi, Game currentGame)
         {
+            // Keep the original overload's behavior for callers that already
+            // relied on the branch's prefixed primary-tag convention.
+            return Build(playniteApi, currentGame, new SeriesTagConsistencyOptions
+            {
+                UsePrimaryTagClassification = true,
+                PrimaryTagPrefix = "- "
+            });
+        }
+
+        public static SeriesLibraryContext Build(
+            IPlayniteAPI playniteApi,
+            Game currentGame,
+            SeriesTagConsistencyOptions options)
+        {
             if (playniteApi == null || playniteApi.Database == null || playniteApi.Database.Games == null ||
                 playniteApi.Database.Series == null || currentGame == null ||
                 currentGame.SeriesIds == null || currentGame.SeriesIds.Count == 0)
@@ -115,7 +140,7 @@ namespace MetaDataIAPlugin
                 .Take(MaxAnalysisGames)
                 .ToList();
 
-            return Build(seriesName, siblings);
+            return Build(seriesName, siblings, options);
         }
 
         /// <summary>
@@ -126,6 +151,20 @@ namespace MetaDataIAPlugin
         public static SeriesLibraryContext Build(
             string seriesName,
             IEnumerable<SeriesTagGameSnapshot> siblingGames)
+        {
+            // Preserve the existing pure-overload contract for tests and
+            // integrations that use the established prefixed convention.
+            return Build(seriesName, siblingGames, new SeriesTagConsistencyOptions
+            {
+                UsePrimaryTagClassification = true,
+                PrimaryTagPrefix = "- "
+            });
+        }
+
+        public static SeriesLibraryContext Build(
+            string seriesName,
+            IEnumerable<SeriesTagGameSnapshot> siblingGames,
+            SeriesTagConsistencyOptions options)
         {
             if (string.IsNullOrWhiteSpace(seriesName))
             {
@@ -154,31 +193,38 @@ namespace MetaDataIAPlugin
                     .ToList()
             };
 
-            context.Baseline = DeriveBaseline(useful);
+            context.Baseline = DeriveBaseline(useful, options ?? new SeriesTagConsistencyOptions());
             return context;
         }
 
-        private static SeriesBaseline DeriveBaseline(IList<SeriesTagGameSnapshot> games)
+        private static SeriesBaseline DeriveBaseline(IList<SeriesTagGameSnapshot> games, SeriesTagConsistencyOptions options)
         {
-            var cohort = SelectMechanicallySimilarCohort(games);
+            var cohort = SelectMechanicallySimilarCohort(games, options);
             if (cohort.Count < 2)
             {
                 return null;
             }
 
-            var primary = Consensus(
-                cohort,
-                x => x.Tags.Where(IsPrimaryTag).Select(NormalizePrimaryTag),
-                PrimarySupportThreshold(cohort.Count),
-                MaxPrimaryTags,
-                true);
+            var primary = options.UsePrimaryTagClassification
+                ? Consensus(
+                    cohort,
+                    x => x.Tags.Where(tag => IsPrimaryTag(tag, options)).Select(tag => NormalizePrimaryTag(tag, options)),
+                    PrimarySupportThreshold(cohort.Count),
+                    MaxPrimaryTags,
+                    true,
+                    options)
+                : InferUnprefixedCoreTags(cohort, options);
+            var inferredCoreKeys = options.UsePrimaryTagClassification
+                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(primary.Select(NormalizeTag), StringComparer.OrdinalIgnoreCase);
 
             var secondary = Consensus(
                 cohort,
-                game => game.Tags.Where(tag => !IsPrimaryTag(tag)),
+                game => game.Tags.Where(tag => !IsPrimaryTag(tag, options) && !inferredCoreKeys.Contains(NormalizeTag(tag))),
                 SecondarySupportThreshold(cohort.Count),
                 MaxSecondaryTags,
-                false);
+                false,
+                options);
 
             if (primary.Count == 0 && secondary.Count == 0)
             {
@@ -192,7 +238,7 @@ namespace MetaDataIAPlugin
             };
         }
 
-        private static List<SeriesTagGameSnapshot> SelectMechanicallySimilarCohort(IList<SeriesTagGameSnapshot> games)
+        private static List<SeriesTagGameSnapshot> SelectMechanicallySimilarCohort(IList<SeriesTagGameSnapshot> games, SeriesTagConsistencyOptions options)
         {
             if (games == null || games.Count < 2)
             {
@@ -204,9 +250,9 @@ namespace MetaDataIAPlugin
             foreach (var seed in games)
             {
                 var candidate = games
-                    .Where(candidateGame => ReferenceEquals(candidateGame, seed) || IsMechanicallySimilar(seed, candidateGame))
+                    .Where(candidateGame => ReferenceEquals(candidateGame, seed) || IsMechanicallySimilar(seed, candidateGame, options))
                     .ToList();
-                var score = candidate.Sum(candidateGame => ReferenceEquals(candidateGame, seed) ? 0 : SimilarityScore(seed, candidateGame));
+                var score = candidate.Sum(candidateGame => ReferenceEquals(candidateGame, seed) ? 0 : SimilarityScore(seed, candidateGame, options));
 
                 if (best == null || candidate.Count > best.Count ||
                     (candidate.Count == best.Count && score > bestScore))
@@ -219,11 +265,11 @@ namespace MetaDataIAPlugin
             return best ?? new List<SeriesTagGameSnapshot>();
         }
 
-        private static bool IsMechanicallySimilar(SeriesTagGameSnapshot left, SeriesTagGameSnapshot right)
+        private static bool IsMechanicallySimilar(SeriesTagGameSnapshot left, SeriesTagGameSnapshot right, SeriesTagConsistencyOptions options)
         {
-            var sharedPrimary = SharedCount(left.Tags.Where(IsPrimaryTag).Select(NormalizePrimaryTag), right.Tags.Where(IsPrimaryTag).Select(NormalizePrimaryTag));
-            var sharedPerspective = SharedCount(left.Tags.Where(IsPerspectiveTag).Select(NormalizeTag), right.Tags.Where(IsPerspectiveTag).Select(NormalizeTag));
-            var sharedSecondary = SharedCount(left.Tags.Where(x => !IsPrimaryTag(x) && !IsPerspectiveTag(x)).Select(NormalizeTag), right.Tags.Where(x => !IsPrimaryTag(x) && !IsPerspectiveTag(x)).Select(NormalizeTag));
+            var sharedPrimary = SharedCount(left.Tags.Where(x => IsPrimaryTag(x, options)).Select(x => NormalizePrimaryTag(x, options)), right.Tags.Where(x => IsPrimaryTag(x, options)).Select(x => NormalizePrimaryTag(x, options)));
+            var sharedPerspective = SharedCount(left.Tags.Where(x => IsPerspectiveTag(x, options)).Select(NormalizeTag), right.Tags.Where(x => IsPerspectiveTag(x, options)).Select(NormalizeTag));
+            var sharedSecondary = SharedCount(left.Tags.Where(x => !IsPrimaryTag(x, options) && !IsPerspectiveTag(x, options)).Select(NormalizeTag), right.Tags.Where(x => !IsPrimaryTag(x, options) && !IsPerspectiveTag(x, options)).Select(NormalizeTag));
             var sharedFeatures = SharedCount(left.Features.Select(NormalizeTag), right.Features.Select(NormalizeTag));
             var sharedGenres = SharedCount(left.Genres.Select(NormalizeTag), right.Genres.Select(NormalizeTag));
 
@@ -237,18 +283,71 @@ namespace MetaDataIAPlugin
                 return true;
             }
 
+            if (options != null && !options.UsePrimaryTagClassification &&
+                sharedGenres > 0 && (sharedSecondary > 0 || sharedPerspective > 0))
+            {
+                return true;
+            }
+
             return sharedGenres > 0 && sharedFeatures >= 2;
         }
 
-        private static int SimilarityScore(SeriesTagGameSnapshot left, SeriesTagGameSnapshot right)
+        private static int SimilarityScore(SeriesTagGameSnapshot left, SeriesTagGameSnapshot right, SeriesTagConsistencyOptions options)
         {
-            var sharedPrimary = SharedCount(left.Tags.Where(IsPrimaryTag).Select(NormalizePrimaryTag), right.Tags.Where(IsPrimaryTag).Select(NormalizePrimaryTag));
-            var sharedPerspective = SharedCount(left.Tags.Where(IsPerspectiveTag).Select(NormalizeTag), right.Tags.Where(IsPerspectiveTag).Select(NormalizeTag));
-            var sharedSecondary = SharedCount(left.Tags.Where(x => !IsPrimaryTag(x) && !IsPerspectiveTag(x)).Select(NormalizeTag), right.Tags.Where(x => !IsPrimaryTag(x) && !IsPerspectiveTag(x)).Select(NormalizeTag));
+            var sharedPrimary = SharedCount(left.Tags.Where(x => IsPrimaryTag(x, options)).Select(x => NormalizePrimaryTag(x, options)), right.Tags.Where(x => IsPrimaryTag(x, options)).Select(x => NormalizePrimaryTag(x, options)));
+            var sharedPerspective = SharedCount(left.Tags.Where(x => IsPerspectiveTag(x, options)).Select(NormalizeTag), right.Tags.Where(x => IsPerspectiveTag(x, options)).Select(NormalizeTag));
+            var sharedSecondary = SharedCount(left.Tags.Where(x => !IsPrimaryTag(x, options) && !IsPerspectiveTag(x, options)).Select(NormalizeTag), right.Tags.Where(x => !IsPrimaryTag(x, options) && !IsPerspectiveTag(x, options)).Select(NormalizeTag));
             var sharedFeatures = SharedCount(left.Features.Select(NormalizeTag), right.Features.Select(NormalizeTag));
             var sharedGenres = SharedCount(left.Genres.Select(NormalizeTag), right.Genres.Select(NormalizeTag));
             return Math.Min(sharedPrimary, 3) * 4 + Math.Min(sharedPerspective, 1) * 3 +
                    Math.Min(sharedSecondary, 4) * 2 + Math.Min(sharedFeatures, 3) + Math.Min(sharedGenres, 2);
+        }
+
+        private static List<string> InferUnprefixedCoreTags(
+            IList<SeriesTagGameSnapshot> cohort,
+            SeriesTagConsistencyOptions options)
+        {
+            var genreHints = new HashSet<string>(
+                cohort.SelectMany(x => x.Genres ?? new List<string>())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(NormalizeTag),
+                StringComparer.OrdinalIgnoreCase);
+            var candidates = new Dictionary<string, TagCount>(StringComparer.OrdinalIgnoreCase);
+            var index = 0;
+
+            foreach (var game in cohort)
+            {
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var value in (game.Tags ?? new List<string>())
+                    .Where(x => !IsPrimaryTag(x, options) && !string.IsNullOrWhiteSpace(x)))
+                {
+                    var key = NormalizeTag(value);
+                    if (!seen.Add(key))
+                    {
+                        continue;
+                    }
+
+                    TagCount count;
+                    if (!candidates.TryGetValue(key, out count))
+                    {
+                        count = new TagCount { Value = value.Trim(), FirstIndex = index++ };
+                        candidates[key] = count;
+                    }
+
+                    count.Count++;
+                }
+            }
+
+            var minimumSupport = Math.Max(2, PrimarySupportThreshold(cohort.Count));
+            return candidates.Values
+                .Where(x => x.Count >= minimumSupport)
+                .OrderByDescending(x => x.Count * 10 +
+                    (IsPerspectiveTag(x.Value, options) ? 3 : 0) +
+                    (genreHints.Contains(NormalizeTag(x.Value)) ? 2 : 0))
+                .ThenBy(x => x.FirstIndex)
+                .Take(MaxPrimaryTags)
+                .Select(x => x.Value)
+                .ToList();
         }
 
         private static List<string> Consensus(
@@ -256,7 +355,8 @@ namespace MetaDataIAPlugin
             Func<SeriesTagGameSnapshot, IEnumerable<string>> selector,
             int minimumSupport,
             int maxItems,
-            bool primary)
+            bool primary,
+            SeriesTagConsistencyOptions options)
         {
             var candidates = new Dictionary<string, TagCount>(StringComparer.OrdinalIgnoreCase);
             var index = 0;
@@ -276,7 +376,7 @@ namespace MetaDataIAPlugin
                     {
                         count = new TagCount
                         {
-                            Value = primary ? NormalizePrimaryTag(value) : value.Trim(),
+                            Value = primary ? NormalizePrimaryTag(value, options) : value.Trim(),
                             FirstIndex = index++
                         };
                         candidates[key] = count;
@@ -291,7 +391,7 @@ namespace MetaDataIAPlugin
                 .OrderByDescending(x => x.Count)
                 .ThenBy(x => x.FirstIndex)
                 .Take(maxItems)
-                .Select(x => primary ? NormalizePrimaryTag(x.Value) : x.Value)
+                .Select(x => primary ? NormalizePrimaryTag(x.Value, options) : x.Value)
                 .ToList();
         }
 
@@ -392,22 +492,46 @@ namespace MetaDataIAPlugin
                 .ToList();
         }
 
-        private static bool IsPrimaryTag(string value)
+        private static bool IsPrimaryTag(string value, SeriesTagConsistencyOptions options)
         {
-            return !string.IsNullOrWhiteSpace(value) && value.TrimStart().StartsWith("-", StringComparison.Ordinal);
+            if (options == null || !options.UsePrimaryTagClassification || string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var prefix = EffectivePrimaryTagPrefix(options);
+            return value.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+                   (string.Equals(prefix, "- ", StringComparison.Ordinal) && value.TrimStart().StartsWith("-", StringComparison.Ordinal));
         }
 
-        private static bool IsPerspectiveTag(string value)
+        private static bool IsPerspectiveTag(string value, SeriesTagConsistencyOptions options)
         {
-            var normalized = NormalizeTag(value).TrimStart('-').Trim();
+            var normalized = NormalizeTag(RemovePrimaryTagPrefix(value, options));
             return PerspectiveTags.Contains(normalized);
         }
 
-        private static string NormalizePrimaryTag(string value)
+        private static string NormalizePrimaryTag(string value, SeriesTagConsistencyOptions options)
+        {
+            var normalized = RemovePrimaryTagPrefix(value, options);
+            return normalized.Length == 0 ? string.Empty : EffectivePrimaryTagPrefix(options) + normalized;
+        }
+
+        private static string RemovePrimaryTagPrefix(string value, SeriesTagConsistencyOptions options)
         {
             var normalized = (value ?? string.Empty).Trim();
-            normalized = Regex.Replace(normalized, @"^[-\s]+", string.Empty);
-            return normalized.Length == 0 ? string.Empty : "- " + normalized;
+            var prefix = EffectivePrimaryTagPrefix(options);
+            if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = normalized.Substring(prefix.Length).Trim();
+            }
+
+            return Regex.Replace(normalized, @"^[-\s]+", string.Empty).Trim();
+        }
+
+        private static string EffectivePrimaryTagPrefix(SeriesTagConsistencyOptions options)
+        {
+            var prefix = options == null ? string.Empty : options.PrimaryTagPrefix;
+            return string.IsNullOrWhiteSpace(prefix) ? "- " : prefix;
         }
 
         private static string NormalizeTag(string value)

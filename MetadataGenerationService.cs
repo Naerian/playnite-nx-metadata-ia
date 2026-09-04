@@ -1151,6 +1151,16 @@ namespace MetaDataIAPlugin
 
         private string BuildSystemPrompt()
         {
+            var genreInstruction = settings.UseControlledGenreVocabulary
+                ? "Controlled Genre vocabulary is enabled. For Genres, use only values from controlledGenreVocabulary, preserving the configured spelling. Map official/store taxonomy to the closest configured values instead of copying it. Never return prose or platform/marketing labels. "
+                : "Genres use flexible general behavior. Keep them as short, coherent classification labels in the requested language, sanitize prose and obvious non-genre values, and never copy official/store taxonomy blindly into the final field. ";
+            var featureInstruction = settings.UseControlledFeatureVocabulary
+                ? "Controlled Feature vocabulary is enabled. For Features, use only values from controlledFeatureVocabulary, preserving the configured spelling. Never return prose, genre labels, tag-only labels or inappropriate console/store marketing values. "
+                : "Features use flexible general behavior. Keep them as short, factual, field-appropriate labels in the requested language. Reject full prose, genre labels, tag-only labels and inappropriate console/store marketing values, while allowing normal user-configured concepts such as achievements, cloud saves, 4K or workshop support. ";
+            var primaryTagInstruction = settings.UsePrimaryTagClassification
+                ? "Primary Tag classification is enabled. Use primary/core game-type tags as strong evidence and prefix them with the exact configured primaryTagPrefix; keep secondary tags unprefixed and do not emit duplicate prefixed/unprefixed forms. "
+                : "Primary Tag classification is disabled. Treat Tags as normal Playnite tags with no required classification prefix; infer recurring core tags from frequency, genres, perspective and mechanical similarity when using series context, but do not add a prefix automatically. ";
+
             return "You are a careful video game metadata editor for Playnite. " +
                    "Return only valid JSON, without markdown. " +
                    "Use the requested output language (targetLanguage / targetLanguageName) for every user-facing value, including descriptions and free-form list labels, unless a field is locked by playniteLibraryVocabulary. " +
@@ -1180,11 +1190,11 @@ namespace MetaDataIAPlugin
                    "If fieldsToGenerate includes features, features should contain 2 to " + settings.MaxFeatures + " concrete features when the game supports them, not generic phrases; do not invent extra features just to reach a count. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate includes links, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
-                   "For features, use source and platforms as context only when reasonably certain about one of the canonical feature labels, especially controller support, local/online multiplayer, VR, HDR, ultrawide or ray tracing. " +
+                   "For features, use source and platforms as context only when reasonably certain that a field-appropriate feature is supported. " +
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
-                   "For English output, use only these canonical feature labels when they apply: Single Player, Controller Support, Local Co-Op, Online Co-Op, Local Multiplayer, Online Multiplayer, Split Screen, PvP, Cross-Platform Multiplayer, VR, HDR, Ultrawide and Ray Tracing. Never use console or store-marketing capability labels as features. " +
+                   featureInstruction +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
-                   "Genres must stay broad and normalized: for English output use only Action, Adventure, RPG, Strategy, Simulation, Shooter, Racing, Sports, Fighting, Puzzle, Platformer and Horror. Map compound or store-taxonomy labels such as Action & adventure, Action-RPG, First-Person Shooter and Survival Horror to those broad families; do not return store subgenres, platform capabilities, marketing labels or descriptive sentences. " +
+                   genreInstruction +
                    "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
                    "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "Developers must contain only the main credited developer studio for the base game. Publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty. " +
@@ -1193,8 +1203,8 @@ namespace MetaDataIAPlugin
                    "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
                    "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
                    "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
-                   "Tags use a two-level taxonomy: primary game-type and classification tags begin with exactly '- ' (hyphen followed by one space), while secondary tags are unprefixed. Preserve that distinction and never emit both a prefixed and unprefixed form of the same tag. " +
-                   "When seriesLibraryContext or seriesBaseline is present, use the local sibling games to infer an established core classification baseline. Preserve primary game-type tags and perspective when they genuinely apply, and do not randomly omit a defining primary tag supported by the sibling consensus. Treat seriesBaseline as a conservative consensus hint, not a command to copy every sibling tag: game-specific settings or mechanics may remain specific to the current game. Spin-offs or entries with genuinely different gameplay override the baseline, while remasters, ports and enhanced editions normally inherit the underlying game's core tag taxonomy. " +
+                   primaryTagInstruction +
+                   "When seriesLibraryContext or seriesBaseline is present, use the local sibling games to infer an established recurring core Tag and perspective baseline. Preserve core Tags and perspective when they genuinely apply, and do not randomly omit a defining Tag supported by the sibling consensus. Treat seriesBaseline as a conservative consensus hint, not a command to copy every sibling tag: game-specific settings or mechanics may remain specific to the current game. Spin-offs or entries with genuinely different gameplay override the baseline, while remasters, ports and enhanced editions normally inherit the underlying game's core tag taxonomy. " +
                    "seriesLibraryContext and seriesBaseline come from other games in the local Playnite library, even when existingMetadataMode is Ignore. They are not official-store evidence and must not be used to invent features or replace the current game's generated features.";
         }
 
@@ -1226,6 +1236,16 @@ namespace MetaDataIAPlugin
             context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
+            context["usePrimaryTagClassification"] = settings.UsePrimaryTagClassification;
+            context["primaryTagPrefix"] = settings.PrimaryTagPrefix;
+            context["useControlledGenreVocabulary"] = settings.UseControlledGenreVocabulary;
+            context["controlledGenreVocabulary"] = settings.UseControlledGenreVocabulary
+                ? settings.GetControlledVocabularyTerms("genres", settings.Language)
+                : new List<string>();
+            context["useControlledFeatureVocabulary"] = settings.UseControlledFeatureVocabulary;
+            context["controlledFeatureVocabulary"] = settings.UseControlledFeatureVocabulary
+                ? settings.GetControlledVocabularyTerms("features", settings.Language)
+                : new List<string>();
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
             context["requestedDescriptionTokens"] = requestedTokens;
@@ -1233,7 +1253,14 @@ namespace MetaDataIAPlugin
             // This is deliberately built from the local Playnite database only.
             // It remains independent of ExistingMetadataMode and every
             // official/community enrichment switch.
-            var seriesLibraryContext = SeriesTagConsistencyService.Build(playniteApi, game);
+            var seriesLibraryContext = SeriesTagConsistencyService.Build(
+                playniteApi,
+                game,
+                new SeriesTagConsistencyOptions
+                {
+                    UsePrimaryTagClassification = settings.UsePrimaryTagClassification,
+                    PrimaryTagPrefix = settings.PrimaryTagPrefix
+                });
             if (seriesLibraryContext != null)
             {
                 context["seriesLibraryContext"] = seriesLibraryContext;
@@ -1772,22 +1799,22 @@ namespace MetaDataIAPlugin
             var vocabulary = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             if (settings.PreferExistingGenres)
             {
-                vocabulary["genres"] = MetaDataIASettings.GetValidatedVocabularyTerms("genres", Names(playniteApi.Database.Genres), settings.Language);
+                vocabulary["genres"] = settings.GetValidatedVocabularyTerms("genres", Names(playniteApi.Database.Genres), settings.Language);
             }
 
             if (settings.PreferExistingTags)
             {
-                vocabulary["tags"] = MetaDataIASettings.GetValidatedVocabularyTerms("tags", Names(playniteApi.Database.Tags), settings.Language);
+                vocabulary["tags"] = settings.GetValidatedVocabularyTerms("tags", Names(playniteApi.Database.Tags), settings.Language);
             }
 
             if (settings.PreferExistingFeatures)
             {
-                vocabulary["features"] = MetaDataIASettings.GetValidatedVocabularyTerms("features", Names(playniteApi.Database.Features), settings.Language);
+                vocabulary["features"] = settings.GetValidatedVocabularyTerms("features", Names(playniteApi.Database.Features), settings.Language);
             }
 
             if (settings.PreferExistingCategories)
             {
-                vocabulary["categories"] = MetaDataIASettings.GetValidatedVocabularyTerms("categories", Names(playniteApi.Database.Categories), settings.Language);
+                vocabulary["categories"] = settings.GetValidatedVocabularyTerms("categories", Names(playniteApi.Database.Categories), settings.Language);
             }
 
             if (settings.PreferExistingAgeRatings)
@@ -1824,15 +1851,18 @@ namespace MetaDataIAPlugin
             if (!string.IsNullOrWhiteSpace(settings.Language) &&
                 settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
             {
+                var englishGenres = settings.UseControlledGenreVocabulary
+                    ? settings.GetControlledVocabularyTerms("genres", settings.Language)
+                    : new List<string>();
+                var englishFeatures = settings.UseControlledFeatureVocabulary
+                    ? settings.GetControlledVocabularyTerms("features", settings.Language)
+                    : new List<string>();
+
                 return new Dictionary<string, List<string>>
                 {
                     {
                         "genres",
-                        new List<string>
-                        {
-                            "Action", "Adventure", "RPG", "Strategy", "Simulation", "Shooter", "Racing",
-                            "Sports", "Fighting", "Puzzle", "Platformer", "Horror"
-                        }
+                        englishGenres
                     },
                     {
                         "tags",
@@ -1847,12 +1877,7 @@ namespace MetaDataIAPlugin
                     },
                     {
                         "features",
-                        new List<string>
-                        {
-                            "Single Player", "Controller Support", "Local Co-Op", "Online Co-Op",
-                            "Local Multiplayer", "Online Multiplayer", "Split Screen", "PvP",
-                            "Cross-Platform Multiplayer", "VR", "HDR", "Ultrawide", "Ray Tracing"
-                        }
+                        englishFeatures
                     },
                     {
                         "categories",

@@ -223,6 +223,17 @@
     <sys:String x:Key="MTDA_SortingLinksHelp">Orden de nombre se calcula localmente: detecta secuelas con 2/3, II/III o v2/v3 y genera valores como Nombre base 01, 02, 03. Enlaces intenta usar URLs oficiales; si el juego viene de Steam y tiene AppId, se añade la URL de tienda de forma fiable.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Prefijo para etiquetas</sys:String>
     <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva. Ejemplo: IA: Mundo abierto.</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyTitle">Taxonomía de metadatos</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyPresetLabel">Preset de taxonomía</sys:String>
+    <sys:String x:Key="MTDA_TaxonomyPresetHelp">Flexible mantiene etiquetas generales de Playnite con comprobaciones de seguridad. Controlled usa las listas editables de géneros y características. Custom permite combinar esas listas y la convención de etiquetas principales.</sys:String>
+    <sys:String x:Key="MTDA_UseControlledGenres">Usar vocabulario controlado de géneros</sys:String>
+    <sys:String x:Key="MTDA_ControlledGenresHelp">Un género por línea. Al activarlo, los géneros generados deben coincidir con esta lista; los géneros de tiendas solo se usan como evidencia.</sys:String>
+    <sys:String x:Key="MTDA_UseControlledFeatures">Usar vocabulario controlado de características</sys:String>
+    <sys:String x:Key="MTDA_ControlledFeaturesHelp">Una característica por línea. Al activarlo, las características generadas deben coincidir con esta lista. El texto libre, los valores cruzados y el marketing inapropiado siempre se rechazan.</sys:String>
+    <sys:String x:Key="MTDA_UsePrimaryTagClassification">Usar clasificación de etiquetas principales</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagClassificationHelp">Al activarlo, el prefijo configurado marca las etiquetas principales y la consistencia de series lo usa como señal. Al desactivarlo, las etiquetas son valores normales de Playnite sin prefijo obligatorio.</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagPrefix">Prefijo de etiqueta principal</sys:String>
+    <sys:String x:Key="MTDA_PrimaryTagPrefixHelp">Solo se usa cuando la clasificación de etiquetas principales está activa. Ejemplo: -  o Core: .</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefijo para categorias</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Sirve para agrupar categorias creadas por el plugin. Ejemplo: Meta: Accion.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Lista negra de terminos</sys:String>

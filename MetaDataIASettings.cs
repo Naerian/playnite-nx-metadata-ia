@@ -118,6 +118,9 @@ namespace MetaDataIAPlugin
         public const string ApplySkip = "No tocar";
         public const string ApplyEmptyOnly = "Solo si esta vacio";
         public const string ApplyAppend = "Anadir sin borrar";
+        public const string TaxonomyFlexible = "Flexible";
+        public const string TaxonomyControlled = "Controlled";
+        public const string TaxonomyCustom = "Custom";
 
         [DontSerialize]
         public string AboutVersionAuthor
@@ -194,6 +197,16 @@ namespace MetaDataIAPlugin
         private int maxLinks = 5;
         private int maxSeries = 1;
         private string tagPrefix = string.Empty;
+        private string taxonomyPreset = TaxonomyFlexible;
+        private bool useControlledGenreVocabulary = false;
+        private bool useControlledFeatureVocabulary = false;
+        private bool usePrimaryTagClassification = false;
+        private string controlledGenreVocabulary = string.Empty;
+        private string controlledFeatureVocabulary = string.Empty;
+        private string primaryTagPrefix = "- ";
+        private bool taxonomySettingsMigrated = false;
+        private bool applyingTaxonomyPreset;
+        private bool taxonomySettingsReady;
         private string categoryPrefix = string.Empty;
         private string blacklist = string.Empty;
         private bool preferExistingGenres = false;
@@ -343,6 +356,21 @@ namespace MetaDataIAPlugin
             "Horror"
         };
 
+        private static readonly HashSet<string> KnownTagOnlyVocabulary = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Multiplayer", "Co-op", "Competitive", "PvE", "Social Deduction", "Building", "Management", "Comedy",
+            "Combat", "Crafting", "Exploration", "Stealth", "Third Person", "First Person",
+            "Top-Down", "Isometric", "Side-Scrolling", "Post-Apocalyptic", "Zombies", "Espionage",
+            "Open World", "Sandbox", "Narrative", "Deep Story", "Difficult", "Casual", "Retro",
+            "Anime", "Pixel Art", "Science Fiction", "Fantasy", "Cyberpunk", "Procedural", "Survival",
+            "Roguelike", "Metroidvania", "Visual Novel", "Rhythm", "Point & Click", "Souls-like"
+        };
+
+        private static readonly HashSet<string> KnownFeatureOnlyVocabulary = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Achievements", "Cloud Saves", "4K", "Workshop"
+        };
+
         private static readonly Dictionary<string, string> CanonicalFeatureAliases =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -366,6 +394,7 @@ namespace MetaDataIAPlugin
                 { "Action-Adventure", new[] { "Action", "Adventure" } },
                 { "Action & Adventure", new[] { "Action", "Adventure" } },
                 { "Action Adventure", new[] { "Action", "Adventure" } },
+                { "Action-RPG", new[] { "Action", "RPG" } },
                 { "Action RPG", new[] { "Action", "RPG" } },
                 { "Action Role-Playing", new[] { "Action", "RPG" } },
                 { "Action Role-Playing Game", new[] { "Action", "RPG" } },
@@ -375,6 +404,8 @@ namespace MetaDataIAPlugin
                 { "RPG Game", new[] { "RPG" } },
                 { "First-Person Shooter", new[] { "Shooter" } },
                 { "Third-Person Shooter", new[] { "Shooter" } },
+                { "First Person Shooter", new[] { "Shooter" } },
+                { "Third Person Shooter", new[] { "Shooter" } },
                 { "FPS", new[] { "Shooter" } },
                 { "TPS", new[] { "Shooter" } },
                 { "Turn-Based Strategy", new[] { "Strategy" } },
@@ -569,6 +600,68 @@ namespace MetaDataIAPlugin
         public int MaxLinks { get { return maxLinks; } set { SetValue(ref maxLinks, Clamp(value)); } }
         public int MaxSeries { get { return maxSeries; } set { SetValue(ref maxSeries, Math.Max(1, Math.Min(5, value))); } }
         public string TagPrefix { get { return tagPrefix; } set { SetValue(ref tagPrefix, value); } }
+        public string TaxonomyPreset
+        {
+            get { return taxonomyPreset; }
+            set
+            {
+                var normalized = NormalizeTaxonomyPreset(value);
+                SetValue(ref taxonomyPreset, normalized);
+                if (taxonomySettingsReady)
+                {
+                    ApplyTaxonomyPreset(normalized);
+                }
+            }
+        }
+
+        [DontSerialize]
+        public List<LocalizedOption> TaxonomyPresetOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    new LocalizedOption(TaxonomyFlexible, "Flexible / Default"),
+                    new LocalizedOption(TaxonomyControlled, "Controlled"),
+                    new LocalizedOption(TaxonomyCustom, "Custom")
+                };
+            }
+        }
+
+        public bool UseControlledGenreVocabulary
+        {
+            get { return useControlledGenreVocabulary; }
+            set
+            {
+                SetValue(ref useControlledGenreVocabulary, value);
+                MarkTaxonomyAsCustomIfEdited();
+            }
+        }
+
+        public bool UseControlledFeatureVocabulary
+        {
+            get { return useControlledFeatureVocabulary; }
+            set
+            {
+                SetValue(ref useControlledFeatureVocabulary, value);
+                MarkTaxonomyAsCustomIfEdited();
+            }
+        }
+
+        public bool UsePrimaryTagClassification
+        {
+            get { return usePrimaryTagClassification; }
+            set
+            {
+                SetValue(ref usePrimaryTagClassification, value);
+                MarkTaxonomyAsCustomIfEdited();
+            }
+        }
+
+        public string ControlledGenreVocabulary { get { return controlledGenreVocabulary; } set { SetValue(ref controlledGenreVocabulary, value); } }
+        public string ControlledFeatureVocabulary { get { return controlledFeatureVocabulary; } set { SetValue(ref controlledFeatureVocabulary, value); } }
+        public string PrimaryTagPrefix { get { return primaryTagPrefix; } set { SetValue(ref primaryTagPrefix, value); } }
+        public bool TaxonomySettingsMigrated { get { return taxonomySettingsMigrated; } set { SetValue(ref taxonomySettingsMigrated, value); } }
         public string CategoryPrefix { get { return categoryPrefix; } set { SetValue(ref categoryPrefix, value); } }
         public string Blacklist { get { return blacklist; } set { SetValue(ref blacklist, value); } }
         public bool PreferExistingGenres { get { return preferExistingGenres; } set { SetValue(ref preferExistingGenres, value); } }
@@ -839,6 +932,7 @@ namespace MetaDataIAPlugin
             EnsureTextLengthDefaults();
             EnsureCompanyLimitDefaults();
             EnsureSafeDefaults();
+            EnsureTaxonomyDefaults(existingSettings);
             EnsureMediaDefaults(existingSettings);
 
             if (Templates == null || Templates.Count == 0)
@@ -865,6 +959,111 @@ namespace MetaDataIAPlugin
             }
 
             SanitizeVocabularyMemory();
+        }
+
+        private void EnsureTaxonomyDefaults(bool existingSettings)
+        {
+            if (!TaxonomySettingsMigrated)
+            {
+                // Settings saved by the previous branch already had the
+                // controlled English behavior. Preserve that behavior when
+                // the new switches are introduced. New installations start
+                // flexible so the plugin does not impose one user's taxonomy.
+                if (existingSettings && IsEnglishLanguage(Language))
+                {
+                    taxonomyPreset = TaxonomyControlled;
+                    useControlledGenreVocabulary = true;
+                    useControlledFeatureVocabulary = true;
+                    usePrimaryTagClassification = true;
+                    primaryTagPrefix = "- ";
+                }
+                else
+                {
+                    // The earlier strict taxonomy was English-only. Keep
+                    // existing non-English installations on their previous
+                    // flexible behavior instead of filtering their localized
+                    // labels through an English preset.
+                    taxonomyPreset = TaxonomyFlexible;
+                    useControlledGenreVocabulary = false;
+                    useControlledFeatureVocabulary = false;
+                    usePrimaryTagClassification = false;
+                }
+
+                TaxonomySettingsMigrated = true;
+            }
+
+            TaxonomyPreset = NormalizeTaxonomyPreset(TaxonomyPreset);
+            if (string.IsNullOrWhiteSpace(ControlledGenreVocabulary))
+            {
+                ControlledGenreVocabulary = string.Join("\n", CanonicalGenreVocabulary);
+            }
+
+            if (string.IsNullOrWhiteSpace(ControlledFeatureVocabulary))
+            {
+                ControlledFeatureVocabulary = string.Join("\n", CanonicalFeatureVocabulary);
+            }
+
+            PrimaryTagPrefix = NormalizePrimaryTagPrefix(PrimaryTagPrefix);
+            taxonomySettingsReady = true;
+        }
+
+        private void ApplyTaxonomyPreset(string value)
+        {
+            applyingTaxonomyPreset = true;
+            try
+            {
+                if (string.Equals(value, TaxonomyFlexible, StringComparison.OrdinalIgnoreCase))
+                {
+                    UseControlledGenreVocabulary = false;
+                    UseControlledFeatureVocabulary = false;
+                    UsePrimaryTagClassification = false;
+                }
+                else if (string.Equals(value, TaxonomyControlled, StringComparison.OrdinalIgnoreCase))
+                {
+                    UseControlledGenreVocabulary = true;
+                    UseControlledFeatureVocabulary = true;
+                    UsePrimaryTagClassification = true;
+                    if (string.IsNullOrWhiteSpace(PrimaryTagPrefix))
+                    {
+                        PrimaryTagPrefix = "- ";
+                    }
+                }
+            }
+            finally
+            {
+                applyingTaxonomyPreset = false;
+            }
+        }
+
+        private void MarkTaxonomyAsCustomIfEdited()
+        {
+            if (taxonomySettingsReady && !applyingTaxonomyPreset &&
+                !string.Equals(TaxonomyPreset, TaxonomyCustom, StringComparison.OrdinalIgnoreCase))
+            {
+                SetValue(ref taxonomyPreset, TaxonomyCustom);
+                OnPropertyChanged("TaxonomyPreset");
+            }
+        }
+
+        private static string NormalizeTaxonomyPreset(string value)
+        {
+            if (string.Equals(value, TaxonomyControlled, StringComparison.OrdinalIgnoreCase))
+            {
+                return TaxonomyControlled;
+            }
+
+            if (string.Equals(value, TaxonomyCustom, StringComparison.OrdinalIgnoreCase))
+            {
+                return TaxonomyCustom;
+            }
+
+            return TaxonomyFlexible;
+        }
+
+        private static string NormalizePrimaryTagPrefix(string value)
+        {
+            var normalized = (value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+            return normalized.Length > 24 ? normalized.Substring(0, 24) : normalized;
         }
 
         private void SanitizeVocabularyMemory()
@@ -1172,7 +1371,7 @@ namespace MetaDataIAPlugin
             return result;
         }
 
-        private static string FormatVocabularyMemory(Dictionary<string, Dictionary<string, List<string>>> values)
+        private string FormatVocabularyMemory(Dictionary<string, Dictionary<string, List<string>>> values)
         {
             var lines = new List<string>();
             foreach (var language in values.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
@@ -1202,7 +1401,7 @@ namespace MetaDataIAPlugin
             return string.Join("\n", lines);
         }
 
-        private static void AddVocabularyTerms(Dictionary<string, List<string>> byField, string field, IEnumerable<string> terms, int maxItems, string language)
+        private void AddVocabularyTerms(Dictionary<string, List<string>> byField, string field, IEnumerable<string> terms, int maxItems, string language)
         {
             if (!byField.ContainsKey(field))
             {
@@ -1218,7 +1417,7 @@ namespace MetaDataIAPlugin
                 .ToList();
         }
 
-        private static IEnumerable<string> FilterVocabularyTerms(string field, IEnumerable<string> terms, string language)
+        private IEnumerable<string> FilterVocabularyTerms(string field, IEnumerable<string> terms, string language)
         {
             var values = terms ?? Enumerable.Empty<string>();
             foreach (var raw in values)
@@ -1234,9 +1433,9 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) && IsEnglishLanguage(language))
+                if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) && UseControlledGenreVocabulary)
                 {
-                    foreach (var genre in NormalizeCanonicalGenres(value))
+                    foreach (var genre in NormalizeConfiguredGenres(value, language))
                     {
                         yield return genre;
                     }
@@ -1244,12 +1443,24 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase) && IsEnglishLanguage(language))
+                if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
                 {
-                    string canonical;
-                    if (TryNormalizeCanonicalFeature(value, out canonical))
+                    if (IsObviousFeatureContamination(value))
                     {
-                        yield return canonical;
+                        continue;
+                    }
+
+                    if (UseControlledFeatureVocabulary)
+                    {
+                        var feature = FindConfiguredTerm("features", value, language);
+                        if (!string.IsNullOrWhiteSpace(feature))
+                        {
+                            yield return feature;
+                        }
+                    }
+                    else
+                    {
+                        yield return value;
                     }
 
                     continue;
@@ -1259,7 +1470,7 @@ namespace MetaDataIAPlugin
                 // out here also cleans memories written by older versions.
                 if ((string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase)) &&
-                    IsCanonicalFeatureOrAlias(value))
+                    (IsObviousFeatureLabel(value) || IsConfiguredFeatureValue(value, language)))
                 {
                     continue;
                 }
@@ -1268,9 +1479,130 @@ namespace MetaDataIAPlugin
             }
         }
 
-        public static List<string> GetValidatedVocabularyTerms(string field, IEnumerable<string> terms, string language = null)
+        public List<string> GetValidatedVocabularyTerms(string field, IEnumerable<string> terms, string language = null)
         {
             return FilterVocabularyTerms(field, terms, language).ToList();
+        }
+
+        public List<string> GetControlledVocabularyTerms(string field, string language = null)
+        {
+            var source = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase)
+                ? ControlledGenreVocabulary
+                : ControlledFeatureVocabulary;
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                source = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase)
+                    ? string.Join("\n", CanonicalGenreVocabulary)
+                    : string.Join("\n", CanonicalFeatureVocabulary);
+            }
+
+            return SplitVocabularyValues(source)
+                .Select(x => Regex.Replace(x.Trim(), @"\s+", " "))
+                .Where(IsReusableVocabularyTerm)
+                .Where(x => !IsConsoleMarketingTerm(x))
+                .Where(x => !string.Equals(field, "features", StringComparison.OrdinalIgnoreCase) || !IsObviousFeatureContamination(x))
+                .Where(x => !string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) || !IsObviousGenreContamination(x))
+                .Where(x => !string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) || !IsConfiguredFeatureValue(x, language))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(200)
+                .ToList();
+        }
+
+        public IEnumerable<string> NormalizeConfiguredGenres(string value, string language = null)
+        {
+            var direct = FindConfiguredTerm("genres", value, language);
+            if (!string.IsNullOrWhiteSpace(direct))
+            {
+                yield return direct;
+            }
+
+            foreach (var canonical in NormalizeCanonicalGenres(value))
+            {
+                var configured = FindConfiguredTerm("genres", canonical, language);
+                if (!string.IsNullOrWhiteSpace(configured))
+                {
+                    yield return configured;
+                }
+            }
+        }
+
+        public IEnumerable<string> NormalizeConfiguredFeatures(IEnumerable<string> values, string language = null)
+        {
+            foreach (var value in values ?? Enumerable.Empty<string>())
+            {
+                if (IsObviousFeatureContamination(value))
+                {
+                    continue;
+                }
+
+                var configured = FindConfiguredTerm("features", value, language);
+                if (!string.IsNullOrWhiteSpace(configured))
+                {
+                    yield return configured;
+                    continue;
+                }
+
+                string canonical;
+                if (IsEnglishLanguage(language) && TryNormalizeCanonicalFeature(value, out canonical))
+                {
+                    configured = FindConfiguredTerm("features", canonical, language);
+                    if (!string.IsNullOrWhiteSpace(configured))
+                    {
+                        yield return configured;
+                    }
+                }
+            }
+        }
+
+        public static bool IsObviousFeatureContamination(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            if (IsConsoleMarketingTerm(value) || NormalizeCanonicalGenres(value).Count > 0)
+            {
+                return true;
+            }
+
+            return KnownTagOnlyVocabulary.Contains(Regex.Replace(value.Trim(), @"\s+", " "));
+        }
+
+        public static bool IsObviousGenreContamination(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ||
+                   IsConsoleMarketingTerm(value) ||
+                   IsCanonicalFeatureOrAlias(value) ||
+                   KnownFeatureOnlyVocabulary.Contains(Regex.Replace((value ?? string.Empty).Trim(), @"\s+", " "));
+        }
+
+        public static bool IsObviousFeatureLabel(string value)
+        {
+            var normalized = Regex.Replace((value ?? string.Empty).Trim(), @"\s+", " ");
+            return IsCanonicalFeatureOrAlias(value) ||
+                   IsConsoleMarketingTerm(value) ||
+                   KnownFeatureOnlyVocabulary.Contains(normalized);
+        }
+
+        public bool IsConfiguredFeatureValue(string value, string language = null)
+        {
+            var normalized = Regex.Replace((value ?? string.Empty).Trim(), @"\s+", " ");
+            return normalized.Length > 0 &&
+                   GetControlledVocabularyTerms("features", language)
+                       .Any(x => string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private string FindConfiguredTerm(string field, string value, string language)
+        {
+            var normalized = Regex.Replace((value ?? string.Empty).Trim(), @"\s+", " ");
+            if (normalized.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            return GetControlledVocabularyTerms(field, language)
+                .FirstOrDefault(x => string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
         }
 
         private static bool IsEnglishLanguage(string language)
@@ -1314,7 +1646,7 @@ namespace MetaDataIAPlugin
                    normalized.Contains("series x s");
         }
 
-        private static bool IsCanonicalFeatureOrAlias(string value)
+        public static bool IsCanonicalFeatureOrAlias(string value)
         {
             string canonical;
             return TryNormalizeCanonicalFeature(value, out canonical);
@@ -1396,7 +1728,7 @@ namespace MetaDataIAPlugin
         private static IEnumerable<string> SplitVocabularyValues(string value)
         {
             return (value ?? string.Empty)
-                .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(new[] { ';', ',', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => x.Trim())
                 .Where(x => !string.IsNullOrWhiteSpace(x));
         }
@@ -2779,6 +3111,7 @@ namespace MetaDataIAPlugin
         public void ResetAllSettings()
         {
             Settings = new MetaDataIASettings();
+            Settings.EnsureDefaults(false);
             Settings.SetupWizardCompleted = false;
             Settings.SetupWizardMigrationApplied = true;
             RefreshOriginLibraryIntegrations();
