@@ -127,7 +127,6 @@ internal static class MetadataRegressionRunner
     private static void Test_FlexibleUsersAreNotForcedIntoControlledGenres()
     {
         var settings = CreateSettings();
-        settings.UseControlledGenreVocabulary = false;
         var result = CreateResult(new[] { "Achievements" });
         result.Genres = new List<string> { "Metroidvania" };
 
