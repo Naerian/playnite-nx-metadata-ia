@@ -201,6 +201,7 @@ namespace MetaDataIAPlugin
         private bool useControlledGenreVocabulary = false;
         private bool useControlledFeatureVocabulary = false;
         private bool usePrimaryTagClassification = false;
+        private bool inferSeriesRelationships = false;
         private string controlledGenreVocabulary = string.Empty;
         private string controlledFeatureVocabulary = string.Empty;
         private string primaryTagPrefix = "- ";
@@ -657,6 +658,8 @@ namespace MetaDataIAPlugin
                 MarkTaxonomyAsCustomIfEdited();
             }
         }
+
+        public bool InferSeriesRelationships { get { return inferSeriesRelationships; } set { SetValue(ref inferSeriesRelationships, value); } }
 
         public string ControlledGenreVocabulary { get { return controlledGenreVocabulary; } set { SetValue(ref controlledGenreVocabulary, value); } }
         public string ControlledFeatureVocabulary { get { return controlledFeatureVocabulary; } set { SetValue(ref controlledFeatureVocabulary, value); } }

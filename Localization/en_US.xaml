@@ -234,6 +234,8 @@
     <sys:String x:Key="MTDA_PrimaryTagClassificationHelp">When enabled, the configured prefix marks strong primary/core Tag evidence and series consistency uses it as a signal. When disabled, Tags remain normal unprefixed Playnite values.</sys:String>
     <sys:String x:Key="MTDA_PrimaryTagPrefix">Primary Tag prefix</sys:String>
     <sys:String x:Key="MTDA_PrimaryTagPrefixHelp">Used only when primary Tag classification is enabled. Example: -  or Core: .</sys:String>
+    <sys:String x:Key="MTDA_InferSeriesRelationships">Infer series relationships when Series is missing</sys:String>
+    <sys:String x:Key="MTDA_InferSeriesRelationshipsHelp">Uses only the local Playnite library to shortlist likely sequel, remake or edition siblings. The AI validates franchise and mechanical similarity; no SeriesIds are written.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Category prefix</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Useful to group categories created by the plugin. Example: Meta: Action.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Term blacklist</sys:String>

@@ -2473,11 +2473,7 @@ namespace MetaDataIAPlugin
             {
                 panel.Children.Add(MetadataTrustUi.Text(item.Error));
             }
-            else if (!hasMetadataChanges && !hasMedia)
-            {
-                panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SimulationNoChanges", "No changes would be made with the current apply rules."), new Thickness(0)));
-            }
-            else if (showGameContext)
+            else if (showGameContext && (hasMetadataChanges || hasMedia))
             {
                 var verdict = MetadataTrustUi.Text(GameRecommendation(item));
                 verdict.FontSize = 14;
@@ -2485,6 +2481,23 @@ namespace MetaDataIAPlugin
                 MetadataTrustUi.SetResource(verdict, TextBlock.ForegroundProperty, "Narian.Accent");
                 panel.Children.Add(verdict);
                 panel.Children.Add(MetadataTrustUi.Hint(GameRecommendationDetails(item), new Thickness(0, 4, 0, 12)));
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Error) && item.Result != null && item.Result.SeriesContextDiagnostics != null)
+            {
+                var seriesContext = item.Result.SeriesContextDiagnostics.ToDisplayText();
+                if (!string.IsNullOrWhiteSpace(seriesContext))
+                {
+                    var diagnostic = MetadataTrustUi.Text(seriesContext);
+                    diagnostic.TextWrapping = TextWrapping.Wrap;
+                    diagnostic.Margin = new Thickness(0, 0, 0, 12);
+                    panel.Children.Add(diagnostic);
+                }
+            }
+
+            if (!hasMetadataChanges && !hasMedia && string.IsNullOrWhiteSpace(item.Error))
+            {
+                panel.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_SimulationNoChanges", "No changes would be made with the current apply rules."), new Thickness(0)));
             }
 
             if (hasMetadataChanges || hasMedia)

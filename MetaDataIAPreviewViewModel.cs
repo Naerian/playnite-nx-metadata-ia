@@ -36,6 +36,7 @@ namespace MetaDataIAPlugin
         public string Genres { get { return Join(Result == null ? null : Result.Genres); } }
         public string Tags { get { return Join(Result == null ? null : Result.Tags); } }
         public string Features { get { return Join(Result == null ? null : Result.Features); } }
+        public string SeriesContext { get { return Result == null || Result.SeriesContextDiagnostics == null ? string.Empty : Result.SeriesContextDiagnostics.ToDisplayText(); } }
         public string Developers { get { return Join(Result == null ? null : Result.Developers); } }
         public string Publishers { get { return Join(Result == null ? null : Result.Publishers); } }
         public string AgeRatings { get { return Join(Result == null ? null : Result.AgeRatings); } }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace MetaDataIAPlugin
 {
@@ -54,6 +55,9 @@ namespace MetaDataIAPlugin
         public List<string> Series { get; set; }
         public string SortingName { get; set; }
         public string Description { get; set; }
+
+        [JsonIgnore]
+        public SeriesContextDiagnostics SeriesContextDiagnostics { get; set; }
 
         public AiMetadataResult()
         {

@@ -19,6 +19,7 @@ namespace MetaDataIAPlugin
         private readonly MetaDataIASettings settings;
         private readonly IPlayniteAPI playniteApi;
         private List<OfficialStoreMetadata> officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
+        private SeriesContextDiagnostics seriesContextDiagnosticsForCurrentRequest;
 
         public MetadataGenerationService(MetaDataIASettings settings, IPlayniteAPI playniteApi = null)
         {
@@ -28,6 +29,7 @@ namespace MetaDataIAPlugin
 
         public async Task<AiMetadataResult> GenerateAsync(Game game, CancellationToken cancellationToken = default(CancellationToken))
         {
+            seriesContextDiagnosticsForCurrentRequest = null;
             Exception primaryError = null;
 
             try
@@ -238,6 +240,10 @@ namespace MetaDataIAPlugin
 
         private void PrepareResult(AiMetadataResult result, Game game)
         {
+            if (result != null)
+            {
+                result.SeriesContextDiagnostics = seriesContextDiagnosticsForCurrentRequest;
+            }
             ApplyStrictFactualGuard(result, game);
             ApplyTrustedFactualFields(result, game);
             EnsureSystemRequirements(result, game);
@@ -1204,6 +1210,7 @@ namespace MetaDataIAPlugin
                    "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url. " +
                    "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant. " +
                    primaryTagInstruction +
+                   "When inferSeriesRelationships is true and seriesInferenceCandidates is present, validate each local candidate before using it for series consistency: it must belong to the same franchise or series and be mechanically similar enough that its core Tags and perspective should carry over. Existing Playnite Series assignments are strong evidence, but reject spin-offs or games that only share a franchise name, genre or publisher. Do not expand the sibling set beyond the supplied shortlist. " +
                    "When seriesLibraryContext or seriesBaseline is present, use the local sibling games to infer an established recurring core Tag and perspective baseline. Preserve core Tags and perspective when they genuinely apply, and do not randomly omit a defining Tag supported by the sibling consensus. Treat seriesBaseline as a conservative consensus hint, not a command to copy every sibling tag: game-specific settings or mechanics may remain specific to the current game. Spin-offs or entries with genuinely different gameplay override the baseline, while remasters, ports and enhanced editions normally inherit the underlying game's core tag taxonomy. " +
                    "seriesLibraryContext and seriesBaseline come from other games in the local Playnite library, even when existingMetadataMode is Ignore. They are not official-store evidence and must not be used to invent features or replace the current game's generated features.";
         }
@@ -1238,6 +1245,7 @@ namespace MetaDataIAPlugin
             context["tagPrefix"] = settings.TagPrefix;
             context["usePrimaryTagClassification"] = settings.UsePrimaryTagClassification;
             context["primaryTagPrefix"] = settings.PrimaryTagPrefix;
+            context["inferSeriesRelationships"] = settings.InferSeriesRelationships;
             context["useControlledGenreVocabulary"] = settings.UseControlledGenreVocabulary;
             context["controlledGenreVocabulary"] = settings.UseControlledGenreVocabulary
                 ? settings.GetControlledVocabularyTerms("genres", settings.Language)
@@ -1253,20 +1261,39 @@ namespace MetaDataIAPlugin
             // This is deliberately built from the local Playnite database only.
             // It remains independent of ExistingMetadataMode and every
             // official/community enrichment switch.
-            var seriesLibraryContext = SeriesTagConsistencyService.Build(
-                playniteApi,
-                game,
-                new SeriesTagConsistencyOptions
+            seriesContextDiagnosticsForCurrentRequest = BuildExplicitSeriesDiagnostics(game);
+            SeriesInferenceResult seriesInference = null;
+            SeriesLibraryContext seriesLibraryContext;
+            var seriesOptions = new SeriesTagConsistencyOptions
+            {
+                UsePrimaryTagClassification = settings.UsePrimaryTagClassification,
+                PrimaryTagPrefix = settings.PrimaryTagPrefix,
+                InferSeriesRelationships = settings.InferSeriesRelationships
+            };
+            if (settings.InferSeriesRelationships && (game.SeriesIds == null || game.SeriesIds.Count == 0))
+            {
+                seriesInference = SeriesTagConsistencyService.FindInferredSeries(playniteApi, game, seriesOptions);
+                seriesLibraryContext = seriesInference == null ? null : seriesInference.Context;
+                if (seriesInference != null)
                 {
-                    UsePrimaryTagClassification = settings.UsePrimaryTagClassification,
-                    PrimaryTagPrefix = settings.PrimaryTagPrefix
-                });
+                    context["seriesInferenceCandidates"] = seriesInference.Candidates;
+                }
+            }
+            else
+            {
+                seriesLibraryContext = SeriesTagConsistencyService.Build(playniteApi, game, seriesOptions);
+            }
             if (seriesLibraryContext != null)
             {
                 context["seriesLibraryContext"] = seriesLibraryContext;
                 if (seriesLibraryContext.Baseline != null)
                 {
                     context["seriesBaseline"] = seriesLibraryContext.Baseline;
+                }
+
+                if (seriesLibraryContext.Inferred)
+                {
+                    seriesContextDiagnosticsForCurrentRequest = BuildInferredSeriesDiagnostics(seriesLibraryContext);
                 }
             }
 
@@ -1602,6 +1629,61 @@ namespace MetaDataIAPlugin
             }
 
             return result.Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+        }
+
+        private SeriesContextDiagnostics BuildExplicitSeriesDiagnostics(Game game)
+        {
+            if (game == null || game.SeriesIds == null || game.SeriesIds.Count == 0)
+            {
+                return null;
+            }
+
+            var names = ExistingNames(game.Series);
+            if (playniteApi != null && playniteApi.Database != null && playniteApi.Database.Series != null)
+            {
+                foreach (var seriesId in game.SeriesIds)
+                {
+                    var series = playniteApi.Database.Series.Get(seriesId);
+                    if (series != null && !string.IsNullOrWhiteSpace(series.Name))
+                    {
+                        names.Add(series.Name.Trim());
+                    }
+                }
+            }
+
+            var seriesName = names
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+            return string.IsNullOrWhiteSpace(seriesName)
+                ? null
+                : new SeriesContextDiagnostics
+                {
+                    Inferred = false,
+                    SeriesName = seriesName,
+                    Confidence = "High"
+                };
+        }
+
+        private static SeriesContextDiagnostics BuildInferredSeriesDiagnostics(SeriesLibraryContext context)
+        {
+            if (context == null || !context.Inferred || string.IsNullOrWhiteSpace(context.SeriesName))
+            {
+                return null;
+            }
+
+            return new SeriesContextDiagnostics
+            {
+                Inferred = true,
+                SeriesName = context.SeriesName,
+                Confidence = string.IsNullOrWhiteSpace(context.Confidence) ? "High" : context.Confidence,
+                RelatedGames = (context.RelatedGames ?? new List<SeriesRelatedGameContext>())
+                    .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name))
+                    .Select(x => x.Name.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(8)
+                    .ToList()
+            };
         }
 
         private List<string> ResolveKnownSeries(IEnumerable<string> generated, Game game, int maxItems)

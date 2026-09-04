@@ -41,6 +41,9 @@
                     <GroupBox Header="Caracteristicas" Margin="0,0,0,8">
                         <TextBlock Text="{Binding Features}" TextWrapping="Wrap" Margin="8"/>
                     </GroupBox>
+                    <GroupBox Header="Series context" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding SeriesContext}" TextWrapping="Wrap" Margin="8"/>
+                    </GroupBox>
                     <GroupBox Header="Detalle IA" Margin="0,0,0,8">
                         <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Margin="8"/>
                     </GroupBox>

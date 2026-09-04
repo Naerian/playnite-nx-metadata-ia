@@ -26,11 +26,15 @@ namespace MetaDataIAPlugin
         [JsonProperty("features")]
         public List<string> Features { get; set; }
 
+        [JsonProperty("explicitSeries")]
+        public List<string> ExplicitSeries { get; set; }
+
         public SeriesRelatedGameContext()
         {
             Tags = new List<string>();
             Genres = new List<string>();
             Features = new List<string>();
+            ExplicitSeries = new List<string>();
         }
     }
 
@@ -53,6 +57,7 @@ namespace MetaDataIAPlugin
     {
         public bool UsePrimaryTagClassification { get; set; }
         public string PrimaryTagPrefix { get; set; }
+        public bool InferSeriesRelationships { get; set; }
 
         public SeriesTagConsistencyOptions()
         {
@@ -60,10 +65,110 @@ namespace MetaDataIAPlugin
         }
     }
 
+    public sealed class SeriesInferenceCandidate
+    {
+        [JsonProperty("candidateId")]
+        public string CandidateId { get; set; }
+
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("explicitSeries")]
+        public List<string> ExplicitSeries { get; set; }
+
+        [JsonProperty("tags")]
+        public List<string> Tags { get; set; }
+
+        [JsonProperty("genres")]
+        public List<string> Genres { get; set; }
+
+        [JsonProperty("features")]
+        public List<string> Features { get; set; }
+
+        [JsonProperty("evidence")]
+        public string Evidence { get; set; }
+
+        [JsonIgnore]
+        public SeriesTagConsistencyService.SeriesTagGameSnapshot Snapshot { get; set; }
+
+        [JsonIgnore]
+        public int LocalScore { get; set; }
+
+        [JsonIgnore]
+        public bool SameNormalizedTitle { get; set; }
+
+        public SeriesInferenceCandidate()
+        {
+            ExplicitSeries = new List<string>();
+            Tags = new List<string>();
+            Genres = new List<string>();
+            Features = new List<string>();
+        }
+    }
+
+    public sealed class SeriesInferenceResult
+    {
+        public string SeriesName { get; set; }
+        public string Confidence { get; set; }
+        public List<SeriesInferenceCandidate> Candidates { get; set; }
+        public List<SeriesTagConsistencyService.SeriesTagGameSnapshot> AcceptedSiblings { get; set; }
+        public SeriesLibraryContext Context { get; set; }
+
+        public SeriesInferenceResult()
+        {
+            Candidates = new List<SeriesInferenceCandidate>();
+            AcceptedSiblings = new List<SeriesTagConsistencyService.SeriesTagGameSnapshot>();
+        }
+    }
+
+    public sealed class SeriesContextDiagnostics
+    {
+        public bool Inferred { get; set; }
+        public string SeriesName { get; set; }
+        public string Confidence { get; set; }
+        public List<string> RelatedGames { get; set; }
+
+        public SeriesContextDiagnostics()
+        {
+            RelatedGames = new List<string>();
+        }
+
+        public string ToDisplayText()
+        {
+            if (string.IsNullOrWhiteSpace(SeriesName))
+            {
+                return string.Empty;
+            }
+
+            var lines = new List<string> { "Series context:" };
+            if (Inferred)
+            {
+                lines.Add("Inferred: " + SeriesName.Trim());
+                lines.Add("Confidence: " + (string.IsNullOrWhiteSpace(Confidence) ? "Unknown" : Confidence.Trim()));
+                lines.Add("Related games:");
+                lines.AddRange((RelatedGames ?? new List<string>())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => "- " + x.Trim()));
+            }
+            else
+            {
+                lines.Add("Playnite Series: " + SeriesName.Trim());
+            }
+
+            return string.Join(Environment.NewLine, lines);
+        }
+    }
+
     public sealed class SeriesLibraryContext
     {
         [JsonProperty("seriesName")]
         public string SeriesName { get; set; }
+
+        [JsonProperty("inferred")]
+        public bool Inferred { get; set; }
+
+        [JsonProperty("confidence")]
+        public string Confidence { get; set; }
 
         [JsonProperty("relatedGames")]
         public List<SeriesRelatedGameContext> RelatedGames { get; set; }
@@ -91,6 +196,8 @@ namespace MetaDataIAPlugin
         private const int MaxFeaturesPerGame = 12;
         private const int MaxPrimaryTags = 10;
         private const int MaxSecondaryTags = 14;
+        private const int MaxInferenceCandidates = 6;
+        private const string SeriesEditionSuffixPattern = "(?:game of the year(?: edition)?|goty(?: edition)?|director'?s cut|definitive edition|complete edition|remastered(?: edition)?|remaster|remake|anniversary(?: edition)?|enhanced edition|ultimate edition|deluxe edition|hd)";
 
         private static readonly HashSet<string> PerspectiveTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -117,9 +224,25 @@ namespace MetaDataIAPlugin
             Game currentGame,
             SeriesTagConsistencyOptions options)
         {
+            var effectiveOptions = options ?? new SeriesTagConsistencyOptions();
             if (playniteApi == null || playniteApi.Database == null || playniteApi.Database.Games == null ||
-                playniteApi.Database.Series == null || currentGame == null ||
-                currentGame.SeriesIds == null || currentGame.SeriesIds.Count == 0)
+                currentGame == null)
+            {
+                return null;
+            }
+
+            if (currentGame.SeriesIds == null || currentGame.SeriesIds.Count == 0)
+            {
+                if (!effectiveOptions.InferSeriesRelationships)
+                {
+                    return null;
+                }
+
+                var inferred = FindInferredSeries(playniteApi, currentGame, effectiveOptions);
+                return inferred == null ? null : inferred.Context;
+            }
+
+            if (playniteApi.Database.Series == null)
             {
                 return null;
             }
@@ -140,7 +263,207 @@ namespace MetaDataIAPlugin
                 .Take(MaxAnalysisGames)
                 .ToList();
 
-            return Build(seriesName, siblings, options);
+            return Build(seriesName, siblings, effectiveOptions);
+        }
+
+        /// <summary>
+        /// Finds a small, local-only shortlist for a game without explicit
+        /// Playnite SeriesIds. Candidate selection is deliberately conservative:
+        /// normalized sequel/edition titles are accepted as siblings, while a
+        /// candidate connected only by a broad franchise assignment is exposed
+        /// for AI validation but is not used in the baseline automatically.
+        /// </summary>
+        public static SeriesInferenceResult FindInferredSeries(
+            IPlayniteAPI playniteApi,
+            Game currentGame,
+            SeriesTagConsistencyOptions options)
+        {
+            var effectiveOptions = options ?? new SeriesTagConsistencyOptions();
+            if (!effectiveOptions.InferSeriesRelationships || playniteApi == null ||
+                playniteApi.Database == null || playniteApi.Database.Games == null ||
+                currentGame == null || string.IsNullOrWhiteSpace(currentGame.Name) ||
+                (currentGame.SeriesIds != null && currentGame.SeriesIds.Count > 0))
+            {
+                return null;
+            }
+
+            var currentSnapshot = ToSnapshot(playniteApi, currentGame);
+            var librarySnapshots = playniteApi.Database.Games.GetClone()
+                .Where(x => x != null && x.Id != currentGame.Id && !string.IsNullOrWhiteSpace(x.Name))
+                .Select(x => ToSnapshot(playniteApi, x))
+                .ToList();
+            return FindInferredSeries(currentSnapshot.Name, currentSnapshot, librarySnapshots, effectiveOptions);
+        }
+
+        /// <summary>
+        /// Dependency-light inference core. The Playnite adapter above only
+        /// supplies local snapshots; this overload is also used by regression
+        /// tests so title and candidate rules can be checked without a live
+        /// Playnite database or any network source.
+        /// </summary>
+        public static SeriesInferenceResult FindInferredSeries(
+            string currentGameName,
+            SeriesTagGameSnapshot currentGame,
+            IEnumerable<SeriesTagGameSnapshot> libraryGames,
+            SeriesTagConsistencyOptions options)
+        {
+            var effectiveOptions = options ?? new SeriesTagConsistencyOptions();
+            if (!effectiveOptions.InferSeriesRelationships || currentGame == null ||
+                string.IsNullOrWhiteSpace(currentGameName) || currentGame.HasExplicitSeriesIds)
+            {
+                return null;
+            }
+
+            var currentTitleKey = NormalizeSeriesTitleForInference(currentGameName);
+            if (string.IsNullOrWhiteSpace(currentTitleKey))
+            {
+                return null;
+            }
+
+            var currentTags = currentGame.Tags ?? new List<string>();
+            var currentGenres = currentGame.Genres ?? new List<string>();
+            var currentFeatures = currentGame.Features ?? new List<string>();
+            var candidates = new List<SeriesInferenceCandidate>();
+            foreach (var snapshotValue in libraryGames ?? Enumerable.Empty<SeriesTagGameSnapshot>())
+            {
+                if (snapshotValue == null || snapshotValue.Id == currentGame.Id || string.IsNullOrWhiteSpace(snapshotValue.Name))
+                {
+                    continue;
+                }
+
+                var snapshot = NormalizeSnapshot(snapshotValue);
+                var candidateTitleKey = NormalizeSeriesTitleForInference(snapshot.Name);
+                var sameTitle = string.Equals(currentTitleKey, candidateTitleKey, StringComparison.OrdinalIgnoreCase);
+                var explicitSeries = snapshot.SeriesNames ?? new List<string>();
+                var compatibleSeries = explicitSeries.Any(x => IsSeriesNameCompatible(x, currentTitleKey));
+                if (!sameTitle && !compatibleSeries)
+                {
+                    continue;
+                }
+
+                var localScore = sameTitle ? 100 : 42;
+                if (explicitSeries.Count > 0)
+                {
+                    localScore += sameTitle ? 25 : 30;
+                }
+
+                localScore += Math.Min(20, SharedCount(snapshot.Tags.Select(NormalizeTag), currentTags.Select(NormalizeTag)) * 3);
+                localScore += Math.Min(12, SharedCount(snapshot.Genres.Select(NormalizeTag), currentGenres.Select(NormalizeTag)) * 4);
+                localScore += Math.Min(9, SharedCount(snapshot.Features.Select(NormalizeTag), currentFeatures.Select(NormalizeTag)) * 3);
+
+                candidates.Add(new SeriesInferenceCandidate
+                {
+                    CandidateId = snapshot.Id.ToString("N"),
+                    Name = snapshot.Name.Trim(),
+                    ExplicitSeries = explicitSeries,
+                    Tags = snapshot.Tags,
+                    Genres = snapshot.Genres,
+                    Features = snapshot.Features,
+                    Evidence = BuildInferenceEvidence(sameTitle, explicitSeries),
+                    Snapshot = snapshot,
+                    LocalScore = localScore,
+                    SameNormalizedTitle = sameTitle
+                });
+            }
+
+            var shortlist = candidates
+                .OrderByDescending(x => x.LocalScore)
+                .ThenByDescending(x => x.Snapshot.MetadataScore)
+                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(MaxInferenceCandidates)
+                .ToList();
+            var accepted = shortlist
+                .Where(x => x.SameNormalizedTitle && x.Snapshot.HasUsefulMetadata)
+                .Select(x => x.Snapshot)
+                .ToList();
+
+            if (shortlist.Count == 0)
+            {
+                return null;
+            }
+
+            var seriesName = shortlist
+                .Where(x => x.SameNormalizedTitle || x.ExplicitSeries.Count > 0)
+                .SelectMany(x => x.ExplicitSeries ?? new List<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(seriesName))
+            {
+                seriesName = DisplaySeriesName(currentGame.Name);
+            }
+
+            var context = accepted.Count == 0 ? null : Build(seriesName, accepted, effectiveOptions);
+            if (accepted.Count > 0 && context == null)
+            {
+                return null;
+            }
+
+            if (context != null)
+            {
+                context.Inferred = true;
+                context.Confidence = "High";
+            }
+
+            return new SeriesInferenceResult
+            {
+                SeriesName = context == null ? seriesName : context.SeriesName,
+                Confidence = context == null ? "Medium" : context.Confidence,
+                Candidates = shortlist,
+                AcceptedSiblings = accepted,
+                Context = context
+            };
+        }
+
+        public static string NormalizeSeriesTitleForInference(string title)
+        {
+            var value = Regex.Replace((title ?? string.Empty).Trim(), @"\s+", " ");
+            if (value.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            value = RemoveSeriesEditionSuffixes(value);
+            value = Regex.Replace(value, @"\b(?:part|episode|chapter)\s+(?:\d+|[ivxlcdm]+)\b", string.Empty, RegexOptions.IgnoreCase);
+            value = Regex.Replace(value, @"(?:\s|[-:])(?:\d+|i{1,3}|iv|v|vi{0,3}|ix|x|xi|xii)\s*$", string.Empty, RegexOptions.IgnoreCase);
+            value = Regex.Replace(value, @"[\(\[\{][^\)\]\}]*[\)\]\}]", " ");
+            value = Regex.Replace(value, @"[^\p{L}\p{N}]+", " ");
+            return Regex.Replace(value.Trim(), @"\s+", " ").ToLowerInvariant();
+        }
+
+        private static string DisplaySeriesName(string title)
+        {
+            var value = Regex.Replace((title ?? string.Empty).Trim(), @"\s+", " ");
+            value = RemoveSeriesEditionSuffixes(value);
+            value = Regex.Replace(value, @"\b(?:part|episode|chapter)\s+(?:\d+|[ivxlcdm]+)\b", string.Empty, RegexOptions.IgnoreCase);
+            value = Regex.Replace(value, @"(?:\s|[-:])(?:\d+|i{1,3}|iv|v|vi{0,3}|ix|x|xi|xii)\s*$", string.Empty, RegexOptions.IgnoreCase);
+            return Regex.Replace(value.Trim().Trim(',', ':', '-', '–', '—'), @"\s+", " ");
+        }
+
+        private static string RemoveSeriesEditionSuffixes(string value)
+        {
+            var normalized = value ?? string.Empty;
+            for (var attempt = 0; attempt < 4; attempt++)
+            {
+                var updated = Regex.Replace(
+                    normalized,
+                    @"\s*[\(\[]\s*" + SeriesEditionSuffixPattern + @"\s*[\)\]]\s*$",
+                    string.Empty,
+                    RegexOptions.IgnoreCase);
+                updated = Regex.Replace(
+                    updated,
+                    @"[\s,:\-–—]+" + SeriesEditionSuffixPattern + @"(?=\s*$)",
+                    string.Empty,
+                    RegexOptions.IgnoreCase);
+                if (string.Equals(normalized, updated, StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                normalized = updated.Trim();
+            }
+
+            return normalized;
         }
 
         /// <summary>
@@ -440,7 +763,36 @@ namespace MetaDataIAPlugin
             return string.Empty;
         }
 
+        private static bool IsSeriesNameCompatible(string seriesName, string currentTitleKey)
+        {
+            var seriesKey = NormalizeSeriesTitleForInference(seriesName);
+            return seriesKey.Length >= 4 &&
+                   (string.Equals(seriesKey, currentTitleKey, StringComparison.OrdinalIgnoreCase) ||
+                    currentTitleKey.StartsWith(seriesKey + " ", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string BuildInferenceEvidence(bool sameTitle, IEnumerable<string> explicitSeries)
+        {
+            var evidence = new List<string>();
+            if (sameTitle)
+            {
+                evidence.Add("normalized sequel or edition title");
+            }
+
+            if ((explicitSeries ?? Enumerable.Empty<string>()).Any(x => !string.IsNullOrWhiteSpace(x)))
+            {
+                evidence.Add("existing Playnite Series assignment");
+            }
+
+            return string.Join("; ", evidence);
+        }
+
         private static SeriesTagGameSnapshot ToSnapshot(Game game)
+        {
+            return ToSnapshot(null, game);
+        }
+
+        private static SeriesTagGameSnapshot ToSnapshot(IPlayniteAPI playniteApi, Game game)
         {
             return new SeriesTagGameSnapshot
             {
@@ -448,8 +800,35 @@ namespace MetaDataIAPlugin
                 Name = game.Name,
                 Tags = Names(game.Tags, MaxTagsPerGame),
                 Genres = Names(game.Genres, MaxGenresPerGame),
-                Features = Names(game.Features, MaxFeaturesPerGame)
+                Features = Names(game.Features, MaxFeaturesPerGame),
+                SeriesNames = GetExplicitSeriesNames(playniteApi, game),
+                HasExplicitSeriesIds = game.SeriesIds != null && game.SeriesIds.Count > 0
             };
+        }
+
+        private static List<string> GetExplicitSeriesNames(IPlayniteAPI playniteApi, Game game)
+        {
+            var result = Names(game == null ? null : game.Series, MaxRelatedGames);
+            if (playniteApi == null || playniteApi.Database == null || playniteApi.Database.Series == null ||
+                game == null || game.SeriesIds == null)
+            {
+                return result;
+            }
+
+            foreach (var seriesId in game.SeriesIds)
+            {
+                var series = playniteApi.Database.Series.Get(seriesId);
+                if (series != null && !string.IsNullOrWhiteSpace(series.Name))
+                {
+                    result.Add(series.Name.Trim());
+                }
+            }
+
+            return result
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(MaxRelatedGames)
+                .ToList();
         }
 
         private static SeriesRelatedGameContext ToContext(SeriesTagGameSnapshot game)
@@ -459,7 +838,8 @@ namespace MetaDataIAPlugin
                 Name = game.Name,
                 Tags = game.Tags,
                 Genres = game.Genres,
-                Features = game.Features
+                Features = game.Features,
+                ExplicitSeries = game.SeriesNames
             };
         }
 
@@ -471,7 +851,9 @@ namespace MetaDataIAPlugin
                 Name = game.Name.Trim(),
                 Tags = CleanStrings(game.Tags, MaxTagsPerGame),
                 Genres = CleanStrings(game.Genres, MaxGenresPerGame),
-                Features = CleanStrings(game.Features, MaxFeaturesPerGame)
+                Features = CleanStrings(game.Features, MaxFeaturesPerGame),
+                SeriesNames = CleanStrings(game.SeriesNames, MaxRelatedGames),
+                HasExplicitSeriesIds = game.HasExplicitSeriesIds
             };
         }
 
@@ -559,6 +941,10 @@ namespace MetaDataIAPlugin
             public List<string> Tags { get; set; }
             public List<string> Genres { get; set; }
             public List<string> Features { get; set; }
+            public List<string> SeriesNames { get; set; }
+
+            [JsonIgnore]
+            public bool HasExplicitSeriesIds { get; set; }
 
             [JsonIgnore]
             public bool HasUsefulMetadata
@@ -587,6 +973,7 @@ namespace MetaDataIAPlugin
                 Tags = new List<string>();
                 Genres = new List<string>();
                 Features = new List<string>();
+                SeriesNames = new List<string>();
             }
         }
     }

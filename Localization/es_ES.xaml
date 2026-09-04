@@ -234,6 +234,8 @@
     <sys:String x:Key="MTDA_PrimaryTagClassificationHelp">Al activarlo, el prefijo configurado marca las etiquetas principales y la consistencia de series lo usa como señal. Al desactivarlo, las etiquetas son valores normales de Playnite sin prefijo obligatorio.</sys:String>
     <sys:String x:Key="MTDA_PrimaryTagPrefix">Prefijo de etiqueta principal</sys:String>
     <sys:String x:Key="MTDA_PrimaryTagPrefixHelp">Solo se usa cuando la clasificación de etiquetas principales está activa. Ejemplo: -  o Core: .</sys:String>
+    <sys:String x:Key="MTDA_InferSeriesRelationships">Inferir relaciones de series cuando falte la serie</sys:String>
+    <sys:String x:Key="MTDA_InferSeriesRelationshipsHelp">Usa solo la biblioteca local de Playnite para buscar secuelas, remakes o ediciones relacionadas. La IA valida la franquicia y la similitud mecánica; no se escriben SeriesIds.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefijo para categorias</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Sirve para agrupar categorias creadas por el plugin. Ejemplo: Meta: Accion.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Lista negra de terminos</sys:String>

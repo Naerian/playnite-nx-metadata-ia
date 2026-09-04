@@ -2214,6 +2214,11 @@
                                 <TextBlock Text="{DynamicResource MTDA_PrimaryTagPrefix}" Margin="0,6,0,0"/>
                                 <TextBox Text="{Binding Settings.PrimaryTagPrefix, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
                                 <TextBlock Text="{DynamicResource MTDA_PrimaryTagPrefixHelp}" Style="{StaticResource HintText}"/>
+
+                                <CheckBox Content="{DynamicResource MTDA_InferSeriesRelationships}"
+                                          IsChecked="{Binding Settings.InferSeriesRelationships}"
+                                          Margin="0,10,0,4"/>
+                                <TextBlock Text="{DynamicResource MTDA_InferSeriesRelationshipsHelp}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource SettingsCard}">
