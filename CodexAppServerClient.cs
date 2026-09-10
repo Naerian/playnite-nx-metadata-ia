@@ -212,94 +212,131 @@ namespace MetaDataIAPlugin
                     "Sign in with ChatGPT in the Metadata AI provider settings before generating metadata.");
             }
 
-            var threadParameters = new JObject();
-            threadParameters["model"] = model;
-            threadParameters["serviceName"] = "metadata_ai_plugin";
-            var thread = await RequestAsync("thread/start", threadParameters, cancellationToken).ConfigureAwait(false);
-            var threadObject = thread["thread"] as JObject;
-            var threadId = threadObject == null ? null : (string)threadObject["id"];
-            if (string.IsNullOrWhiteSpace(threadId))
+            string threadId = null;
+            try
             {
-                throw new CodexAppServerException("Codex did not return a thread id.");
-            }
-
-            var turnParameters = new JObject();
-            turnParameters["threadId"] = threadId;
-            var input = new JArray();
-            var inputText = new JObject();
-            inputText["type"] = "text";
-            inputText["text"] = prompt;
-            input.Add(inputText);
-            turnParameters["input"] = input;
-            turnParameters["model"] = model;
-            turnParameters["approvalPolicy"] = "never";
-
-            var sandboxPolicy = new JObject();
-            sandboxPolicy["type"] = "readOnly";
-            var access = new JObject();
-            access["type"] = "fullAccess";
-            sandboxPolicy["access"] = access;
-            turnParameters["sandboxPolicy"] = sandboxPolicy;
-
-            if (outputSchema != null)
-            {
-                turnParameters["outputSchema"] = outputSchema.DeepClone();
-            }
-            turnParameters["summary"] = "concise";
-            await RequestAsync("turn/start", turnParameters, cancellationToken).ConfigureAwait(false);
-
-            var responseText = new StringBuilder();
-            while (true)
-            {
-                var message = await ReadNotificationAsync(cancellationToken).ConfigureAwait(false);
-                var method = (string)message["method"];
-                var parameters = message["params"] as JObject;
-
-                if (string.Equals(method, "item/agentMessage/delta", StringComparison.OrdinalIgnoreCase))
+                var threadParameters = new JObject();
+                threadParameters["model"] = model;
+                threadParameters["serviceName"] = "metadata_ai_plugin";
+                var thread = await RequestAsync("thread/start", threadParameters, cancellationToken).ConfigureAwait(false);
+                var threadObject = thread["thread"] as JObject;
+                threadId = threadObject == null ? null : (string)threadObject["id"];
+                if (string.IsNullOrWhiteSpace(threadId))
                 {
-                    var delta = parameters == null ? null : (string)parameters["delta"];
-                    if (!string.IsNullOrEmpty(delta))
-                    {
-                        responseText.Append(delta);
-                    }
+                    throw new CodexAppServerException("Codex did not return a thread id.");
                 }
-                else if (string.Equals(method, "item/completed", StringComparison.OrdinalIgnoreCase))
+
+                var turnParameters = new JObject();
+                turnParameters["threadId"] = threadId;
+                var input = new JArray();
+                var inputText = new JObject();
+                inputText["type"] = "text";
+                inputText["text"] = prompt;
+                input.Add(inputText);
+                turnParameters["input"] = input;
+                turnParameters["model"] = model;
+                turnParameters["approvalPolicy"] = "never";
+
+                var sandboxPolicy = new JObject();
+                sandboxPolicy["type"] = "readOnly";
+                var access = new JObject();
+                access["type"] = "fullAccess";
+                sandboxPolicy["access"] = access;
+                turnParameters["sandboxPolicy"] = sandboxPolicy;
+
+                if (outputSchema != null)
                 {
-                    var item = parameters == null ? null : parameters["item"] as JObject;
-                    if (item != null && string.Equals((string)item["type"], "agentMessage", StringComparison.OrdinalIgnoreCase))
+                    turnParameters["outputSchema"] = outputSchema.DeepClone();
+                }
+                turnParameters["summary"] = "concise";
+                await RequestAsync("turn/start", turnParameters, cancellationToken).ConfigureAwait(false);
+
+                var responseText = new StringBuilder();
+                while (true)
+                {
+                    var message = await ReadNotificationAsync(cancellationToken).ConfigureAwait(false);
+                    var method = (string)message["method"];
+                    var parameters = message["params"] as JObject;
+
+                    if (string.Equals(method, "item/agentMessage/delta", StringComparison.OrdinalIgnoreCase))
                     {
-                        var text = (string)item["text"];
-                        if (!string.IsNullOrWhiteSpace(text))
+                        var delta = parameters == null ? null : (string)parameters["delta"];
+                        if (!string.IsNullOrEmpty(delta))
                         {
-                            responseText.Clear();
-                            responseText.Append(text);
+                            responseText.Append(delta);
                         }
                     }
-                }
-                else if (string.Equals(method, "turn/completed", StringComparison.OrdinalIgnoreCase))
-                {
-                    var turn = parameters == null ? null : parameters["turn"] as JObject;
-                    var status = turn == null ? null : (string)turn["status"];
-                    if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+                    else if (string.Equals(method, "item/completed", StringComparison.OrdinalIgnoreCase))
                     {
-                        var error = turn["error"] as JObject;
-                        throw new CodexAppServerException(
-                            error == null || string.IsNullOrWhiteSpace((string)error["message"])
-                                ? "Codex failed to generate metadata."
-                                : (string)error["message"]);
+                        var item = parameters == null ? null : parameters["item"] as JObject;
+                        if (item != null && string.Equals((string)item["type"], "agentMessage", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var text = (string)item["text"];
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                responseText.Clear();
+                                responseText.Append(text);
+                            }
+                        }
                     }
+                    else if (string.Equals(method, "turn/completed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var turn = parameters == null ? null : parameters["turn"] as JObject;
+                        var status = turn == null ? null : (string)turn["status"];
+                        if (string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var error = turn["error"] as JObject;
+                            throw new CodexAppServerException(
+                                error == null || string.IsNullOrWhiteSpace((string)error["message"])
+                                    ? "Codex failed to generate metadata."
+                                    : (string)error["message"]);
+                        }
 
-                    break;
+                        break;
+                    }
                 }
-            }
 
-            var result = responseText.ToString().Trim();
-            if (string.IsNullOrWhiteSpace(result))
+                var result = responseText.ToString().Trim();
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    throw new CodexAppServerException("Codex completed without returning metadata.");
+                }
+
+                await ArchiveThreadQuietlyAsync(threadId).ConfigureAwait(false);
+                return result;
+            }
+            catch
             {
-                throw new CodexAppServerException("Codex completed without returning metadata.");
+                // C# 5 does not permit await in catch/finally blocks. The
+                // archive helper uses ConfigureAwait(false), so synchronously
+                // finish this short cleanup before the caller disposes the
+                // app-server process.
+                ArchiveThreadQuietlyAsync(threadId).GetAwaiter().GetResult();
+                throw;
+            }
+        }
+
+        private async Task ArchiveThreadQuietlyAsync(string threadId)
+        {
+            if (string.IsNullOrWhiteSpace(threadId))
+            {
+                return;
             }
 
-            return result;
+            try
+            {
+                var parameters = new JObject();
+                parameters["threadId"] = threadId;
+                // Metadata requests are throwaway integration work. Archive the
+                // persisted app-server thread so each game does not pollute the
+                // user's visible Codex Recents list. Use a non-cancelled token so
+                // cleanup still runs after a failed or cancelled turn.
+                await RequestAsync("thread/archive", parameters, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Cleanup must not hide the generation result or original error.
+            }
         }
 
         public static async Task LoginAsync(
