@@ -101,6 +101,7 @@ General setup:
 | LM Studio | No; runs on your PC | `local-model` | Install LM Studio, download and load a model, then enable its local server in the Developer tab. Keep LM Studio running while Metadata AI is working. |
 | Ollama | No; runs on your PC | `llama3.1` | Install Ollama, download a model with `ollama pull`, and keep the Ollama service running. The model field must match a model shown by `ollama list`. |
 | OpenAI | Yes, API billing or credit | `gpt-4.1-mini` | Create an API key in the OpenAI Platform. ChatGPT Plus or Pro does not include API credit. |
+| ChatGPT (OAuth) | Uses the ChatGPT account available to Codex | `gpt-5.6-terra` | Requires the Codex CLI. Select this provider, set the Codex executable path if needed, and use **Sign in with ChatGPT**. The extension communicates with the documented local Codex app-server; it does not read or store OAuth tokens. |
 | Claude Anthropic | Usually yes, through separate API billing | `claude-sonnet-4-5` | Create a key in Anthropic Console. A claude.ai subscription does not include Anthropic API usage. |
 | OpenRouter | Depends on the selected model | `openrouter/auto` | Use this preset for paid models or enter an exact OpenRouter model ID. Use the separate OpenRouter Free preset when no paid routing is desired. |
 

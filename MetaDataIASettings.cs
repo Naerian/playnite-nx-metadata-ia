@@ -130,6 +130,7 @@ namespace MetaDataIAPlugin
 
         public const string ApplyOverwrite = "Sobrescribir";
         public const string ProviderOpenAI = "OpenAI";
+        public const string ProviderChatGptOAuth = "ChatGPT (OAuth)";
         public const string ProviderLmStudio = "LM Studio local";
         public const string ProviderOllama = "Ollama local";
         public const string ProviderGemini = "Google Gemini";
@@ -146,6 +147,7 @@ namespace MetaDataIAPlugin
         private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
         private string model = "llama-3.1-8b-instant";
+        private string codexExecutablePath = "codex";
         private string language = "es";
         private bool showAdvancedOptions = false;
         private string descriptionTemplate = DefaultMediumTemplate;
@@ -501,6 +503,7 @@ namespace MetaDataIAPlugin
                 OnPropertyChanged("ProviderBillingHelp");
                 OnPropertyChanged("ShowEndpointEditor");
                 OnPropertyChanged("CanRestoreProviderEndpoint");
+                OnPropertyChanged("IsChatGptOAuthProvider");
             }
         }
 
@@ -525,6 +528,7 @@ namespace MetaDataIAPlugin
         public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
         public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
         public string Model { get { return model; } set { SetValue(ref model, value); } }
+        public string CodexExecutablePath { get { return codexExecutablePath; } set { SetValue(ref codexExecutablePath, value); } }
         public string Language { get { return language; } set { SetValue(ref language, value); } }
         public bool ShowAdvancedOptions
         {
@@ -544,13 +548,19 @@ namespace MetaDataIAPlugin
         [DontSerialize]
         public bool ShowEndpointEditor
         {
-            get { return ShowAdvancedOptions || ProviderPreset == ProviderCustom; }
+            get { return !IsChatGptOAuthProvider && (ShowAdvancedOptions || ProviderPreset == ProviderCustom); }
         }
 
         [DontSerialize]
         public bool CanRestoreProviderEndpoint
         {
-            get { return ProviderPreset != ProviderCustom; }
+            get { return !IsChatGptOAuthProvider && ProviderPreset != ProviderCustom; }
+        }
+
+        [DontSerialize]
+        public bool IsChatGptOAuthProvider
+        {
+            get { return ProviderPreset == ProviderChatGptOAuth; }
         }
         public string DescriptionTemplate { get { return descriptionTemplate; } set { SetValue(ref descriptionTemplate, value); } }
         public ObservableCollection<TemplateProfile> Templates { get { return templates; } set { SetValue(ref templates, value); } }
@@ -928,6 +938,11 @@ namespace MetaDataIAPlugin
             if (string.IsNullOrWhiteSpace(ProviderPreset))
             {
                 ProviderPreset = ProviderGroq;
+            }
+
+            if (string.IsNullOrWhiteSpace(CodexExecutablePath))
+            {
+                CodexExecutablePath = "codex";
             }
 
             AppearancePreset = SettingsAppearance.Normalize(AppearancePreset);
@@ -2149,7 +2164,13 @@ namespace MetaDataIAPlugin
 
         public void ApplyProviderPreset()
         {
-            if (ProviderPreset == ProviderOpenAI)
+            if (ProviderPreset == ProviderChatGptOAuth)
+            {
+                Endpoint = "codex-app-server://stdio";
+                ApiKey = string.Empty;
+                Model = "gpt-5.6-terra";
+            }
+            else if (ProviderPreset == ProviderOpenAI)
             {
                 Endpoint = "https://api.openai.com/v1/chat/completions";
                 Model = "gpt-4.1-mini";
@@ -2203,7 +2224,11 @@ namespace MetaDataIAPlugin
 
         public void RestoreProviderEndpoint()
         {
-            if (ProviderPreset == ProviderOpenAI)
+            if (ProviderPreset == ProviderChatGptOAuth)
+            {
+                Endpoint = "codex-app-server://stdio";
+            }
+            else if (ProviderPreset == ProviderOpenAI)
             {
                 Endpoint = "https://api.openai.com/v1/chat/completions";
             }
@@ -2339,6 +2364,7 @@ namespace MetaDataIAPlugin
                     Option(ProviderMistral, "MTDA_ProviderMistral", "Mistral AI (free mode)"),
                     Option(ProviderLmStudio, "MTDA_ProviderLmStudio", "LM Studio local"),
                     Option(ProviderOllama, "MTDA_ProviderOllama", "Ollama local"),
+                    Option(ProviderChatGptOAuth, "MTDA_ProviderChatGptOAuth", "ChatGPT (OAuth)"),
                     Option(ProviderOpenAI, "MTDA_ProviderOpenAI", "OpenAI"),
                     Option(ProviderClaude, "MTDA_ProviderClaude", "Claude Anthropic"),
                     Option(ProviderOpenRouter, "MTDA_ProviderOpenRouter", "OpenRouter"),
@@ -2422,6 +2448,11 @@ namespace MetaDataIAPlugin
         {
             get
             {
+                if (ProviderPreset == ProviderChatGptOAuth)
+                {
+                    return Loc("MTDA_ProviderHelpChatGptOAuth", "ChatGPT OAuth: sign in with your ChatGPT account through the installed Codex app-server. The extension does not read or store your OAuth tokens.");
+                }
+
                 if (ProviderPreset == ProviderOpenAI)
                 {
                     return Loc("MTDA_ProviderHelpOpenAI", "OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.");
@@ -2481,6 +2512,11 @@ namespace MetaDataIAPlugin
         {
             get
             {
+                if (ProviderPreset == ProviderChatGptOAuth)
+                {
+                    return "https://chatgpt.com/";
+                }
+
                 if (ProviderPreset == ProviderOpenAI)
                 {
                     return "https://platform.openai.com/api-keys";
@@ -2579,6 +2615,11 @@ namespace MetaDataIAPlugin
         {
             get
             {
+                if (ProviderPreset == ProviderChatGptOAuth)
+                {
+                    return Loc("MTDA_ProviderBillingChatGptOAuth", "ChatGPT OAuth uses the ChatGPT account and plan available to Codex. The provider may have plan, model and usage limits.");
+                }
+
                 if (ProviderPreset == ProviderOpenAI)
                 {
                     return Loc("MTDA_ProviderBillingOpenAI", "Signing in with ChatGPT Plus is not enough for this plugin: you need an OpenAI Platform API key and API billing/credit. Plus only gives benefits inside ChatGPT.");
@@ -2810,7 +2851,7 @@ namespace MetaDataIAPlugin
         {
             get
             {
-                return !string.IsNullOrWhiteSpace(Endpoint) &&
+                return (IsChatGptOAuthProvider || !string.IsNullOrWhiteSpace(Endpoint)) &&
                        !string.IsNullOrWhiteSpace(Model);
             }
         }

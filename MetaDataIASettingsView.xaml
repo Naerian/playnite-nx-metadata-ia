@@ -899,6 +899,37 @@
                                         Margin="0,0,0,16"
                                         Click="OpenProviderPage_OnClick"/>
 
+                                <StackPanel Visibility="{Binding Settings.IsChatGptOAuthProvider, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                            Margin="0,0,0,16">
+                                    <TextBlock Text="{DynamicResource MTDA_ChatGptOAuthHelp}"
+                                               Style="{StaticResource FieldHintText}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_CodexExecutablePath}"
+                                               Style="{StaticResource FieldLabelText}"/>
+                                    <TextBox Text="{Binding Settings.CodexExecutablePath, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,8"/>
+                                    <TextBlock Text="{DynamicResource MTDA_CodexExecutablePathHelp}"
+                                               Style="{StaticResource FieldHintText}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="ChatGptOAuthSignInButton"
+                                                Content="{DynamicResource MTDA_SignInWithChatGpt}"
+                                                MinWidth="170"
+                                                Margin="0,0,8,0"
+                                                Click="SignInWithChatGpt_OnClick"/>
+                                        <Button x:Name="ChatGptOAuthSignOutButton"
+                                                Content="{DynamicResource MTDA_SignOutChatGpt}"
+                                                MinWidth="130"
+                                                Click="SignOutChatGpt_OnClick"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="ChatGptOAuthStatusText"
+                                               Style="{StaticResource FieldHintText}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,8,0,0"/>
+                                </StackPanel>
+
                                 <StackPanel Visibility="{Binding Settings.ShowEndpointEditor, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
                                             Margin="0,0,0,16">
                                     <TextBlock Text="{DynamicResource MTDA_Endpoint}" Style="{StaticResource FieldLabelText}"/>

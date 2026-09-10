@@ -88,6 +88,7 @@
       <DependentUpon>MetaDataIAPreviewWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MetaDataIASettings.cs" />
+    <Compile Include="CodexAppServerClient.cs" />
     <Compile Include="MetaDataIASettingsBackup.cs" />
     <Compile Include="MetaDataIASettingsView.xaml.cs">
       <DependentUpon>MetaDataIASettingsView.xaml</DependentUpon>

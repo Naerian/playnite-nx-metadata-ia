@@ -51,6 +51,11 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> GenerateCurrentAsync(Game game, CancellationToken cancellationToken)
         {
+            if (settings.ProviderPreset == MetaDataIASettings.ProviderChatGptOAuth)
+            {
+                return await GenerateChatGptOAuthAsync(game, cancellationToken).ConfigureAwait(false);
+            }
+
             if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
             {
                 return await GenerateAnthropicAsync(game, cancellationToken).ConfigureAwait(false);
@@ -153,6 +158,79 @@ namespace MetaDataIAPlugin
             await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
             return result;
+        }
+
+        private async Task<AiMetadataResult> GenerateChatGptOAuthAsync(Game game, CancellationToken cancellationToken)
+        {
+            var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
+            var result = ParseResult(await SendChatGptOAuthRequestAsync(userPrompt, cancellationToken).ConfigureAwait(false));
+            PrepareResult(result, game);
+
+            if (RequiresGeneratedDescription() && !HasRequestedDescriptionContent(result, game))
+            {
+                var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+                var retryPrompt = userPrompt +
+                    "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
+                    "Return useful text for at least one of these requested description tokens when the supplied context supports it: " +
+                    string.Join(", ", requestedTokens) + ". " +
+                    "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
+
+                result = ParseResult(await SendChatGptOAuthRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false));
+                PrepareResult(result, game);
+
+                if (!HasRequestedDescriptionContent(result, game))
+                {
+                    throw new InvalidOperationException(
+                        Loc(
+                            "MTDA_ErrorAiDescriptionEmpty",
+                            "The provider returned metadata but did not generate content for the active description template. No empty description was applied. Try again, choose a model that follows structured output more reliably, or enable official context for this game."));
+                }
+            }
+
+            await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
+            await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+
+        private async Task<string> SendChatGptOAuthRequestAsync(
+            string userPrompt,
+            CancellationToken cancellationToken)
+        {
+            using (var client = await CodexAppServerClient.StartAsync(
+                settings.CodexExecutablePath,
+                cancellationToken).ConfigureAwait(false))
+            {
+                return await client.GenerateTextAsync(
+                    settings.Model,
+                    BuildChatGptOAuthPrompt(BuildSystemPrompt(), userPrompt),
+                    ResolveCompletionMaxTokens(),
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private async Task<string> SendChatGptOAuthTextAsync(
+            string systemPrompt,
+            string userPrompt,
+            int maxTokens,
+            CancellationToken cancellationToken)
+        {
+            using (var client = await CodexAppServerClient.StartAsync(
+                settings.CodexExecutablePath,
+                cancellationToken).ConfigureAwait(false))
+            {
+                return await client.GenerateTextAsync(
+                    settings.Model,
+                    BuildChatGptOAuthPrompt(systemPrompt, userPrompt),
+                    maxTokens,
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static string BuildChatGptOAuthPrompt(string systemPrompt, string userPrompt)
+        {
+            return "Treat the following as the complete metadata task. Do not use tools, inspect files, modify files or discuss the task. Return only the requested JSON object and no markdown.\n\n" +
+                   "METADATA INSTRUCTIONS:\n" + (systemPrompt ?? string.Empty) +
+                   "\n\nMETADATA REQUEST:\n" + (userPrompt ?? string.Empty);
         }
 
         private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
@@ -624,6 +702,11 @@ namespace MetaDataIAPlugin
 
         private async Task<string> SendConstrainedPromptAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
         {
+            if (settings.ProviderPreset == MetaDataIASettings.ProviderChatGptOAuth)
+            {
+                return await SendChatGptOAuthTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
+            }
+
             if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
             {
                 return await SendAnthropicTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
@@ -1585,7 +1668,8 @@ namespace MetaDataIAPlugin
         private bool SupportsJsonObjectResponse()
         {
             var preset = settings.ProviderPreset;
-            return preset == MetaDataIASettings.ProviderOpenAI ||
+            return preset == MetaDataIASettings.ProviderChatGptOAuth ||
+                   preset == MetaDataIASettings.ProviderOpenAI ||
                    preset == MetaDataIASettings.ProviderGemini ||
                    preset == MetaDataIASettings.ProviderGroq ||
                    preset == MetaDataIASettings.ProviderMistral ||

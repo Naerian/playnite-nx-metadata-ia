@@ -50,6 +50,7 @@
     <sys:String x:Key="MTDA_ProviderUsageAvailable">Current provider limits were updated.</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageUnknown">No usage information has been received yet.</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageUnavailable">The provider did not return usage or limit information.</sys:String>
+    <sys:String x:Key="MTDA_ProviderUsageChatGptOAuth">ChatGPT OAuth usage and limits are managed by Codex.</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageDashboardOnly">This provider does not expose a portable remaining-quota value to the plugin.</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageLocal">Local provider: there is no external API quota. Availability depends on your PC and the local server.</sys:String>
     <sys:String x:Key="MTDA_ProviderUsageRequests">Requests</sys:String>
@@ -473,6 +474,9 @@ What you can do without paying:
     <sys:String x:Key="MTDA_ProviderHelpLmStudio">LM Studio local: no API key is needed. Open LM Studio, load a model, and enable the local server in the Developer tab.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpOllama">Ollama local: no API key is needed. Install Ollama, download a model with &apos;ollama pull&apos;, and keep the local service running.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpOpenAI">OpenAI: create the key at platform.openai.com/api-keys. ChatGPT Plus/Pro does not include API usage; the API uses separate billing in the OpenAI Platform.</sys:String>
+    <sys:String x:Key="MTDA_ProviderChatGptOAuth">ChatGPT (OAuth)</sys:String>
+    <sys:String x:Key="MTDA_ProviderHelpChatGptOAuth">ChatGPT OAuth: sign in with your ChatGPT account through the installed Codex app-server. The extension does not read or store your OAuth tokens.</sys:String>
+    <sys:String x:Key="MTDA_ProviderBillingChatGptOAuth">ChatGPT OAuth uses the ChatGPT account and plan available to Codex. The provider may have plan, model and usage limits.</sys:String>
     <sys:String x:Key="MTDA_ProviderHelpOpenRouter">OpenRouter: create the key in OpenRouter. You can choose free models if the model ends in :free or appears as Free, but they have limits and variable availability.</sys:String>
     <sys:String x:Key="MTDA_ProviderLmStudio">LM Studio local</sys:String>
     <sys:String x:Key="MTDA_ProviderOllama">Ollama local</sys:String>
@@ -924,6 +928,16 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsInvalidEndpoint">Configure a valid provider endpoint first.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsApiKeyRequired">Enter the provider API key to load its available models.</sys:String>
     <sys:String x:Key="MTDA_ProviderModelsUnavailable">The model list is not available right now. You can enter the model manually.</sys:String>
+    <sys:String x:Key="MTDA_ProviderModelsOAuthManual">ChatGPT OAuth does not expose a model list here. Enter a model supported by your Codex account manually.</sys:String>
+    <sys:String x:Key="MTDA_ChatGptOAuthHelp">This provider uses the documented Codex app-server. Sign-in opens the official ChatGPT OAuth flow; tokens stay managed by Codex and are never placed in the API key field.</sys:String>
+    <sys:String x:Key="MTDA_CodexExecutablePath">Codex executable</sys:String>
+    <sys:String x:Key="MTDA_CodexExecutablePathHelp">Use codex if it is on PATH, or enter the full path to the Codex executable.</sys:String>
+    <sys:String x:Key="MTDA_SignInWithChatGpt">Sign in with ChatGPT</sys:String>
+    <sys:String x:Key="MTDA_SignOutChatGpt">Sign out</sys:String>
+    <sys:String x:Key="MTDA_ChatGptOAuthOpeningLogin">Opening the ChatGPT sign-in page...</sys:String>
+    <sys:String x:Key="MTDA_ChatGptOAuthSignedIn">ChatGPT OAuth sign-in completed.</sys:String>
+    <sys:String x:Key="MTDA_ChatGptOAuthSignedOut">ChatGPT OAuth credentials were cleared from Codex.</sys:String>
+    <sys:String x:Key="MTDA_ChatGptOAuthNotConfigured">Select ChatGPT (OAuth) and apply the provider before signing in.</sys:String>
     <sys:String x:Key="MTDA_ManualMediaUrl">External image URL</sys:String>
     <sys:String x:Key="MTDA_ManualMediaUrlHelp">Paste a direct HTTP or HTTPS image URL to use the same crop and processing rules.</sys:String>
     <sys:String x:Key="MTDA_PreviewManualMediaUrl">Preview URL</sys:String>

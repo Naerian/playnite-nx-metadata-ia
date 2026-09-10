@@ -628,7 +628,8 @@ namespace MetaDataIAPlugin
                                  settings.Endpoint.IndexOf("127.0.0.1", StringComparison.OrdinalIgnoreCase) >= 0);
             var providerReady = !string.IsNullOrWhiteSpace(settings.Endpoint) &&
                                 !string.IsNullOrWhiteSpace(settings.Model) &&
-                                (settings.ProviderPreset == MetaDataIASettings.ProviderLmStudio ||
+                                (settings.IsChatGptOAuthProvider ||
+                                 settings.ProviderPreset == MetaDataIASettings.ProviderLmStudio ||
                                  settings.ProviderPreset == MetaDataIASettings.ProviderOllama ||
                                  localEndpoint ||
                                  !string.IsNullOrWhiteSpace(settings.ApiKey));
@@ -1534,6 +1535,78 @@ namespace MetaDataIAPlugin
             Process.Start(new ProcessStartInfo(viewModel.Settings.ProviderKeyUrl));
         }
 
+        private async void SignInWithChatGpt_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || !viewModel.Settings.IsChatGptOAuthProvider)
+            {
+                if (ChatGptOAuthStatusText != null)
+                {
+                    ChatGptOAuthStatusText.Text = Loc(
+                        "MTDA_ChatGptOAuthNotConfigured",
+                        "Select ChatGPT (OAuth) and apply the provider before signing in.");
+                }
+
+                return;
+            }
+
+            ChatGptOAuthSignInButton.IsEnabled = false;
+            ChatGptOAuthSignOutButton.IsEnabled = false;
+            ChatGptOAuthStatusText.Text = Loc(
+                "MTDA_ChatGptOAuthOpeningLogin",
+                "Opening the ChatGPT sign-in page...");
+
+            try
+            {
+                await CodexAppServerClient.LoginAsync(
+                    viewModel.Settings.CodexExecutablePath,
+                    OpenExternalUrl,
+                    CancellationToken.None);
+                ChatGptOAuthStatusText.Text = Loc(
+                    "MTDA_ChatGptOAuthSignedIn",
+                    "ChatGPT OAuth sign-in completed.");
+            }
+            catch (Exception ex)
+            {
+                ChatGptOAuthStatusText.Text = MetadataGenerationService.SanitizeForUser(ex.Message);
+            }
+            finally
+            {
+                ChatGptOAuthSignInButton.IsEnabled = true;
+                ChatGptOAuthSignOutButton.IsEnabled = true;
+            }
+        }
+
+        private async void SignOutChatGpt_OnClick(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null || !viewModel.Settings.IsChatGptOAuthProvider)
+            {
+                return;
+            }
+
+            ChatGptOAuthSignInButton.IsEnabled = false;
+            ChatGptOAuthSignOutButton.IsEnabled = false;
+            try
+            {
+                await CodexAppServerClient.LogoutAsync(
+                    viewModel.Settings.CodexExecutablePath,
+                    CancellationToken.None);
+                ChatGptOAuthStatusText.Text = Loc(
+                    "MTDA_ChatGptOAuthSignedOut",
+                    "ChatGPT OAuth credentials were cleared from Codex.");
+            }
+            catch (Exception ex)
+            {
+                ChatGptOAuthStatusText.Text = MetadataGenerationService.SanitizeForUser(ex.Message);
+            }
+            finally
+            {
+                ChatGptOAuthSignInButton.IsEnabled = true;
+                ChatGptOAuthSignOutButton.IsEnabled = true;
+            }
+        }
+
         private void ProviderPreset_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
@@ -1555,6 +1628,14 @@ namespace MetaDataIAPlugin
             var settings = viewModel == null ? null : viewModel.Settings;
             if (settings == null)
             {
+                return;
+            }
+
+            if (settings.IsChatGptOAuthProvider)
+            {
+                ProviderModelsStatusText.Text = Loc(
+                    "MTDA_ProviderModelsOAuthManual",
+                    "ChatGPT OAuth does not expose a model list here. Enter a model supported by your Codex account manually.");
                 return;
             }
 
@@ -1674,7 +1755,7 @@ namespace MetaDataIAPlugin
         private async void RefreshProviderUsage_OnClick(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel == null || providerUsageRefreshActive)
+            if (viewModel == null || viewModel.Settings.IsChatGptOAuthProvider || providerUsageRefreshActive)
             {
                 return;
             }
@@ -1766,7 +1847,8 @@ namespace MetaDataIAPlugin
             var settings = viewModel.Settings;
             var snapshot = ProviderUsageService.GetCached(settings);
             var exposesQuota = !ProviderUsageService.IsLocalProvider(settings) &&
-                               !ProviderUsageService.UsesDashboardOnly(settings);
+                               !ProviderUsageService.UsesDashboardOnly(settings) &&
+                               !settings.IsChatGptOAuthProvider;
 
             if (ProviderUsageActionsPanel != null)
             {
@@ -1790,6 +1872,12 @@ namespace MetaDataIAPlugin
             if (!string.IsNullOrWhiteSpace(statusOverride))
             {
                 ProviderUsageStatusText.Text = statusOverride;
+            }
+            else if (settings.IsChatGptOAuthProvider)
+            {
+                ProviderUsageStatusText.Text = Loc(
+                    "MTDA_ProviderUsageChatGptOAuth",
+                    "ChatGPT OAuth usage and limits are managed by Codex.");
             }
             else if (ProviderUsageService.IsLocalProvider(settings))
             {
