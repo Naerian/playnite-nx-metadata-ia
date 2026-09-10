@@ -31,10 +31,16 @@ namespace MetaDataIAPlugin
         private CodexAppServerClient(Process process)
         {
             this.process = process;
-            output = process.StandardOutput;
-            input = process.StandardInput;
+            // Process.StandardInput/Output inherit the Windows process code page
+            // on .NET Framework. Playnite commonly runs with IBM850/other legacy
+            // code pages, while app-server's stdio protocol is always UTF-8.
+            // Construct the stream wrappers explicitly so localized titles,
+            // descriptions, and prompts cannot corrupt the JSONL connection.
+            var utf8 = new UTF8Encoding(false, true);
+            output = new StreamReader(process.StandardOutput.BaseStream, utf8, true);
+            input = new StreamWriter(process.StandardInput.BaseStream, utf8);
             input.AutoFlush = true;
-            standardErrorTask = process.StandardError.ReadToEndAsync();
+            standardErrorTask = new StreamReader(process.StandardError.BaseStream, utf8, true).ReadToEndAsync();
         }
 
         public static async Task<CodexAppServerClient> StartAsync(
