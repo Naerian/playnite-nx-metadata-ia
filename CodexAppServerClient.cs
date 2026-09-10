@@ -20,17 +20,29 @@ namespace MetaDataIAPlugin
     internal sealed class CodexAppServerClient : IDisposable
     {
         private static readonly TimeSpan ReadTimeout = TimeSpan.FromMinutes(10);
+        private static readonly SemaphoreSlim SharedLeaseGate = new SemaphoreSlim(1, 1);
+        private static CodexAppServerClient sharedClient;
+        private static string sharedExecutablePath;
 
         private readonly Process process;
         private readonly StreamReader output;
         private readonly StreamWriter input;
         private readonly Task<string> standardErrorTask;
+        private readonly bool sharedProcess;
         private int nextRequestId;
         private bool disposed;
+        private bool leaseHeld;
 
-        private CodexAppServerClient(Process process)
+        static CodexAppServerClient()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) => ShutdownSharedProcess();
+            AppDomain.CurrentDomain.DomainUnload += (sender, args) => ShutdownSharedProcess();
+        }
+
+        private CodexAppServerClient(Process process, bool sharedProcess)
         {
             this.process = process;
+            this.sharedProcess = sharedProcess;
             // Process.StandardInput/Output inherit the Windows process code page
             // on .NET Framework. Playnite commonly runs with IBM850/other legacy
             // code pages, while app-server's stdio protocol is always UTF-8.
@@ -47,9 +59,46 @@ namespace MetaDataIAPlugin
             string executablePath,
             CancellationToken cancellationToken)
         {
+            // Starting Codex is relatively expensive. Keep one initialized
+            // app-server alive and hand out exclusive leases so a bulk metadata
+            // operation reuses the process without allowing JSONL responses to
+            // interleave. Each GenerateTextAsync call still starts a fresh
+            // thread, so game prompts never share conversation context.
+            await SharedLeaseGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var requestedPath = string.IsNullOrWhiteSpace(executablePath) ? "codex" : executablePath.Trim();
+                if (sharedClient == null ||
+                    !string.Equals(sharedExecutablePath, requestedPath, StringComparison.OrdinalIgnoreCase) ||
+                    !sharedClient.IsProcessRunning())
+                {
+                    if (sharedClient != null)
+                    {
+                        sharedClient.StopOwnedProcess();
+                        sharedClient = null;
+                    }
+
+                    sharedClient = await StartProcessAsync(requestedPath, cancellationToken).ConfigureAwait(false);
+                    sharedExecutablePath = requestedPath;
+                }
+
+                sharedClient.leaseHeld = true;
+                return sharedClient;
+            }
+            catch
+            {
+                SharedLeaseGate.Release();
+                throw;
+            }
+        }
+
+        private static async Task<CodexAppServerClient> StartProcessAsync(
+            string executablePath,
+            CancellationToken cancellationToken)
+        {
             var startInfo = new ProcessStartInfo
             {
-                FileName = string.IsNullOrWhiteSpace(executablePath) ? "codex" : executablePath.Trim(),
+                FileName = executablePath,
                 Arguments = "app-server --listen stdio://",
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -72,7 +121,7 @@ namespace MetaDataIAPlugin
                     throw new InvalidOperationException("The Codex app-server process could not be started.");
                 }
 
-                var client = new CodexAppServerClient(process);
+                var client = new CodexAppServerClient(process, true);
                 await client.InitializeAsync(cancellationToken).ConfigureAwait(false);
                 return client;
             }
@@ -464,14 +513,52 @@ namespace MetaDataIAPlugin
 
         public void Dispose()
         {
+            if (!sharedProcess)
+            {
+                return;
+            }
+
+            if (leaseHeld)
+            {
+                leaseHeld = false;
+                SharedLeaseGate.Release();
+            }
+        }
+
+        private bool IsProcessRunning()
+        {
+            try
+            {
+                return !disposed && process != null && !process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void StopOwnedProcess()
+        {
             if (disposed)
             {
                 return;
             }
 
             disposed = true;
+            leaseHeld = false;
             TryStopProcess(process);
             process.Dispose();
+        }
+
+        private static void ShutdownSharedProcess()
+        {
+            var client = sharedClient;
+            sharedClient = null;
+            sharedExecutablePath = null;
+            if (client != null)
+            {
+                client.StopOwnedProcess();
+            }
         }
 
         private static void TryStopProcess(Process process)
