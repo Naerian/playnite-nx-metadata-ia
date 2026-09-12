@@ -1631,14 +1631,6 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            if (settings.IsChatGptOAuthProvider)
-            {
-                ProviderModelsStatusText.Text = Loc(
-                    "MTDA_ProviderModelsOAuthManual",
-                    "ChatGPT OAuth does not expose a model list here. Enter a model supported by your Codex account manually.");
-                return;
-            }
-
             AddCurrentProviderModel(settings.Model);
             if (RequiresApiKeyForModelListing(settings) && string.IsNullOrWhiteSpace(settings.ApiKey))
             {
@@ -1660,7 +1652,20 @@ namespace MetaDataIAPlugin
 
             try
             {
-                var models = await ProviderModelService.GetModelsAsync(settings, cancellation.Token);
+                IList<ProviderModelOption> models;
+                if (settings.IsChatGptOAuthProvider)
+                {
+                    using (var client = await CodexAppServerClient.StartAsync(
+                        settings.CodexExecutablePath,
+                        cancellation.Token))
+                    {
+                        models = await client.ReadModelOptionsAsync(cancellation.Token);
+                    }
+                }
+                else
+                {
+                    models = await ProviderModelService.GetModelsAsync(settings, cancellation.Token);
+                }
                 if (cancellation.IsCancellationRequested)
                 {
                     return;

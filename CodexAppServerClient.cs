@@ -1,9 +1,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,10 +146,47 @@ namespace MetaDataIAPlugin
             return await RequestAsync("account/read", parameters, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task<IList<ProviderModelOption>> ReadModelOptionsAsync(CancellationToken cancellationToken)
+        {
+            var parameters = new JObject();
+            parameters["limit"] = 100;
+            parameters["includeHidden"] = false;
+            var result = await RequestAsync("model/list", parameters, cancellationToken).ConfigureAwait(false);
+            var data = result["data"] as JArray;
+            if (data == null)
+            {
+                return new List<ProviderModelOption>();
+            }
+
+            return data
+                .OfType<JObject>()
+                .Select(model =>
+                {
+                    var id = (string)model["id"] ?? (string)model["model"];
+                    var displayName = (string)model["displayName"] ?? id;
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        return null;
+                    }
+
+                    return new ProviderModelOption
+                    {
+                        Id = id.Trim(),
+                        DisplayName = string.IsNullOrWhiteSpace(displayName) ? id.Trim() : displayName.Trim()
+                    };
+                })
+                .Where(model => model != null && !string.IsNullOrWhiteSpace(model.Id))
+                .GroupBy(model => model.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .OrderBy(model => model.DisplayName ?? model.Id, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+
         public async Task<string> GenerateTextAsync(
             string model,
             string prompt,
             int maxTokens,
+            JObject outputSchema,
             CancellationToken cancellationToken)
         {
             // maxTokens is retained in this method's contract so the app-server
@@ -196,10 +235,10 @@ namespace MetaDataIAPlugin
             sandboxPolicy["access"] = access;
             turnParameters["sandboxPolicy"] = sandboxPolicy;
 
-            var outputSchema = new JObject();
-            outputSchema["type"] = "object";
-            outputSchema["additionalProperties"] = true;
-            turnParameters["outputSchema"] = outputSchema;
+            if (outputSchema != null)
+            {
+                turnParameters["outputSchema"] = outputSchema.DeepClone();
+            }
             turnParameters["summary"] = "concise";
             await RequestAsync("turn/start", turnParameters, cancellationToken).ConfigureAwait(false);
 

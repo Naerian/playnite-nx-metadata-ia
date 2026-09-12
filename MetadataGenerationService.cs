@@ -162,20 +162,23 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> GenerateChatGptOAuthAsync(Game game, CancellationToken cancellationToken)
         {
+            var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+            var fieldsToGenerate = BuildFieldsToGenerate(requestedTokens);
+            var outputSchema = BuildMetadataOutputSchema(requestedTokens, fieldsToGenerate);
             var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
-            var result = ParseResult(await SendChatGptOAuthRequestAsync(userPrompt, cancellationToken).ConfigureAwait(false));
+            var result = ParseResult(await SendChatGptOAuthRequestAsync(userPrompt, outputSchema, cancellationToken).ConfigureAwait(false));
             PrepareResult(result, game);
 
             if (RequiresGeneratedDescription() && !HasRequestedDescriptionContent(result, game))
             {
-                var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
+                var retryRequestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
                 var retryPrompt = userPrompt +
                     "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
                     "Return useful text for at least one of these requested description tokens when the supplied context supports it: " +
-                    string.Join(", ", requestedTokens) + ". " +
+                    string.Join(", ", retryRequestedTokens) + ". " +
                     "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
 
-                result = ParseResult(await SendChatGptOAuthRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false));
+                result = ParseResult(await SendChatGptOAuthRequestAsync(retryPrompt, outputSchema, cancellationToken).ConfigureAwait(false));
                 PrepareResult(result, game);
 
                 if (!HasRequestedDescriptionContent(result, game))
@@ -194,6 +197,7 @@ namespace MetaDataIAPlugin
 
         private async Task<string> SendChatGptOAuthRequestAsync(
             string userPrompt,
+            JObject outputSchema,
             CancellationToken cancellationToken)
         {
             using (var client = await CodexAppServerClient.StartAsync(
@@ -204,6 +208,7 @@ namespace MetaDataIAPlugin
                     settings.Model,
                     BuildChatGptOAuthPrompt(BuildSystemPrompt(), userPrompt),
                     ResolveCompletionMaxTokens(),
+                    outputSchema,
                     cancellationToken).ConfigureAwait(false);
             }
         }
@@ -212,6 +217,7 @@ namespace MetaDataIAPlugin
             string systemPrompt,
             string userPrompt,
             int maxTokens,
+            JObject outputSchema,
             CancellationToken cancellationToken)
         {
             using (var client = await CodexAppServerClient.StartAsync(
@@ -222,6 +228,7 @@ namespace MetaDataIAPlugin
                     settings.Model,
                     BuildChatGptOAuthPrompt(systemPrompt, userPrompt),
                     maxTokens,
+                    outputSchema,
                     cancellationToken).ConfigureAwait(false);
             }
         }
@@ -231,6 +238,144 @@ namespace MetaDataIAPlugin
             return "Treat the following as the complete metadata task. Do not use tools, inspect files, modify files or discuss the task. Return only the requested JSON object and no markdown.\n\n" +
                    "METADATA INSTRUCTIONS:\n" + (systemPrompt ?? string.Empty) +
                    "\n\nMETADATA REQUEST:\n" + (userPrompt ?? string.Empty);
+        }
+
+        private static JObject BuildMetadataOutputSchema(
+            IList<string> requestedTokens,
+            Dictionary<string, bool> fields)
+        {
+            var schema = CreateClosedObjectSchema();
+            var properties = (JObject)schema["properties"];
+            var required = (JArray)schema["required"];
+
+            AddTextSchemaProperty(properties, required, requestedTokens, "short");
+            AddTextSchemaProperty(properties, required, requestedTokens, "synopsis");
+            AddTextSchemaProperty(properties, required, requestedTokens, "premise");
+            AddTextSchemaProperty(properties, required, requestedTokens, "gameplay");
+            AddTextSchemaProperty(properties, required, requestedTokens, "tone");
+            AddTextSchemaProperty(properties, required, requestedTokens, "setting");
+            AddTextSchemaProperty(properties, required, requestedTokens, "perspective");
+            AddTextSchemaProperty(properties, required, requestedTokens, "playModes");
+            AddTextSchemaProperty(properties, required, requestedTokens, "estimatedLength");
+            AddTextSchemaProperty(properties, required, requestedTokens, "similarGames");
+            AddTextSchemaProperty(properties, required, requestedTokens, "notes");
+            AddTextSchemaProperty(properties, required, requestedTokens, "recommendedFor");
+
+            if (ContainsToken(requestedTokens, "similarGames") ||
+                ContainsToken(requestedTokens, "similarGamesList") ||
+                requestedTokens.Any(IsIndexedSimilarGameToken))
+            {
+                AddSchemaProperty(properties, required, "similarGamesList", BuildStringArraySchema());
+            }
+
+            if (FieldEnabled(fields, "features") ||
+                ContainsToken(requestedTokens, "features") ||
+                requestedTokens.Any(IsIndexedFeatureToken))
+            {
+                AddSchemaProperty(properties, required, "features", BuildStringArraySchema());
+            }
+
+            AddFieldSchemaProperty(properties, required, fields, "genres", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "tags", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "developers", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "publishers", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "ageRatings", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "regions", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "categories", BuildStringArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "links", BuildLinksArraySchema());
+            AddFieldSchemaProperty(properties, required, fields, "releaseDate", BuildStringSchema());
+            AddFieldSchemaProperty(properties, required, fields, "series", BuildStringArraySchema());
+
+            if (properties.Count == 0)
+            {
+                AddSchemaProperty(properties, required, "short", BuildStringSchema());
+            }
+
+            return schema;
+        }
+
+        private static JObject BuildSystemRequirementsOutputSchema()
+        {
+            var schema = CreateClosedObjectSchema();
+            var properties = (JObject)schema["properties"];
+            var required = (JArray)schema["required"];
+            AddSchemaProperty(properties, required, "minimumSystemRequirements", BuildStringSchema());
+            AddSchemaProperty(properties, required, "recommendedSystemRequirements", BuildStringSchema());
+            return schema;
+        }
+
+        private static JObject CreateClosedObjectSchema()
+        {
+            var schema = new JObject();
+            schema["type"] = "object";
+            schema["properties"] = new JObject();
+            schema["required"] = new JArray();
+            schema["additionalProperties"] = false;
+            return schema;
+        }
+
+        private static void AddTextSchemaProperty(
+            JObject properties,
+            JArray required,
+            IList<string> requestedTokens,
+            string name)
+        {
+            if (ContainsToken(requestedTokens, name))
+            {
+                AddSchemaProperty(properties, required, name, BuildStringSchema());
+            }
+        }
+
+        private static void AddFieldSchemaProperty(
+            JObject properties,
+            JArray required,
+            Dictionary<string, bool> fields,
+            string name,
+            JObject schema)
+        {
+            if (FieldEnabled(fields, name))
+            {
+                AddSchemaProperty(properties, required, name, schema);
+            }
+        }
+
+        private static void AddSchemaProperty(
+            JObject properties,
+            JArray required,
+            string name,
+            JObject schema)
+        {
+            properties[name] = schema;
+            required.Add(name);
+        }
+
+        private static JObject BuildStringSchema()
+        {
+            var schema = new JObject();
+            schema["type"] = "string";
+            return schema;
+        }
+
+        private static JObject BuildStringArraySchema()
+        {
+            var schema = new JObject();
+            schema["type"] = "array";
+            schema["items"] = BuildStringSchema();
+            return schema;
+        }
+
+        private static JObject BuildLinksArraySchema()
+        {
+            var item = CreateClosedObjectSchema();
+            var itemProperties = (JObject)item["properties"];
+            var itemRequired = (JArray)item["required"];
+            AddSchemaProperty(itemProperties, itemRequired, "name", BuildStringSchema());
+            AddSchemaProperty(itemProperties, itemRequired, "url", BuildStringSchema());
+
+            var schema = new JObject();
+            schema["type"] = "array";
+            schema["items"] = item;
+            return schema;
         }
 
         private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
@@ -704,7 +849,12 @@ namespace MetaDataIAPlugin
         {
             if (settings.ProviderPreset == MetaDataIASettings.ProviderChatGptOAuth)
             {
-                return await SendChatGptOAuthTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
+                return await SendChatGptOAuthTextAsync(
+                    systemPrompt,
+                    userPrompt,
+                    maxTokens,
+                    BuildSystemRequirementsOutputSchema(),
+                    cancellationToken).ConfigureAwait(false);
             }
 
             if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)

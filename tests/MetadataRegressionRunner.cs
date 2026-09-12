@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Offline regression checks for trusted metadata boundaries and vocabulary.
@@ -30,6 +31,7 @@ internal static class MetadataRegressionRunner
         Test_EmptyFeaturesDoNotBorrowGenresOrTags();
         Test_OfficialLinksMergeAcrossSources();
         Test_VocabularyIsFieldSafeAndTermOnly();
+        Test_CodexOutputSchemasAreClosed();
 
         Console.WriteLine();
         if (failures == 0)
@@ -355,6 +357,27 @@ internal static class MetadataRegressionRunner
         AssertContains("features learn canonical graphics value", terms["features"], "HDR");
         AssertNotContains("features reject tag value", terms["features"], "Exploration");
         AssertNotContains("features reject console marketing", terms["features"], "Xbox Play Anywhere");
+    }
+
+    private static void Test_CodexOutputSchemasAreClosed()
+    {
+        var method = typeof(MetadataGenerationService).GetMethod(
+            "BuildMetadataOutputSchema",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        var fields = new Dictionary<string, bool>
+        {
+            { "links", true }
+        };
+        var schema = (JObject)method.Invoke(
+            null,
+            new object[] { new List<string> { "short" }, fields });
+        var links = (JObject)schema["properties"]["links"];
+        var linkItem = (JObject)links["items"];
+
+        AssertEqual("Codex output schema closes the root object", false, (bool)schema["additionalProperties"]);
+        AssertEqual("Codex output schema closes link objects", false, (bool)linkItem["additionalProperties"]);
+        AssertTrue("Codex output schema requires requested fields", ((JArray)schema["required"]).Any(x => string.Equals((string)x, "short", StringComparison.Ordinal)));
+        AssertTrue("Codex output schema includes generated link fields", ((JArray)schema["required"]).Any(x => string.Equals((string)x, "links", StringComparison.Ordinal)));
     }
 
     private static MetaDataIASettings CreateSettings()
