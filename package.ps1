@@ -14,8 +14,9 @@ if (-not (Test-Path -LiteralPath $msbuild)) {
     throw "MSBuild was not found at $msbuild"
 }
 
-if (-not (Test-Path -LiteralPath $ToolboxPath)) {
-    throw "Playnite Toolbox was not found at $ToolboxPath"
+$toolboxAvailable = Test-Path -LiteralPath $ToolboxPath
+if (-not $toolboxAvailable) {
+    Write-Warning "Playnite Toolbox was not found at $ToolboxPath. The package will use the compatible ZIP fallback."
 }
 
 $manifestVersion = (
@@ -80,11 +81,45 @@ Copy-Item -LiteralPath (Join-Path $build "media") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $build "Localization") -Destination $stage -Recurse
 Copy-Item -LiteralPath (Join-Path $build "Icons") -Destination $stage -Recurse
 
-& $ToolboxPath pack $stage $distVersion
-$packExit = $LASTEXITCODE
+if ($toolboxAvailable) {
+    & $ToolboxPath pack $stage $distVersion
+    $packExit = $LASTEXITCODE
+}
+else {
+    $packExit = 1
+}
+
+if ($packExit -ne 0) {
+    Write-Warning "Playnite Toolbox could not create the package. Creating the equivalent ZIP-based .pext directly."
+    Get-ChildItem -LiteralPath $distVersion -File -Filter '*.pext' -ErrorAction SilentlyContinue |
+        Remove-Item -Force
+
+    $manifestId = (
+        Select-String -LiteralPath $extensionYaml -Pattern '^\s*Id:\s*(.+)\s*$' |
+            Select-Object -First 1
+    ).Matches[0].Groups[1].Value.Trim()
+    if ([string]::IsNullOrWhiteSpace($manifestId)) {
+        throw "Could not read Id from extension.yaml for ZIP package fallback."
+    }
+
+    $fallbackName = "{0}_{1}.pext" -f $manifestId, ($Version -replace '\.', '_')
+    $fallbackZip = Join-Path $distVersion ($fallbackName -replace '\.pext$', '.zip')
+    try {
+        Compress-Archive -Path (Join-Path $stage '*') `
+            -DestinationPath $fallbackZip `
+            -CompressionLevel Optimal -Force
+        Move-Item -LiteralPath $fallbackZip `
+            -Destination (Join-Path $distVersion $fallbackName) -Force
+        $packExit = 0
+    }
+    catch {
+        $packExit = 1
+    }
+}
+
 Remove-Item -LiteralPath $stage -Recurse -Force
 if ($packExit -ne 0) {
-    throw "Playnite Toolbox pack failed with exit code $packExit"
+    throw "Playnite package creation failed with exit code $packExit"
 }
 
 $package = Get-ChildItem -LiteralPath $distVersion -Filter '*.pext' |
