@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 1.4.17 — 2026-09-17
+- Fixed Custom OpenAI-compatible endpoints that only had a base URL: the plugin now appends /chat/completions when it is missing (DeepSeek and similar providers).
+- Clarified HTTP 404 errors so bare endpoint failures are no longer reported as a missing model, and include a short provider detail snippet.
+- Added endpoint field help text explaining that base URLs and full /chat/completions URLs are both accepted.
+
 ## 1.4.16 — 2026-08-31
 - System requirements are copied from the store, then localized in a dedicated AI pass. The description HTML is rebuilt after that pass.
 - Faster metadata generation: session cache for store context, smaller per-game prompts, JSON object mode on supported cloud providers, and generous max_tokens by length.

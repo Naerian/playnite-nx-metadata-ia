@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.17
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-17
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.17/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_17.pext
+    Changelog:
+      - 'Fixed Custom OpenAI-compatible endpoints that only had a base URL: the plugin now appends /chat/completions when it is missing (DeepSeek and similar providers).'
+      - 'Clarified HTTP 404 errors so bare endpoint failures are no longer reported as a missing model, and include a short provider detail snippet.'
+      - 'Added endpoint field help text explaining that base URLs and full /chat/completions URLs are both accepted.'
   - Version: 1.4.16
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-08-31

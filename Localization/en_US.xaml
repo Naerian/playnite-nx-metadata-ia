@@ -69,6 +69,7 @@
     <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">Could not obtain usage information from the provider (HTTP {0}).</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
     <sys:String x:Key="MTDA_RestoreEndpoint">Restore default endpoint</sys:String>
+    <sys:String x:Key="MTDA_EndpointHelp">You can enter a base URL or the full chat completions URL. Examples: https://api.deepseek.com · http://localhost:1234/v1/chat/completions · http://localhost:11434/v1/chat/completions</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API key</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">Paste it here only if the provider requires it. For local LM Studio and Ollama this is usually empty. Do not paste your ChatGPT key here: it must be an API key from the selected provider.</sys:String>
     <sys:String x:Key="MTDA_Model">Model</sys:String>
@@ -303,6 +304,10 @@ Examples:
 - Gemini: gemini-3.5-flash-lite
 - Ollama: the name shown by &apos;ollama list&apos;
 - LM Studio: the model loaded in the local server</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderEndpointNotFound">The configured endpoint returned HTTP 404 (not found).
+
+Check that the endpoint is written correctly. For Custom OpenAI-compatible providers you can enter either the base URL (for example https://api.deepseek.com or https://api.openai.com/v1) or the full chat completions URL ending in /chat/completions.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderDetail">Provider detail:</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">Your AI provider rejected the request because the account has no available quota.
 
 With OpenAI, this usually means there is no active API credit/balance or the monthly limit has been reached.

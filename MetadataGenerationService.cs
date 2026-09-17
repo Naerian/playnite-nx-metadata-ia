@@ -189,7 +189,7 @@ namespace MetaDataIAPlugin
             }
 
             using (var client = new HttpClient())
-            using (var message = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint))
+            using (var message = new HttpRequestMessage(HttpMethod.Post, ProviderEndpointHelper.ResolveChatCompletionsUri(settings.Endpoint)))
             {
                 if (!string.IsNullOrWhiteSpace(settings.ApiKey))
                 {
@@ -652,7 +652,7 @@ namespace MetaDataIAPlugin
             }
 
             using (var client = new HttpClient())
-            using (var message = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint))
+            using (var message = new HttpRequestMessage(HttpMethod.Post, ProviderEndpointHelper.ResolveChatCompletionsUri(settings.Endpoint)))
             {
                 client.Timeout = TimeSpan.FromMinutes(2);
                 if (!string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -2491,14 +2491,29 @@ namespace MetaDataIAPlugin
                     true);
             }
 
-            if (statusCode == 404 ||
+            var isModelNotFound =
                 string.Equals(providerCode, "model_not_found", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(providerCode, "invalid_model", StringComparison.OrdinalIgnoreCase) ||
-                providerMessage.IndexOf("model", StringComparison.OrdinalIgnoreCase) >= 0 && providerMessage.IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                providerMessage.IndexOf("does not exist", StringComparison.OrdinalIgnoreCase) >= 0)
+                providerMessage.IndexOf("model", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                (providerMessage.IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 providerMessage.IndexOf("does not exist", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (isModelNotFound)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderModelNotFound", "The configured provider or model does not exist, or is not available for your account.\n\nCheck that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.\n\nExamples:\n- Gemini: gemini-3.5-flash-lite\n- Ollama: the name shown by 'ollama list'\n- LM Studio: the model loaded in the local server"),
+                    AppendProviderDetail(
+                        Loc("MTDA_ErrorProviderModelNotFound", "The configured provider or model does not exist, or is not available for your account.\n\nCheck that the provider, endpoint and model name are written correctly. If you typed the model manually, copy the exact name from the provider documentation or console.\n\nExamples:\n- Gemini: gemini-3.5-flash-lite\n- Ollama: the name shown by 'ollama list'\n- LM Studio: the model loaded in the local server"),
+                        providerMessage),
+                    true,
+                    responseText);
+            }
+
+            if (statusCode == 404)
+            {
+                return new AiProviderException(
+                    AppendProviderDetail(
+                        Loc("MTDA_ErrorProviderEndpointNotFound", "The configured endpoint returned HTTP 404 (not found).\n\nCheck that the endpoint is written correctly. For Custom OpenAI-compatible providers you can enter either the base URL (for example https://api.deepseek.com or https://api.openai.com/v1) or the full chat completions URL ending in /chat/completions."),
+                        providerMessage),
                     true,
                     responseText);
             }
@@ -2506,7 +2521,9 @@ namespace MetaDataIAPlugin
             if (statusCode == 429)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderRateLimit", "The AI provider has temporarily limited requests.\n\nTry waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions."),
+                    AppendProviderDetail(
+                        Loc("MTDA_ErrorProviderRateLimit", "The AI provider has temporarily limited requests.\n\nTry waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions."),
+                        providerMessage),
                     true,
                     responseText);
             }
@@ -2517,7 +2534,9 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("unavailable", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-3.5-flash-lite if you were using another model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
+                    AppendProviderDetail(
+                        Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-3.5-flash-lite if you were using another model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
+                        providerMessage),
                     true,
                     responseText);
             }
@@ -2525,15 +2544,51 @@ namespace MetaDataIAPlugin
             if (statusCode == 401 || statusCode == 403)
             {
                 return new AiProviderException(
-                    Loc("MTDA_ErrorProviderAuth", "The AI provider did not accept the authentication.\n\nCheck the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty."),
+                    AppendProviderDetail(
+                        Loc("MTDA_ErrorProviderAuth", "The AI provider did not accept the authentication.\n\nCheck the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty."),
+                        providerMessage),
                     false,
                     responseText);
             }
 
             return new AiProviderException(
-                string.Format(Loc("MTDA_ErrorProviderGeneric", "The AI provider returned an error ({0}).\n\nCheck the configured provider, endpoint, model and API key. If the problem continues, try another model or a local provider."), statusCode),
+                AppendProviderDetail(
+                    string.Format(Loc("MTDA_ErrorProviderGeneric", "The AI provider returned an error ({0}).\n\nCheck the configured provider, endpoint, model and API key. If the problem continues, try another model or a local provider."), statusCode),
+                    providerMessage),
                 false,
                 responseText);
+        }
+
+        private static string AppendProviderDetail(string message, string providerMessage)
+        {
+            var detail = TruncateProviderDetail(providerMessage);
+            if (string.IsNullOrWhiteSpace(detail))
+            {
+                return message;
+            }
+
+            return message + "\n\n" + Loc("MTDA_ErrorProviderDetail", "Provider detail:") + " " + detail;
+        }
+
+        private static string TruncateProviderDetail(string providerMessage)
+        {
+            if (string.IsNullOrWhiteSpace(providerMessage))
+            {
+                return string.Empty;
+            }
+
+            var text = providerMessage.Trim().Replace("\r", " ").Replace("\n", " ");
+            while (text.IndexOf("  ", StringComparison.Ordinal) >= 0)
+            {
+                text = text.Replace("  ", " ");
+            }
+
+            if (text.Length > 300)
+            {
+                text = text.Substring(0, 300).Trim() + "...";
+            }
+
+            return text;
         }
 
         private static Exception CreateConnectionException(Exception ex)

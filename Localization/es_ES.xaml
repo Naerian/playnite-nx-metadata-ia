@@ -69,6 +69,7 @@
     <sys:String x:Key="MTDA_ProviderUsageRefreshFailed">No se pudo obtener la informacion de uso del proveedor (HTTP {0}).</sys:String>
     <sys:String x:Key="MTDA_Endpoint">Endpoint</sys:String>
     <sys:String x:Key="MTDA_RestoreEndpoint">Restaurar endpoint</sys:String>
+    <sys:String x:Key="MTDA_EndpointHelp">Puedes indicar la URL base o la URL completa de chat completions. Ejemplos: https://api.deepseek.com · http://localhost:1234/v1/chat/completions · http://localhost:11434/v1/chat/completions</sys:String>
     <sys:String x:Key="MTDA_ApiKey">API key</sys:String>
     <sys:String x:Key="MTDA_ApiKeyHelp">Pegala aqui solo si el proveedor la requiere. Para LM Studio y Ollama locales normalmente se deja vacia. No pegues aqui la clave de ChatGPT: debe ser una clave de API del proveedor elegido.</sys:String>
     <sys:String x:Key="MTDA_Model">Modelo</sys:String>
@@ -296,6 +297,10 @@ Verifique el proveedor configurado, el punto final, el modelo y la clave API. Si
     <sys:String x:Key="MTDA_ErrorProviderModelNotFound">El proveedor o modelo configurado no existe, o no está disponible para tu proyecto.
 
 Comprueba el proveedor, el endpoint y el nombre exacto del modelo. Para Gemini, pulsa «Aplicar proveedor» y usa gemini-3.5-flash-lite.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderEndpointNotFound">El endpoint configurado devolvió HTTP 404 (no encontrado).
+
+Comprueba que el endpoint esté bien escrito. En Custom compatible con OpenAI puedes indicar la URL base (por ejemplo https://api.deepseek.com o https://api.openai.com/v1) o la URL completa que termine en /chat/completions.</sys:String>
+    <sys:String x:Key="MTDA_ErrorProviderDetail">Detalle del proveedor:</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderQuota">El proveedor de IA rechazó la petición porque la cuenta o el proyecto no tienen cuota disponible.
 
 Con OpenAI, normalmente significa que la API no tiene saldo o facturación activa; ChatGPT Plus se factura por separado. Crear otra clave en el mismo proyecto no añade saldo. Con otros proveedores, revisa la cuota del proyecto o usa Ollama/LM Studio para evitar límites externos.</sys:String>

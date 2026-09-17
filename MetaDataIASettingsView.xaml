@@ -907,14 +907,15 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Text="{Binding Settings.Endpoint, UpdateSourceTrigger=PropertyChanged}"
-                                                 Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding Settings.Endpoint, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,8,0"/>
                                         <Button Grid.Column="1"
                                                 Content="{DynamicResource MTDA_RestoreEndpoint}"
                                                 IsEnabled="{Binding Settings.CanRestoreProviderEndpoint, Mode=OneWay}"
                                                 MinWidth="150"
                                                 Click="RestoreEndpoint_OnClick"/>
                                     </Grid>
+                                    <TextBlock Text="{DynamicResource MTDA_EndpointHelp}" Style="{StaticResource FieldHintText}"/>
                                 </StackPanel>
 
                                 <TextBlock Text="{DynamicResource MTDA_ApiKey}" Style="{StaticResource FieldLabelText}"/>

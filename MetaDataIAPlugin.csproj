@@ -78,6 +78,7 @@
     <Compile Include="OfficialStoreDataService.cs" />
     <Compile Include="PlayniteIntegrationService.cs" />
     <Compile Include="ProviderUsageService.cs" />
+    <Compile Include="ProviderEndpointHelper.cs" />
     <Compile Include="ProviderModelService.cs" />
     <Compile Include="TitleMatchingService.cs" />
     <Compile Include="MetaDataIAPlugin.cs" />
