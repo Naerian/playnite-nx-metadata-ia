@@ -296,7 +296,7 @@ Comprueba la URL del endpoint, tu conexión a internet y si el servicio está di
 Verifique el proveedor configurado, el punto final, el modelo y la clave API. Si el problema continúa, pruebe con otro modelo o con un proveedor local.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderModelNotFound">El proveedor o modelo configurado no existe, o no está disponible para tu proyecto.
 
-Comprueba el proveedor, el endpoint y el nombre exacto del modelo. Para Gemini, pulsa «Aplicar proveedor» y usa gemini-3.5-flash-lite.</sys:String>
+Comprueba el proveedor, el endpoint y el nombre exacto del modelo. Para Gemini, elige Google Gemini en el desplegable y usa gemini-3.5-flash-lite.</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderEndpointNotFound">El endpoint configurado devolvió HTTP 404 (no encontrado).
 
 Comprueba que el endpoint esté bien escrito. En Custom compatible con OpenAI puedes indicar la URL base (por ejemplo https://api.deepseek.com o https://api.openai.com/v1) o la URL completa que termine en /chat/completions.</sys:String>

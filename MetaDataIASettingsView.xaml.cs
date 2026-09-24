@@ -38,6 +38,9 @@ namespace MetaDataIAPlugin
         private bool providerModelsRefreshActive;
         private readonly ObservableCollection<string> providerModelIds = new ObservableCollection<string>();
         private string lastAppliedProviderPreset;
+        private bool providerPresetSelectionReady;
+        private bool applyingProviderPreset;
+        private int providerPresetBindGeneration;
         private MetaDataIASettings observedSettings;
         private string lastProviderTestDetails;
         private string lastMediaTestDetails;
@@ -88,6 +91,15 @@ namespace MetaDataIAPlugin
                 {
                     ObserveSettings(viewModel.Settings);
                     lastAppliedProviderPreset = viewModel.Settings.ProviderPreset;
+                    providerPresetSelectionReady = false;
+                    var bindGeneration = ++providerPresetBindGeneration;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (bindGeneration == providerPresetBindGeneration)
+                        {
+                            providerPresetSelectionReady = true;
+                        }
+                    }), DispatcherPriority.ContextIdle);
                     viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
                     ApplyAppearancePreset();
@@ -1481,36 +1493,32 @@ namespace MetaDataIAPlugin
             return bytes + " B";
         }
 
-        private async void ApplyProvider_OnClick(object sender, RoutedEventArgs e)
+        private async Task ApplySelectedProviderAsync(MetaDataIASettingsViewModel viewModel)
         {
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel != null)
+            CancelProviderModelsRefresh();
+            var selectedProvider = viewModel.Settings.ProviderPreset;
+            var previousModel = viewModel.Settings.Model;
+            var preserveCustomModel = string.Equals(
+                lastAppliedProviderPreset,
+                selectedProvider,
+                StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(previousModel);
+
+            viewModel.Settings.ApplyProviderPreset();
+            if (preserveCustomModel)
             {
-                CancelProviderModelsRefresh();
-                var selectedProvider = viewModel.Settings.ProviderPreset;
-                var previousModel = viewModel.Settings.Model;
-                var preserveCustomModel = string.Equals(
-                    lastAppliedProviderPreset,
-                    selectedProvider,
-                    StringComparison.OrdinalIgnoreCase) &&
-                    !string.IsNullOrWhiteSpace(previousModel);
-
-                viewModel.Settings.ApplyProviderPreset();
-                if (preserveCustomModel)
-                {
-                    viewModel.Settings.Model = previousModel;
-                }
-
-                lastAppliedProviderPreset = selectedProvider;
-                var appliedModel = viewModel.Settings.Model;
-                providerModelIds.Clear();
-                AddCurrentProviderModel(appliedModel);
-                viewModel.Settings.Model = appliedModel;
-                ProviderModelComboBox.Text = appliedModel ?? string.Empty;
-                LoadPasswordBoxes(viewModel.Settings);
-                RefreshProviderUsageDisplay(null);
-                await RefreshProviderModelsAsync(false);
+                viewModel.Settings.Model = previousModel;
             }
+
+            lastAppliedProviderPreset = selectedProvider;
+            var appliedModel = viewModel.Settings.Model;
+            providerModelIds.Clear();
+            AddCurrentProviderModel(appliedModel);
+            viewModel.Settings.Model = appliedModel;
+            ProviderModelComboBox.Text = appliedModel ?? string.Empty;
+            LoadPasswordBoxes(viewModel.Settings);
+            RefreshProviderUsageDisplay(null);
+            await RefreshProviderModelsAsync(false);
         }
 
         private void RestoreEndpoint_OnClick(object sender, RoutedEventArgs e)
@@ -1533,9 +1541,40 @@ namespace MetaDataIAPlugin
             Process.Start(new ProcessStartInfo(viewModel.Settings.ProviderKeyUrl));
         }
 
-        private void ProviderPreset_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void ProviderPreset_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
+            if (!providerPresetSelectionReady || applyingProviderPreset || e.AddedItems == null || e.AddedItems.Count == 0)
+            {
+                return;
+            }
+
+            var selected = e.AddedItems[0] as LocalizedOption;
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (selected == null || viewModel == null || viewModel.Settings == null || string.IsNullOrWhiteSpace(selected.Value))
+            {
+                return;
+            }
+
+            if (string.Equals(selected.Value, lastAppliedProviderPreset, StringComparison.OrdinalIgnoreCase))
+            {
+                RefreshProviderUsageDisplay(null);
+                return;
+            }
+
+            applyingProviderPreset = true;
+            try
+            {
+                if (!string.Equals(viewModel.Settings.ProviderPreset, selected.Value, StringComparison.Ordinal))
+                {
+                    viewModel.Settings.ProviderPreset = selected.Value;
+                }
+
+                await ApplySelectedProviderAsync(viewModel);
+            }
+            finally
+            {
+                applyingProviderPreset = false;
+            }
         }
 
         private async void RefreshProviderModels_OnClick(object sender, RoutedEventArgs e)

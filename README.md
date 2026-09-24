@@ -78,14 +78,14 @@ Free cloud tiers are limited and can be rate-limited or temporarily unavailable.
 
 ## Choosing and configuring an AI provider
 
-The provider list places cloud services with a free tier first, followed by local providers and paid services. Selecting a provider does not immediately replace the current endpoint and model. Click **Apply provider** to load the recommended endpoint and default model for that provider.
+The provider list places cloud services with a free tier first, followed by local providers and paid services. Selecting a provider replaces the endpoint and default model immediately and refreshes the list of models offered by that provider.
 
 New installations start with Groq selected because it is generally the simplest fast cloud option with a free tier. Existing installations keep their currently configured provider.
 
 General setup:
 
 1. Open **Add-ons > Extension settings > Metadata AI > AI**.
-2. Select a provider and click **Apply provider**.
+2. Select a provider. The endpoint, default model and model list update immediately.
 3. Use **Open provider page** to create the required API key.
 4. Paste the key into **API key**. Local providers do not need one.
 5. Keep the suggested model initially, then click **Test provider**.

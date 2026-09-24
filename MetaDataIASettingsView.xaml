@@ -869,22 +869,12 @@
                                 </Border>
 
                                 <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource FieldLabelText}"/>
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ComboBox ItemsSource="{Binding Settings.ProviderPresetOptions}"
-                                              DisplayMemberPath="DisplayName"
-                                              SelectedValuePath="Value"
-                                              SelectedValue="{Binding Settings.ProviderPreset}"
-                                              SelectionChanged="ProviderPreset_OnSelectionChanged"
-                                              Margin="0,0,8,0"/>
-                                    <Button Grid.Column="1"
-                                            Content="{DynamicResource MTDA_ApplyProvider}"
-                                            MinWidth="140"
-                                            Click="ApplyProvider_OnClick"/>
-                                </Grid>
+                                <ComboBox ItemsSource="{Binding Settings.ProviderPresetOptions}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding Settings.ProviderPreset}"
+                                          SelectionChanged="ProviderPreset_OnSelectionChanged"
+                                          Margin="0,0,0,8"/>
                                 <TextBlock Text="{Binding Settings.ProviderKeyHelp, Mode=OneWay}" Style="{StaticResource FieldHintText}" Margin="0,0,0,8"/>
                                 <TextBlock Text="{Binding Settings.ProviderBillingHelp, Mode=OneWay}" Style="{StaticResource FieldHintText}" Margin="0,0,0,8"/>
                                 <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,8">

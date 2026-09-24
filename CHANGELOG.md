@@ -1,6 +1,11 @@
 # Changelog
 
 
+
+## 1.4.18 — 2026-09-24
+- Selecting a provider applies its endpoint and default model immediately and refreshes that provider's model list. The Apply provider button is removed.
+- Gemini 2.5 and 3 requests use a low reasoning effort so thinking tokens fit the completion budget. An invalid Gemini API key reported as HTTP 400 is shown as an authentication error.
+
 ## 1.4.17 — 2026-09-17
 - Fixed Custom OpenAI-compatible endpoints that only had a base URL: the plugin now appends /chat/completions when it is missing (DeepSeek and similar providers).
 - Clarified HTTP 404 errors so bare endpoint failures are no longer reported as a missing model, and include a short provider detail snippet.

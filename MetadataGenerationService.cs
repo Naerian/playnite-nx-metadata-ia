@@ -155,10 +155,10 @@ namespace MetaDataIAPlugin
 
         private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, CancellationToken cancellationToken)
         {
-            return await SendOpenAICompatibleRequestAsync(userPrompt, SupportsJsonObjectResponse(), cancellationToken).ConfigureAwait(false);
+            return await SendOpenAICompatibleRequestAsync(userPrompt, SupportsJsonObjectResponse(), true, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, bool jsonObject, CancellationToken cancellationToken)
+        private async Task<AiMetadataResult> SendOpenAICompatibleRequestAsync(string userPrompt, bool jsonObject, bool allowReasoning, CancellationToken cancellationToken)
         {
             var request = JObject.FromObject(new
             {
@@ -178,10 +178,7 @@ namespace MetaDataIAPlugin
                     }
                 }
             });
-            if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
-            {
-                request["temperature"] = 0.0;
-            }
+            ApplyOpenAiSampling(request, allowReasoning);
 
             if (jsonObject)
             {
@@ -223,9 +220,14 @@ namespace MetaDataIAPlugin
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    if (jsonObject && (int)response.StatusCode == 400)
+                    if ((int)response.StatusCode == 400 && jsonObject)
                     {
-                        return await SendOpenAICompatibleRequestAsync(userPrompt, false, cancellationToken).ConfigureAwait(false);
+                        return await SendOpenAICompatibleRequestAsync(userPrompt, false, allowReasoning && !ResponseRejectsReasoningEffort(responseText), cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if ((int)response.StatusCode == 400 && allowReasoning && ResponseRejectsReasoningEffort(responseText))
+                    {
+                        return await SendOpenAICompatibleRequestAsync(userPrompt, false, false, cancellationToken).ConfigureAwait(false);
                     }
 
                     throw CreateProviderException((int)response.StatusCode, responseText);
@@ -626,10 +628,10 @@ namespace MetaDataIAPlugin
                 return await SendAnthropicTextAsync(systemPrompt, userPrompt, maxTokens, cancellationToken).ConfigureAwait(false);
             }
 
-            return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, SupportsJsonObjectResponse(), cancellationToken).ConfigureAwait(false);
+            return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, SupportsJsonObjectResponse(), true, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> SendOpenAICompatibleTextAsync(string systemPrompt, string userPrompt, int maxTokens, bool jsonObject, CancellationToken cancellationToken)
+        private async Task<string> SendOpenAICompatibleTextAsync(string systemPrompt, string userPrompt, int maxTokens, bool jsonObject, bool allowReasoning, CancellationToken cancellationToken)
         {
             var request = JObject.FromObject(new
             {
@@ -641,10 +643,7 @@ namespace MetaDataIAPlugin
                     new { role = "user", content = userPrompt }
                 }
             });
-            if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
-            {
-                request["temperature"] = 0.0;
-            }
+            ApplyOpenAiSampling(request, allowReasoning);
 
             if (jsonObject)
             {
@@ -684,9 +683,14 @@ namespace MetaDataIAPlugin
                 var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
-                    if (jsonObject && (int)response.StatusCode == 400)
+                    if ((int)response.StatusCode == 400 && jsonObject)
                     {
-                        return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, false, cancellationToken).ConfigureAwait(false);
+                        return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, false, allowReasoning && !ResponseRejectsReasoningEffort(responseText), cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if ((int)response.StatusCode == 400 && allowReasoning && ResponseRejectsReasoningEffort(responseText))
+                    {
+                        return await SendOpenAICompatibleTextAsync(systemPrompt, userPrompt, maxTokens, false, false, cancellationToken).ConfigureAwait(false);
                     }
 
                     throw CreateProviderException((int)response.StatusCode, responseText);
@@ -1463,6 +1467,54 @@ namespace MetaDataIAPlugin
         {
             bool enabled;
             return fields != null && fields.TryGetValue(name, out enabled) && enabled;
+        }
+
+        private void ApplyOpenAiSampling(JObject request, bool allowReasoning)
+        {
+            if (settings.ProviderPreset != MetaDataIASettings.ProviderGemini)
+            {
+                request["temperature"] = 0.0;
+                return;
+            }
+
+            if (!allowReasoning)
+            {
+                return;
+            }
+
+            var effort = ResolveGeminiReasoningEffort(settings.Model);
+            if (!string.IsNullOrWhiteSpace(effort))
+            {
+                request["reasoning_effort"] = effort;
+            }
+        }
+
+        private static string ResolveGeminiReasoningEffort(string model)
+        {
+            var id = (model ?? string.Empty).Trim().ToLowerInvariant();
+            if (id.StartsWith("gemini-3", StringComparison.Ordinal) && id.IndexOf("flash-lite", StringComparison.Ordinal) >= 0)
+            {
+                return "minimal";
+            }
+
+            if (id.StartsWith("gemini-2.5", StringComparison.Ordinal) || id.StartsWith("gemini-3", StringComparison.Ordinal))
+            {
+                return "low";
+            }
+
+            return null;
+        }
+
+        private static bool ResponseRejectsReasoningEffort(string responseText)
+        {
+            if (string.IsNullOrWhiteSpace(responseText))
+            {
+                return false;
+            }
+
+            return responseText.IndexOf("reasoning_effort", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   responseText.IndexOf("thinking level", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   responseText.IndexOf("thinking_level", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private int ResolveCompletionMaxTokens()
@@ -2541,7 +2593,10 @@ namespace MetaDataIAPlugin
                     responseText);
             }
 
-            if (statusCode == 401 || statusCode == 403)
+            var invalidApiKey = providerMessage.IndexOf("api key", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                (providerMessage.IndexOf("not valid", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 providerMessage.IndexOf("invalid", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (statusCode == 401 || statusCode == 403 || (statusCode == 400 && invalidApiKey))
             {
                 return new AiProviderException(
                     AppendProviderDetail(
