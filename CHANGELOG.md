@@ -1,6 +1,8 @@
 # Changelog
 
 
+## 1.4.19 — 2026-09-24
+- A failed IGN catalogue request no longer aborts provider tests or metadata generation. IGN details currently return HTTP 400 because their persisted query asks for a removed field.
 
 ## 1.4.18 — 2026-09-24
 - Selecting a provider applies its endpoint and default model immediately and refreshes that provider's model list. The Apply provider button is removed.

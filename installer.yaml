@@ -1,5 +1,11 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.19
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-24
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.19/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_19.pext
+    Changelog:
+      - 'A failed IGN catalogue request no longer aborts provider tests or metadata generation. IGN details currently return HTTP 400 because their persisted query asks for a removed field.'
   - Version: 1.4.18
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-24

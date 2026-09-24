@@ -160,11 +160,49 @@ namespace MetaDataIAPlugin
                 cancellationToken.ThrowIfCancellationRequested();
                 using (cancellationToken.Register(client.CancelAsync))
                 {
-                    var root = JObject.Parse(await client.DownloadStringTaskAsync(url).ConfigureAwait(false));
-                    var errors = root["errors"] as JArray;
-                    return errors != null && errors.Count > 0 ? null : root;
+                    try
+                    {
+                        var root = JObject.Parse(await client.DownloadStringTaskAsync(url).ConfigureAwait(false));
+                        return HasGraphQlErrors(root) ? null : root;
+                    }
+                    catch (WebException ex)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException(cancellationToken);
+                        }
+
+                        var http = ex.Response as HttpWebResponse;
+                        if (http == null)
+                        {
+                            return null;
+                        }
+
+                        try
+                        {
+                            using (var reader = new System.IO.StreamReader(http.GetResponseStream()))
+                            {
+                                var root = JObject.Parse(reader.ReadToEnd());
+                                return HasGraphQlErrors(root) ? null : root;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch
+                        {
+                            return null;
+                        }
+                    }
                 }
             }
+        }
+
+        private static bool HasGraphQlErrors(JObject root)
+        {
+            var errors = root == null ? null : root["errors"] as JArray;
+            return errors != null && errors.Count > 0;
         }
 
         private static void AddCandidate(List<OfficialMediaCandidate> target, string url, string style, int score)

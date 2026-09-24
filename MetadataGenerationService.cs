@@ -1260,11 +1260,7 @@ namespace MetaDataIAPlugin
 
             if (settings.MediaUseIgn && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
             {
-                var ignContext = await new IgnDataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
-                if (ignContext != null && ignContext.HasUsefulData())
-                {
-                    officialContextForCurrentRequest.Add(ignContext);
-                }
+                await TryAddOptionalContextAsync(() => new IgnDataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
             // These are opt-in, specialist/fallback catalogues. Their data is
@@ -1272,20 +1268,12 @@ namespace MetaDataIAPlugin
             // never bypasses the configured field apply rules.
             if (settings.UseVndbMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
             {
-                var vndbContext = await new VndbMetadataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
-                if (vndbContext != null && vndbContext.HasUsefulData())
-                {
-                    officialContextForCurrentRequest.Add(vndbContext);
-                }
+                await TryAddOptionalContextAsync(() => new VndbMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
             if (settings.UseWikidataMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
             {
-                var wikidataContext = await new WikidataMetadataService().GetContextAsync(game, cancellationToken).ConfigureAwait(false);
-                if (wikidataContext != null && wikidataContext.HasUsefulData())
-                {
-                    officialContextForCurrentRequest.Add(wikidataContext);
-                }
+                await TryAddOptionalContextAsync(() => new WikidataMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
             if (officialContextForCurrentRequest.Count > 0)
@@ -2652,6 +2640,28 @@ namespace MetaDataIAPlugin
                 Loc("MTDA_ErrorProviderConnection", "Could not connect to the configured provider.\n\nCheck that the endpoint is written correctly and that the provider exists. If you use LM Studio or Ollama, make sure the app is open, the local server is active, and the model is loaded or downloaded.\n\nBrief detail: ") + SanitizeForUser(ex == null ? string.Empty : ex.Message),
                 true,
                 ex == null ? string.Empty : ex.ToString());
+        }
+
+        private async Task TryAddOptionalContextAsync(Func<Task<OfficialStoreMetadata>> fetch, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var context = await fetch().ConfigureAwait(false);
+                if (context != null && context.HasUsefulData())
+                {
+                    officialContextForCurrentRequest.Add(context);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+            }
+            catch
+            {
+            }
         }
 
         private bool NeedsTrustedEnrichment()

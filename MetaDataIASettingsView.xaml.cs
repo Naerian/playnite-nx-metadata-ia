@@ -2495,6 +2495,15 @@ namespace MetaDataIAPlugin
             testSettings.GenerateCategories = false;
             testSettings.Length = "Corta";
             testSettings.UseOfficialStoreContext = false;
+            testSettings.UseOriginIntegrationAsAiContext = false;
+            testSettings.UseOriginIntegrationForFactualMetadata = false;
+            testSettings.MediaUseIgn = false;
+            testSettings.UseVndbMetadata = false;
+            testSettings.UseWikidataMetadata = false;
+            testSettings.GenerateReleaseDate = false;
+            testSettings.GenerateSeries = false;
+            testSettings.GenerateLinks = false;
+            testSettings.GenerateSortingName = false;
             testSettings.EnableLocalFallback = false;
             testSettings.ExtraInstructions = Loc(
                 "MTDA_TestProviderInstruction",
