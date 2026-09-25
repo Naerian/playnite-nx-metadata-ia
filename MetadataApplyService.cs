@@ -16,6 +16,8 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            NormalizeResultAgainstLibrary(api, result, settings);
+
             if (settings.GenerateDescription &&
                 !string.IsNullOrWhiteSpace(result.Description) &&
                 ShouldApplyScalar(settings.DescriptionApplyMode, game.Description))
@@ -25,17 +27,38 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.GenreIds = MergeIds(game.GenreIds, Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres), settings.GenresApplyMode, settings.MaxGenres);
+                game.GenreIds = MergeIds(
+                    api.Database.Genres,
+                    game.GenreIds,
+                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres),
+                    settings.GenresApplyMode,
+                    settings.MaxGenres,
+                    "genres",
+                    settings.Language);
             }
 
             if (settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.TagIds = MergeIds(game.TagIds, Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags), settings.TagsApplyMode, settings.MaxTags);
+                game.TagIds = MergeIds(
+                    api.Database.Tags,
+                    game.TagIds,
+                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags),
+                    settings.TagsApplyMode,
+                    settings.MaxTags,
+                    "tags",
+                    settings.Language);
             }
 
             if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.FeatureIds = MergeIds(game.FeatureIds, Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures), settings.FeaturesApplyMode, settings.MaxFeatures);
+                game.FeatureIds = MergeIds(
+                    api.Database.Features,
+                    game.FeatureIds,
+                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures),
+                    settings.FeaturesApplyMode,
+                    settings.MaxFeatures,
+                    "features",
+                    settings.Language);
             }
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
@@ -60,7 +83,14 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.CategoryIds = MergeIds(game.CategoryIds, Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories), settings.CategoriesApplyMode, settings.MaxCategories);
+                game.CategoryIds = MergeIds(
+                    api.Database.Categories,
+                    game.CategoryIds,
+                    Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories),
+                    settings.CategoriesApplyMode,
+                    settings.MaxCategories,
+                    "categories",
+                    settings.Language);
             }
 
             if (settings.GenerateSortingName && settings.SortingNameApplyMode != MetaDataIASettings.ApplySkip)
@@ -95,6 +125,37 @@ namespace MetaDataIAPlugin
             }
 
             api.Database.Games.Update(game);
+        }
+
+        private static void NormalizeResultAgainstLibrary(IPlayniteAPI api, AiMetadataResult result, MetaDataIASettings settings)
+        {
+            if (api == null || api.Database == null || result == null || settings == null)
+            {
+                return;
+            }
+
+            var learned = settings.GetVocabularyTerms(settings.Language) ?? new Dictionary<string, List<string>>();
+            List<string> learnedField;
+
+            learned.TryGetValue("genres", out learnedField);
+            result.Genres = VocabularyTermNormalizer.NormalizeField(
+                result.Genres, "genres", settings.Language, api.Database.Genres.Select(x => x.Name), learnedField,
+                settings.MaxGenres, settings.PreferExistingGenres);
+
+            learned.TryGetValue("tags", out learnedField);
+            result.Tags = VocabularyTermNormalizer.NormalizeField(
+                result.Tags, "tags", settings.Language, api.Database.Tags.Select(x => x.Name), learnedField,
+                settings.MaxTags, settings.PreferExistingTags);
+
+            learned.TryGetValue("features", out learnedField);
+            result.Features = VocabularyTermNormalizer.NormalizeField(
+                result.Features, "features", settings.Language, api.Database.Features.Select(x => x.Name), learnedField,
+                settings.MaxFeatures, settings.PreferExistingFeatures);
+
+            learned.TryGetValue("categories", out learnedField);
+            result.Categories = VocabularyTermNormalizer.NormalizeField(
+                result.Categories, "categories", settings.Language, api.Database.Categories.Select(x => x.Name), learnedField,
+                settings.MaxCategories, settings.PreferExistingCategories);
         }
 
         private static List<Guid> Ensure<T>(IItemCollection<T> collection, IEnumerable<string> names, bool preferExistingOnly) where T : DatabaseObject
@@ -166,6 +227,60 @@ namespace MetaDataIAPlugin
             return (current ?? new List<Guid>()).Concat(generatedList).Distinct().Take(max).ToList();
         }
 
+        private static List<Guid> MergeIds<T>(
+            IItemCollection<T> collection,
+            List<Guid> current,
+            IEnumerable<Guid> generated,
+            string mode,
+            int maxItems,
+            string field,
+            string language) where T : DatabaseObject
+        {
+            var generatedList = generated == null ? new List<Guid>() : generated.Where(x => x != Guid.Empty).Distinct().ToList();
+            var max = Math.Max(1, maxItems);
+            if (mode == MetaDataIASettings.ApplySkip)
+            {
+                return current ?? new List<Guid>();
+            }
+
+            if (mode == MetaDataIASettings.ApplyEmptyOnly && current != null && current.Count > 0)
+            {
+                return current;
+            }
+
+            if (mode == MetaDataIASettings.ApplyOverwrite)
+            {
+                return generatedList.Take(max).ToList();
+            }
+
+            // Append: drop current IDs that are vocabulary-equivalent to an incoming clean term,
+            // so dirty launcher spellings do not remain next to their canonical form.
+            var incomingNames = generatedList
+                .Select(id =>
+                {
+                    var item = collection.Get(id);
+                    return item == null ? null : item.Name;
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            var keptCurrent = (current ?? new List<Guid>())
+                .Where(id =>
+                {
+                    var item = collection.Get(id);
+                    if (item == null || string.IsNullOrWhiteSpace(item.Name))
+                    {
+                        return false;
+                    }
+
+                    return !incomingNames.Any(incoming =>
+                        VocabularyTermNormalizer.AreEquivalent(item.Name, incoming, field, language));
+                })
+                .ToList();
+
+            return keptCurrent.Concat(generatedList).Distinct().Take(max).ToList();
+        }
+
         private static bool ShouldApplyScalar(string mode, string current)
         {
             if (mode == MetaDataIASettings.ApplySkip)
@@ -178,41 +293,38 @@ namespace MetaDataIAPlugin
                 return string.IsNullOrWhiteSpace(current);
             }
 
-            return mode == MetaDataIASettings.ApplyAppend || mode == MetaDataIASettings.ApplyOverwrite;
+            return true;
         }
 
         private static ObservableCollection<Link> MergeLinks(ObservableCollection<Link> current, IEnumerable<AiMetadataLink> generated, string mode, int maxItems)
         {
-            var max = Math.Max(1, maxItems);
-            var currentList = current == null ? new List<Link>() : current.Where(x => x != null).ToList();
-            var generatedList = (generated ?? Enumerable.Empty<AiMetadataLink>())
+            var generatedLinks = (generated ?? Enumerable.Empty<AiMetadataLink>())
                 .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
-                .Select(x => new Link(x.Name, x.Url))
-                .Take(max)
+                .Select(x => new Link(string.IsNullOrWhiteSpace(x.Name) ? x.Url : x.Name, x.Url))
                 .ToList();
 
             if (mode == MetaDataIASettings.ApplySkip)
             {
-                return new ObservableCollection<Link>(currentList);
+                return current ?? new ObservableCollection<Link>();
             }
 
-            if (mode == MetaDataIASettings.ApplyEmptyOnly && currentList.Count > 0)
+            if (mode == MetaDataIASettings.ApplyEmptyOnly && current != null && current.Count > 0)
             {
-                return new ObservableCollection<Link>(currentList);
+                return current;
             }
 
+            IEnumerable<Link> merged;
             if (mode == MetaDataIASettings.ApplyOverwrite)
             {
-                return new ObservableCollection<Link>(DeduplicateLinks(generatedList).Take(max));
+                merged = generatedLinks;
+            }
+            else
+            {
+                merged = (current ?? new ObservableCollection<Link>()).Concat(generatedLinks);
             }
 
-            return new ObservableCollection<Link>(DeduplicateLinks(currentList.Concat(generatedList)).Take(max));
-        }
-
-        private static List<Link> DeduplicateLinks(IEnumerable<Link> links)
-        {
-            var result = new List<Link>();
-            foreach (var link in links ?? Enumerable.Empty<Link>())
+            var result = new ObservableCollection<Link>();
+            foreach (var link in merged)
             {
                 if (link == null || string.IsNullOrWhiteSpace(link.Url))
                 {
@@ -225,6 +337,10 @@ namespace MetaDataIAPlugin
                 }
 
                 result.Add(link);
+                if (result.Count >= Math.Max(1, maxItems))
+                {
+                    break;
+                }
             }
 
             return result;

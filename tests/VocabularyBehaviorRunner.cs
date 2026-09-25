@@ -24,6 +24,10 @@ internal static class VocabularyBehaviorRunner
         Test_PreferExisting_DropsUnknownSpanishWhenLibraryIsEnglish();
         Test_PreferExisting_NormalizedAccentMatch();
         Test_PreferExisting_DoesNotMapAcrossLanguages();
+        Test_Canonical_MapsDirtySteamSpanishFeatures();
+        Test_Canonical_PrefersCleanLibrarySpelling();
+        Test_Canonical_CreatesPreferredWhenMissing();
+        Test_Canonical_CollapsesEquivalentFeatures();
 
         if (failures == 0)
         {
@@ -113,6 +117,53 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("no EN↔ES synonym mapping", string.Empty, Join(mapped));
     }
 
+    private static void Test_Canonical_MapsDirtySteamSpanishFeatures()
+    {
+        var library = new[] { "Coop. A Pantalla (Com)Partida", "Logros de Steam", "Un jugador" };
+        var proposed = new[]
+        {
+            "Coop. A Pantalla (Com)Partida",
+            "Pantalla Partida/Compartida",
+            "Cooperativo en línea",
+            "Logros De",
+            "Un jugador",
+            "Multijugador"
+        };
+
+        var mapped = VocabularyTermNormalizer.NormalizeField(
+            proposed, "features", "es", library, null, 12, false);
+
+        AssertEqual(
+            "dirty Steam Spanish features map to canonical",
+            "Pantalla dividida, Cooperativo online, Logros, Un jugador, Multijugador",
+            Join(mapped));
+    }
+
+    private static void Test_Canonical_PrefersCleanLibrarySpelling()
+    {
+        var library = new[] { "Pantalla dividida", "Coop. A Pantalla (Com)Partida" };
+        var mapped = VocabularyTermNormalizer.NormalizeField(
+            new[] { "Pantalla Partida/Compartida" }, "features", "es", library, null, 12, false);
+
+        AssertEqual("reuse clean library spelling", "Pantalla dividida", Join(mapped));
+    }
+
+    private static void Test_Canonical_CreatesPreferredWhenMissing()
+    {
+        var mapped = VocabularyTermNormalizer.NormalizeField(
+            new[] { "Shared/Split Screen" }, "features", "en", new string[0], null, 12, false);
+
+        AssertEqual("create preferred English spelling", "Split screen", Join(mapped));
+    }
+
+    private static void Test_Canonical_CollapsesEquivalentFeatures()
+    {
+        AssertTrue(
+            "equivalent dirty/clean features",
+            VocabularyTermNormalizer.AreEquivalent(
+                "Coop. A Pantalla (Com)Partida", "Pantalla dividida", "features", "es"));
+    }
+
     private static MetaDataIASettings CreateSettings(string language)
     {
         return new MetaDataIASettings
@@ -169,5 +220,19 @@ internal static class VocabularyBehaviorRunner
         Console.WriteLine("[FAIL] " + name);
         Console.WriteLine("       expected: " + expected);
         Console.WriteLine("       actual:   " + actual);
+    }
+
+    private static void AssertTrue(string name, bool condition)
+    {
+        if (condition)
+        {
+            Console.WriteLine("[PASS] " + name);
+            return;
+        }
+
+        failures++;
+        Console.WriteLine("[FAIL] " + name);
+        Console.WriteLine("       expected: true");
+        Console.WriteLine("       actual:   false");
     }
 }

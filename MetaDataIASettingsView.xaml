@@ -923,7 +923,7 @@
                                     </Grid.ColumnDefinitions>
                                     <ComboBox x:Name="ProviderModelComboBox"
                                               IsEditable="True"
-                                              IsTextSearchEnabled="True"
+                                              IsTextSearchEnabled="False"
                                               Text="{Binding Settings.Model, UpdateSourceTrigger=PropertyChanged}"
                                               Margin="0,0,8,0"/>
                                     <Button x:Name="RefreshProviderModelsButton"

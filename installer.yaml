@@ -1,5 +1,12 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.20
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-25
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.20/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_20.pext
+    Changelog:
+      - 'Genres, tags, features and categories are normalized through the plugin canonical vocabulary first, then matched to clean Playnite names, otherwise created. Dirty launcher spellings (for example Steam Spanish categories) are mapped to stable preferred terms and no longer overwrite AI output as final text.'
+      - 'Changing AI provider refreshes the model list reliably: pending refreshes are queued, stale responses are ignored, and entering an API key triggers an automatic model reload.'
   - Version: 1.4.19
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-24

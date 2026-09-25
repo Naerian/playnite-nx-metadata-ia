@@ -1,6 +1,11 @@
 # Changelog
 
 
+
+## 1.4.20 — 2026-09-25
+- Genres, tags, features and categories are normalized through the plugin canonical vocabulary first, then matched to clean Playnite names, otherwise created. Dirty launcher spellings (for example Steam Spanish categories) are mapped to stable preferred terms and no longer overwrite AI output as final text.
+- Changing AI provider refreshes the model list reliably: pending refreshes are queued, stale responses are ignored, and entering an API key triggers an automatic model reload.
+
 ## 1.4.19 — 2026-09-24
 - A failed IGN catalogue request no longer aborts provider tests or metadata generation. IGN details currently return HTTP 400 because their persisted query asks for a removed field.
 

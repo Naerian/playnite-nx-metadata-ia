@@ -68,6 +68,8 @@
     <Compile Include="IgdbMetadataContextService.cs" />
     <Compile Include="IgnDataService.cs" />
     <Compile Include="LibraryNameMatching.cs" />
+    <Compile Include="CanonicalVocabulary.cs" />
+    <Compile Include="VocabularyTermNormalizer.cs" />
     <Compile Include="CommunityMetadataServices.cs" />
     <Compile Include="MetadataMaintenanceService.cs" />
     <Compile Include="MetadataTrustModels.cs" />

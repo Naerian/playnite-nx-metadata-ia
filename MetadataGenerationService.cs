@@ -244,8 +244,52 @@ namespace MetaDataIAPlugin
             ApplyTrustedFactualFields(result, game);
             EnsureSystemRequirements(result, game);
             result.Normalize(settings, game);
+            ApplyVocabularyNormalization(result);
             ApplyStrictFactualGuard(result, game);
             AttachProvenance(result, game);
+        }
+
+        private void ApplyVocabularyNormalization(AiMetadataResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            var learned = settings.GetVocabularyTerms(settings.Language);
+            List<string> learnedField;
+            var genresLibrary = playniteApi != null && playniteApi.Database != null
+                ? playniteApi.Database.Genres.Select(x => x.Name)
+                : Enumerable.Empty<string>();
+            var tagsLibrary = playniteApi != null && playniteApi.Database != null
+                ? playniteApi.Database.Tags.Select(x => x.Name)
+                : Enumerable.Empty<string>();
+            var featuresLibrary = playniteApi != null && playniteApi.Database != null
+                ? playniteApi.Database.Features.Select(x => x.Name)
+                : Enumerable.Empty<string>();
+            var categoriesLibrary = playniteApi != null && playniteApi.Database != null
+                ? playniteApi.Database.Categories.Select(x => x.Name)
+                : Enumerable.Empty<string>();
+
+            learned.TryGetValue("genres", out learnedField);
+            result.Genres = VocabularyTermNormalizer.NormalizeField(
+                result.Genres, "genres", settings.Language, genresLibrary, learnedField,
+                settings.MaxGenres, settings.PreferExistingGenres);
+
+            learned.TryGetValue("tags", out learnedField);
+            result.Tags = VocabularyTermNormalizer.NormalizeField(
+                result.Tags, "tags", settings.Language, tagsLibrary, learnedField,
+                settings.MaxTags, settings.PreferExistingTags);
+
+            learned.TryGetValue("features", out learnedField);
+            result.Features = VocabularyTermNormalizer.NormalizeField(
+                result.Features, "features", settings.Language, featuresLibrary, learnedField,
+                settings.MaxFeatures, settings.PreferExistingFeatures);
+
+            learned.TryGetValue("categories", out learnedField);
+            result.Categories = VocabularyTermNormalizer.NormalizeField(
+                result.Categories, "categories", settings.Language, categoriesLibrary, learnedField,
+                settings.MaxCategories, settings.PreferExistingCategories);
         }
 
         private void ApplyTrustedFactualFields(AiMetadataResult result, Game game)
@@ -267,16 +311,25 @@ namespace MetaDataIAPlugin
             DetectListConflict(result, "ageRatings", sources, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating });
             DetectListConflict(result, "regions", sources, x => x.Regions);
 
+            // Official/Origin lists are factual candidates, not final spellings.
+            // Merge with AI output; ApplyVocabularyNormalization later maps them onto
+            // the plugin canonical vocabulary (then Playnite DB / create cleaned).
             if (settings.GenerateGenres)
             {
                 var genres = FirstOfficialList(x => x.Genres);
-                if (genres.Count > 0) result.Genres = genres.Take(settings.MaxGenres).ToList();
+                if (genres.Count > 0)
+                {
+                    result.Genres = MergeTermCandidates(genres, result.Genres, settings.MaxGenres);
+                }
             }
 
             if (settings.GenerateFeatures)
             {
                 var features = FirstOfficialList(x => x.Features);
-                if (features.Count > 0) result.Features = features.Take(settings.MaxFeatures).ToList();
+                if (features.Count > 0)
+                {
+                    result.Features = MergeTermCandidates(features, result.Features, settings.MaxFeatures);
+                }
             }
 
             if (settings.GenerateLinks)
@@ -1819,101 +1872,18 @@ namespace MetaDataIAPlugin
 
         private Dictionary<string, List<string>> BuildDefaultCanonicalTerms()
         {
-            if (!string.IsNullOrWhiteSpace(settings.Language) &&
-                settings.Language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
-            {
-                return new Dictionary<string, List<string>>
-                {
-                    {
-                        "genres",
-                        new List<string>
-                        {
-                            "Action", "Adventure", "RPG", "Strategy", "Simulation", "Sports", "Racing",
-                            "Fighting", "Platformer", "Puzzle", "Shooter", "Horror", "Survival",
-                            "Stealth", "Roguelike", "Open world", "Metroidvania", "Visual novel", "Rhythm"
-                        }
-                    },
-                    {
-                        "tags",
-                        new List<string>
-                        {
-                            "Single-player", "Multiplayer", "Co-op", "Online co-op", "Local co-op",
-                            "Competitive", "PvP", "PvE", "Social deduction", "Exploration", "Building",
-                            "Management", "Crafting", "Deep story", "Narrative", "Comedy", "Difficult",
-                            "Casual", "Retro", "Anime", "Pixel art", "Science fiction", "Fantasy", "Cyberpunk",
-                            "Post-apocalyptic", "Sandbox", "Procedural"
-                        }
-                    },
-                    {
-                        "features",
-                        new List<string>
-                        {
-                            "Single-player", "Online multiplayer", "Local multiplayer", "Online co-op",
-                            "Local co-op", "Split screen", "Controller support", "Achievements",
-                            "Cloud saves", "Steam trading cards", "Steam Deck compatibility",
-                            "Cross-play", "Level editor", "PvP modes", "PvE modes", "In-app purchases"
-                        }
-                    },
-                    {
-                        "categories",
-                        new List<string>
-                        {
-                            "Favorites", "Backlog", "Completed", "Abandoned", "Co-op games",
-                            "Quick sessions", "Long sessions", "Relaxing", "Challenges", "Narrative",
-                            "Multiplayer", "Indie", "Retro", "Emulation"
-                        }
-                    }
-                };
-            }
+            return CanonicalVocabulary.GetPreferredNames(settings.Language);
+        }
 
-            if (!string.IsNullOrWhiteSpace(settings.Language) &&
-                !settings.Language.StartsWith("es", StringComparison.OrdinalIgnoreCase))
-            {
-                return new Dictionary<string, List<string>>();
-            }
-
-            return new Dictionary<string, List<string>>
-            {
-                {
-                    "genres",
-                    new List<string>
-                    {
-                        "Accion", "Aventura", "RPG", "Estrategia", "Simulacion", "Deportes", "Carreras",
-                        "Lucha", "Plataformas", "Puzzle", "Disparos", "Terror", "Supervivencia",
-                        "Sigilo", "Roguelike", "Mundo abierto", "Metroidvania", "Novela visual", "Ritmo"
-                    }
-                },
-                {
-                    "tags",
-                    new List<string>
-                    {
-                        "Un jugador", "Multijugador", "Cooperativo", "Cooperativo online", "Cooperativo local",
-                        "Competitivo", "PvP", "PvE", "Deduccion social", "Exploracion", "Construccion",
-                        "Gestion", "Crafteo", "Historia profunda", "Narrativo", "Humor", "Dificil",
-                        "Casual", "Retro", "Anime", "Pixel art", "Ciencia ficcion", "Fantasia", "Cyberpunk",
-                        "Postapocaliptico", "Sandbox", "Procedural"
-                    }
-                },
-                {
-                    "features",
-                    new List<string>
-                    {
-                        "Un jugador", "Multijugador online", "Multijugador local", "Cooperativo online",
-                        "Cooperativo local", "Pantalla dividida", "Soporte mando", "Logros",
-                        "Guardado en la nube", "Cromos de Steam", "Compatibilidad Steam Deck",
-                        "Juego cruzado", "Editor de niveles", "Modos PvP", "Modos PvE", "Compras integradas"
-                    }
-                },
-                {
-                    "categories",
-                    new List<string>
-                    {
-                        "Favoritos", "Pendientes", "Completados", "Abandonados", "Para jugar en cooperativo",
-                        "Para jugar rapido", "Para sesiones largas", "Relax", "Retos", "Narrativos",
-                        "Multijugador", "Indie", "Retro", "Emulacion"
-                    }
-                }
-            };
+        private static List<string> MergeTermCandidates(IEnumerable<string> primary, IEnumerable<string> secondary, int maxItems)
+        {
+            return (primary ?? Enumerable.Empty<string>())
+                .Concat(secondary ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(Math.Max(1, maxItems))
+                .ToList();
         }
 
         private static string ExtractAssistantContent(string responseText)

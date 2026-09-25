@@ -36,6 +36,9 @@ namespace MetaDataIAPlugin
         private bool providerUsageRefreshActive;
         private CancellationTokenSource providerModelsRefreshCancellation;
         private bool providerModelsRefreshActive;
+        private bool providerModelsRefreshPending;
+        private bool providerModelsRefreshPendingManual;
+        private int providerModelsRefreshGeneration;
         private readonly ObservableCollection<string> providerModelIds = new ObservableCollection<string>();
         private string lastAppliedProviderPreset;
         private bool providerPresetSelectionReady;
@@ -585,12 +588,7 @@ namespace MetaDataIAPlugin
                 providerUsageRefreshCancellation.Dispose();
                 providerUsageRefreshCancellation = null;
             }
-            if (providerModelsRefreshCancellation != null)
-            {
-                providerModelsRefreshCancellation.Cancel();
-                providerModelsRefreshCancellation.Dispose();
-                providerModelsRefreshCancellation = null;
-            }
+            CancelProviderModelsRefresh();
         }
 
         private void ObserveSettings(MetaDataIASettings settings)
@@ -910,9 +908,18 @@ namespace MetaDataIAPlugin
         private void ApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel != null)
+            if (viewModel == null)
             {
-                viewModel.Settings.ApiKey = ApiKeyBox.Password;
+                return;
+            }
+
+            var previousKey = viewModel.Settings.ApiKey;
+            viewModel.Settings.ApiKey = ApiKeyBox.Password;
+            if (string.IsNullOrWhiteSpace(previousKey) &&
+                !string.IsNullOrWhiteSpace(viewModel.Settings.ApiKey) &&
+                RequiresApiKeyForModelListing(viewModel.Settings))
+            {
+                Dispatcher.BeginInvoke(new Action(async () => await RefreshProviderModelsAsync(false)));
             }
         }
 
@@ -1512,8 +1519,9 @@ namespace MetaDataIAPlugin
 
             lastAppliedProviderPreset = selectedProvider;
             var appliedModel = viewModel.Settings.Model;
+            // Keep the dropdown empty while the provider list loads. A single
+            // placeholder model made failed auto-refreshes look like a one-item list.
             providerModelIds.Clear();
-            AddCurrentProviderModel(appliedModel);
             viewModel.Settings.Model = appliedModel;
             ProviderModelComboBox.Text = appliedModel ?? string.Empty;
             LoadPasswordBoxes(viewModel.Settings);
@@ -1584,8 +1592,15 @@ namespace MetaDataIAPlugin
 
         private async Task RefreshProviderModelsAsync(bool manual)
         {
-            if (providerModelsRefreshActive || ProviderModelComboBox == null || ProviderModelsStatusText == null)
+            if (ProviderModelComboBox == null || ProviderModelsStatusText == null)
             {
+                return;
+            }
+
+            if (providerModelsRefreshActive)
+            {
+                providerModelsRefreshPending = true;
+                providerModelsRefreshPendingManual |= manual;
                 return;
             }
 
@@ -1596,19 +1611,16 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            AddCurrentProviderModel(settings.Model);
             if (RequiresApiKeyForModelListing(settings) && string.IsNullOrWhiteSpace(settings.ApiKey))
             {
+                EnsureCurrentProviderModelVisible(settings.Model);
                 ProviderModelsStatusText.Text = Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models.");
                 return;
             }
 
-            if (providerModelsRefreshCancellation != null)
-            {
-                providerModelsRefreshCancellation.Cancel();
-                providerModelsRefreshCancellation.Dispose();
-            }
-
+            var generation = providerModelsRefreshGeneration;
+            var expectedProvider = settings.ProviderPreset;
+            var expectedEndpoint = settings.Endpoint;
             providerModelsRefreshCancellation = new CancellationTokenSource();
             var cancellation = providerModelsRefreshCancellation;
             providerModelsRefreshActive = true;
@@ -1618,7 +1630,7 @@ namespace MetaDataIAPlugin
             try
             {
                 var models = await ProviderModelService.GetModelsAsync(settings, cancellation.Token);
-                if (cancellation.IsCancellationRequested)
+                if (!IsCurrentProviderModelsRefresh(generation, expectedProvider, expectedEndpoint, cancellation))
                 {
                     return;
                 }
@@ -1630,13 +1642,13 @@ namespace MetaDataIAPlugin
                     providerModelIds.Add(model.Id);
                 }
 
-                AddCurrentProviderModel(configuredModel);
+                EnsureCurrentProviderModelVisible(configuredModel);
                 if (!string.Equals(settings.Model, configuredModel, StringComparison.Ordinal))
                 {
                     settings.Model = configuredModel;
                 }
 
-                ProviderModelComboBox.Text = configuredModel ?? string.Empty;
+                ResetProviderModelComboBox(configuredModel);
                 ProviderModelsStatusText.Text = models.Count == 0
                     ? Loc("MTDA_ProviderModelsEmpty", "The provider did not return compatible text models. You can still enter one manually.")
                     : string.Format(Loc("MTDA_ProviderModelsLoaded", "{0} compatible models available. You can also enter one manually."), models.Count);
@@ -1646,23 +1658,67 @@ namespace MetaDataIAPlugin
             }
             catch (Exception ex)
             {
+                if (!IsCurrentProviderModelsRefresh(generation, expectedProvider, expectedEndpoint, cancellation))
+                {
+                    return;
+                }
+
+                EnsureCurrentProviderModelVisible(settings.Model);
+                ResetProviderModelComboBox(settings.Model);
                 ProviderModelsStatusText.Text = manual
                     ? string.Format(Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
                     : Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually.");
             }
             finally
             {
-                if (ReferenceEquals(providerModelsRefreshCancellation, cancellation))
+                if (generation == providerModelsRefreshGeneration)
                 {
                     providerModelsRefreshActive = false;
-                    RefreshProviderModelsButton.IsEnabled = true;
-                    providerModelsRefreshCancellation.Dispose();
-                    providerModelsRefreshCancellation = null;
+                    if (RefreshProviderModelsButton != null)
+                    {
+                        RefreshProviderModelsButton.IsEnabled = true;
+                    }
+
+                    if (ReferenceEquals(providerModelsRefreshCancellation, cancellation))
+                    {
+                        providerModelsRefreshCancellation.Dispose();
+                        providerModelsRefreshCancellation = null;
+                    }
                 }
+            }
+
+            if (generation == providerModelsRefreshGeneration && providerModelsRefreshPending)
+            {
+                var pendingManual = providerModelsRefreshPendingManual;
+                providerModelsRefreshPending = false;
+                providerModelsRefreshPendingManual = false;
+                await RefreshProviderModelsAsync(pendingManual);
             }
         }
 
-        private void AddCurrentProviderModel(string model)
+        private bool IsCurrentProviderModelsRefresh(
+            int generation,
+            string expectedProvider,
+            string expectedEndpoint,
+            CancellationTokenSource cancellation)
+        {
+            if (generation != providerModelsRefreshGeneration || cancellation.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var settings = viewModel == null ? null : viewModel.Settings;
+            if (settings == null)
+            {
+                return false;
+            }
+
+            return string.Equals(expectedProvider, settings.ProviderPreset, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(expectedEndpoint ?? string.Empty, settings.Endpoint ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void EnsureCurrentProviderModelVisible(string model)
         {
             if (string.IsNullOrWhiteSpace(model) || providerModelIds.Any(x => string.Equals(x, model, StringComparison.OrdinalIgnoreCase)))
             {
@@ -1670,6 +1726,19 @@ namespace MetaDataIAPlugin
             }
 
             providerModelIds.Insert(0, model.Trim());
+        }
+
+        private void ResetProviderModelComboBox(string selectedModel)
+        {
+            if (ProviderModelComboBox == null)
+            {
+                return;
+            }
+
+            // Rebind ItemsSource so an editable ComboBox does not keep a stale text-search filter.
+            ProviderModelComboBox.ItemsSource = null;
+            ProviderModelComboBox.ItemsSource = providerModelIds;
+            ProviderModelComboBox.Text = selectedModel ?? string.Empty;
         }
 
         private static bool RequiresApiKeyForModelListing(MetaDataIASettings settings)
@@ -1684,6 +1753,9 @@ namespace MetaDataIAPlugin
 
         private void CancelProviderModelsRefresh()
         {
+            providerModelsRefreshGeneration++;
+            providerModelsRefreshPending = false;
+            providerModelsRefreshPendingManual = false;
             if (providerModelsRefreshCancellation != null)
             {
                 providerModelsRefreshCancellation.Cancel();
