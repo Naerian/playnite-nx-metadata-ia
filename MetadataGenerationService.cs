@@ -150,6 +150,7 @@ namespace MetaDataIAPlugin
 
             await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
             await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
+            result.ApplyConfiguredPrefixes(settings, Names(game == null ? null : game.Tags), Names(game == null ? null : game.Categories));
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
             return result;
         }
@@ -285,8 +286,6 @@ namespace MetaDataIAPlugin
             result.Categories = VocabularyTermNormalizer.NormalizeField(
                 result.Categories, "categories", settings.Language, categoriesLibrary, null,
                 settings.MaxCategories, settings.PreferExistingCategories);
-
-            result.ApplyConfiguredPrefixes(settings);
         }
 
         private void ApplyTrustedFactualFields(AiMetadataResult result, Game game)
@@ -1125,6 +1124,7 @@ namespace MetaDataIAPlugin
                 PrepareResult(result, game);
                 await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
                 await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
+                result.ApplyConfiguredPrefixes(settings, Names(game == null ? null : game.Tags), Names(game == null ? null : game.Categories));
                 await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
                 return result;
             }

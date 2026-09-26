@@ -226,9 +226,9 @@
     <sys:String x:Key="MTDA_CompaniesLimitHelp">Para compañías, el valor recomendado es 1: el plugin intenta guardar solo el estudio/editor principal y evitar estudios de apoyo, ports, multijugador o distribución regional.</sys:String>
     <sys:String x:Key="MTDA_SortingLinksHelp">Orden de nombre se calcula localmente: detecta secuelas con 2/3, II/III o v2/v3 y genera valores como Nombre base 01, 02, 03. Enlaces intenta usar URLs oficiales; si el juego viene de Steam y tiene AppId, se añade la URL de tienda de forma fiable.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Prefijo para etiquetas</sys:String>
-    <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva tal cual (incluye corchetes y mayúsculas). Ejemplo: [MAI] Mundo abierto.</sys:String>
+    <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva tal cual (incluye corchetes y mayúsculas). Las etiquetas que ya tenía el juego no se modifican. Ejemplo: [MAI] Mundo abierto.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefijo para categorias</sys:String>
-    <sys:String x:Key="MTDA_CategoryPrefixHelp">Sirve para agrupar categorias creadas por el plugin. Ejemplo: Meta: Accion.</sys:String>
+    <sys:String x:Key="MTDA_CategoryPrefixHelp">Sirve para agrupar categorias creadas por el plugin. Las categorias que ya tenia el juego no se modifican. Ejemplo: Meta: Accion.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Lista negra de terminos</sys:String>
     <sys:String x:Key="MTDA_BlacklistHelp">Introduce palabras o expresiones separadas por comas, punto y coma o saltos de línea. Cualquier etiqueta, género, característica, categoría, desarrollador, editor, clasificación por edad o región generada que contenga uno de esos términos se descarta antes de aplicarse. Sirve para bloquear vocabulario ambiguo, no deseado, duplicado o mal traducido.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">Activar reglas automaticas de plantilla</sys:String>

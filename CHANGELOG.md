@@ -4,6 +4,10 @@
 
 
 
+
+## 1.4.24 — 2026-09-27
+- Tag and category prefixes are applied only to labels newly added by the plugin. Existing tags and categories already on the game are left unchanged in Append without deleting mode.
+
 ## 1.4.23 — 2026-09-26
 - Tag and category prefixes keep brackets and casing as typed (for example [MAI]). Prefixes are applied after capitalization, and Uppercase only affects the label body.
 - When IGDB metadata is enabled, IGDB genres and themes are always fetched as enrichment alongside store lists (not only when those lists are short). Steam Action/Adventure can merge with IGDB Shooter and Science fiction before the AI organises them.

@@ -16,7 +16,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            NormalizeResultAgainstLibrary(api, result, settings);
+            NormalizeResultAgainstLibrary(api, game, result, settings);
 
             if (settings.GenerateDescription &&
                 !string.IsNullOrWhiteSpace(result.Description) &&
@@ -128,7 +128,7 @@ namespace MetaDataIAPlugin
             api.Database.Games.Update(game);
         }
 
-        private static void NormalizeResultAgainstLibrary(IPlayniteAPI api, AiMetadataResult result, MetaDataIASettings settings)
+        private static void NormalizeResultAgainstLibrary(IPlayniteAPI api, Game game, AiMetadataResult result, MetaDataIASettings settings)
         {
             if (api == null || api.Database == null || result == null || settings == null)
             {
@@ -152,7 +152,10 @@ namespace MetaDataIAPlugin
                 settings.MaxCategories, false);
 
             ApplyUppercase(result, settings);
-            result.ApplyConfiguredPrefixes(settings);
+            result.ApplyConfiguredPrefixes(
+                settings,
+                game == null || game.Tags == null ? null : game.Tags.Where(x => x != null).Select(x => x.Name),
+                game == null || game.Categories == null ? null : game.Categories.Where(x => x != null).Select(x => x.Name));
         }
 
         private static void ApplyUppercase(AiMetadataResult result, MetaDataIASettings settings)

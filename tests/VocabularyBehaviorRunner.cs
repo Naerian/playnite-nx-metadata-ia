@@ -636,6 +636,14 @@ internal static class VocabularyBehaviorRunner
             "category prefix applied after casing",
             "[META] Co-Op",
             Join(result.Categories));
+
+        var append = CreateResult(new[] { "Action" }, new[] { "Fantasy", "Extraction Shooter", "Sci-Fi" });
+        append.Tags = TextCapitalization.ApplyList(append.Tags, "en", false);
+        append.ApplyConfiguredPrefixes(settings, new[] { "Fantasy", "Local Co-op" });
+        AssertEqual(
+            "prefix skips tags that already existed on the game",
+            "Fantasy, [MAI] Extraction Shooter, [MAI] Sci-Fi",
+            Join(append.Tags));
     }
 
     private static MetaDataIASettings CreateSettings(string language)

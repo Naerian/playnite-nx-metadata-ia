@@ -123,15 +123,20 @@ namespace MetaDataIAPlugin
             RefreshDescription(settings, game);
         }
 
-        public void ApplyConfiguredPrefixes(MetaDataIASettings settings)
+        public void ApplyConfiguredPrefixes(
+            MetaDataIASettings settings,
+            IEnumerable<string> existingTags = null,
+            IEnumerable<string> existingCategories = null)
         {
             if (settings == null)
             {
                 return;
             }
 
-            Tags = ApplyPrefixList(Tags, settings.TagPrefix);
-            Categories = ApplyPrefixList(Categories, settings.CategoryPrefix);
+            // Prefix only plugin-introduced labels. Tags/categories that already existed on
+            // the game (append / organise kept them) keep their original spelling.
+            Tags = ApplyPrefixList(Tags, settings.TagPrefix, existingTags);
+            Categories = ApplyPrefixList(Categories, settings.CategoryPrefix, existingCategories);
         }
 
         public void RefreshDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
@@ -587,18 +592,70 @@ namespace MetaDataIAPlugin
                 .ToList();
         }
 
-        private static List<string> ApplyPrefixList(IEnumerable<string> values, string prefix)
+        private static List<string> ApplyPrefixList(IEnumerable<string> values, string prefix, IEnumerable<string> existingValues)
         {
             if (values == null)
             {
                 return new List<string>();
             }
 
-            return values
+            var existing = (existingValues ?? Enumerable.Empty<string>())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => AddPrefix(x, prefix))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.Trim())
                 .ToList();
+
+            var result = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var raw in values)
+            {
+                if (string.IsNullOrWhiteSpace(raw))
+                {
+                    continue;
+                }
+
+                var value = raw.Trim();
+                var preserved = FindExistingEquivalent(value, prefix, existing);
+                var finalName = preserved ?? AddPrefix(value, prefix);
+                if (seen.Add(finalName))
+                {
+                    result.Add(finalName);
+                }
+            }
+
+            return result;
+        }
+
+        private static string FindExistingEquivalent(string value, string prefix, List<string> existing)
+        {
+            var body = StripConfiguredPrefix(value, prefix);
+            foreach (var item in existing)
+            {
+                var existingBody = StripConfiguredPrefix(item, prefix);
+                if (VocabularyTermNormalizer.AreEquivalent(body, existingBody, "tags", null) ||
+                    VocabularyTermNormalizer.AreEquivalent(value, item, "tags", null))
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
+
+        private static string StripConfiguredPrefix(string value, string prefix)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var text = value.Trim();
+            if (!string.IsNullOrWhiteSpace(prefix) &&
+                text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return text.Substring(prefix.Length).TrimStart();
+            }
+
+            return text;
         }
 
         private static string AddPrefix(string value, string prefix)
