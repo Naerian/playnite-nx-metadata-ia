@@ -59,7 +59,7 @@ namespace MetaDataIAPlugin
                 return Failure(Loc("MTDA_SeriesLookupNoTitle", "The game has no title to identify it."));
             }
 
-            if (settings == null || string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
+            if (settings == null || !settings.UseIgdbMetadata || string.IsNullOrWhiteSpace(settings.IgdbClientId) ||
                 (string.IsNullOrWhiteSpace(settings.IgdbAccessToken) && string.IsNullOrWhiteSpace(settings.IgdbClientSecret)))
             {
                 return Failure(Loc("MTDA_SeriesLookupNotConfigured", "IGDB is not configured. Add its Client ID and access token or client secret in Media > Sources."));

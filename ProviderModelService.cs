@@ -41,6 +41,15 @@ namespace MetaDataIAPlugin
                     var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
+                        if ((int)response.StatusCode == 401)
+                        {
+                            throw new InvalidOperationException(string.Format(
+                                PluginLocalization.GetString(
+                                    "MTDA_ProviderModelsUnauthorized",
+                                    "The API key was rejected by {0} (HTTP 401). Paste a key created for this provider and refresh the list."),
+                                string.IsNullOrWhiteSpace(settings.ProviderPreset) ? "the provider" : settings.ProviderPreset));
+                        }
+
                         throw new InvalidOperationException(string.Format(
                             PluginLocalization.GetString("MTDA_ProviderModelsRefreshFailedHttp", "Could not obtain the model list (HTTP {0})."),
                             (int)response.StatusCode));
@@ -105,11 +114,12 @@ namespace MetaDataIAPlugin
 
         private static void ConfigureAuthentication(HttpRequestMessage request, MetaDataIASettings settings)
         {
+            var apiKey = MetaDataIASettings.NormalizeApiKey(settings.ApiKey);
             if (settings.ProviderPreset == MetaDataIASettings.ProviderGemini)
             {
-                if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+                if (!string.IsNullOrEmpty(apiKey))
                 {
-                    request.Headers.TryAddWithoutValidation("x-goog-api-key", settings.ApiKey);
+                    request.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
                 }
 
                 return;
@@ -117,18 +127,18 @@ namespace MetaDataIAPlugin
 
             if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
             {
-                if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+                if (!string.IsNullOrEmpty(apiKey))
                 {
-                    request.Headers.TryAddWithoutValidation("x-api-key", settings.ApiKey);
+                    request.Headers.TryAddWithoutValidation("x-api-key", apiKey);
                 }
 
                 request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(settings.ApiKey))
+            if (!string.IsNullOrEmpty(apiKey))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             }
         }
 

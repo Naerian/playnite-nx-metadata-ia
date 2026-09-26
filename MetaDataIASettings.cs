@@ -141,6 +141,7 @@ namespace MetaDataIAPlugin
         private string appearancePreset = SettingsAppearance.Midnight;
         private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
+        private Dictionary<string, string> providerApiKeys;
         private string model = "llama-3.1-8b-instant";
         private string language = "es";
         private bool showAdvancedOptions = false;
@@ -279,15 +280,20 @@ namespace MetaDataIAPlugin
         private bool iconSquarePreferGrid = true;
         private bool mediaUseSteamOfficial = true;
         private bool mediaUseSteamScreenshots = true;
+        private bool useSteamMetadata = true;
         private bool useOriginIntegrationForMedia = true;
         private bool useOriginIntegrationAsAiContext = true;
         private bool useOriginIntegrationForFactualMetadata = true;
         private List<Guid> disabledOriginIntegrationIds = new List<Guid>();
         private bool originIntegrationPriorityMigrated = false;
         private bool ignSourcePriorityMigrated = false;
+        private bool sourceMetadataMediaSplitMigrated = false;
         private bool mediaUsePsnStore = false;
+        private bool usePsnStoreMetadata = true;
         private bool mediaUseXboxStore = false;
+        private bool useXboxStoreMetadata = true;
         private bool mediaUseEpicStore = false;
+        private bool useEpicStoreMetadata = true;
         private bool mediaUseSteamGridDb = true;
         private bool mediaUseSteamGridDbBackgroundGrids = true;
         private bool mediaUseRawg = false;
@@ -307,7 +313,9 @@ namespace MetaDataIAPlugin
         private bool mediaUseTheGamesDb = false;
         private string theGamesDbApiKey = string.Empty;
         private bool mediaUseIgdb = false;
+        private bool useIgdbMetadata = true;
         private bool mediaUseIgn = true;
+        private bool useIgnMetadata = true;
         private bool useVndbMetadata = false;
         private bool useWikidataMetadata = false;
         private string igdbClientId = string.Empty;
@@ -424,6 +432,24 @@ namespace MetaDataIAPlugin
         }
         public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
         public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
+
+        /// <summary>
+        /// API keys remembered per provider preset so switching Claude/OpenAI/Groq
+        /// does not reuse the previous provider's key (which returns HTTP 401).
+        /// </summary>
+        public Dictionary<string, string> ProviderApiKeys
+        {
+            get
+            {
+                EnsureProviderApiKeysStorage();
+                return providerApiKeys;
+            }
+            set
+            {
+                providerApiKeys = value;
+                EnsureProviderApiKeysStorage();
+            }
+        }
         public string Model { get { return model; } set { SetValue(ref model, value); } }
         public string Language { get { return language; } set { SetValue(ref language, value); } }
         public bool ShowAdvancedOptions
@@ -587,15 +613,20 @@ namespace MetaDataIAPlugin
         public bool IconSquarePreferGrid { get { return iconSquarePreferGrid; } set { SetValue(ref iconSquarePreferGrid, value); } }
         public bool MediaUseSteamOfficial { get { return mediaUseSteamOfficial; } set { SetValue(ref mediaUseSteamOfficial, value); } }
         public bool MediaUseSteamScreenshots { get { return mediaUseSteamScreenshots; } set { SetValue(ref mediaUseSteamScreenshots, value); } }
+        public bool UseSteamMetadata { get { return useSteamMetadata; } set { SetValue(ref useSteamMetadata, value); } }
         public bool UseOriginIntegrationForMedia { get { return useOriginIntegrationForMedia; } set { SetValue(ref useOriginIntegrationForMedia, value); } }
         public bool UseOriginIntegrationAsAiContext { get { return useOriginIntegrationAsAiContext; } set { SetValue(ref useOriginIntegrationAsAiContext, value); } }
         public bool UseOriginIntegrationForFactualMetadata { get { return useOriginIntegrationForFactualMetadata; } set { SetValue(ref useOriginIntegrationForFactualMetadata, value); } }
         public List<Guid> DisabledOriginIntegrationIds { get { return disabledOriginIntegrationIds; } set { SetValue(ref disabledOriginIntegrationIds, value); } }
         public bool OriginIntegrationPriorityMigrated { get { return originIntegrationPriorityMigrated; } set { SetValue(ref originIntegrationPriorityMigrated, value); } }
         public bool IgnSourcePriorityMigrated { get { return ignSourcePriorityMigrated; } set { SetValue(ref ignSourcePriorityMigrated, value); } }
+        public bool SourceMetadataMediaSplitMigrated { get { return sourceMetadataMediaSplitMigrated; } set { SetValue(ref sourceMetadataMediaSplitMigrated, value); } }
         public bool MediaUsePsnStore { get { return mediaUsePsnStore; } set { SetValue(ref mediaUsePsnStore, value); } }
+        public bool UsePsnStoreMetadata { get { return usePsnStoreMetadata; } set { SetValue(ref usePsnStoreMetadata, value); } }
         public bool MediaUseXboxStore { get { return mediaUseXboxStore; } set { SetValue(ref mediaUseXboxStore, value); } }
+        public bool UseXboxStoreMetadata { get { return useXboxStoreMetadata; } set { SetValue(ref useXboxStoreMetadata, value); } }
         public bool MediaUseEpicStore { get { return mediaUseEpicStore; } set { SetValue(ref mediaUseEpicStore, value); } }
+        public bool UseEpicStoreMetadata { get { return useEpicStoreMetadata; } set { SetValue(ref useEpicStoreMetadata, value); } }
         public bool MediaUseSteamGridDb { get { return mediaUseSteamGridDb; } set { SetValue(ref mediaUseSteamGridDb, value); } }
         public bool MediaUseSteamGridDbBackgroundGrids { get { return mediaUseSteamGridDbBackgroundGrids; } set { SetValue(ref mediaUseSteamGridDbBackgroundGrids, value); } }
         public bool MediaUseRawg { get { return mediaUseRawg; } set { SetValue(ref mediaUseRawg, value); } }
@@ -651,7 +682,9 @@ namespace MetaDataIAPlugin
         public bool MediaUseTheGamesDb { get { return mediaUseTheGamesDb; } set { SetValue(ref mediaUseTheGamesDb, value); } }
         public string TheGamesDbApiKey { get { return theGamesDbApiKey; } set { SetValue(ref theGamesDbApiKey, value); } }
         public bool MediaUseIgdb { get { return mediaUseIgdb; } set { SetValue(ref mediaUseIgdb, value); } }
+        public bool UseIgdbMetadata { get { return useIgdbMetadata; } set { SetValue(ref useIgdbMetadata, value); } }
         public bool MediaUseIgn { get { return mediaUseIgn; } set { SetValue(ref mediaUseIgn, value); } }
+        public bool UseIgnMetadata { get { return useIgnMetadata; } set { SetValue(ref useIgnMetadata, value); } }
         public bool UseVndbMetadata { get { return useVndbMetadata; } set { SetValue(ref useVndbMetadata, value); } }
         public bool UseWikidataMetadata { get { return useWikidataMetadata; } set { SetValue(ref useWikidataMetadata, value); } }
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
@@ -661,6 +694,7 @@ namespace MetaDataIAPlugin
         public void ProtectSecretsForStorage()
         {
             ApiKey = SecretProtectionService.Protect(ApiKey);
+            ProtectProviderApiKeys();
             SteamGridDbApiKey = SecretProtectionService.Protect(SteamGridDbApiKey);
             RawgApiKey = SecretProtectionService.Protect(RawgApiKey);
             ScreenScraperUserName = SecretProtectionService.Protect(ScreenScraperUserName);
@@ -682,6 +716,7 @@ namespace MetaDataIAPlugin
 
             succeeded = SecretProtectionService.TryUnprotect(ApiKey, out plainText) && succeeded;
             ApiKey = plainText;
+            succeeded = UnprotectProviderApiKeys() && succeeded;
             succeeded = SecretProtectionService.TryUnprotect(SteamGridDbApiKey, out plainText) && succeeded;
             SteamGridDbApiKey = plainText;
             succeeded = SecretProtectionService.TryUnprotect(RawgApiKey, out plainText) && succeeded;
@@ -707,6 +742,138 @@ namespace MetaDataIAPlugin
             succeeded = SecretProtectionService.TryUnprotect(IgdbAccessToken, out plainText) && succeeded;
             IgdbAccessToken = plainText;
 
+            return succeeded;
+        }
+
+        public static string NormalizeApiKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var key = value.Trim();
+            if (key.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                key = key.Substring("Bearer ".Length).Trim();
+            }
+
+            return key;
+        }
+
+        public void RememberApiKeyForProvider(string provider)
+        {
+            if (string.IsNullOrWhiteSpace(provider))
+            {
+                return;
+            }
+
+            EnsureProviderApiKeysStorage();
+            var key = NormalizeApiKey(ApiKey);
+            if (string.IsNullOrEmpty(key))
+            {
+                providerApiKeys.Remove(provider);
+            }
+            else
+            {
+                providerApiKeys[provider] = key;
+            }
+        }
+
+        public void ApplyStoredApiKeyForProvider(string provider)
+        {
+            EnsureProviderApiKeysStorage();
+            string stored;
+            if (!string.IsNullOrWhiteSpace(provider) &&
+                providerApiKeys.TryGetValue(provider, out stored) &&
+                !string.IsNullOrWhiteSpace(stored))
+            {
+                ApiKey = NormalizeApiKey(stored);
+            }
+            else
+            {
+                ApiKey = string.Empty;
+            }
+        }
+
+        private void EnsureProviderApiKeysStorage()
+        {
+            if (providerApiKeys == null)
+            {
+                providerApiKeys = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                return;
+            }
+
+            if (providerApiKeys.Comparer == StringComparer.OrdinalIgnoreCase)
+            {
+                return;
+            }
+
+            var normalized = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in providerApiKeys)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                normalized[pair.Key] = pair.Value ?? string.Empty;
+            }
+
+            providerApiKeys = normalized;
+        }
+
+        private void MigrateCurrentApiKeyIntoProviderMap()
+        {
+            EnsureProviderApiKeysStorage();
+            var key = NormalizeApiKey(ApiKey);
+            if (string.IsNullOrEmpty(key) || string.IsNullOrWhiteSpace(ProviderPreset))
+            {
+                return;
+            }
+
+            string existing;
+            if (!providerApiKeys.TryGetValue(ProviderPreset, out existing) || string.IsNullOrWhiteSpace(existing))
+            {
+                providerApiKeys[ProviderPreset] = key;
+            }
+        }
+
+        private void ProtectProviderApiKeys()
+        {
+            EnsureProviderApiKeysStorage();
+            var protectedKeys = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in providerApiKeys)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                protectedKeys[pair.Key] = SecretProtectionService.Protect(pair.Value);
+            }
+
+            providerApiKeys = protectedKeys;
+        }
+
+        private bool UnprotectProviderApiKeys()
+        {
+            EnsureProviderApiKeysStorage();
+            var succeeded = true;
+            var plainKeys = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in providerApiKeys)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                string plainText;
+                succeeded = SecretProtectionService.TryUnprotect(pair.Value, out plainText) && succeeded;
+                plainKeys[pair.Key] = plainText;
+            }
+
+            providerApiKeys = plainKeys;
             return succeeded;
         }
         public string MediaCoverSourcePriority
@@ -784,6 +951,10 @@ namespace MetaDataIAPlugin
             EnsureCompanyLimitDefaults();
             EnsureSafeDefaults();
             EnsureMediaDefaults(existingSettings);
+            // Always-on product behaviour (kept as settings fields for older saves).
+            UseOfficialStoreContext = true;
+            StrictCompanyAgeRegion = true;
+            MigrateCurrentApiKeyIntoProviderMap();
 
             if (Templates == null || Templates.Count == 0)
             {
@@ -883,6 +1054,19 @@ namespace MetaDataIAPlugin
                 }
 
                 IgnSourcePriorityMigrated = true;
+            }
+
+            if (!SourceMetadataMediaSplitMigrated)
+            {
+                // Preserve previous behaviour: storefront metadata was always on;
+                // IGN metadata followed the single shared media toggle.
+                UseSteamMetadata = true;
+                UsePsnStoreMetadata = true;
+                UseXboxStoreMetadata = true;
+                UseEpicStoreMetadata = true;
+                UseIgdbMetadata = true;
+                UseIgnMetadata = MediaUseIgn;
+                SourceMetadataMediaSplitMigrated = true;
             }
         }
 

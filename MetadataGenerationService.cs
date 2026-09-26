@@ -1234,7 +1234,7 @@ namespace MetaDataIAPlugin
             context["tone"] = NormalizeToneForPrompt(settings.Tone);
             context["length"] = NormalizeLengthForPrompt(settings.Length);
             context["tokenLengths"] = BuildTokenLengths();
-            context["strictCompanyAgeRegion"] = settings.StrictCompanyAgeRegion;
+            context["strictCompanyAgeRegion"] = true;
             var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
             var fieldsToGenerate = BuildFieldsToGenerate(requestedTokens);
             context["maxDevelopers"] = settings.MaxDevelopers;
@@ -1246,11 +1246,7 @@ namespace MetaDataIAPlugin
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
             context["requestedDescriptionTokens"] = requestedTokens;
-            var trustedContextEnabled = settings.UseOfficialStoreContext ||
-                                        settings.UseOriginIntegrationAsAiContext ||
-                                        settings.UseOriginIntegrationForFactualMetadata ||
-                                        TemplateNeedsSystemRequirements(requestedTokens);
-            context["officialStoreContextEnabled"] = trustedContextEnabled;
+            context["officialStoreContextEnabled"] = true;
             officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
 
             if (!string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
@@ -1284,14 +1280,12 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.UseOfficialStoreContext || NeedsTrustedEnrichment() || TemplateNeedsSystemRequirements(requestedTokens))
             {
                 var officialContext = await new OfficialStoreDataService(settings).GetOfficialContextsAsync(game, cancellationToken).ConfigureAwait(false);
                 officialContextForCurrentRequest.AddRange(officialContext);
             }
 
-            if (CanQueryIgdb() && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()) &&
-                (HasMissingTrustedEvidence() || TermListsAreShort(game)))
+            if (CanQueryIgdb() && settings.UseIgdbMetadata && (HasMissingTrustedEvidence() || TermListsAreShort(game)))
             {
                 var igdbContext = await new IgdbMetadataContextService(settings).GetContextAsync(game, cancellationToken).ConfigureAwait(false);
                 if (igdbContext != null && igdbContext.HasUsefulData())
@@ -1300,7 +1294,7 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            if (settings.MediaUseIgn && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            if (settings.UseIgnMetadata)
             {
                 await TryAddOptionalContextAsync(() => new IgnDataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
@@ -1308,13 +1302,12 @@ namespace MetaDataIAPlugin
             // These are opt-in, specialist/fallback catalogues. Their data is
             // offered to the same factual-validation path as other sources; it
             // never bypasses the configured field apply rules.
-            if (settings.UseVndbMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            if (settings.UseVndbMetadata)
             {
                 await TryAddOptionalContextAsync(() => new VndbMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
-            if ((settings.UseOfficialStoreContext || NeedsTrustedEnrichment()) &&
-                (settings.UseWikidataMetadata || TermListsAreShort(game)) &&
+            if (settings.UseWikidataMetadata &&
                 !HasContextSource(MetaDataIASettings.SourceWikidata))
             {
                 await TryAddOptionalContextAsync(() => new WikidataMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
@@ -2661,10 +2654,7 @@ namespace MetaDataIAPlugin
 
         private void ApplyStrictFactualGuard(AiMetadataResult result, Game game)
         {
-            if (result == null ||
-                !(settings.UseOfficialStoreContext || settings.UseOriginIntegrationForFactualMetadata ||
-                  (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>()).Any(x => x != null && x.IsExactMatch)) ||
-                !settings.StrictCompanyAgeRegion)
+            if (result == null)
             {
                 return;
             }

@@ -932,9 +932,26 @@
                                             MinWidth="140"
                                             Click="RefreshProviderModels_OnClick"/>
                                 </Grid>
-                                <TextBlock x:Name="ProviderModelsStatusText"
-                                           Style="{StaticResource FieldHintText}"
-                                           Margin="0,0,0,16"/>
+                                <Border x:Name="ProviderModelsStatusPanel"
+                                        Style="{StaticResource TestOperationBorder}"
+                                        Visibility="Collapsed"
+                                        Margin="0,0,0,16"
+                                        Padding="12,10">
+                                    <DockPanel LastChildFill="True">
+                                        <Border x:Name="ProviderModelsStatusBadge"
+                                                Style="{StaticResource SummaryPill}"
+                                                DockPanel.Dock="Left"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Top">
+                                            <TextBlock x:Name="ProviderModelsStatusBadgeText"
+                                                       VerticalAlignment="Center"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <TextBlock x:Name="ProviderModelsStatusText"
+                                                   TextWrapping="Wrap"
+                                                   VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </Border>
 
                                 <Button Content="{DynamicResource MTDA_TestProvider}"
                                         Style="{StaticResource NarianPrimaryButton}"
@@ -1024,9 +1041,6 @@
                                 <TextBlock Text="{DynamicResource MTDA_CurrentMetadata}" Style="{StaticResource FieldLabelText}"/>
                                 <ComboBox ItemsSource="{Binding Settings.ExistingMetadataModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ExistingMetadataMode}" Margin="0"/>
                                 <TextBlock Text="{DynamicResource MTDA_CurrentMetadataHelp}" Style="{StaticResource HintText}"/>
-                                <CheckBox Content="{DynamicResource MTDA_OfficialStoreContext}" IsChecked="{Binding Settings.UseOfficialStoreContext}" Margin="0"/>
-                                <TextBlock Text="{DynamicResource MTDA_OfficialStoreContextHelp}" Style="{StaticResource FieldHintText}" Margin="0,8,0,16"/>
-                                <CheckBox Content="{DynamicResource MTDA_StrictCompanyAgeRegion}" IsChecked="{Binding Settings.StrictCompanyAgeRegion}" Margin="0"/>
                             </StackPanel>
                         </Border>
 
@@ -1435,7 +1449,7 @@
                             <Border Style="{StaticResource PageHeader}">
                                 <TextBlock Text="{DynamicResource MTDA_TabSources}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
-                            <TextBlock Text="{Binding Settings.SteamGridDbHelp, Mode=OneWay}" Style="{StaticResource SectionSubtitleText}"/>
+                            <TextBlock Text="{DynamicResource MTDA_SourcesHelp}" Style="{StaticResource SectionSubtitleText}"/>
                         </StackPanel>
                         <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap" Margin="0,0,0,12">
                             <Run Text="{DynamicResource MTDA_NotePrefix}" FontWeight="SemiBold"/>
@@ -1492,6 +1506,9 @@
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="{DynamicResource MTDA_OfficialSteamCdn}" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="SteamSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintSteam}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_OfficialSteamHelp}" Style="{StaticResource HintText}"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableSteamMetadata}"
+                                              IsChecked="{Binding Settings.UseSteamMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableSteamOfficialCovers}"
                                               IsChecked="{Binding Settings.MediaUseSteamOfficial}"
                                               Margin="0,0,0,8"/>
@@ -1516,7 +1533,7 @@
                                                  PasswordChanged="SteamGridDbApiKeyBox_OnPasswordChanged"
                                                  Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0"/>
-                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                                         <Button Content="{DynamicResource MTDA_OpenSteamGridDb}" MinWidth="140" Margin="0,0,8,0" Click="OpenSteamGridDbPage_OnClick"/>
                                         <Button Content="{DynamicResource MTDA_TestSteamGridDb}" MinWidth="140" Click="TestSteamGridDbMedia_OnClick"/>
                                     </StackPanel>
@@ -1526,6 +1543,9 @@
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="PlayStation" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PsnSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintPsn}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_PsnStoreHelp}" Style="{StaticResource HintText}"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnablePsnStoreMetadata}"
+                                              IsChecked="{Binding Settings.UsePsnStoreMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnablePsnStore}"
                                               IsChecked="{Binding Settings.MediaUsePsnStore}"
                                               Margin="0,0,0,16"/>
@@ -1536,6 +1556,9 @@
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="Xbox" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="XboxSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintXbox}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_XboxStoreHelp}" Style="{StaticResource HintText}"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableXboxStoreMetadata}"
+                                              IsChecked="{Binding Settings.UseXboxStoreMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableXboxStore}"
                                               IsChecked="{Binding Settings.MediaUseXboxStore}"
                                               Margin="0,0,0,16"/>
@@ -1546,6 +1569,9 @@
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="Epic" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="EpicSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintEpic}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_EpicStoreHelp}" Style="{StaticResource HintText}"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableEpicStoreMetadata}"
+                                              IsChecked="{Binding Settings.UseEpicStoreMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableEpicStore}"
                                               IsChecked="{Binding Settings.MediaUseEpicStore}"
                                               Margin="0,0,0,16"/>
@@ -1564,7 +1590,7 @@
                                                  PasswordChanged="RawgApiKeyBox_OnPasswordChanged"
                                                  Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0"/>
-                                    <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Click="TestRawgMedia_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_TestRawg}" HorizontalAlignment="Left" MinWidth="120" Margin="0,16,0,0" Click="TestRawgMedia_OnClick"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
@@ -1624,7 +1650,7 @@
                                                  PasswordChanged="MobyGamesApiKeyBox_OnPasswordChanged"
                                                  Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0"/>
-                                    <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Click="TestMobyGamesMedia_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_TestMobyGames}" HorizontalAlignment="Left" MinWidth="140" Margin="0,16,0,0" Click="TestMobyGamesMedia_OnClick"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
@@ -1635,13 +1661,16 @@
                                     <TextBlock Text="{DynamicResource MTDA_TheGamesDbApiKey}" Style="{StaticResource FieldLabelText}"/>
                                     <PasswordBox x:Name="TheGamesDbApiKeyBox" PasswordChanged="TheGamesDbApiKeyBox_OnPasswordChanged" Style="{StaticResource SecurePasswordBox}" Margin="0"/>
                                     <TextBlock Text="{DynamicResource MTDA_TheGamesDbKeyHelp}" Style="{StaticResource HintText}"/>
-                                    <Button Content="{DynamicResource MTDA_TestTheGamesDb}" HorizontalAlignment="Left" MinWidth="150" Click="TestTheGamesDbMedia_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_TestTheGamesDb}" HorizontalAlignment="Left" MinWidth="150" Margin="0,16,0,0" Click="TestTheGamesDbMedia_OnClick"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="IGN" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgnSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintIgn}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_IgnMediaHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableIgnMetadata}"
+                                              IsChecked="{Binding Settings.UseIgnMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableIgnMedia}"
                                               IsChecked="{Binding Settings.MediaUseIgn}"
                                               Margin="0,0,0,16"/>
@@ -1666,6 +1695,9 @@
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="IGDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintIgdb}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" Style="{StaticResource HintText}"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnableIgdbMetadata}"
+                                              IsChecked="{Binding Settings.UseIgdbMetadata}"
+                                              Margin="0,0,0,8"/>
                                     <CheckBox Content="{DynamicResource MTDA_EnableIgdb}"
                                               IsChecked="{Binding Settings.MediaUseIgdb}"
                                               Margin="0,0,0,16"/>
@@ -1679,7 +1711,7 @@
                                                  PasswordChanged="IgdbClientSecretBox_OnPasswordChanged"
                                                  Style="{StaticResource SecurePasswordBox}"
                                                  Margin="0"/>
-                                    <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Click="TestIgdbMedia_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_TestIgdb}" HorizontalAlignment="Left" MinWidth="120" Margin="0,16,0,0" Click="TestIgdbMedia_OnClick"/>
                                 </StackPanel>
                             </Expander>
                         </StackPanel>
@@ -2050,12 +2082,12 @@
                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
                             </Grid.Resources>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="280"/>
-                                <ColumnDefinition Width="72"/>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="72"/>
-                                <ColumnDefinition Width="160"/>
+                                <ColumnDefinition Width="2*" MinWidth="120"/>
+                                <ColumnDefinition Width="0.9*" MinWidth="64"/>
+                                <ColumnDefinition Width="1.1*" MinWidth="72"/>
+                                <ColumnDefinition Width="2.6*" MinWidth="160"/>
+                                <ColumnDefinition Width="0.9*" MinWidth="64"/>
+                                <ColumnDefinition Width="1.5*" MinWidth="96"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -2074,27 +2106,27 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource FieldTableHeader}"/>
-                            <Border Grid.Row="1" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="2" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="3" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="4" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="5" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="6" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="7" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="8" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="9" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="10" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="11" Style="{StaticResource FieldTableRowOdd}"/>
-                            <Border Grid.Row="12" Style="{StaticResource FieldTableRowEven}"/>
-                            <Border Grid.Row="13" Style="{StaticResource FieldTableRowOdd}"/>
+                            <Border Grid.Row="0" Style="{StaticResource FieldTableHeader}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="1" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="2" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="3" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="4" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="5" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="6" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="7" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="8" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="9" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="10" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="11" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="12" Style="{StaticResource FieldTableRowEven}" Grid.ColumnSpan="6"/>
+                            <Border Grid.Row="13" Style="{StaticResource FieldTableRowOdd}" Grid.ColumnSpan="6"/>
 
                             <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="8,0,8,0"/>
-                            <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Uppercase}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold" Margin="4,0" TextWrapping="Wrap"/>
+                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Uppercase}" FontWeight="SemiBold" Margin="4,0" TextWrapping="Wrap"/>
                             <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="5" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0"/>
+                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold" Margin="4,0" TextWrapping="Wrap"/>
+                            <TextBlock Grid.Column="5" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0,8,0"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}"/>

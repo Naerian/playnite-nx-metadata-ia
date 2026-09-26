@@ -2,6 +2,18 @@
 
 
 
+
+## 1.4.22 — 2026-09-26
+- Library â†’ Fields table row backgrounds span all six columns again after the Uppercase column was added.
+- Batch result dialog shows short reasons, a View detail modal for the full error, status badges for updated and pending games, and tooltips on the action buttons.
+- API keys are remembered per AI provider, so switching between Claude, OpenAI, Groq and others no longer reuses the previous key and fails the model list with HTTP 401.
+- Model list feedback is a visible status panel with Ready, Loading, Warning and Error badges instead of faint hint text, and HTTP 401 explains that the key must belong to the selected provider.
+- Cloud providers clear the API key field when switching to a provider without a saved key, and the model list stays disabled until a key is entered.
+- Official store context and strict company, age and region handling are always on. The former settings checkboxes were removed.
+- Sources can enable metadata and media separately for Steam, PlayStation, Xbox, Epic, IGDB and IGN. Each pipeline respects those toggles. Test buttons under API key fields have clearer spacing.
+- Batch error list rows and the View detail text box use the theme text brush so dark presets stay readable.
+- The Sources tab help text explains that metadata sources feed verified facts for the AI context, while media sources supply covers, icons and backgrounds on their own path.
+
 ## 1.4.20 — 2026-09-25
 - Genres, tags, features and categories are normalized through the plugin canonical vocabulary first, then matched to clean Playnite names, otherwise created. Dirty launcher spellings (for example Steam Spanish categories) are mapped to stable preferred terms and no longer overwrite AI output as final text.
 - Changing AI provider refreshes the model list reliably: pending refreshes are queued, stale responses are ignored, and entering an API key triggers an automatic model reload.

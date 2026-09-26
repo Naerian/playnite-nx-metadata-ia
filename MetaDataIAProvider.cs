@@ -52,7 +52,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return ToNameProperties(Generate().Developers, settings.StrictCompanyAgeRegion, () => plugin.Api.Database.Companies.Select(x => x.Name));
+            return ToNameProperties(Generate().Developers, true, () => plugin.Api.Database.Companies.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetPublishers(GetMetadataFieldArgs args)
@@ -62,7 +62,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return ToNameProperties(Generate().Publishers, settings.StrictCompanyAgeRegion, () => plugin.Api.Database.Companies.Select(x => x.Name));
+            return ToNameProperties(Generate().Publishers, true, () => plugin.Api.Database.Companies.Select(x => x.Name));
         }
 
         public override IEnumerable<MetadataProperty> GetTags(GetMetadataFieldArgs args)
@@ -102,7 +102,7 @@ namespace MetaDataIAPlugin
                 return Enumerable.Empty<MetadataProperty>();
             }
 
-            return ToNameProperties(Generate().Regions, settings.StrictCompanyAgeRegion, () => plugin.Api.Database.Regions.Select(x => x.Name));
+            return ToNameProperties(Generate().Regions, true, () => plugin.Api.Database.Regions.Select(x => x.Name));
         }
 
         public override IEnumerable<Link> GetLinks(GetMetadataFieldArgs args)

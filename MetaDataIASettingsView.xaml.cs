@@ -729,8 +729,8 @@ namespace MetaDataIAPlugin
             SetSummaryStatus(ConfigurationAutomationSummaryText, settings.AutoImportNewGames);
             SetSummaryStatus(ConfigurationAutomationAiStatusText, settings.AutoImportGenerateMetadata);
             SetSummaryStatus(ConfigurationAutomationMediaStatusText, settings.AutoImportGenerateMedia);
-            SetSummaryStatus(ConfigurationOfficialContextStatusText, settings.UseOfficialStoreContext || settings.UseOriginIntegrationAsAiContext);
-            SetSummaryStatus(ConfigurationStrictFactsStatusText, settings.StrictCompanyAgeRegion);
+            SetSummaryStatus(ConfigurationOfficialContextStatusText, true);
+            SetSummaryStatus(ConfigurationStrictFactsStatusText, true);
             SetSummaryStatus(ConfigurationLocalFallbackStatusText, settings.EnableLocalFallback);
 
             RefreshMediaSourceStatuses(settings);
@@ -811,12 +811,12 @@ namespace MetaDataIAPlugin
 
         private void RefreshMediaSourceStatuses(MetaDataIASettings settings)
         {
-            SetSourceStatus(OriginSourceStatusText, settings.UseOriginIntegrationForMedia, true);
-            SetSourceStatus(SteamSourceStatusText, settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots, true);
+            SetSourceStatus(OriginSourceStatusText, settings.UseOriginIntegrationForMedia || settings.UseOriginIntegrationAsAiContext || settings.UseOriginIntegrationForFactualMetadata, true);
+            SetSourceStatus(SteamSourceStatusText, settings.UseSteamMetadata || settings.MediaUseSteamOfficial || settings.MediaUseSteamScreenshots, true);
             SetSourceStatus(SteamGridDbSourceStatusText, settings.MediaUseSteamGridDb || settings.MediaUseSteamGridDbBackgroundGrids, !string.IsNullOrWhiteSpace(settings.SteamGridDbApiKey));
-            SetSourceStatus(PsnSourceStatusText, settings.MediaUsePsnStore, true);
-            SetSourceStatus(XboxSourceStatusText, settings.MediaUseXboxStore, true);
-            SetSourceStatus(EpicSourceStatusText, settings.MediaUseEpicStore, true);
+            SetSourceStatus(PsnSourceStatusText, settings.UsePsnStoreMetadata || settings.MediaUsePsnStore, true);
+            SetSourceStatus(XboxSourceStatusText, settings.UseXboxStoreMetadata || settings.MediaUseXboxStore, true);
+            SetSourceStatus(EpicSourceStatusText, settings.UseEpicStoreMetadata || settings.MediaUseEpicStore, true);
             SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
             SetSourceStatus(WallhavenSourceStatusText, settings.MediaUseWallhaven, true);
             SetSourceStatus(WebSearchSourceStatusText, settings.MediaUseWebSearch, true);
@@ -826,10 +826,10 @@ namespace MetaDataIAPlugin
             SetSourceStatus(GiantBombSourceStatusText, settings.MediaUseGiantBomb, !string.IsNullOrWhiteSpace(settings.GiantBombApiKey));
             SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
             SetSourceStatus(TheGamesDbSourceStatusText, settings.MediaUseTheGamesDb, !string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey));
-            SetSourceStatus(IgdbSourceStatusText, settings.MediaUseIgdb,
+            SetSourceStatus(IgdbSourceStatusText, settings.UseIgdbMetadata || settings.MediaUseIgdb,
                 !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                 (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken)));
-            SetSourceStatus(IgnSourceStatusText, settings.MediaUseIgn, true);
+            SetSourceStatus(IgnSourceStatusText, settings.UseIgnMetadata || settings.MediaUseIgn, true);
             SetSourceStatus(VndbSourceStatusText, settings.UseVndbMetadata, true);
             SetSourceStatus(WikidataSourceStatusText, settings.UseWikidataMetadata, true);
         }
@@ -908,14 +908,27 @@ namespace MetaDataIAPlugin
         private void ApiKeyBox_OnPasswordChanged(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            if (viewModel == null)
+            if (viewModel == null || viewModel.Settings == null)
             {
                 return;
             }
 
-            var previousKey = viewModel.Settings.ApiKey;
-            viewModel.Settings.ApiKey = ApiKeyBox.Password;
-            if (string.IsNullOrWhiteSpace(previousKey) &&
+            var previousKey = MetaDataIASettings.NormalizeApiKey(viewModel.Settings.ApiKey);
+            viewModel.Settings.ApiKey = MetaDataIASettings.NormalizeApiKey(ApiKeyBox.Password);
+            viewModel.Settings.RememberApiKeyForProvider(viewModel.Settings.ProviderPreset);
+            UpdateProviderModelControlsEnabled(
+                RequiresApiKeyForModelListing(viewModel.Settings),
+                !string.IsNullOrWhiteSpace(viewModel.Settings.ApiKey));
+            if (string.IsNullOrWhiteSpace(viewModel.Settings.ApiKey) &&
+                RequiresApiKeyForModelListing(viewModel.Settings))
+            {
+                SetProviderModelsStatus(
+                    Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models."),
+                    ProviderModelsStatusKind.Warning);
+                return;
+            }
+
+            if (!string.Equals(previousKey, viewModel.Settings.ApiKey, StringComparison.Ordinal) &&
                 !string.IsNullOrWhiteSpace(viewModel.Settings.ApiKey) &&
                 RequiresApiKeyForModelListing(viewModel.Settings))
             {
@@ -1503,6 +1516,12 @@ namespace MetaDataIAPlugin
         private async Task ApplySelectedProviderAsync(MetaDataIASettingsViewModel viewModel)
         {
             CancelProviderModelsRefresh();
+            SyncApiKeyFromPasswordBox(viewModel.Settings);
+            if (!string.IsNullOrWhiteSpace(lastAppliedProviderPreset))
+            {
+                viewModel.Settings.RememberApiKeyForProvider(lastAppliedProviderPreset);
+            }
+
             var selectedProvider = viewModel.Settings.ProviderPreset;
             var previousModel = viewModel.Settings.Model;
             var preserveCustomModel = string.Equals(
@@ -1517,6 +1536,7 @@ namespace MetaDataIAPlugin
                 viewModel.Settings.Model = previousModel;
             }
 
+            viewModel.Settings.ApplyStoredApiKeyForProvider(selectedProvider);
             lastAppliedProviderPreset = selectedProvider;
             var appliedModel = viewModel.Settings.Model;
             // Keep the dropdown empty while the provider list loads. A single
@@ -1611,10 +1631,19 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            if (RequiresApiKeyForModelListing(settings) && string.IsNullOrWhiteSpace(settings.ApiKey))
+            SyncApiKeyFromPasswordBox(settings);
+            settings.RememberApiKeyForProvider(settings.ProviderPreset);
+
+            var keyRequired = RequiresApiKeyForModelListing(settings);
+            var hasApiKey = !string.IsNullOrWhiteSpace(settings.ApiKey);
+            UpdateProviderModelControlsEnabled(keyRequired, hasApiKey);
+
+            if (keyRequired && !hasApiKey)
             {
                 EnsureCurrentProviderModelVisible(settings.Model);
-                ProviderModelsStatusText.Text = Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models.");
+                SetProviderModelsStatus(
+                    Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models."),
+                    ProviderModelsStatusKind.Warning);
                 return;
             }
 
@@ -1624,8 +1653,13 @@ namespace MetaDataIAPlugin
             providerModelsRefreshCancellation = new CancellationTokenSource();
             var cancellation = providerModelsRefreshCancellation;
             providerModelsRefreshActive = true;
-            RefreshProviderModelsButton.IsEnabled = false;
-            ProviderModelsStatusText.Text = Loc("MTDA_ProviderModelsLoading", "Loading available models...");
+            if (RefreshProviderModelsButton != null)
+            {
+                RefreshProviderModelsButton.IsEnabled = false;
+            }
+            SetProviderModelsStatus(
+                Loc("MTDA_ProviderModelsLoading", "Loading available models..."),
+                ProviderModelsStatusKind.Loading);
 
             try
             {
@@ -1649,9 +1683,18 @@ namespace MetaDataIAPlugin
                 }
 
                 ResetProviderModelComboBox(configuredModel);
-                ProviderModelsStatusText.Text = models.Count == 0
-                    ? Loc("MTDA_ProviderModelsEmpty", "The provider did not return compatible text models. You can still enter one manually.")
-                    : string.Format(Loc("MTDA_ProviderModelsLoaded", "{0} compatible models available. You can also enter one manually."), models.Count);
+                if (models.Count == 0)
+                {
+                    SetProviderModelsStatus(
+                        Loc("MTDA_ProviderModelsEmpty", "The provider did not return compatible text models. You can still enter one manually."),
+                        ProviderModelsStatusKind.Warning);
+                }
+                else
+                {
+                    SetProviderModelsStatus(
+                        string.Format(Loc("MTDA_ProviderModelsLoaded", "{0} compatible models available. You can also enter one manually."), models.Count),
+                        ProviderModelsStatusKind.Success);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -1665,19 +1708,23 @@ namespace MetaDataIAPlugin
 
                 EnsureCurrentProviderModelVisible(settings.Model);
                 ResetProviderModelComboBox(settings.Model);
-                ProviderModelsStatusText.Text = manual
-                    ? string.Format(Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
-                    : Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually.");
+                var unauthorized = ex.Message != null &&
+                    (ex.Message.IndexOf("401", StringComparison.Ordinal) >= 0 ||
+                     ex.Message.IndexOf("rejected", StringComparison.OrdinalIgnoreCase) >= 0);
+                SetProviderModelsStatus(
+                    manual || unauthorized
+                        ? string.Format(Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
+                        : Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually."),
+                    unauthorized ? ProviderModelsStatusKind.Error : ProviderModelsStatusKind.Warning);
             }
             finally
             {
                 if (generation == providerModelsRefreshGeneration)
                 {
                     providerModelsRefreshActive = false;
-                    if (RefreshProviderModelsButton != null)
-                    {
-                        RefreshProviderModelsButton.IsEnabled = true;
-                    }
+                    UpdateProviderModelControlsEnabled(
+                        RequiresApiKeyForModelListing(settings),
+                        !string.IsNullOrWhiteSpace(settings.ApiKey));
 
                     if (ReferenceEquals(providerModelsRefreshCancellation, cancellation))
                     {
@@ -1693,6 +1740,95 @@ namespace MetaDataIAPlugin
                 providerModelsRefreshPending = false;
                 providerModelsRefreshPendingManual = false;
                 await RefreshProviderModelsAsync(pendingManual);
+            }
+        }
+
+        private void SyncApiKeyFromPasswordBox(MetaDataIASettings settings)
+        {
+            if (settings == null || ApiKeyBox == null)
+            {
+                return;
+            }
+
+            settings.ApiKey = MetaDataIASettings.NormalizeApiKey(ApiKeyBox.Password);
+        }
+
+        private void UpdateProviderModelControlsEnabled(bool keyRequired, bool hasApiKey)
+        {
+            var modelsEnabled = !keyRequired || hasApiKey;
+            if (ProviderModelComboBox != null)
+            {
+                ProviderModelComboBox.IsEnabled = modelsEnabled;
+            }
+
+            if (RefreshProviderModelsButton != null)
+            {
+                RefreshProviderModelsButton.IsEnabled = modelsEnabled && !providerModelsRefreshActive;
+            }
+        }
+
+        private enum ProviderModelsStatusKind
+        {
+            Hidden,
+            Info,
+            Loading,
+            Success,
+            Warning,
+            Error
+        }
+
+        private void SetProviderModelsStatus(string message, ProviderModelsStatusKind kind)
+        {
+            if (ProviderModelsStatusPanel == null || ProviderModelsStatusText == null)
+            {
+                return;
+            }
+
+            if (kind == ProviderModelsStatusKind.Hidden || string.IsNullOrWhiteSpace(message))
+            {
+                ProviderModelsStatusPanel.Visibility = Visibility.Collapsed;
+                ProviderModelsStatusText.Text = string.Empty;
+                if (ProviderModelsStatusBadgeText != null)
+                {
+                    ProviderModelsStatusBadgeText.Text = string.Empty;
+                }
+
+                return;
+            }
+
+            ProviderModelsStatusPanel.Visibility = Visibility.Visible;
+            ProviderModelsStatusText.Text = message;
+
+            string badgeLabel;
+            string brushKey;
+            switch (kind)
+            {
+                case ProviderModelsStatusKind.Success:
+                    badgeLabel = Loc("MTDA_StatusReady", "Ready");
+                    brushKey = "PositiveRatingBrush";
+                    break;
+                case ProviderModelsStatusKind.Loading:
+                    badgeLabel = Loc("MTDA_ProviderModelsStatusLoading", "Loading");
+                    brushKey = "Narian.Accent";
+                    break;
+                case ProviderModelsStatusKind.Error:
+                    badgeLabel = Loc("MTDA_SourceStatusError", "Error");
+                    brushKey = "WarningBrush";
+                    break;
+                case ProviderModelsStatusKind.Warning:
+                    badgeLabel = Loc("MTDA_StatusNeedsConfiguration", "Needs configuration");
+                    brushKey = "WarningBrush";
+                    break;
+                default:
+                    badgeLabel = Loc("MTDA_ProviderModelsStatusInfo", "Info");
+                    brushKey = "Narian.TextMuted";
+                    break;
+            }
+
+            if (ProviderModelsStatusBadgeText != null)
+            {
+                ProviderModelsStatusBadgeText.Text = badgeLabel;
+                ApplyStatusBadgeAppearance(ProviderModelsStatusBadgeText, brushKey);
             }
         }
 
@@ -1764,7 +1900,15 @@ namespace MetaDataIAPlugin
             }
 
             providerModelsRefreshActive = false;
-            if (RefreshProviderModelsButton != null)
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var settings = viewModel == null ? null : viewModel.Settings;
+            if (settings != null)
+            {
+                UpdateProviderModelControlsEnabled(
+                    RequiresApiKeyForModelListing(settings),
+                    !string.IsNullOrWhiteSpace(settings.ApiKey));
+            }
+            else if (RefreshProviderModelsButton != null)
             {
                 RefreshProviderModelsButton.IsEnabled = true;
             }
@@ -2570,8 +2714,14 @@ namespace MetaDataIAPlugin
             testSettings.UseOriginIntegrationAsAiContext = false;
             testSettings.UseOriginIntegrationForFactualMetadata = false;
             testSettings.MediaUseIgn = false;
+            testSettings.UseIgnMetadata = false;
             testSettings.UseVndbMetadata = false;
             testSettings.UseWikidataMetadata = false;
+            testSettings.UseIgdbMetadata = false;
+            testSettings.UseSteamMetadata = false;
+            testSettings.UsePsnStoreMetadata = false;
+            testSettings.UseXboxStoreMetadata = false;
+            testSettings.UseEpicStoreMetadata = false;
             testSettings.GenerateReleaseDate = false;
             testSettings.GenerateSeries = false;
             testSettings.GenerateLinks = false;

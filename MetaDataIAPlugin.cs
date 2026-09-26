@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -73,6 +74,7 @@ namespace MetaDataIAPlugin
             public Game Game { get; set; }
             public string GameName { get { return Game == null || string.IsNullOrWhiteSpace(Game.Name) ? string.Empty : Game.Name; } }
             public string Reason { get; set; }
+            public string ShortReason { get; set; }
         }
 
         private sealed class MediaPickerCandidateFilter
@@ -730,7 +732,7 @@ namespace MetaDataIAPlugin
 
         private static AiMetadataResult PrepareResultForDirectBatchApply(AiMetadataResult result, MetaDataIASettings activeSettings, bool batchMode)
         {
-            if (result == null || activeSettings == null || !batchMode || !activeSettings.StrictCompanyAgeRegion)
+            if (result == null || activeSettings == null || !batchMode)
             {
                 return result;
             }
@@ -3745,14 +3747,46 @@ namespace MetaDataIAPlugin
         {
             return (games ?? Enumerable.Empty<Game>())
                 .Where(x => x != null && (updatedGameIds == null || !updatedGameIds.Contains(x.Id)))
-                .Select(x => new BatchFailedGame
+                .Select(x =>
                 {
-                    Game = x,
-                    Reason = failureReasons != null && failureReasons.ContainsKey(x.Id)
+                    var reason = failureReasons != null && failureReasons.ContainsKey(x.Id)
                         ? failureReasons[x.Id]
-                        : Loc("MTDA_BatchNotProcessedAfterStop", "Not processed because the batch stopped after the previous error.")
+                        : Loc("MTDA_BatchNotProcessedAfterStop", "Not processed because the batch stopped after the previous error.");
+                    return new BatchFailedGame
+                    {
+                        Game = x,
+                        Reason = reason,
+                        ShortReason = SummarizeBatchFailureReason(reason)
+                    };
                 })
                 .ToList();
+        }
+
+        private string SummarizeBatchFailureReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return Loc("MTDA_ErrorUnspecified", "Unspecified error.");
+            }
+
+            var text = reason.Replace("\r\n", "\n").Trim();
+            var detailMarker = Loc("MTDA_ErrorProviderDetail", "Provider detail:");
+            var detailIndex = text.IndexOf(detailMarker, StringComparison.OrdinalIgnoreCase);
+            if (detailIndex >= 0)
+            {
+                text = text.Substring(0, detailIndex).Trim();
+            }
+
+            var paragraphs = text.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+            text = paragraphs.Length > 0 ? paragraphs[0] : text;
+            text = Regex.Replace(text.Replace('\n', ' '), @"\s+", " ").Trim();
+            const int maxLength = 90;
+            if (text.Length <= maxLength)
+            {
+                return text;
+            }
+
+            return text.Substring(0, maxLength - 1).TrimEnd(' ', '.', ',', ';', ':') + "…";
         }
 
         private void ShowBatchErrors(
@@ -3762,7 +3796,18 @@ namespace MetaDataIAPlugin
             IEnumerable<BatchFailedGame> notUpdatedGames = null,
             Action retryAction = null)
         {
-            var failedGames = (notUpdatedGames ?? Enumerable.Empty<BatchFailedGame>()).ToList();
+            var failedGames = (notUpdatedGames ?? Enumerable.Empty<BatchFailedGame>())
+                .Select(item =>
+                {
+                    if (item != null && string.IsNullOrWhiteSpace(item.ShortReason))
+                    {
+                        item.ShortReason = SummarizeBatchFailureReason(item.Reason);
+                    }
+
+                    return item;
+                })
+                .Where(item => item != null)
+                .ToList();
             var message = string.Format(
                 Loc("MTDA_MessageBatchErrorsHeader", "Metadata AI updated {0} game(s). Errors: {1}"),
                 processed,
@@ -3808,55 +3853,144 @@ namespace MetaDataIAPlugin
             var root = new Grid { Margin = new Thickness(16) };
             ApplyDynamicResource(root, Panel.BackgroundProperty, "StandardWindowBackgroundBrush");
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            var summaryText = new TextBlock
-            {
-                Text = message + Environment.NewLine + string.Format(
-                    Loc("MTDA_MessageGamesNotUpdated", "Games not updated ({0}):"),
-                    failedGames.Count),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 12),
-                FontSize = 14
-            };
-            ApplyDynamicResource(summaryText, TextBlock.ForegroundProperty, "TextBrush");
-            Grid.SetRow(summaryText, 0);
-            root.Children.Add(summaryText);
+            var summaryRow = new Grid { Margin = new Thickness(0, 0, 0, qualitySkipped > 0 ? 8 : 12) };
+            summaryRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            summaryRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            var list = new ListView
+            var updatedBadge = MetadataTrustUi.Badge(
+                string.Format(Loc("MTDA_BatchUpdatedBadge", "Updated: {0}"), processed),
+                processed > 0 ? MetadataTrustUi.BadgeKind.Success : MetadataTrustUi.BadgeKind.Muted);
+            updatedBadge.HorizontalAlignment = HorizontalAlignment.Left;
+            updatedBadge.Margin = new Thickness(0);
+            updatedBadge.Padding = new Thickness(12, 5, 12, 5);
+            Grid.SetColumn(updatedBadge, 0);
+            summaryRow.Children.Add(updatedBadge);
+
+            var pendingBadge = MetadataTrustUi.Badge(
+                string.Format(Loc("MTDA_BatchNotUpdatedBadge", "Not updated: {0}"), failedGames.Count),
+                failedGames.Count > 0 ? MetadataTrustUi.BadgeKind.Warning : MetadataTrustUi.BadgeKind.Muted);
+            pendingBadge.HorizontalAlignment = HorizontalAlignment.Right;
+            pendingBadge.Margin = new Thickness(0);
+            pendingBadge.Padding = new Thickness(12, 5, 12, 5);
+            Grid.SetColumn(pendingBadge, 1);
+            summaryRow.Children.Add(pendingBadge);
+            Grid.SetRow(summaryRow, 0);
+            root.Children.Add(summaryRow);
+
+            if (qualitySkipped > 0)
+            {
+                var qualityNote = new TextBlock
+                {
+                    Text = string.Format(
+                        Loc("MTDA_MessageMediaStrictQualitySkipped", "Skipped because the source image was below the configured output resolution: {0}."),
+                        qualitySkipped),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 0, 0, 12),
+                    FontSize = 12,
+                    Opacity = 0.82
+                };
+                ApplyDynamicResource(qualityNote, TextBlock.ForegroundProperty, "TextBrush");
+                Grid.SetRow(qualityNote, 1);
+                root.Children.Add(qualityNote);
+            }
+
+            var list = new ListBox
             {
                 ItemsSource = failedGames,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent
             };
-            var reasonText = new FrameworkElementFactory(typeof(TextBlock));
-            reasonText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Reason"));
-            reasonText.SetBinding(FrameworkElement.ToolTipProperty, new System.Windows.Data.Binding("Reason"));
-            reasonText.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
-            reasonText.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 4, 6, 4));
-            reasonText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-            var reasonTemplate = new DataTemplate { VisualTree = reasonText };
+            ScrollViewer.SetHorizontalScrollBarVisibility(list, ScrollBarVisibility.Disabled);
+            ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Auto);
+            MetadataTrustUi.StyleCardListBox(list);
+            MetadataTrustUi.ApplyTextBrush(list);
 
-            list.View = new GridView
+            var rowFactory = new FrameworkElementFactory(typeof(Border));
+            rowFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            rowFactory.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 2, 0, 2));
+            rowFactory.SetValue(FrameworkElement.MinHeightProperty, 44.0);
+            rowFactory.SetResourceReference(Border.BackgroundProperty, "Narian.RowOdd");
+            rowFactory.SetResourceReference(TextElement.ForegroundProperty, "TextBrush");
+
+            var dockFactory = new FrameworkElementFactory(typeof(DockPanel));
+            dockFactory.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 4, 8, 4));
+            dockFactory.SetValue(DockPanel.LastChildFillProperty, true);
+            dockFactory.SetResourceReference(TextElement.ForegroundProperty, "TextBrush");
+
+            var detailButton = new FrameworkElementFactory(typeof(Button));
+            detailButton.SetValue(DockPanel.DockProperty, Dock.Right);
+            detailButton.SetValue(ContentControl.ContentProperty, Loc("MTDA_ViewDetail", "View detail"));
+            detailButton.SetValue(FrameworkElement.MarginProperty, new Thickness(10, 0, 0, 0));
+            detailButton.SetValue(FrameworkElement.MinWidthProperty, 110.0);
+            detailButton.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            detailButton.SetResourceReference(Control.ForegroundProperty, "TextBrush");
+            detailButton.SetBinding(FrameworkElement.TagProperty, new Binding("."));
+            detailButton.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler((sender, args) =>
             {
-                Columns =
+                var button = sender as Button;
+                var failed = button == null ? null : button.Tag as BatchFailedGame;
+                if (failed != null)
                 {
-                    new GridViewColumn
-                    {
-                        Header = Loc("MTDA_Game", "Game"),
-                        DisplayMemberBinding = new System.Windows.Data.Binding("GameName"),
-                        Width = 260
-                    },
-                    new GridViewColumn
-                    {
-                        Header = Loc("MTDA_BatchFailureReason", "Reason"),
-                        CellTemplate = reasonTemplate,
-                        Width = 620
-                    }
+                    ShowBatchFailureDetail(window, failed);
                 }
-            };
-            Grid.SetRow(list, 1);
-            root.Children.Add(list);
+            }));
+
+            var gameText = new FrameworkElementFactory(typeof(TextBlock));
+            gameText.SetValue(DockPanel.DockProperty, Dock.Left);
+            gameText.SetBinding(TextBlock.TextProperty, new Binding("GameName"));
+            gameText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            gameText.SetValue(FrameworkElement.WidthProperty, 210.0);
+            gameText.SetValue(FrameworkElement.MarginProperty, new Thickness(2, 0, 12, 0));
+            gameText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            gameText.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
+            gameText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+            var reasonText = new FrameworkElementFactory(typeof(TextBlock));
+            reasonText.SetBinding(TextBlock.TextProperty, new Binding("ShortReason"));
+            reasonText.SetBinding(FrameworkElement.ToolTipProperty, new Binding("ShortReason"));
+            reasonText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            reasonText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            reasonText.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 4, 0));
+            reasonText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+            dockFactory.AppendChild(detailButton);
+            dockFactory.AppendChild(gameText);
+            dockFactory.AppendChild(reasonText);
+            rowFactory.AppendChild(dockFactory);
+            list.ItemTemplate = new DataTemplate { VisualTree = rowFactory };
+
+            var header = new DockPanel { Margin = new Thickness(0, 0, 0, 6), LastChildFill = true };
+            var headerBackground = new Border { CornerRadius = new CornerRadius(4), MinHeight = 36 };
+            headerBackground.SetResourceReference(Border.BackgroundProperty, "Narian.TableHeader");
+            var headerContent = new DockPanel { Margin = new Thickness(10, 0, 10, 0), LastChildFill = true };
+            var detailHeader = CreateBatchColumnHeader(Loc("MTDA_ViewDetail", "View detail"), 0);
+            detailHeader.Width = 110;
+            detailHeader.Margin = new Thickness(10, 0, 0, 0);
+            detailHeader.TextAlignment = TextAlignment.Center;
+            DockPanel.SetDock(detailHeader, Dock.Right);
+            var gameHeader = CreateBatchColumnHeader(Loc("MTDA_Game", "Game"), 0);
+            gameHeader.Width = 210;
+            gameHeader.Margin = new Thickness(2, 0, 12, 0);
+            DockPanel.SetDock(gameHeader, Dock.Left);
+            var reasonHeader = CreateBatchColumnHeader(Loc("MTDA_BatchFailureReason", "Reason"), 0);
+            reasonHeader.Margin = new Thickness(0, 0, 4, 0);
+            headerContent.Children.Add(detailHeader);
+            headerContent.Children.Add(gameHeader);
+            headerContent.Children.Add(reasonHeader);
+            headerBackground.Child = headerContent;
+            header.Children.Add(headerBackground);
+
+            var listHost = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(header, Dock.Top);
+            listHost.Children.Add(header);
+            listHost.Children.Add(list);
+            Grid.SetRow(listHost, 2);
+            root.Children.Add(listHost);
 
             var retryRequested = false;
             var buttons = new StackPanel
@@ -3868,16 +4002,34 @@ namespace MetaDataIAPlugin
 
             if (retryAction != null && failedGames.Count > 0)
             {
-                var retryButton = new Button { Content = Loc("MTDA_RetryPending", "Retry pending"), MinWidth = 130, Margin = new Thickness(0, 0, 8, 0) };
+                var retryButton = new Button
+                {
+                    Content = Loc("MTDA_RetryPending", "Retry pending"),
+                    MinWidth = 130,
+                    Margin = new Thickness(0, 0, 8, 0),
+                    ToolTip = Loc("MTDA_RetryPendingHelp", "Runs the same operation again only for the games that were not updated.")
+                };
                 retryButton.Click += (sender, args) => { retryRequested = true; window.Close(); };
                 buttons.Children.Add(retryButton);
             }
 
-            var copyButton = new Button { Content = Loc("MTDA_CopyList", "Copy list"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            var copyButton = new Button
+            {
+                Content = Loc("MTDA_CopyList", "Copy list"),
+                MinWidth = 110,
+                Margin = new Thickness(0, 0, 8, 0),
+                ToolTip = Loc("MTDA_CopyListHelp", "Copies the list of games and full error details to the clipboard.")
+            };
             copyButton.Click += (sender, args) => Clipboard.SetText(exportText.ToString().Trim());
             buttons.Children.Add(copyButton);
 
-            var exportButton = new Button { Content = Loc("MTDA_ExportList", "Export list"), MinWidth = 110, Margin = new Thickness(0, 0, 8, 0) };
+            var exportButton = new Button
+            {
+                Content = Loc("MTDA_ExportList", "Export list"),
+                MinWidth = 110,
+                Margin = new Thickness(0, 0, 8, 0),
+                ToolTip = Loc("MTDA_ExportListHelp", "Saves the list of games and full error details to a text file.")
+            };
             exportButton.Click += (sender, args) =>
             {
                 var dialog = new SaveFileDialog
@@ -3902,7 +4054,7 @@ namespace MetaDataIAPlugin
             };
             okButton.Click += (sender, args) => window.Close();
             buttons.Children.Add(okButton);
-            Grid.SetRow(buttons, 2);
+            Grid.SetRow(buttons, 3);
             root.Children.Add(buttons);
 
             window.Content = root;
@@ -3911,6 +4063,109 @@ namespace MetaDataIAPlugin
             {
                 retryAction();
             }
+        }
+
+        private TextBlock CreateBatchColumnHeader(string text, int column)
+        {
+            var header = new TextBlock
+            {
+                Text = text,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            ApplyDynamicResource(header, TextBlock.ForegroundProperty, "TextBrush");
+            return header;
+        }
+
+        private void ShowBatchFailureDetail(Window owner, BatchFailedGame failed)
+        {
+            if (failed == null)
+            {
+                return;
+            }
+
+            var window = MetadataTrustUi.CreateHostWindow(PlayniteApi);
+            window.Title = Loc("MTDA_BatchErrorDetailTitle", "Error detail");
+            window.Width = 720;
+            window.Height = 480;
+            window.MinWidth = 520;
+            window.MinHeight = 320;
+            window.ResizeMode = ResizeMode.CanResize;
+            window.ShowInTaskbar = false;
+            ApplyPluginWindowStyle(window);
+            if (owner != null)
+            {
+                window.Owner = owner;
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            var root = new Grid { Margin = new Thickness(16) };
+            ApplyDynamicResource(root, Panel.BackgroundProperty, "StandardWindowBackgroundBrush");
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var gameLabel = new TextBlock
+            {
+                Text = Loc("MTDA_Game", "Game"),
+                FontSize = 12,
+                Opacity = 0.8,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            ApplyDynamicResource(gameLabel, TextBlock.ForegroundProperty, "TextBrush");
+            Grid.SetRow(gameLabel, 0);
+            root.Children.Add(gameLabel);
+
+            var gameName = new TextBlock
+            {
+                Text = failed.GameName,
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 14)
+            };
+            ApplyDynamicResource(gameName, TextBlock.ForegroundProperty, "TextBrush");
+            Grid.SetRow(gameName, 1);
+            root.Children.Add(gameName);
+
+            var detailBox = new TextBox
+            {
+                Text = failed.Reason ?? string.Empty,
+                IsReadOnly = true,
+                TextWrapping = TextWrapping.Wrap,
+                AcceptsReturn = true,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                MinHeight = 180,
+                Padding = new Thickness(10),
+                BorderThickness = new Thickness(1),
+                FontSize = 13
+            };
+            ApplyDynamicResource(detailBox, Control.ForegroundProperty, "TextBrush");
+            ApplyDynamicResource(detailBox, TextBox.CaretBrushProperty, "TextBrush");
+            ApplyDynamicResource(detailBox, Control.BackgroundProperty, "ControlBackgroundBrush");
+            ApplyDynamicResource(detailBox, Control.BorderBrushProperty, "Narian.Border");
+            Grid.SetRow(detailBox, 2);
+            root.Children.Add(detailBox);
+
+            var closeButton = new Button
+            {
+                Content = Loc("MTDA_Close", "Close"),
+                MinWidth = 100,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+            closeButton.Click += (sender, args) => window.Close();
+            Grid.SetRow(closeButton, 3);
+            root.Children.Add(closeButton);
+
+            window.Content = root;
+            window.ShowDialog();
         }
 
         private string AppendQualitySkipSummary(string message, int qualitySkipped)

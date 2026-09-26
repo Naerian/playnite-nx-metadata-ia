@@ -170,6 +170,7 @@
     <sys:String x:Key="MTDA_SourceRawg">RAWG: Hauptbild und Screenshots</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: historische Cover und Screenshots</sys:String>
     <sys:String x:Key="MTDA_SourceIgdb">IGDB: Cover, Kunstwerke und Screenshots</sys:String>
+    <sys:String x:Key="MTDA_SourcesHelp">Aktiviere jede Quelle für Metadaten, Medien oder beides. Metadatenquellen liefern überprüfbare Fakten (Genres, Tags, Features, Studios, Daten und ähnliche Felder). Die KI nutzt diese Belege als Kontext, um Felder für deine Sprache und Vorlage zu organisieren, zu übersetzen und zu schreiben; sie erfindet keine Store-Daten, wenn diese Listen bereits vorliegen. Medienquellen liefern Cover, Icons und Hintergründe auf einem eigenen Pfad.</sys:String>
     <sys:String x:Key="MTDA_MissingApiKeyHelp">Wenn für eine aktive Quelle kein API-Schlüssel konfiguriert ist, überspringt das Plugin diesen automatisch beim Abrufen von Daten.</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreference">Logo-Präferenz für Hintergründe</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreferenceHelp">Nicht alle Quellen stellen diese Informationen perfekt dar. Das Plugin verwendet es als Präferenz: Wenn es es nicht erkennen kann, wählt es das Bild aus, das am besten zum Format passt.</sys:String>
@@ -904,7 +905,7 @@ Hintergründe: {4}</sys:String>
     <sys:String x:Key="MTDA_AuditFilterPending">Pending</sys:String>
     <sys:String x:Key="MTDA_AuditFilterReview">Review</sys:String>
     <sys:String x:Key="MTDA_AuditMarkModified">Mark as modified</sys:String>
-    <sys:String x:Key="MTDA_EnableIgnMetadata">Use IGN as a structured metadata source</sys:String>
+    <sys:String x:Key="MTDA_EnableIgnMetadata">Enable IGN as a structured metadata source</sys:String>
     <sys:String x:Key="MTDA_IgnMetadataHelp">IGN can enrich verified matching games with description, series, companies, age ratings, release date, genres and an IGN link. It never requires an API key.</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>

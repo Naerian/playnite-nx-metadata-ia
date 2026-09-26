@@ -239,7 +239,38 @@ namespace MetaDataIAPlugin
 
             // Drop preferred sources that do not fit this game's platform family
             // (e.g. an xbox.com link on an Epic PC game must not inject console capabilities).
-            return order.Where(allowed.Contains).ToList();
+            // Then honour per-storefront metadata toggles from Fuentes.
+            return order.Where(allowed.Contains).Where(IsStoreMetadataEnabled).ToList();
+        }
+
+        private bool IsStoreMetadataEnabled(string source)
+        {
+            if (settings == null || string.IsNullOrWhiteSpace(source))
+            {
+                return true;
+            }
+
+            if (string.Equals(source, SourceSteamOfficial, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.UseSteamMetadata;
+            }
+
+            if (string.Equals(source, SourcePsnStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.UsePsnStoreMetadata;
+            }
+
+            if (string.Equals(source, SourceXboxStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.UseXboxStoreMetadata;
+            }
+
+            if (string.Equals(source, SourceEpicStore, StringComparison.OrdinalIgnoreCase))
+            {
+                return settings.UseEpicStoreMetadata;
+            }
+
+            return true;
         }
 
         private static HashSet<string> GetAllowedOfficialSources(Game game)
@@ -1297,6 +1328,11 @@ namespace MetaDataIAPlugin
 
         public async Task<OfficialStoreMetadata> TryGetSteamContextAsync(Game game, CancellationToken cancelToken)
         {
+            if (settings != null && !settings.UseSteamMetadata)
+            {
+                return null;
+            }
+
             try
             {
                 return await GetSteamMetadataAsync(game, cancelToken).ConfigureAwait(false);

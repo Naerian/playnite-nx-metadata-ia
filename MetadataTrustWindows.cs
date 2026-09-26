@@ -1562,7 +1562,11 @@ namespace MetaDataIAPlugin
                     }
                 }));
             };
-            key.PasswordChanged += (s, e) => working.ApiKey = key.Password;
+            key.PasswordChanged += (s, e) =>
+            {
+                working.ApiKey = MetaDataIASettings.NormalizeApiKey(key.Password);
+                working.RememberApiKeyForProvider(working.ProviderPreset);
+            };
 
             Func<Task> refreshModelsAsync = async () =>
             {
@@ -1575,8 +1579,13 @@ namespace MetaDataIAPlugin
             provider.SelectionChanged += async (s, e) =>
             {
                 if (provider.SelectedValue == null) return;
+                var previousProvider = working.ProviderPreset;
+                working.ApiKey = MetaDataIASettings.NormalizeApiKey(key.Password);
+                working.RememberApiKeyForProvider(previousProvider);
                 working.ProviderPreset = provider.SelectedValue.ToString();
                 working.ApplyProviderPreset();
+                working.ApplyStoredApiKeyForProvider(working.ProviderPreset);
+                key.Password = working.ApiKey ?? string.Empty;
                 model.Text = working.Model ?? string.Empty;
                 // refresh help hints by rebuilding is heavy; update via status/models only
                 await RefreshProviderModelsAsync(model, modelsStatus, refreshModels, false);
@@ -1631,6 +1640,7 @@ namespace MetaDataIAPlugin
             }
 
             AddCurrentProviderModel(working.Model);
+            working.ApiKey = MetaDataIASettings.NormalizeApiKey(working.ApiKey);
             if (RequiresApiKeyForModelListing(working) && string.IsNullOrWhiteSpace(working.ApiKey))
             {
                 status.Text = plugin.Loc("MTDA_ProviderModelsApiKeyRequired", "Enter the provider API key to load its available models.");
@@ -1674,7 +1684,10 @@ namespace MetaDataIAPlugin
             }
             catch (Exception ex)
             {
-                status.Text = manual
+                var unauthorized = ex.Message != null &&
+                    (ex.Message.IndexOf("401", StringComparison.Ordinal) >= 0 ||
+                     ex.Message.IndexOf("rejected", StringComparison.OrdinalIgnoreCase) >= 0);
+                status.Text = manual || unauthorized
                     ? string.Format(plugin.Loc("MTDA_ProviderModelsRefreshFailed", "The model list could not be updated: {0}"), ex.Message)
                     : plugin.Loc("MTDA_ProviderModelsUnavailable", "The model list is not available right now. You can enter the model manually.");
             }
@@ -1748,16 +1761,6 @@ namespace MetaDataIAPlugin
             AddFieldCheck(wrap, plugin.Loc("MTDA_Icon", "Icon"), () => working.DownloadIcon, v => working.DownloadIcon = v);
             AddFieldCheck(wrap, plugin.Loc("MTDA_Background", "Background"), () => working.DownloadBackgroundImage, v => working.DownloadBackgroundImage = v);
             panel.Children.Add(wrap);
-            var strict = new CheckBox
-            {
-                Content = plugin.Loc("MTDA_StrictCompanyAgeRegion", "Do not create developers, publishers, age ratings or regions without trusted evidence"),
-                IsChecked = working.StrictCompanyAgeRegion,
-                Margin = new Thickness(0, 16, 0, 0),
-                FontSize = 14
-            };
-            strict.Checked += (s, e) => working.StrictCompanyAgeRegion = true;
-            strict.Unchecked += (s, e) => working.StrictCompanyAgeRegion = false;
-            panel.Children.Add(strict);
             return panel;
         }
 

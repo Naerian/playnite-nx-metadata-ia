@@ -170,6 +170,7 @@
     <sys:String x:Key="MTDA_SourceRawg">RWG: メイン画像とスクリーンショット</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames: 歴代のカバーとスクリーンショット</sys:String>
     <sys:String x:Key="MTDA_SourceIgdb">IGDB: カバー、アートワーク、スクリーンショット</sys:String>
+    <sys:String x:Key="MTDA_SourcesHelp">各ソースをメタデータ、メディア、または両方用に有効にします。メタデータソースは検証可能な事実（ジャンル、タグ、機能、会社、日付など）を提供します。AI はその根拠を文脈として使い、言語とテンプレートに合わせてフィールドを整理・翻訳・記述します。ストアの一覧が既にある場合はデータを捏造しません。メディアソースはカバー、アイコン、背景を別経路で提供します。</sys:String>
     <sys:String x:Key="MTDA_MissingApiKeyHelp">アクティブなソースに API キーが設定されていない場合、プラグインはデータをフェッチするときに API キーを自動的にスキップします。</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreference">背景のロゴの設定</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreferenceHelp">すべての情報源がこの情報を完全に公開しているわけではありません。プラグインはそれを好みとして使用します。判断できない場合は、フォーマットに最も適合する画像を選択します。</sys:String>
@@ -894,7 +895,7 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_AuditFilterPending">Pending</sys:String>
     <sys:String x:Key="MTDA_AuditFilterReview">Review</sys:String>
     <sys:String x:Key="MTDA_AuditMarkModified">Mark as modified</sys:String>
-    <sys:String x:Key="MTDA_EnableIgnMetadata">Use IGN as a structured metadata source</sys:String>
+    <sys:String x:Key="MTDA_EnableIgnMetadata">Enable IGN as a structured metadata source</sys:String>
     <sys:String x:Key="MTDA_IgnMetadataHelp">IGN can enrich verified matching games with description, series, companies, age ratings, release date, genres and an IGN link. It never requires an API key.</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>

@@ -170,6 +170,7 @@
     <sys:String x:Key="MTDA_SourceRawg">RAWG：主图和屏幕截图</sys:String>
     <sys:String x:Key="MTDA_SourceMobyGames">MobyGames：历史封面和屏幕截图</sys:String>
     <sys:String x:Key="MTDA_SourceIgdb">IGDB：封面、艺术作品和屏幕截图</sys:String>
+    <sys:String x:Key="MTDA_SourcesHelp">可为每个来源分别启用元数据、媒体或两者。元数据来源提供可核验的事实（类型、标签、功能、公司、日期等）。AI 将这些证据作为上下文，按你的语言和模板整理、翻译并撰写字段；当商店列表已存在时不会凭空编造商店数据。媒体来源则单独提供封面、图标和背景。</sys:String>
     <sys:String x:Key="MTDA_MissingApiKeyHelp">如果活动源没有配置 API 密钥，则插件在获取数据时将自动跳过它。</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreference">背景的标志偏好</sys:String>
     <sys:String x:Key="MTDA_BackgroundLogoPreferenceHelp">并非所有来源都能完美地披露此信息。该插件将其用作首选项：如果它无法判断，它会选择最适合该格式的图像。</sys:String>
@@ -894,7 +895,7 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_AuditFilterPending">Pending</sys:String>
     <sys:String x:Key="MTDA_AuditFilterReview">Review</sys:String>
     <sys:String x:Key="MTDA_AuditMarkModified">Mark as modified</sys:String>
-    <sys:String x:Key="MTDA_EnableIgnMetadata">Use IGN as a structured metadata source</sys:String>
+    <sys:String x:Key="MTDA_EnableIgnMetadata">Enable IGN as a structured metadata source</sys:String>
     <sys:String x:Key="MTDA_IgnMetadataHelp">IGN can enrich verified matching games with description, series, companies, age ratings, release date, genres and an IGN link. It never requires an API key.</sys:String>
     <sys:String x:Key="MTDA_IgnMediaHelp">IGN provides an official cover and promotional backgrounds for verified game matches. It does not provide icons and needs no API key.</sys:String>
     <sys:String x:Key="MTDA_EnableIgnMedia">Enable IGN for covers and backgrounds</sys:String>
