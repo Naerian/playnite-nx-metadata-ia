@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">Campo</sys:String>
     <sys:String x:Key="MTDA_Get">Pegar</sys:String>
     <sys:String x:Key="MTDA_Generate">Gerar</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Maiúsculas</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Se marcado, o campo fica todo em maiúsculas. Se não, só a primeira letra de cada frase, segundo o idioma do plugin.</sys:String>
     <sys:String x:Key="MTDA_Apply">Aplicar</sys:String>
     <sys:String x:Key="MTDA_Format">Formato e resolução de saída</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">O formato e a resolução selecionados definem o arquivo final salvo pelo Metadata AI. Os candidatos podem ter outras resoluções originais: as imagens são redimensionadas e, se a proporção mudar, recortadas a partir do centro.</sys:String>

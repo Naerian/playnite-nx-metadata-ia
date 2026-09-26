@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">场地</sys:String>
     <sys:String x:Key="MTDA_Get">得到</sys:String>
     <sys:String x:Key="MTDA_Generate">产生</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">大写</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">勾选后，该字段全部大写。未勾选时，只把每句的首字母按插件语言大写，不会把每个单词都大写。</sys:String>
     <sys:String x:Key="MTDA_Apply">申请</sys:String>
     <sys:String x:Key="MTDA_Format">输出格式和分辨率</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">所选格式和分辨率决定 Metadata AI 保存的最终文件。候选图片的原始分辨率可能不同：图片会被缩放，宽高比变化时会从中心裁剪。</sys:String>

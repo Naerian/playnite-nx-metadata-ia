@@ -4996,32 +4996,37 @@ namespace MetaDataIAPlugin
         private MetaDataIASettings CreateFocusedSettings(string focus)
         {
             var clone = Serialization.GetClone(settings.Settings);
+            var descriptionMode = ChosenApplyMode(clone.DescriptionApplyMode, MetaDataIASettings.ApplyOverwrite);
+            var tagsMode = ChosenApplyMode(clone.TagsApplyMode, MetaDataIASettings.ApplyAppend);
+            var categoriesMode = ChosenApplyMode(clone.CategoriesApplyMode, MetaDataIASettings.ApplyAppend);
+            var genresMode = ChosenApplyMode(clone.GenresApplyMode, MetaDataIASettings.ApplyAppend);
+            var featuresMode = ChosenApplyMode(clone.FeaturesApplyMode, MetaDataIASettings.ApplyAppend);
             DisableAllFields(clone);
 
             if (focus == "description")
             {
                 clone.GenerateDescription = true;
-                clone.DescriptionApplyMode = MetaDataIASettings.ApplyOverwrite;
+                clone.DescriptionApplyMode = descriptionMode;
             }
             else if (focus == "tags")
             {
                 clone.GenerateTags = true;
-                clone.TagsApplyMode = MetaDataIASettings.ApplyAppend;
+                clone.TagsApplyMode = tagsMode;
             }
             else if (focus == "categories")
             {
                 clone.GenerateCategories = true;
-                clone.CategoriesApplyMode = MetaDataIASettings.ApplyAppend;
+                clone.CategoriesApplyMode = categoriesMode;
             }
             else if (focus == "genres")
             {
                 clone.GenerateGenres = true;
-                clone.GenresApplyMode = MetaDataIASettings.ApplyAppend;
+                clone.GenresApplyMode = genresMode;
             }
             else if (focus == "features")
             {
                 clone.GenerateFeatures = true;
-                clone.FeaturesApplyMode = MetaDataIASettings.ApplyAppend;
+                clone.FeaturesApplyMode = featuresMode;
             }
             else if (focus == "developers")
             {
@@ -5094,6 +5099,16 @@ namespace MetaDataIAPlugin
             }
 
             return clone;
+        }
+
+        private static string ChosenApplyMode(string configured, string fallbackWhenSkip)
+        {
+            if (string.IsNullOrWhiteSpace(configured) || configured == MetaDataIASettings.ApplySkip)
+            {
+                return fallbackWhenSkip;
+            }
+
+            return configured;
         }
 
         private static void DisableAllFields(MetaDataIASettings activeSettings)

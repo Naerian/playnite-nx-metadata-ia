@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">分野</sys:String>
     <sys:String x:Key="MTDA_Get">得る</sys:String>
     <sys:String x:Key="MTDA_Generate">生成する</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">大文字</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">オンにすると項目はすべて大文字になります。オフなら各文の先頭だけを、プラグインの言語に合わせて大文字にします。</sys:String>
     <sys:String x:Key="MTDA_Apply">適用する</sys:String>
     <sys:String x:Key="MTDA_Format">出力形式と解像度</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">選択した形式と解像度が Metadata AI の保存する最終ファイルを決定します。候補画像の元の解像度は異なる場合があり、画像はリサイズされ、縦横比が変わる場合は中央から切り抜かれます。</sys:String>

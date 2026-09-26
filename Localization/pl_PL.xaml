@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">Pole</sys:String>
     <sys:String x:Key="MTDA_Get">Pobierz</sys:String>
     <sys:String x:Key="MTDA_Generate">Generuj</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Wersaliki</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Gdy zaznaczone, pole jest wielkimi literami. W przeciwnym razie wielka jest tylko pierwsza litera każdego zdania, według języka wtyczki.</sys:String>
     <sys:String x:Key="MTDA_Apply">Zastosuj</sys:String>
     <sys:String x:Key="MTDA_Format">Format i rozdzielczość wyjściowa</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">Wybrany format i rozdzielczość określają plik końcowy zapisywany przez Metadata AI. Kandydaci mogą mieć inne rozdzielczości źródłowe: obrazy są skalowane, a przy zmianie proporcji przycinane od środka.</sys:String>

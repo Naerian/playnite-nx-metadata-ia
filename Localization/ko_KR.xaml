@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">필드</sys:String>
     <sys:String x:Key="MTDA_Get">얻다</sys:String>
     <sys:String x:Key="MTDA_Generate">생성하다</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">대문자</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">켜면 필드를 모두 대문자로 저장합니다. 끄면 플러그인 언어에 맞춰 각 문장의 첫 글자만 대문자로 둡니다.</sys:String>
     <sys:String x:Key="MTDA_Apply">적용하다</sys:String>
     <sys:String x:Key="MTDA_Format">출력 형식 및 해상도</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">선택한 형식과 해상도는 Metadata AI가 저장할 최종 파일을 정의합니다. 후보 이미지의 원본 해상도는 다를 수 있으며, 이미지 크기가 조정되고 비율이 바뀌면 중앙을 기준으로 잘립니다.</sys:String>

@@ -1,4 +1,5 @@
 using MetaDataIAPlugin;
+using Newtonsoft.Json.Linq;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,23 @@ internal static class VocabularyBehaviorRunner
         Test_PreferExisting_DropsUnknownSpanishWhenLibraryIsEnglish();
         Test_PreferExisting_NormalizedAccentMatch();
         Test_PreferExisting_DoesNotMapAcrossLanguages();
-        Test_Canonical_MapsDirtySteamSpanishFeatures();
-        Test_Canonical_PrefersCleanLibrarySpelling();
-        Test_Canonical_CreatesPreferredWhenMissing();
-        Test_Canonical_CollapsesEquivalentFeatures();
+        Test_StoreTerms_ReuseExactLibrarySpellingOnly();
+        Test_StoreTerms_DoesNotSwapForASimilarLibraryName();
+        Test_StoreTerms_KeepsStoreWordingWhenLibraryIsEmpty();
+        Test_StoreTerms_EquivalentOnlyWhenNormalizedTextMatches();
+        Test_SteamAppTags_ReadsLocalizedLabels();
+        Test_SteamAppDetails_ReadsDataWhenResponseKeyDiffers();
+        Test_SteamAgeGate_IsRecognized();
+        Test_TermResolve_AppendKeepsSpecificGenres();
+        Test_TermResolve_AppendRejectsDroppingUnrelated();
+        Test_TermResolve_LocalizedOverwriteSkipsModel();
+        Test_TermResolve_InvalidJsonFallsBack();
+        Test_RomTitle_MatchesStoreTitle();
+        Test_ArticleAndPlatform_SeparateRomFromRemake();
+        Test_Genres_AreOrganizedEvenWhenAlreadyLocalized();
+        Test_MissingStoreLists_AskFromKnownFacts();
+        Test_ModesAndLanguages();
+        Test_Uppercase_UsesLanguageRules();
 
         if (failures == 0)
         {
@@ -117,7 +131,7 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("no EN↔ES synonym mapping", string.Empty, Join(mapped));
     }
 
-    private static void Test_Canonical_MapsDirtySteamSpanishFeatures()
+    private static void Test_StoreTerms_ReuseExactLibrarySpellingOnly()
     {
         var library = new[] { "Coop. A Pantalla (Com)Partida", "Logros de Steam", "Un jugador" };
         var proposed = new[]
@@ -134,34 +148,408 @@ internal static class VocabularyBehaviorRunner
             proposed, "features", "es", library, null, 12, false);
 
         AssertEqual(
-            "dirty Steam Spanish features map to canonical",
-            "Pantalla dividida, Cooperativo online, Logros, Un jugador, Multijugador",
+            "same name reused, different wording kept",
+            "Coop. A Pantalla (Com)Partida, Pantalla Partida/Compartida, Cooperativo en línea, Logros De, Un jugador, Multijugador",
             Join(mapped));
     }
 
-    private static void Test_Canonical_PrefersCleanLibrarySpelling()
+    private static void Test_StoreTerms_DoesNotSwapForASimilarLibraryName()
     {
         var library = new[] { "Pantalla dividida", "Coop. A Pantalla (Com)Partida" };
         var mapped = VocabularyTermNormalizer.NormalizeField(
             new[] { "Pantalla Partida/Compartida" }, "features", "es", library, null, 12, false);
 
-        AssertEqual("reuse clean library spelling", "Pantalla dividida", Join(mapped));
+        AssertEqual("similar library name is not substituted", "Pantalla Partida/Compartida", Join(mapped));
     }
 
-    private static void Test_Canonical_CreatesPreferredWhenMissing()
+    private static void Test_StoreTerms_KeepsStoreWordingWhenLibraryIsEmpty()
     {
         var mapped = VocabularyTermNormalizer.NormalizeField(
             new[] { "Shared/Split Screen" }, "features", "en", new string[0], null, 12, false);
 
-        AssertEqual("create preferred English spelling", "Split screen", Join(mapped));
+        AssertEqual("store wording kept", "Shared/Split Screen", Join(mapped));
     }
 
-    private static void Test_Canonical_CollapsesEquivalentFeatures()
+    private static void Test_StoreTerms_EquivalentOnlyWhenNormalizedTextMatches()
     {
         AssertTrue(
-            "equivalent dirty/clean features",
-            VocabularyTermNormalizer.AreEquivalent(
-                "Coop. A Pantalla (Com)Partida", "Pantalla dividida", "features", "es"));
+            "accent and case are the same term",
+            VocabularyTermNormalizer.AreEquivalent("Logros de Steam", "logros de steam", "features", "es"));
+        AssertTrue(
+            "different phrases stay different",
+            !VocabularyTermNormalizer.AreEquivalent("Coop. A Pantalla (Com)Partida", "Pantalla dividida", "features", "es"));
+    }
+
+    private static void Test_SteamAppTags_ReadsLocalizedLabels()
+    {
+        var html = "<a class=\"app_tag\" href=\"/tags/es/Acci%C3%B3n\">Acci&oacute;n</a>" +
+                   "<a class=\"app_tag\" href=\"/tags/es/Plataformas\"> Plataformas </a>" +
+                   "<a class=\"app_tag\">+</a>" +
+                   "InitAppTagModal( 690640, [{\"tagid\":1,\"name\":\"Fantasía\"},{\"tagid\":2,\"name\":\"Cooperativos locales\"}], 1);";
+        AssertEqual(
+            "steam user tags",
+            "Fantasía, Cooperativos locales",
+            Join(OfficialStoreDataService.ParseSteamAppTags(html)));
+        AssertEqual(
+            "steam tags fall back to the tag links",
+            "Acción",
+            Join(OfficialStoreDataService.ParseSteamAppTags(
+                "<a class=\"app_tag\" style=\"display: none;\">\nAcci&oacute;n\n</a><a class=\"app_tag\">+</a>")));
+    }
+
+    private static void Test_SteamAppDetails_ReadsDataWhenResponseKeyDiffers()
+    {
+        var wrapped = JObject.Parse("{\"1113990\":{\"success\":true,\"data\":{\"type\":\"game\",\"name\":\"Trine 4: The Nightmare Prince\",\"steam_appid\":690640,\"genres\":[{\"id\":1,\"description\":\"Acción\"}]}}}");
+        var data = OfficialStoreDataService.ResolveSteamAppData(wrapped, "690640");
+        AssertEqual("steam data when the response key is not the app id", "Trine 4: The Nightmare Prince", data == null ? string.Empty : (string)data["name"]);
+
+        var direct = JObject.Parse("{\"620\":{\"success\":true,\"data\":{\"name\":\"Portal 2\",\"steam_appid\":620}}}");
+        var portal = OfficialStoreDataService.ResolveSteamAppData(direct, "620");
+        AssertEqual("steam data when the response key is the app id", "Portal 2", portal == null ? string.Empty : (string)portal["name"]);
+
+        AssertTrue(
+            "a different steam_appid is not accepted",
+            OfficialStoreDataService.ResolveSteamAppData(wrapped, "999") == null);
+        AssertTrue(
+            "success false stays empty",
+            OfficialStoreDataService.ResolveSteamAppData(JObject.Parse("{\"690640\":{\"success\":false}}"), "690640") == null);
+    }
+
+    private static void Test_SteamAgeGate_IsRecognized()
+    {
+        AssertTrue("age gate page", OfficialStoreDataService.IsSteamAgeGate("<div id=\"app_agegate\"></div>"));
+        AssertTrue(
+            "store page with tags is not an age gate",
+            !OfficialStoreDataService.IsSteamAgeGate("InitAppTagModal(1583230, [{\"tagid\":1,\"name\":\"Comedia\"}], 1);"));
+    }
+
+    private static void Test_TermResolve_AppendKeepsSpecificGenres()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "append",
+            Existing = new List<string> { "Acción y aventura" },
+            Incoming = new List<string> { "Acción", "Aventura" },
+            MaxItems = 8,
+            AlreadyInLanguage = true
+        };
+        AssertTrue("append with both sides needs the model", field.NeedsModel);
+
+        Dictionary<string, List<string>> resolved;
+        var ok = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Aventura\"]}]}",
+            new List<TermFieldRequest> { field },
+            out resolved);
+        AssertTrue("append response parses", ok);
+        AssertEqual("broad genre dropped", "Acción, Aventura", Join(resolved["genres"]));
+    }
+
+    private static void Test_TermResolve_AppendRejectsDroppingUnrelated()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "append",
+            Existing = new List<string> { "Fantasía" },
+            Incoming = new List<string> { "Acción" },
+            MaxItems = 8
+        };
+        Dictionary<string, List<string>> resolved;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"tags\",\"terms\":[\"Acción\"]}]}",
+            new List<TermFieldRequest> { field },
+            out resolved);
+        AssertEqual("unrelated existing tag stays", "Fantasía, Acción", Join(resolved["tags"]));
+    }
+
+    private static void Test_TermResolve_LocalizedOverwriteSkipsModel()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Existing = new List<string> { "Viejo" },
+            Incoming = new List<string> { "Acción", "Aventura" },
+            AlreadyInLanguage = true
+        };
+        AssertTrue("localized overwrite skips the model", !field.NeedsModel);
+        AssertEqual("overwrite uses incoming", "Acción, Aventura", Join(field.DirectTerms()));
+
+        var translate = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Incoming = new List<string> { "Action" },
+            AlreadyInLanguage = false
+        };
+        AssertTrue("foreign overwrite asks the model", translate.NeedsModel);
+
+        var empty = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "empty",
+            Existing = new List<string> { "Retro" },
+            Incoming = new List<string> { "Mythology" }
+        };
+        AssertTrue("filled empty-only skips the model", !empty.NeedsModel);
+        AssertEqual("empty-only keeps current", "Retro", Join(empty.DirectTerms()));
+    }
+
+    private static void Test_TermResolve_InvalidJsonFallsBack()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "features",
+            Mode = "append",
+            Existing = new List<string> { "Un jugador" },
+            Incoming = new List<string> { "Cooperativo" },
+            MaxItems = 8
+        };
+        Dictionary<string, List<string>> resolved;
+        var ok = TermFieldResolver.TryApplyResponse("not json", new List<TermFieldRequest> { field }, out resolved);
+        AssertTrue("invalid json is a fallback", !ok);
+        AssertEqual("fallback keeps both", "Un jugador, Cooperativo", Join(resolved["features"]));
+    }
+
+    private static void Test_RomTitle_MatchesStoreTitle()
+    {
+        AssertTrue(
+            "region tag matches the store title",
+            TitleMatchingService.IsReliableMatch("Battle of Olympus (USA)", "Battle of Olympus"));
+        AssertEqual(
+            "search title drops the region tag",
+            "Battle of Olympus",
+            TitleMatchingService.SearchTitle("Battle of Olympus (USA)"));
+        AssertTrue(
+            "a subtitle is not treated as a region tag",
+            !TitleMatchingService.IsReliableMatch("Trine 4: The Nightmare Prince", "Trine 4"));
+    }
+
+    private static void Test_ArticleAndPlatform_SeparateRomFromRemake()
+    {
+        AssertTrue(
+            "leading article matches the store title",
+            TitleMatchingService.IsReliableMatch("Battle of Olympus (USA)", "The Battle of Olympus"));
+        AssertTrue(
+            "trailing article matches the store title",
+            TitleMatchingService.IsReliableMatch("Battle of Olympus, The (USA)", "The Battle Of Olympus"));
+        AssertTrue(
+            "nes labels fit the cartridge",
+            TitleMatchingService.PlatformLabelsFit(
+                new[] { "Nintendo Entertainment System" },
+                new[] { "nintendo_nes" },
+                new[] { "Nintendo Entertainment System" }));
+        AssertTrue(
+            "windows labels do not fit the cartridge",
+            !TitleMatchingService.PlatformLabelsFit(
+                new[] { "Nintendo Entertainment System" },
+                new[] { "nintendo_nes" },
+                new[] { "PC (Microsoft Windows)" }));
+        AssertTrue(
+            "windows labels fit the steam release",
+            TitleMatchingService.PlatformLabelsFit(
+                new[] { "PC (Windows)" },
+                new[] { "pc_windows" },
+                new[] { "PC (Microsoft Windows)" }));
+    }
+
+    private static void Test_Genres_AreOrganizedEvenWhenAlreadyLocalized()
+    {
+        var genres = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Incoming = new List<string> { "Action", "Adventure" },
+            AlreadyInLanguage = true,
+            Organize = true
+        };
+        AssertTrue("localized genres still go to the model", genres.NeedsModel);
+        Dictionary<string, List<string>> organized;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[]}]}",
+            new List<TermFieldRequest> { genres },
+            out organized);
+        AssertEqual("an empty organize response keeps the store list", "Action, Adventure", Join(organized["genres"]));
+
+        var features = new TermFieldRequest
+        {
+            Field = "features",
+            Mode = "overwrite",
+            Incoming = new List<string> { "Single-player" },
+            AlreadyInLanguage = true
+        };
+        AssertTrue("localized features stay on the store list", !features.NeedsModel);
+
+        var append = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "append",
+            Existing = new List<string> { "Fantasy" },
+            Incoming = new List<string> { "Mythology" },
+            AlreadyInLanguage = true,
+            Organize = true
+        };
+        AssertTrue("append tags go to the model", append.NeedsModel);
+        var json = TermFieldResolver.BuildUserJson("en", new[] { "Nintendo Entertainment System nintendo_nes" }, new List<TermFieldRequest> { append });
+        AssertTrue("the request names the platform", json.Contains("nintendo_nes"));
+        AssertTrue("append sends both lists", json.Contains("Fantasy") && json.Contains("Mythology"));
+    }
+
+    private static void Test_MissingStoreLists_AskFromKnownFacts()
+    {
+        var genres = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Incoming = new List<string>(),
+            MaxItems = 4,
+            Organize = true,
+            FromKnowledge = true
+        };
+        AssertTrue("missing genres ask the model", genres.NeedsModel);
+
+        var features = new TermFieldRequest
+        {
+            Field = "features",
+            Mode = "overwrite",
+            Incoming = new List<string>(),
+            MaxItems = 8,
+            FromKnowledge = true
+        };
+        AssertTrue("missing features ask the model", features.NeedsModel);
+        Dictionary<string, List<string>> featureTerms;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"features\",\"terms\":[\"Single-player\"]}]}",
+            new List<TermFieldRequest> { features },
+            out featureTerms);
+        AssertEqual("a feature from the model is kept", "Single-player", Join(featureTerms["features"]));
+
+        var filled = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "empty",
+            Existing = new List<string> { "Comedy" },
+            Incoming = new List<string>(),
+            FromKnowledge = true
+        };
+        AssertTrue("filled empty-only does not ask from memory", !filled.NeedsModel);
+
+        Dictionary<string, List<string>> resolved;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Action\",\"Adventure\"]}]}",
+            new List<TermFieldRequest> { genres },
+            out resolved);
+        AssertEqual("labels from the model are kept", "Action, Adventure", Join(resolved["genres"]));
+
+        var append = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "append",
+            Existing = new List<string> { "Comedy" },
+            Incoming = new List<string>(),
+            MaxItems = 8,
+            FromKnowledge = true
+        };
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"tags\",\"terms\":[]}]}",
+            new List<TermFieldRequest> { append },
+            out resolved);
+        AssertEqual("an empty guess keeps the current tags", "Comedy", Join(resolved["tags"]));
+
+        var facts = new JObject();
+        facts["title"] = "High On Life";
+        facts["platform"] = new JArray("PC (Windows) pc_windows");
+        var json = TermFieldResolver.BuildKnowledgeJson("es", facts, new List<TermFieldRequest> { genres });
+        AssertTrue("the guess names the title", json.Contains("High On Life"));
+        AssertTrue("the guess names the platform", json.Contains("pc_windows"));
+    }
+
+    private static void Test_ModesAndLanguages()
+    {
+        var languages = new[] { "es", "en", "fr", "de", "it", "pt", "pt-BR", "ja", "tr", "pl", "nl", "ru" };
+        var steam = new Dictionary<string, string>
+        {
+            { "es", "spanish" },
+            { "en", "english" },
+            { "fr", "french" },
+            { "de", "german" },
+            { "it", "italian" },
+            { "pt", "portuguese" },
+            { "pt-BR", "brazilian" },
+            { "ja", "japanese" },
+            { "tr", "turkish" },
+            { "pl", "polish" },
+            { "nl", "dutch" },
+            { "ru", "russian" }
+        };
+
+        foreach (var language in languages)
+        {
+            AssertEqual(language + " steam language", steam[language], OfficialStoreDataService.ToSteamStoreLanguage(language));
+
+            var overwrite = new TermFieldRequest
+            {
+                Field = "features",
+                Mode = "overwrite",
+                Existing = new List<string> { "Co-Operative", "Cooperativo" },
+                Incoming = new List<string> { "Un jugador", "Cooperativo" },
+                AlreadyInLanguage = true,
+                MaxItems = 8
+            };
+            AssertTrue(language + " overwrite skips the model", !overwrite.NeedsModel);
+            AssertEqual(language + " overwrite drops what was already there", "Un jugador, Cooperativo", Join(overwrite.DirectTerms()));
+
+            var empty = new TermFieldRequest
+            {
+                Field = "genres",
+                Mode = "empty",
+                Existing = new List<string> { "Aventura" },
+                Incoming = new List<string> { "Action" },
+                AlreadyInLanguage = true,
+                MaxItems = 8
+            };
+            AssertTrue(language + " empty-only skips the model", !empty.NeedsModel);
+            AssertEqual(language + " empty-only keeps the current value", "Aventura", Join(empty.DirectTerms()));
+
+            var append = new TermFieldRequest
+            {
+                Field = "tags",
+                Mode = "append",
+                Existing = new List<string> { "Fantasía" },
+                Incoming = new List<string> { "Mitología" },
+                AlreadyInLanguage = true,
+                MaxItems = 8
+            };
+            AssertTrue(language + " append asks the model", append.NeedsModel);
+
+            var foreign = new TermFieldRequest
+            {
+                Field = "genres",
+                Mode = "overwrite",
+                Incoming = new List<string> { "Action" },
+                AlreadyInLanguage = false,
+                MaxItems = 8
+            };
+            AssertTrue(language + " foreign overwrite asks the model", foreign.NeedsModel);
+        }
+    }
+
+    private static void Test_Uppercase_UsesLanguageRules()
+    {
+        AssertEqual("es uppercase keeps accents", "ACCIÓN", TextCapitalization.ToUpper("Acción", "es"));
+        AssertEqual("fr uppercase", "COOPÉRATIF", TextCapitalization.ToUpper("coopératif", "fr"));
+        AssertEqual(
+            "de uppercase follows de-DE",
+            "Straße".ToUpper(System.Globalization.CultureInfo.GetCultureInfo("de-DE")),
+            TextCapitalization.ToUpper("Straße", "de"));
+        AssertEqual("tr uppercase uses turkish i", "İSTANBUL", TextCapitalization.ToUpper("istanbul", "tr"));
+        AssertEqual("es sentence case is not title case", "Un jugador", TextCapitalization.Apply("UN JUGADOR", "es", false));
+        AssertEqual("en capitalizes each word", "Full Controller Support", TextCapitalization.Apply("FULL CONTROLLER SUPPORT", "en", false));
+        AssertEqual("en-GB uses the same word capitals", "Action And Adventure", TextCapitalization.Apply("action and adventure", "en-GB", false));
+        AssertEqual("es keeps a single capital", "Acción y aventura", TextCapitalization.ToSentence("Acción Y Aventura", "es"));
+        AssertEqual("fr sentence case", "Coopératif en ligne", TextCapitalization.ToSentence("COOPÉRATIF EN LIGNE", "fr"));
+        AssertEqual("second sentence starts with a capital", "Empieza aquí. Sigue allá.", TextCapitalization.ToSentence("EMPIEZA AQUÍ. SIGUE ALLÁ.", "es"));
     }
 
     private static MetaDataIASettings CreateSettings(string language)

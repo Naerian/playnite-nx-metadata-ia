@@ -161,6 +161,8 @@
     <sys:String x:Key="MTDA_Field">Field</sys:String>
     <sys:String x:Key="MTDA_Get">Get</sys:String>
     <sys:String x:Key="MTDA_Generate">Generate</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Uppercase</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">When checked, that field is stored in uppercase. Otherwise English capitalizes each word, and other languages capitalize only the first letter of each sentence.</sys:String>
     <sys:String x:Key="MTDA_Apply">Apply</sys:String>
     <sys:String x:Key="MTDA_Format">Output format and resolution</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">The selected format and resolution define the final file saved by Metadata AI. Candidates may have different original resolutions: images are resized and, when the aspect ratio changes, cropped from the center.</sys:String>
@@ -526,7 +528,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Load more ({0} remaining)</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Advanced mode</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemory">Local vocabulary memory</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Preferred reusable terms learned from applied metadata. Format: language.field=value; value. Example: es.tags=Disparos; Cooperativo. Edit it to merge variants or force your preferred wording.</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Text kept from earlier versions. It is no longer learned or sent to the model. Store labels decide the names, and an existing Playnite name is reused only when the text matches.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Open in browser</sys:String>
     <sys:String x:Key="MTDA_Discard">Discard</sys:String>
     <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Source diagnostics:</sys:String>

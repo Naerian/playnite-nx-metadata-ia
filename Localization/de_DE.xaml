@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">Feld</sys:String>
     <sys:String x:Key="MTDA_Get">Erhalten</sys:String>
     <sys:String x:Key="MTDA_Generate">Erzeugen</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Großbuchstaben</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Wenn aktiv, wird das Feld in Großbuchstaben gespeichert. Sonst nur der erste Buchstabe jedes Satzes, gemäß der Plugin-Sprache.</sys:String>
     <sys:String x:Key="MTDA_Apply">Anwenden</sys:String>
     <sys:String x:Key="MTDA_Format">Ausgabeformat und -auflösung</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">Das ausgewählte Format und die Auflösung bestimmen die von Metadata AI gespeicherte Datei. Kandidaten können andere Originalauflösungen haben: Bilder werden skaliert und bei abweichendem Seitenverhältnis mittig zugeschnitten.</sys:String>

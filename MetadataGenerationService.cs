@@ -149,6 +149,7 @@ namespace MetaDataIAPlugin
             }
 
             await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
+            await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
             return result;
         }
@@ -256,8 +257,6 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            var learned = settings.GetVocabularyTerms(settings.Language);
-            List<string> learnedField;
             var genresLibrary = playniteApi != null && playniteApi.Database != null
                 ? playniteApi.Database.Genres.Select(x => x.Name)
                 : Enumerable.Empty<string>();
@@ -271,24 +270,20 @@ namespace MetaDataIAPlugin
                 ? playniteApi.Database.Categories.Select(x => x.Name)
                 : Enumerable.Empty<string>();
 
-            learned.TryGetValue("genres", out learnedField);
             result.Genres = VocabularyTermNormalizer.NormalizeField(
-                result.Genres, "genres", settings.Language, genresLibrary, learnedField,
-                settings.MaxGenres, settings.PreferExistingGenres);
+                result.Genres, "genres", settings.Language, genresLibrary, null,
+                settings.MaxGenres, false);
 
-            learned.TryGetValue("tags", out learnedField);
             result.Tags = VocabularyTermNormalizer.NormalizeField(
-                result.Tags, "tags", settings.Language, tagsLibrary, learnedField,
-                settings.MaxTags, settings.PreferExistingTags);
+                result.Tags, "tags", settings.Language, tagsLibrary, null,
+                settings.MaxTags, false);
 
-            learned.TryGetValue("features", out learnedField);
             result.Features = VocabularyTermNormalizer.NormalizeField(
-                result.Features, "features", settings.Language, featuresLibrary, learnedField,
-                settings.MaxFeatures, settings.PreferExistingFeatures);
+                result.Features, "features", settings.Language, featuresLibrary, null,
+                settings.MaxFeatures, false);
 
-            learned.TryGetValue("categories", out learnedField);
             result.Categories = VocabularyTermNormalizer.NormalizeField(
-                result.Categories, "categories", settings.Language, categoriesLibrary, learnedField,
+                result.Categories, "categories", settings.Language, categoriesLibrary, null,
                 settings.MaxCategories, settings.PreferExistingCategories);
         }
 
@@ -311,25 +306,23 @@ namespace MetaDataIAPlugin
             DetectListConflict(result, "ageRatings", sources, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating });
             DetectListConflict(result, "regions", sources, x => x.Regions);
 
-            // Official/Origin lists are factual candidates, not final spellings.
-            // Merge with AI output; ApplyVocabularyNormalization later maps them onto
-            // the plugin canonical vocabulary (then Playnite DB / create cleaned).
+            // A store that already returned this field wins. The model does not add a second list.
+            // Epic, GOG and other PC libraries usually have no structured genres/features, so the
+            // first allowed store that does (often Steam, in the plugin language) is used.
+            // When no allowed store has the field, the model output is kept.
             if (settings.GenerateGenres)
             {
-                var genres = FirstOfficialList(x => x.Genres);
-                if (genres.Count > 0)
-                {
-                    result.Genres = MergeTermCandidates(genres, result.Genres, settings.MaxGenres);
-                }
+                result.Genres = CollectStoreTerms(x => x.Genres, settings.MaxGenres, false, game);
             }
 
             if (settings.GenerateFeatures)
             {
-                var features = FirstOfficialList(x => x.Features);
-                if (features.Count > 0)
-                {
-                    result.Features = MergeTermCandidates(features, result.Features, settings.MaxFeatures);
-                }
+                result.Features = CollectStoreTerms(x => x.Features, settings.MaxFeatures, true, game);
+            }
+
+            if (settings.GenerateTags)
+            {
+                result.Tags = CollectStoreTerms(x => x.Tags, 20, false, game);
             }
 
             if (settings.GenerateLinks)
@@ -1127,6 +1120,7 @@ namespace MetaDataIAPlugin
                 var result = ParseResult(content);
                 PrepareResult(result, game);
                 await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
+                await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
                 await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
                 return result;
             }
@@ -1209,8 +1203,8 @@ namespace MetaDataIAPlugin
                    "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
                    "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally. " +
-                   "Use localVocabulary first, then canonicalTerms, to keep genres, tags, features and categories stable across games when those fields are not locked. If both are empty for a field and playniteLibraryVocabulary does not lock it, create stable terms directly in the requested output language and reuse the same wording consistently. " +
-                   "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. Locked fields override localVocabulary and canonicalTerms. " +
+                   "For tags and categories, write short reusable names in the requested output language. Reuse playniteLibraryVocabulary spelling when that field is locked. " +
+                   "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. " +
                    "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
                    "If fieldsToGenerate includes links, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links. " +
@@ -1218,7 +1212,7 @@ namespace MetaDataIAPlugin
                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish. " +
                    "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
-                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, genres, features, ratings and links. The store context may contain values in any language; for unlocked fields, always translate every user-facing value (genres, features, tags, categories, descriptions) from the store context into the requested output language before using them. Do not copy store-language strings verbatim unless the field is locked by playniteLibraryVocabulary. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
+                   "If officialStoreContext is present, treat it as the primary factual source material for description, companies, ratings and links. Genres, features and tags are absent from jsonShape because the plugin fills them from store evidence: do not invent those lists. Do not add extra factual claims that are not supported by officialStoreContext or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
                    "Developers must contain only the main credited developer studio for the base game. Publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty. " +
                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure. " +
@@ -1243,15 +1237,9 @@ namespace MetaDataIAPlugin
             context["strictCompanyAgeRegion"] = settings.StrictCompanyAgeRegion;
             var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
             var fieldsToGenerate = BuildFieldsToGenerate(requestedTokens);
-            context["fieldsToGenerate"] = fieldsToGenerate
-                .Where(x => x.Value)
-                .ToDictionary(x => x.Key, x => true, StringComparer.OrdinalIgnoreCase);
-            context["jsonShape"] = BuildJsonShape(requestedTokens, fieldsToGenerate);
             context["maxDevelopers"] = settings.MaxDevelopers;
             context["maxPublishers"] = settings.MaxPublishers;
-            context["canonicalTerms"] = ExcludePreferExistingFields(BuildCanonicalTerms());
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
-            context["localVocabulary"] = ExcludePreferExistingFields(settings.GetVocabularyTerms(settings.Language));
             context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
             context["blacklist"] = settings.GetBlacklistTerms();
             context["tagPrefix"] = settings.TagPrefix;
@@ -1302,7 +1290,8 @@ namespace MetaDataIAPlugin
                 officialContextForCurrentRequest.AddRange(officialContext);
             }
 
-            if (ShouldUseTrustedEnrichment(game) && HasMissingTrustedEvidence())
+            if (CanQueryIgdb() && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()) &&
+                (HasMissingTrustedEvidence() || TermListsAreShort(game)))
             {
                 var igdbContext = await new IgdbMetadataContextService(settings).GetContextAsync(game, cancellationToken).ConfigureAwait(false);
                 if (igdbContext != null && igdbContext.HasUsefulData())
@@ -1324,7 +1313,9 @@ namespace MetaDataIAPlugin
                 await TryAddOptionalContextAsync(() => new VndbMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
-            if (settings.UseWikidataMetadata && (settings.UseOfficialStoreContext || NeedsTrustedEnrichment()))
+            if ((settings.UseOfficialStoreContext || NeedsTrustedEnrichment()) &&
+                (settings.UseWikidataMetadata || TermListsAreShort(game)) &&
+                !HasContextSource(MetaDataIASettings.SourceWikidata))
             {
                 await TryAddOptionalContextAsync(() => new WikidataMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
@@ -1340,6 +1331,7 @@ namespace MetaDataIAPlugin
                     description = x.Description,
                     genres = x.Genres,
                     features = x.Features,
+                    tags = x.Tags,
                     developers = x.Developers,
                     publishers = x.Publishers,
                     ageRating = x.AgeRating,
@@ -1351,6 +1343,17 @@ namespace MetaDataIAPlugin
                     links = x.Links.Select(link => new { name = link.Name, url = link.Url }).ToList()
                 }).ToList();
             }
+
+            // Genres and tags are organized later from store evidence. Features stay
+            // on the store list. The description model must not invent a second list.
+            fieldsToGenerate["genres"] = false;
+            fieldsToGenerate["tags"] = false;
+            fieldsToGenerate["features"] = false;
+
+            context["fieldsToGenerate"] = fieldsToGenerate
+                .Where(x => x.Value)
+                .ToDictionary(x => x.Key, x => true, StringComparer.OrdinalIgnoreCase);
+            context["jsonShape"] = BuildJsonShape(requestedTokens, fieldsToGenerate);
 
             return "Generate normalized metadata for this game. The requested output language is " +
                    TargetLanguageName(settings.Language) + " (" + settings.Language + "). " +
@@ -1465,7 +1468,7 @@ namespace MetaDataIAPlugin
                 parts.Add("\"similarGamesList\":[]");
             }
 
-            if (FieldEnabled(fields, "features") || ContainsToken(requestedTokens, "features") || requestedTokens.Any(IsIndexedFeatureToken))
+            if (FieldEnabled(fields, "features"))
             {
                 parts.Add("\"features\":[]");
             }
@@ -1821,21 +1824,6 @@ namespace MetaDataIAPlugin
             }
 
             var vocabulary = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            if (settings.PreferExistingGenres)
-            {
-                vocabulary["genres"] = Names(playniteApi.Database.Genres);
-            }
-
-            if (settings.PreferExistingTags)
-            {
-                vocabulary["tags"] = Names(playniteApi.Database.Tags);
-            }
-
-            if (settings.PreferExistingFeatures)
-            {
-                vocabulary["features"] = Names(playniteApi.Database.Features);
-            }
-
             if (settings.PreferExistingCategories)
             {
                 vocabulary["categories"] = Names(playniteApi.Database.Categories);
@@ -1872,7 +1860,7 @@ namespace MetaDataIAPlugin
 
         private Dictionary<string, List<string>> BuildDefaultCanonicalTerms()
         {
-            return CanonicalVocabulary.GetPreferredNames(settings.Language);
+            return new Dictionary<string, List<string>>();
         }
 
         private static List<string> MergeTermCandidates(IEnumerable<string> primary, IEnumerable<string> secondary, int maxItems)
@@ -2706,12 +2694,415 @@ namespace MetaDataIAPlugin
                 settings.MaxRegions);
         }
 
+        private async Task ResolveTermFieldsAsync(AiMetadataResult result, Game game, CancellationToken cancellationToken)
+        {
+            if (result == null || game == null || settings == null)
+            {
+                return;
+            }
+
+            var requests = new List<TermFieldRequest>
+            {
+                BuildTermRequest(game, "genres", settings.GenerateGenres, settings.GenresApplyMode, Names(game.Genres), result.Genres, settings.MaxGenres, x => x.Genres),
+                BuildTermRequest(game, "features", settings.GenerateFeatures, settings.FeaturesApplyMode, Names(game.Features), result.Features, settings.MaxFeatures, x => x.Features),
+                BuildTermRequest(game, "tags", settings.GenerateTags, settings.TagsApplyMode, Names(game.Tags), result.Tags, settings.MaxTags, x => x.Tags),
+                BuildTermRequest(game, "categories", settings.GenerateCategories, settings.CategoriesApplyMode, Names(game.Categories), result.Categories, settings.MaxCategories, null)
+            };
+
+            var active = requests.Where(x => !string.Equals(x.Mode, "skip", StringComparison.OrdinalIgnoreCase)).ToList();
+            var direct = active.Where(x => !x.NeedsModel).ToList();
+            var modelFields = active.Where(x => x.NeedsModel).ToList();
+            foreach (var field in direct)
+            {
+                if (string.Equals(field.Mode, "empty", StringComparison.OrdinalIgnoreCase) && field.Existing.Count > 0)
+                {
+                    AssignTermField(result, field.Field, field.DirectTerms());
+                }
+            }
+
+            if (modelFields.Count == 0)
+            {
+                return;
+            }
+
+            var organizeFields = modelFields.Where(x => !x.FromKnowledge).ToList();
+            var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
+            var resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (organizeFields.Count > 0)
+            {
+                foreach (var pair in await AskTermModelAsync(
+                    TermFieldResolver.SystemPrompt,
+                    TermFieldResolver.BuildUserJson(settings.Language, PlatformLabels(game), organizeFields),
+                    organizeFields,
+                    cancellationToken).ConfigureAwait(false))
+                {
+                    resolved[pair.Key] = pair.Value;
+                }
+            }
+
+            if (knowledgeFields.Count > 0)
+            {
+                foreach (var pair in await AskTermModelAsync(
+                    TermFieldResolver.KnowledgePrompt,
+                    TermFieldResolver.BuildKnowledgeJson(settings.Language, BuildKnownGameFacts(game), knowledgeFields),
+                    knowledgeFields,
+                    cancellationToken).ConfigureAwait(false))
+                {
+                    resolved[pair.Key] = pair.Value;
+                }
+            }
+
+            if (result.ResolvedTermFields == null)
+            {
+                result.ResolvedTermFields = new List<string>();
+            }
+
+            foreach (var field in modelFields)
+            {
+                List<string> terms;
+                if (resolved == null || !resolved.TryGetValue(field.Field, out terms))
+                {
+                    terms = field.FallbackTerms();
+                }
+
+                AssignTermField(result, field.Field, terms);
+                if (!result.ResolvedTermFields.Any(x => string.Equals(x, field.Field, StringComparison.OrdinalIgnoreCase)))
+                {
+                    result.ResolvedTermFields.Add(field.Field);
+                }
+            }
+
+            result.RefreshDescription(settings, game);
+        }
+
+        private static List<string> PlatformLabels(Game game)
+        {
+            if (game == null || game.Platforms == null)
+            {
+                return new List<string>();
+            }
+
+            return game.Platforms
+                .Where(platform => platform != null)
+                .Select(platform => ((platform.Name ?? string.Empty) + " " + (platform.SpecificationId ?? string.Empty)).Trim())
+                .Where(label => label.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private TermFieldRequest BuildTermRequest(
+            Game game,
+            string field,
+            bool generate,
+            string applyMode,
+            List<string> existing,
+            List<string> current,
+            int maxItems,
+            Func<OfficialStoreMetadata, List<string>> storeSelector)
+        {
+            var mode = "skip";
+            if (generate && applyMode == MetaDataIASettings.ApplyOverwrite)
+            {
+                mode = "overwrite";
+            }
+            else if (generate && applyMode == MetaDataIASettings.ApplyEmptyOnly)
+            {
+                mode = "empty";
+            }
+            else if (generate && applyMode == MetaDataIASettings.ApplyAppend)
+            {
+                mode = "append";
+            }
+
+            var target = string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ? 20 : Math.Max(1, maxItems);
+            var filterFeatures = string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
+            var fromStore = storeSelector != null && CollectStoreTerms(storeSelector, target, filterFeatures, game).Count > 0;
+            var incoming = TermFieldResolver.DistinctTerms(current).Take(Math.Min(20, Math.Max(maxItems, 1) * 2)).ToList();
+            return new TermFieldRequest
+            {
+                Field = field,
+                Mode = mode,
+                Existing = TermFieldResolver.DistinctTerms(existing).Take(20).ToList(),
+                Incoming = incoming,
+                MaxItems = Math.Max(1, maxItems),
+                AlreadyInLanguage = !fromStore || StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
+                Organize = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase),
+                FromKnowledge = (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(field, "features", StringComparison.OrdinalIgnoreCase)) &&
+                                incoming.Count == 0 &&
+                                mode != "skip"
+            };
+        }
+
+        private async Task<Dictionary<string, List<string>>> AskTermModelAsync(
+            string systemPrompt,
+            string userJson,
+            List<TermFieldRequest> fields,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var content = await SendConstrainedPromptAsync(systemPrompt, userJson, 700, cancellationToken).ConfigureAwait(false);
+                Dictionary<string, List<string>> resolved;
+                TermFieldResolver.TryApplyResponse(content, fields, out resolved);
+                return resolved ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            }
+            catch (OperationCanceledException)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+            }
+            catch
+            {
+            }
+
+            return fields.ToDictionary(x => x.Field, x => x.FallbackTerms(), StringComparer.OrdinalIgnoreCase);
+        }
+
+        private JObject BuildKnownGameFacts(Game game)
+        {
+            var facts = new JObject();
+            facts["title"] = game == null ? string.Empty : game.Name ?? string.Empty;
+            facts["platform"] = new JArray(PlatformLabels(game));
+            facts["librarySource"] = game == null || game.Source == null ? string.Empty : game.Source.Name ?? string.Empty;
+            facts["releaseDate"] = game != null && game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString() : string.Empty;
+            facts["developers"] = new JArray(game == null ? new List<string>() : Names(game.Developers));
+            facts["publishers"] = new JArray(game == null ? new List<string>() : Names(game.Publishers));
+            facts["series"] = new JArray(game == null ? new List<string>() : Names(game.Series));
+            facts["ageRatings"] = new JArray(game == null ? new List<string>() : Names(game.AgeRatings));
+            var links = game == null || game.Links == null
+                ? new List<string>()
+                : game.Links
+                    .Where(link => link != null && !string.IsNullOrWhiteSpace(link.Url))
+                    .Select(link => ((link.Name ?? string.Empty) + " " + link.Url).Trim())
+                    .Take(6)
+                    .ToList();
+            facts["links"] = new JArray(links);
+
+            var editions = new JArray();
+            foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+            {
+                if (source == null || editions.Count >= 4)
+                {
+                    continue;
+                }
+
+                var edition = new JObject();
+                edition["source"] = source.SourceName ?? string.Empty;
+                edition["title"] = source.Title ?? string.Empty;
+                edition["url"] = source.StoreUrl ?? string.Empty;
+                edition["releaseDate"] = source.ReleaseDate ?? string.Empty;
+                edition["developers"] = new JArray(source.Developers ?? new List<string>());
+                edition["publishers"] = new JArray(source.Publishers ?? new List<string>());
+                edition["series"] = new JArray(source.Series ?? new List<string>());
+                edition["ageRating"] = source.AgeRating ?? string.Empty;
+                var description = ShortFact(source.Description);
+                if (description.Length > 0)
+                {
+                    edition["description"] = description;
+                }
+
+                editions.Add(edition);
+            }
+
+            facts["editions"] = editions;
+            if (editions.Count == 0 && game != null)
+            {
+                var libraryDescription = ShortFact(game.Description);
+                if (libraryDescription.Length > 0)
+                {
+                    facts["description"] = libraryDescription;
+                }
+            }
+
+            return facts;
+        }
+
+        private static string ShortFact(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var text = Regex.Replace(value, "<[^>]+>", " ");
+            text = Regex.Replace(text, @"\s+", " ").Trim();
+            return text.Length <= 480 ? text : text.Substring(0, 480).Trim();
+        }
+
+        private static void AssignTermField(AiMetadataResult result, string field, List<string> terms)
+        {
+            var values = terms ?? new List<string>();
+            if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Genres = values;
+            }
+            else if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Features = values;
+            }
+            else if (string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Tags = values;
+            }
+            else if (string.Equals(field, "categories", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Categories = values;
+            }
+        }
+
+        private bool CanQueryIgdb()
+        {
+            return settings != null &&
+                   !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
+                   (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
+        }
+
+        private bool TermListsAreShort(Game game)
+        {
+            if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip &&
+                CollectStoreTerms(x => x.Genres, settings.MaxGenres, false, game).Count < 2)
+            {
+                return true;
+            }
+
+            if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip &&
+                CollectStoreTerms(x => x.Features, settings.MaxFeatures, true, game).Count < 3)
+            {
+                return true;
+            }
+
+            return settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip &&
+                   CollectStoreTerms(x => x.Tags, 20, false, game).Count < 4;
+        }
+
+        private bool HasContextSource(string sourceName)
+        {
+            return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Any(x => x != null && string.Equals(x.SourceName, sourceName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private List<string> CollectStoreTerms(Func<OfficialStoreMetadata, List<string>> selector, int targetCount, bool filterFeatures, Game game)
+        {
+            var result = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var target = Math.Max(1, targetCount);
+            foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+            {
+                if (source == null || IsLibraryIntegrationSource(source))
+                {
+                    continue;
+                }
+
+                var values = selector(source);
+                if (filterFeatures)
+                {
+                    values = FilterFeaturesForGamePlatform(game, values);
+                }
+
+                foreach (var value in values ?? new List<string>())
+                {
+                    var cleaned = VocabularyTermNormalizer.CleanTerm(value);
+                    var key = LibraryNameMatching.NormalizeKey(cleaned);
+                    if (key.Length == 0 || !seen.Add(key))
+                    {
+                        continue;
+                    }
+
+                    result.Add(cleaned);
+                    if (result.Count >= target)
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private bool StoreTermsAreInPluginLanguage(Func<OfficialStoreMetadata, List<string>> selector, int targetCount, bool filterFeatures, Game game)
+        {
+            var count = 0;
+            var target = Math.Max(1, targetCount);
+            var saw = false;
+            foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+            {
+                if (source == null || IsLibraryIntegrationSource(source))
+                {
+                    continue;
+                }
+
+                var values = selector(source);
+                if (filterFeatures)
+                {
+                    values = FilterFeaturesForGamePlatform(game, values);
+                }
+
+                if (!HasStoreValues(values))
+                {
+                    continue;
+                }
+
+                saw = true;
+                if (!source.ListsMatchPluginLanguage)
+                {
+                    return false;
+                }
+
+                count += values.Count(x => !string.IsNullOrWhiteSpace(x));
+                if (count >= target)
+                {
+                    return true;
+                }
+            }
+
+            return saw;
+        }
+
+        private List<string> FirstStoreList(Func<OfficialStoreMetadata, List<string>> selector)
+        {
+            return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && !IsLibraryIntegrationSource(x))
+                .Select(selector)
+                .FirstOrDefault(HasStoreValues) ?? new List<string>();
+        }
+
+        private static bool IsLibraryIntegrationSource(OfficialStoreMetadata source)
+        {
+            var name = source == null ? string.Empty : source.SourceName ?? string.Empty;
+            return name.IndexOf(MetaDataIASettings.SourceOriginIntegration, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool HasStoreValues(List<string> values)
+        {
+            return values != null && values.Any(x => !string.IsNullOrWhiteSpace(x));
+        }
+
         private List<string> FirstOfficialList(Func<OfficialStoreMetadata, List<string>> selector)
         {
             return (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
                 .Select(selector)
                 .Where(x => x != null && x.Any(y => !string.IsNullOrWhiteSpace(y)))
                 .FirstOrDefault() ?? new List<string>();
+        }
+
+        private static List<string> FilterFeaturesForGamePlatform(Game game, IEnumerable<string> features)
+        {
+            var list = (features ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .ToList();
+
+            if (!OfficialStoreDataService.IsPcOrientedGame(game))
+            {
+                return list;
+            }
+
+            return list.Where(x => !OfficialStoreDataService.IsConsoleOnlyXboxFeature(x)).ToList();
         }
 
         private static List<string> ResolveStrictField(List<string> officialValues, List<string> existingValues, string existingMetadataMode, int maxItems)

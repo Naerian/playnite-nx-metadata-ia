@@ -2050,11 +2050,12 @@
                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
                             </Grid.Resources>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="280"/>
                                 <ColumnDefinition Width="72"/>
+                                <ColumnDefinition Width="110"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="72"/>
-                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="160"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -2090,76 +2091,89 @@
 
                             <TextBlock Text="{DynamicResource MTDA_Field}" FontWeight="SemiBold" Margin="8,0,8,0"/>
                             <TextBlock Grid.Column="1" Text="{DynamicResource MTDA_Generate}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold" Margin="4,0"/>
-                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0"/>
+                            <TextBlock Grid.Column="2" Text="{DynamicResource MTDA_Uppercase}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="3" Text="{DynamicResource MTDA_Apply}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="4" Text="{DynamicResource MTDA_Maximum}" FontWeight="SemiBold" Margin="4,0"/>
+                            <TextBlock Grid.Column="5" Text="{DynamicResource MTDA_UseExistingPlayniteValues}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="4,0"/>
 
                             <TextBlock Grid.Row="1" Text="{DynamicResource MTDA_Description}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.GenerateDescription}"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DescriptionApplyMode}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="1" Grid.Column="2" IsChecked="{Binding Settings.UppercaseDescription}"/>
+                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DescriptionApplyMode}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="2" Text="{DynamicResource MTDA_Genres}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding Settings.GenerateGenres}"/>
-                            <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GenresApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Settings.MaxGenres}" Margin="0,0,8,0"/>
-                            <CheckBox Grid.Row="2" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingGenres}"/>
+                            <CheckBox Grid.Row="2" Grid.Column="2" IsChecked="{Binding Settings.UppercaseGenres}"/>
+                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.GenresApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="2" Grid.Column="4" Text="{Binding Settings.MaxGenres}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="2" Grid.Column="5" IsChecked="{Binding Settings.PreferExistingGenres}"/>
 
                             <TextBlock Grid.Row="3" Text="{DynamicResource MTDA_Tags}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Settings.GenerateTags}"/>
-                            <ComboBox Grid.Row="3" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.TagsApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Settings.MaxTags}" Margin="0,0,8,0"/>
-                            <CheckBox Grid.Row="3" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingTags}"/>
+                            <CheckBox Grid.Row="3" Grid.Column="2" IsChecked="{Binding Settings.UppercaseTags}"/>
+                            <ComboBox Grid.Row="3" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.TagsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="3" Grid.Column="4" Text="{Binding Settings.MaxTags}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="3" Grid.Column="5" IsChecked="{Binding Settings.PreferExistingTags}"/>
 
                             <TextBlock Grid.Row="4" Text="{DynamicResource MTDA_Features}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Settings.GenerateFeatures}"/>
-                            <ComboBox Grid.Row="4" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.FeaturesApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Settings.MaxFeatures}" Margin="0,0,8,0"/>
-                            <CheckBox Grid.Row="4" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingFeatures}"/>
+                            <CheckBox Grid.Row="4" Grid.Column="2" IsChecked="{Binding Settings.UppercaseFeatures}"/>
+                            <ComboBox Grid.Row="4" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.FeaturesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="4" Grid.Column="4" Text="{Binding Settings.MaxFeatures}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="4" Grid.Column="5" IsChecked="{Binding Settings.PreferExistingFeatures}"/>
 
                             <TextBlock Grid.Row="5" Text="{DynamicResource MTDA_Developers}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding Settings.GenerateDevelopers}"/>
-                            <ComboBox Grid.Row="5" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DevelopersApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Settings.MaxDevelopers}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="5" Grid.Column="2" IsChecked="{Binding Settings.UppercaseDevelopers}"/>
+                            <ComboBox Grid.Row="5" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.DevelopersApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="5" Grid.Column="4" Text="{Binding Settings.MaxDevelopers}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="6" Text="{DynamicResource MTDA_Publishers}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Settings.GeneratePublishers}"/>
-                            <ComboBox Grid.Row="6" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PublishersApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Settings.MaxPublishers}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="6" Grid.Column="2" IsChecked="{Binding Settings.UppercasePublishers}"/>
+                            <ComboBox Grid.Row="6" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.PublishersApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="6" Grid.Column="4" Text="{Binding Settings.MaxPublishers}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="7" Text="{DynamicResource MTDA_Age}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding Settings.GenerateAgeRatings}"/>
-                            <ComboBox Grid.Row="7" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="7" Grid.Column="3" Text="{Binding Settings.MaxAgeRatings}" Margin="0,0,8,0"/>
-                            <CheckBox Grid.Row="7" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingAgeRatings}"/>
+                            <CheckBox Grid.Row="7" Grid.Column="2" IsChecked="{Binding Settings.UppercaseAgeRatings}"/>
+                            <ComboBox Grid.Row="7" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.AgeRatingsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="7" Grid.Column="4" Text="{Binding Settings.MaxAgeRatings}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="7" Grid.Column="5" IsChecked="{Binding Settings.PreferExistingAgeRatings}"/>
 
                             <TextBlock Grid.Row="8" Text="{DynamicResource MTDA_Region}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding Settings.GenerateRegions}"/>
-                            <ComboBox Grid.Row="8" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RegionsApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="8" Grid.Column="3" Text="{Binding Settings.MaxRegions}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="8" Grid.Column="2" IsChecked="{Binding Settings.UppercaseRegions}"/>
+                            <ComboBox Grid.Row="8" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RegionsApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="8" Grid.Column="4" Text="{Binding Settings.MaxRegions}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="9" Text="{DynamicResource MTDA_Categories}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="9" Grid.Column="1" IsChecked="{Binding Settings.GenerateCategories}"/>
-                            <ComboBox Grid.Row="9" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CategoriesApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Settings.MaxCategories}" Margin="0,0,8,0"/>
-                            <CheckBox Grid.Row="9" Grid.Column="4" IsChecked="{Binding Settings.PreferExistingCategories}"/>
+                            <CheckBox Grid.Row="9" Grid.Column="2" IsChecked="{Binding Settings.UppercaseCategories}"/>
+                            <ComboBox Grid.Row="9" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.CategoriesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="9" Grid.Column="4" Text="{Binding Settings.MaxCategories}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="9" Grid.Column="5" IsChecked="{Binding Settings.PreferExistingCategories}"/>
 
                             <TextBlock Grid.Row="10" Text="{DynamicResource MTDA_SortingName}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="10" Grid.Column="1" IsChecked="{Binding Settings.GenerateSortingName}"/>
-                            <ComboBox Grid.Row="10" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="10" Grid.Column="2" IsChecked="{Binding Settings.UppercaseSortingName}"/>
+                            <ComboBox Grid.Row="10" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SortingNameApplyMode}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="11" Text="{DynamicResource MTDA_Links}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="11" Grid.Column="1" IsChecked="{Binding Settings.GenerateLinks}"/>
-                            <ComboBox Grid.Row="11" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="11" Grid.Column="3" Text="{Binding Settings.MaxLinks}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="11" Grid.Column="2" IsChecked="{Binding Settings.UppercaseLinks}"/>
+                            <ComboBox Grid.Row="11" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.LinksApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="11" Grid.Column="4" Text="{Binding Settings.MaxLinks}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="12" Text="{DynamicResource MTDA_ReleaseDate}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.GenerateReleaseDate}"/>
-                            <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ReleaseDateApplyMode}" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Row="12" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.ReleaseDateApplyMode}" Margin="0,0,8,0"/>
 
                             <TextBlock Grid.Row="13" Text="{DynamicResource MTDA_Series}" Margin="8,0,8,0"/>
                             <CheckBox Grid.Row="13" Grid.Column="1" IsChecked="{Binding Settings.GenerateSeries}"/>
-                            <ComboBox Grid.Row="13" Grid.Column="2" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SeriesApplyMode}" Margin="0,0,8,0"/>
-                            <TextBox Grid.Row="13" Grid.Column="3" Text="{Binding Settings.MaxSeries}" Margin="0,0,8,0"/>
+                            <CheckBox Grid.Row="13" Grid.Column="2" IsChecked="{Binding Settings.UppercaseSeries}"/>
+                            <ComboBox Grid.Row="13" Grid.Column="3" ItemsSource="{Binding Settings.ApplyModeOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.SeriesApplyMode}" Margin="0,0,8,0"/>
+                            <TextBox Grid.Row="13" Grid.Column="4" Text="{Binding Settings.MaxSeries}" Margin="0,0,8,0"/>
 
                         </Grid>
                         </Border>
@@ -2175,6 +2189,9 @@
                                            Style="{StaticResource HintText}"
                                            Margin="0,0,0,8"/>
                                 <TextBlock Text="{DynamicResource MTDA_UseExistingPlayniteValuesHelp}"
+                                           Style="{StaticResource HintText}"
+                                           Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource MTDA_UppercaseHelp}"
                                            Style="{StaticResource HintText}"
                                            Margin="0"/>
                             </StackPanel>

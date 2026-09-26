@@ -30,8 +30,8 @@ namespace MetaDataIAPlugin
                 game.GenreIds = MergeIds(
                     api.Database.Genres,
                     game.GenreIds,
-                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), settings.PreferExistingGenres),
-                    settings.GenresApplyMode,
+                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), false, true),
+                    TermApplyMode(result, "genres", settings.GenresApplyMode),
                     settings.MaxGenres,
                     "genres",
                     settings.Language);
@@ -42,8 +42,8 @@ namespace MetaDataIAPlugin
                 game.TagIds = MergeIds(
                     api.Database.Tags,
                     game.TagIds,
-                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), settings.PreferExistingTags),
-                    settings.TagsApplyMode,
+                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), false, true),
+                    TermApplyMode(result, "tags", settings.TagsApplyMode),
                     settings.MaxTags,
                     "tags",
                     settings.Language);
@@ -54,8 +54,8 @@ namespace MetaDataIAPlugin
                 game.FeatureIds = MergeIds(
                     api.Database.Features,
                     game.FeatureIds,
-                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), settings.PreferExistingFeatures),
-                    settings.FeaturesApplyMode,
+                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), false, true),
+                    TermApplyMode(result, "features", settings.FeaturesApplyMode),
                     settings.MaxFeatures,
                     "features",
                     settings.Language);
@@ -63,22 +63,22 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "developers")) game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), false), settings.DevelopersApplyMode, settings.MaxDevelopers);
+                if (!HasConflict(result, "developers")) game.DeveloperIds = MergeIds(game.DeveloperIds, Ensure(api.Database.Companies, Limit(result.Developers, settings.MaxDevelopers), false, true), settings.DevelopersApplyMode, settings.MaxDevelopers);
             }
 
             if (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "publishers")) game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), false), settings.PublishersApplyMode, settings.MaxPublishers);
+                if (!HasConflict(result, "publishers")) game.PublisherIds = MergeIds(game.PublisherIds, Ensure(api.Database.Companies, Limit(result.Publishers, settings.MaxPublishers), false, true), settings.PublishersApplyMode, settings.MaxPublishers);
             }
 
             if (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.PreferExistingAgeRatings), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
+                if (!HasConflict(result, "ageRatings")) game.AgeRatingIds = MergeIds(game.AgeRatingIds, Ensure(api.Database.AgeRatings, Limit(result.AgeRatings, settings.MaxAgeRatings), settings.PreferExistingAgeRatings, true), settings.AgeRatingsApplyMode, settings.MaxAgeRatings);
             }
 
             if (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip)
             {
-                if (!HasConflict(result, "regions")) game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), false), settings.RegionsApplyMode, settings.MaxRegions);
+                if (!HasConflict(result, "regions")) game.RegionIds = MergeIds(game.RegionIds, Ensure(api.Database.Regions, Limit(result.Regions, settings.MaxRegions), false, true), settings.RegionsApplyMode, settings.MaxRegions);
             }
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
@@ -86,8 +86,8 @@ namespace MetaDataIAPlugin
                 game.CategoryIds = MergeIds(
                     api.Database.Categories,
                     game.CategoryIds,
-                    Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), settings.PreferExistingCategories),
-                    settings.CategoriesApplyMode,
+                    Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), false, true),
+                    TermApplyMode(result, "categories", settings.CategoriesApplyMode),
                     settings.MaxCategories,
                     "categories",
                     settings.Language);
@@ -98,6 +98,7 @@ namespace MetaDataIAPlugin
                 var sortingName = string.IsNullOrWhiteSpace(result.SortingName)
                     ? SortingNameService.Generate(api, game)
                     : result.SortingName;
+                sortingName = TextCapitalization.Apply(sortingName, settings.Language, settings.UppercaseSortingName);
                 if (!string.IsNullOrWhiteSpace(sortingName) && ShouldApplyScalar(settings.SortingNameApplyMode, game.SortingName))
                 {
                     game.SortingName = sortingName;
@@ -121,7 +122,7 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateSeries && !HasConflict(result, "series") && settings.SeriesApplyMode != MetaDataIASettings.ApplySkip)
             {
-                game.SeriesIds = MergeIds(game.SeriesIds, Ensure(api.Database.Series, Limit(result.Series, settings.MaxSeries), false), settings.SeriesApplyMode, settings.MaxSeries);
+                game.SeriesIds = MergeIds(game.SeriesIds, Ensure(api.Database.Series, Limit(result.Series, settings.MaxSeries), false, true), settings.SeriesApplyMode, settings.MaxSeries);
             }
 
             api.Database.Games.Update(game);
@@ -134,31 +135,56 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            var learned = settings.GetVocabularyTerms(settings.Language) ?? new Dictionary<string, List<string>>();
-            List<string> learnedField;
-
-            learned.TryGetValue("genres", out learnedField);
             result.Genres = VocabularyTermNormalizer.NormalizeField(
-                result.Genres, "genres", settings.Language, api.Database.Genres.Select(x => x.Name), learnedField,
-                settings.MaxGenres, settings.PreferExistingGenres);
+                result.Genres, "genres", settings.Language, api.Database.Genres.Select(x => x.Name), null,
+                settings.MaxGenres, false);
 
-            learned.TryGetValue("tags", out learnedField);
             result.Tags = VocabularyTermNormalizer.NormalizeField(
-                result.Tags, "tags", settings.Language, api.Database.Tags.Select(x => x.Name), learnedField,
-                settings.MaxTags, settings.PreferExistingTags);
+                result.Tags, "tags", settings.Language, api.Database.Tags.Select(x => x.Name), null,
+                settings.MaxTags, false);
 
-            learned.TryGetValue("features", out learnedField);
             result.Features = VocabularyTermNormalizer.NormalizeField(
-                result.Features, "features", settings.Language, api.Database.Features.Select(x => x.Name), learnedField,
-                settings.MaxFeatures, settings.PreferExistingFeatures);
+                result.Features, "features", settings.Language, api.Database.Features.Select(x => x.Name), null,
+                settings.MaxFeatures, false);
 
-            learned.TryGetValue("categories", out learnedField);
             result.Categories = VocabularyTermNormalizer.NormalizeField(
-                result.Categories, "categories", settings.Language, api.Database.Categories.Select(x => x.Name), learnedField,
-                settings.MaxCategories, settings.PreferExistingCategories);
+                result.Categories, "categories", settings.Language, api.Database.Categories.Select(x => x.Name), null,
+                settings.MaxCategories, false);
+
+            ApplyUppercase(result, settings);
+        }
+
+        private static void ApplyUppercase(AiMetadataResult result, MetaDataIASettings settings)
+        {
+            var language = settings.Language;
+            result.Description = TextCapitalization.Apply(result.Description, language, settings.UppercaseDescription);
+            result.Genres = TextCapitalization.ApplyList(result.Genres, language, settings.UppercaseGenres);
+            result.Tags = TextCapitalization.ApplyList(result.Tags, language, settings.UppercaseTags);
+            result.Features = TextCapitalization.ApplyList(result.Features, language, settings.UppercaseFeatures);
+            result.Developers = TextCapitalization.ApplyList(result.Developers, language, settings.UppercaseDevelopers);
+            result.Publishers = TextCapitalization.ApplyList(result.Publishers, language, settings.UppercasePublishers);
+            result.AgeRatings = TextCapitalization.ApplyList(result.AgeRatings, language, settings.UppercaseAgeRatings);
+            result.Regions = TextCapitalization.ApplyList(result.Regions, language, settings.UppercaseRegions);
+            result.Categories = TextCapitalization.ApplyList(result.Categories, language, settings.UppercaseCategories);
+            result.Series = TextCapitalization.ApplyList(result.Series, language, settings.UppercaseSeries);
+            if (result.Links != null)
+            {
+                foreach (var link in result.Links)
+                {
+                    if (link != null && !string.IsNullOrWhiteSpace(link.Name))
+                    {
+                        link.Name = TextCapitalization.Apply(link.Name, language, settings.UppercaseLinks);
+                    }
+                }
+            }
         }
 
         private static List<Guid> Ensure<T>(IItemCollection<T> collection, IEnumerable<string> names, bool preferExistingOnly) where T : DatabaseObject
+        {
+            return Ensure(collection, names, preferExistingOnly, false);
+        }
+
+        private static List<Guid> Ensure<T>(IItemCollection<T> collection, IEnumerable<string> names, bool preferExistingOnly, bool matchCase) where T : DatabaseObject
         {
             var ids = new List<Guid>();
             foreach (var name in names ?? Enumerable.Empty<string>())
@@ -169,7 +195,7 @@ namespace MetaDataIAPlugin
                 }
 
                 var trimmed = name.Trim();
-                var existing = collection.FirstOrDefault(x => string.Equals(x.Name, trimmed, StringComparison.OrdinalIgnoreCase));
+                var existing = collection.FirstOrDefault(x => string.Equals(x.Name, trimmed, matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase));
                 if (existing == null && preferExistingOnly)
                 {
                     var matchedName = LibraryNameMatching.FindExisting(trimmed, collection.Select(x => x.Name));
@@ -203,6 +229,17 @@ namespace MetaDataIAPlugin
         {
             return result != null && (result.Conflicts ?? new List<MetadataFieldConflict>())
                 .Any(x => string.Equals(x.Field, field, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string TermApplyMode(AiMetadataResult result, string field, string mode)
+        {
+            if (result != null && result.ResolvedTermFields != null &&
+                result.ResolvedTermFields.Any(x => string.Equals(x, field, StringComparison.OrdinalIgnoreCase)))
+            {
+                return MetaDataIASettings.ApplyOverwrite;
+            }
+
+            return mode;
         }
 
         private static List<Guid> MergeIds(List<Guid> current, IEnumerable<Guid> generated, string mode, int maxItems)

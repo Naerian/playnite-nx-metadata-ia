@@ -1,5 +1,17 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.21
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-26
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.21/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_21.pext
+    Changelog:
+      - 'Official store context is filtered by platform family using Playnite platform SpecificationId: PC games use PC storefronts; console capabilities are no longer applied to PC titles. Steam categories are mapped to Features.'
+      - 'Series sorting names follow the padding and suffix already used by other games in the same series, instead of always using a three-digit number plus the full title.'
+      - 'A game whose platform is not PC, Xbox or PlayStation no longer takes Steam, Epic, Xbox or PlayStation store data, so a ROM is not filled from a PC remake. A leading or trailing "The" still matches the same title. Genres and tags are organized in one small JSON call from the store lists and the real platform; the model cannot add a concept those lists did not contain. Append mode still compares existing and incoming labels. Features stay on the store list and are only sent to the model to translate or to merge an append, unless no source returned them.'
+      - 'Library fields have an Uppercase option after Generate. Checked fields are stored in uppercase. Otherwise English capitalizes each word and other languages capitalize the first letter of each sentence.'
+      - 'Steam app details are read when the response is keyed by a different id than the requested app, so genres and tags are no longer dropped for every game.'
+      - 'Age-restricted Steam pages are opened after the store age check, so user tags are collected for those games as well.'
+      - 'When every store and catalogue returns no genres, tags or features, one small request asks the model for the missing fields using the title, platform, release, companies, description and links already known. The model must match that release and leave a field empty if the game cannot be identified.'
   - Version: 1.4.20
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-25

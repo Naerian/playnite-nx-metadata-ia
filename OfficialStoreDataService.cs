@@ -20,6 +20,8 @@ namespace MetaDataIAPlugin
         public string Description { get; set; }
         public List<string> Genres { get; set; }
         public List<string> Features { get; set; }
+        public List<string> Tags { get; set; }
+        public bool ListsMatchPluginLanguage { get; set; }
         public List<string> Developers { get; set; }
         public List<string> Publishers { get; set; }
         public List<string> Regions { get; set; }
@@ -35,6 +37,7 @@ namespace MetaDataIAPlugin
         {
             Genres = new List<string>();
             Features = new List<string>();
+            Tags = new List<string>();
             Developers = new List<string>();
             Publishers = new List<string>();
             Regions = new List<string>();
@@ -47,6 +50,7 @@ namespace MetaDataIAPlugin
             return !string.IsNullOrWhiteSpace(Description) ||
                    Genres.Count > 0 ||
                    Features.Count > 0 ||
+                   (Tags != null && Tags.Count > 0) ||
                    Developers.Count > 0 ||
                    Publishers.Count > 0 ||
                    Regions.Count > 0 ||
@@ -217,12 +221,289 @@ namespace MetaDataIAPlugin
                 AddSourceForName(order, link);
             }
 
-            AddUnique(order, SourceSteamOfficial);
-            AddUnique(order, SourceXboxStore);
-            AddUnique(order, SourcePsnStore);
-            AddUnique(order, SourceEpicStore);
-            AddUnique(order, SourceEsrb);
-            return order;
+            var allowed = GetAllowedOfficialSources(game);
+            foreach (var source in new[]
+                     {
+                         SourceSteamOfficial,
+                         SourceXboxStore,
+                         SourcePsnStore,
+                         SourceEpicStore,
+                         SourceEsrb
+                     })
+            {
+                if (allowed.Contains(source))
+                {
+                    AddUnique(order, source);
+                }
+            }
+
+            // Drop preferred sources that do not fit this game's platform family
+            // (e.g. an xbox.com link on an Epic PC game must not inject console capabilities).
+            return order.Where(allowed.Contains).ToList();
+        }
+
+        private static HashSet<string> GetAllowedOfficialSources(Game game)
+        {
+            var families = DetectPlatformFamilies(game);
+            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { SourceEsrb };
+            var sourceName = game == null || game.Source == null ? string.Empty : game.Source.Name ?? string.Empty;
+
+            if (families.Count == 0)
+            {
+                // A NES/ROM platform is known, it is just not a desktop storefront.
+                // Leave Steam, Epic, Xbox and PlayStation out so a PC remake is not
+                // applied to the cartridge. No platform at all keeps the broad search.
+                if (!HasOnlyNonDesktopPlatforms(game))
+                {
+                    allowed.Add(SourceSteamOfficial);
+                    allowed.Add(SourceXboxStore);
+                    allowed.Add(SourcePsnStore);
+                    allowed.Add(SourceEpicStore);
+                }
+
+                return allowed;
+            }
+
+            if (families.Contains(PlatformFamily.Pc))
+            {
+                allowed.Add(SourceSteamOfficial);
+                allowed.Add(SourceEpicStore);
+                // Xbox Store only for Xbox/Microsoft library (Game Pass / MS Store PC),
+                // or when the game also has an Xbox console platform.
+                if (families.Contains(PlatformFamily.Xbox) || IsXboxLibrarySource(sourceName))
+                {
+                    allowed.Add(SourceXboxStore);
+                }
+            }
+
+            if (families.Contains(PlatformFamily.Xbox))
+            {
+                allowed.Add(SourceXboxStore);
+            }
+
+            if (families.Contains(PlatformFamily.PlayStation))
+            {
+                allowed.Add(SourcePsnStore);
+            }
+
+            return allowed;
+        }
+
+        private enum PlatformFamily
+        {
+            Pc,
+            Xbox,
+            PlayStation
+        }
+
+        private static HashSet<PlatformFamily> DetectPlatformFamilies(Game game)
+        {
+            var families = new HashSet<PlatformFamily>();
+            if (game != null && game.Platforms != null)
+            {
+                foreach (var platform in game.Platforms)
+                {
+                    var name = platform == null ? string.Empty : platform.Name ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(name))
+                    {
+                        continue;
+                    }
+
+                    var fromSpec = FamilyFromSpecificationId(platform.SpecificationId);
+                    if (fromSpec.HasValue)
+                    {
+                        families.Add(fromSpec.Value);
+                        continue;
+                    }
+
+                    // Custom platforms have no SpecificationId. Name matching is only the fallback.
+                    if (IsPlayStationPlatformName(name))
+                    {
+                        families.Add(PlatformFamily.PlayStation);
+                    }
+                    else if (IsXboxPlatformName(name))
+                    {
+                        families.Add(PlatformFamily.Xbox);
+                    }
+                    else if (IsPcPlatformName(name))
+                    {
+                        families.Add(PlatformFamily.Pc);
+                    }
+                }
+            }
+
+            var sourceName = game == null || game.Source == null ? string.Empty : game.Source.Name ?? string.Empty;
+            if (IsPcLibrarySource(sourceName))
+            {
+                families.Add(PlatformFamily.Pc);
+            }
+            else if (IsXboxLibrarySource(sourceName) && families.Count == 0)
+            {
+                // Xbox library with no platforms yet: treat as Xbox family (PC Game Pass
+                // still gets Xbox Store; console-only capability filtering happens later).
+                families.Add(PlatformFamily.Xbox);
+            }
+            else if (IsPlayStationLibrarySource(sourceName) && families.Count == 0)
+            {
+                families.Add(PlatformFamily.PlayStation);
+            }
+
+            return families;
+        }
+
+        private static PlatformFamily? FamilyFromSpecificationId(string specificationId)
+        {
+            if (string.IsNullOrWhiteSpace(specificationId))
+            {
+                return null;
+            }
+
+            var id = specificationId.Trim().ToLowerInvariant();
+            if (id == "pc_windows" || id == "macintosh" || id == "linux" || id.StartsWith("pc_", StringComparison.Ordinal))
+            {
+                return PlatformFamily.Pc;
+            }
+
+            if (id.StartsWith("xbox", StringComparison.Ordinal))
+            {
+                return PlatformFamily.Xbox;
+            }
+
+            if (id.StartsWith("playstation", StringComparison.Ordinal) ||
+                id.StartsWith("ps_", StringComparison.Ordinal) ||
+                id == "psp" ||
+                id == "psvita")
+            {
+                return PlatformFamily.PlayStation;
+            }
+
+            return null;
+        }
+
+        // Fallback when Platform.SpecificationId is empty (custom or legacy platforms).
+        private static bool IsPcPlatformName(string name)
+        {
+            var value = (name ?? string.Empty).ToLowerInvariant();
+            return value.Contains("windows") ||
+                   value == "pc" ||
+                   value.Contains("pc (") ||
+                   value.Contains("linux") ||
+                   value.Contains("mac") ||
+                   value.Contains("steam deck") ||
+                   value.Contains("steamdeck");
+        }
+
+        // Fallback when Platform.SpecificationId is empty (custom or legacy platforms).
+        private static bool IsXboxPlatformName(string name)
+        {
+            var value = (name ?? string.Empty).ToLowerInvariant();
+            return value.Contains("xbox");
+        }
+
+        // Fallback when Platform.SpecificationId is empty (custom or legacy platforms).
+        private static bool IsPlayStationPlatformName(string name)
+        {
+            var value = (name ?? string.Empty).ToLowerInvariant();
+            return value.Contains("playstation") ||
+                   value.Contains("ps5") ||
+                   value.Contains("ps4") ||
+                   value.Contains("ps3") ||
+                   value.Contains("ps vita") ||
+                   value.Contains("psp");
+        }
+
+        // Fallback when the game has no platform family yet (no platforms, or none recognized).
+        private static bool IsPcLibrarySource(string sourceName)
+        {
+            var value = (sourceName ?? string.Empty).ToLowerInvariant();
+            return value.Contains("steam") ||
+                   value.Contains("epic") ||
+                   value.Contains("gog") ||
+                   value.Contains("battle.net") ||
+                   value.Contains("battlenet") ||
+                   value.Contains("origin") ||
+                   value.Contains("ea app") ||
+                   value.Contains("ubisoft") ||
+                   value.Contains("uplay") ||
+                   value.Contains("itch") ||
+                   value.Contains("amazon") ||
+                   value.Contains("humble");
+        }
+
+        // Fallback when no platform family was detected. Also keeps Xbox Store for an Xbox/Microsoft PC library.
+        private static bool IsXboxLibrarySource(string sourceName)
+        {
+            var value = (sourceName ?? string.Empty).ToLowerInvariant();
+            return value.Contains("xbox") || value.Contains("microsoft");
+        }
+
+        // Fallback when the game has no platform family yet (no platforms, or none recognized).
+        private static bool IsPlayStationLibrarySource(string sourceName)
+        {
+            var value = (sourceName ?? string.Empty).ToLowerInvariant();
+            return value.Contains("playstation") || value.Contains("psn");
+        }
+
+        public static bool HasOnlyNonDesktopPlatforms(Game game)
+        {
+            if (DetectPlatformFamilies(game).Count > 0)
+            {
+                return false;
+            }
+
+            return game != null && game.Platforms != null && game.Platforms.Any(platform =>
+                platform != null &&
+                (!string.IsNullOrWhiteSpace(platform.Name) || !string.IsNullOrWhiteSpace(platform.SpecificationId)));
+        }
+
+        internal static bool IsPcOrientedGame(Game game)
+        {
+            return DetectPlatformFamilies(game).Contains(PlatformFamily.Pc);
+        }
+
+        /// <summary>
+        /// Xbox product capabilities include console marketing labels (Smart Delivery, Series X|S, …).
+        /// Keep those only when the game is treated as an Xbox console title.
+        /// </summary>
+        internal static bool IsConsoleOnlyXboxFeature(string feature)
+        {
+            if (string.IsNullOrWhiteSpace(feature))
+            {
+                return false;
+            }
+
+            var value = feature.Trim().ToLowerInvariant();
+            return value.Contains("smart delivery") ||
+                   value.Contains("xbox series") ||
+                   value.Contains("series x") ||
+                   value.Contains("series s") ||
+                   value.Contains("optimized for xbox") ||
+                   value.Contains("console keyboard") ||
+                   value.Contains("console mouse") ||
+                   value.Contains("xbox cloud") ||
+                   value.Contains("xcloud") ||
+                   value.Contains("xbox one") ||
+                   value.Contains("xbox 360") ||
+                   value.Contains("kinect");
+        }
+
+        private static List<string> FilterXboxFeaturesForGame(Game game, IEnumerable<string> features)
+        {
+            var list = (features ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var families = DetectPlatformFamilies(game);
+            // Pure console Xbox keeps marketing capabilities. Any PC family game drops them
+            // (Epic/Steam/GOG PC and Xbox PC / Game Pass on Windows).
+            if (!families.Contains(PlatformFamily.Pc))
+            {
+                return list;
+            }
+
+            return list.Where(x => !IsConsoleOnlyXboxFeature(x)).ToList();
         }
 
         private static void AddSourceForName(List<string> order, string value)
@@ -284,15 +565,33 @@ namespace MetaDataIAPlugin
             {
                 SourceName = SourceSteamOfficial,
                 StoreUrl = "https://store.steampowered.com/app/" + appId,
-                Title = CleanText((string)data["name"]),
-                Description = CleanHtml((string)data["detailed_description"] ?? (string)data["short_description"]),
+                Title = CleanText(TokenText(data["name"])),
+                Description = CleanHtml(TokenText(data["detailed_description"]) ?? TokenText(data["short_description"])),
                 Genres = ReadNameArray(data["genres"]),
+                // Steam categories are the PC feature list (Single-player, Co-op, Controller, …).
+                Features = ReadNameArray(data["categories"]),
+                Tags = new List<string>(),
+                ListsMatchPluginLanguage = true,
                 Developers = ReadStringArray(data["developers"]),
                 Publishers = ReadStringArray(data["publishers"]),
-                ReleaseDate = data["release_date"] == null ? string.Empty : NormalizeReleaseDate((string)data["release_date"]["date"]),
+                ReleaseDate = data["release_date"] == null ? string.Empty : NormalizeReleaseDate(TokenText(data["release_date"]["date"])),
                 MinimumSystemRequirements = ReadPcRequirement(data["pc_requirements"], "minimum"),
                 RecommendedSystemRequirements = ReadPcRequirement(data["pc_requirements"], "recommended")
             };
+            try
+            {
+                metadata.Tags = await ReadSteamUserTagsAsync(appId, cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                if (cancelToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+            }
+            catch
+            {
+            }
             OfficialStoreContextCache.SetSteam(game, GetStoreLanguage(), metadata);
             return metadata;
         }
@@ -308,7 +607,16 @@ namespace MetaDataIAPlugin
                       "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage()) +
                       "&cc=" + Uri.EscapeDataString(GetCountryCode());
             var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
-            var entry = json[appId] as JObject;
+            return ResolveSteamAppData(json, appId);
+        }
+
+        /// <summary>
+        /// Steam's appdetails object is keyed by an id that is no longer always the requested app id.
+        /// The payload still carries steam_appid for the game that was requested.
+        /// </summary>
+        public static JObject ResolveSteamAppData(JObject json, string appId)
+        {
+            var entry = FindSteamAppEntry(json, appId);
             if (entry == null)
             {
                 return null;
@@ -321,6 +629,58 @@ namespace MetaDataIAPlugin
             }
 
             return entry["data"] as JObject;
+        }
+
+        private static JObject FindSteamAppEntry(JObject json, string appId)
+        {
+            if (json == null || string.IsNullOrWhiteSpace(appId))
+            {
+                return null;
+            }
+
+            var requested = appId.Trim();
+            var direct = json[requested] as JObject;
+            if (direct != null)
+            {
+                return direct;
+            }
+
+            JObject only = null;
+            var count = 0;
+            foreach (var property in json.Properties())
+            {
+                var candidate = property.Value as JObject;
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                count++;
+                only = candidate;
+                var steamAppId = SteamAppIdOf(candidate);
+                if (string.Equals(steamAppId, requested, StringComparison.Ordinal))
+                {
+                    return candidate;
+                }
+            }
+
+            if (count == 1 && only != null && string.IsNullOrEmpty(SteamAppIdOf(only)))
+            {
+                return only;
+            }
+
+            return null;
+        }
+
+        private static string SteamAppIdOf(JObject entry)
+        {
+            var data = entry == null ? null : entry["data"] as JObject;
+            if (data == null || data["steam_appid"] == null || data["steam_appid"].Type == JTokenType.Null)
+            {
+                return string.Empty;
+            }
+
+            return data["steam_appid"].ToString().Trim();
         }
 
         private static bool IsNonGameSteamApp(JObject data)
@@ -599,7 +959,11 @@ namespace MetaDataIAPlugin
                 Title = CleanText((string)product["title"]),
                 Description = CleanText((string)product["description"] ?? (string)product["shortDescription"]),
                 Genres = ReadStringArray(product["categories"]),
-                Features = capabilities == null ? new List<string>() : ReadStringArray(capabilities.Properties().Select(x => x.Value)),
+                Features = FilterXboxFeaturesForGame(
+                    game,
+                    capabilities == null
+                        ? new List<string>()
+                        : ReadStringArray(capabilities.Properties().Select(x => x.Value))),
                 Developers = SplitCompanies((string)product["developerName"]),
                 Publishers = SplitCompanies((string)product["publisherName"]),
                 AgeRating = CombineAgeRating(board, value),
@@ -1011,7 +1375,23 @@ namespace MetaDataIAPlugin
 
         private string GetSteamStoreLanguage()
         {
-            var code = (GetStoreLanguage() ?? "en").Trim().ToLowerInvariant();
+            return ToSteamStoreLanguage(settings == null ? "en" : settings.Language);
+        }
+
+        public static string ToSteamStoreLanguage(string pluginLanguage)
+        {
+            var raw = (pluginLanguage ?? "en").Trim().ToLowerInvariant().Replace('_', '-');
+            if (raw == "pt-br")
+            {
+                return "brazilian";
+            }
+
+            if (raw == "zh-tw" || raw == "zh-hant")
+            {
+                return "tchinese";
+            }
+
+            var code = raw.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "en";
             switch (code)
             {
                 case "es": return "spanish";
@@ -1240,14 +1620,182 @@ namespace MetaDataIAPlugin
             return year.Success ? year.Value : string.Empty;
         }
 
+        private async Task<List<string>> ReadSteamUserTagsAsync(string appId, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(appId))
+            {
+                return new List<string>();
+            }
+
+            var url = "https://store.steampowered.com/app/" + Uri.EscapeDataString(appId) +
+                      "/?l=" + Uri.EscapeDataString(GetSteamStoreLanguage());
+            var html = await GetSteamStorePageAsync(appId, url, cancelToken).ConfigureAwait(false);
+            return ParseSteamAppTags(html).Take(20).ToList();
+        }
+
+        /// <summary>
+        /// Mature Steam pages redirect to an age gate. Cookies alone no longer pass it;
+        /// the store expects a birth date posted to agecheckset before the tags are in the HTML.
+        /// </summary>
+        private static async Task<string> GetSteamStorePageAsync(string appId, string url, CancellationToken cancelToken)
+        {
+            var cookies = new CookieContainer();
+            var store = new Uri("https://store.steampowered.com/");
+            cookies.Add(store, new Cookie("birthtime", "631152000"));
+            cookies.Add(store, new Cookie("lastagecheckage", "1-January-1990"));
+            cookies.Add(store, new Cookie("mature_content", "1"));
+            cookies.Add(store, new Cookie("wants_mature_content", "1"));
+
+            using (var handler = new HttpClientHandler { CookieContainer = cookies, UseCookies = true })
+            using (var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) })
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("MetaDataIAPlugin/1.0");
+                var body = await ReadSteamPageAsync(client, url, cancelToken).ConfigureAwait(false);
+                if (!IsSteamAgeGate(body))
+                {
+                    return body;
+                }
+
+                var sessionId = ExtractSteamSessionId(body);
+                if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(sessionId))
+                {
+                    return string.Empty;
+                }
+
+                using (var form = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("sessionid", sessionId),
+                    new KeyValuePair<string, string>("ageDay", "1"),
+                    new KeyValuePair<string, string>("ageMonth", "January"),
+                    new KeyValuePair<string, string>("ageYear", "1990")
+                }))
+                using (var post = await client.PostAsync("https://store.steampowered.com/agecheckset/app/" + Uri.EscapeDataString(appId) + "/", form, cancelToken).ConfigureAwait(false))
+                {
+                    await post.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }
+
+                body = await ReadSteamPageAsync(client, url, cancelToken).ConfigureAwait(false);
+                return IsSteamAgeGate(body) ? string.Empty : body;
+            }
+        }
+
+        private static async Task<string> ReadSteamPageAsync(HttpClient client, string url, CancellationToken cancelToken)
+        {
+            using (var response = await client.GetAsync(url, cancelToken).ConfigureAwait(false))
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    return string.Empty;
+                }
+
+                return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
+        }
+
+        public static bool IsSteamAgeGate(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+            {
+                return false;
+            }
+
+            return html.IndexOf("app_agegate", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string ExtractSteamSessionId(string html)
+        {
+            var match = Regex.Match(html ?? string.Empty, "g_sessionID\\s*=\\s*\"(?<id>[^\"]+)\"", RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups["id"].Value : string.Empty;
+        }
+
+        public static List<string> ParseSteamAppTags(string html)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return result;
+            }
+
+            var modal = Regex.Match(
+                html,
+                "InitAppTagModal\\s*\\(\\s*\\d+\\s*,\\s*(?<json>\\[.*?\\])\\s*,",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (modal.Success)
+            {
+                try
+                {
+                    foreach (var item in JArray.Parse(modal.Groups["json"].Value).OfType<JObject>())
+                    {
+                        AddSteamTag(result, (string)item["name"]);
+                    }
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                }
+            }
+
+            if (result.Count > 0)
+            {
+                return result;
+            }
+
+            var matches = Regex.Matches(
+                html,
+                "class\\s*=\\s*\"app_tag\"[^>]*>\\s*(?<name>[^<]+?)\\s*<",
+                RegexOptions.IgnoreCase);
+            foreach (Match match in matches)
+            {
+                AddSteamTag(result, match.Groups["name"].Value);
+            }
+
+            return result;
+        }
+
+        private static void AddSteamTag(List<string> result, string raw)
+        {
+            var name = CleanText(WebUtility.HtmlDecode(raw ?? string.Empty));
+            if (string.IsNullOrWhiteSpace(name) || name == "+" ||
+                result.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            result.Add(name);
+        }
+
+        private static string TokenText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return null;
+            }
+
+            return token.Type == JTokenType.String ? (string)token : token.ToString();
+        }
+
         private static List<string> ReadNameArray(JToken token)
         {
-            return (token as JArray ?? new JArray())
-                .OfType<JObject>()
-                .Select(x => CleanText((string)x["description"] ?? (string)x["name"]))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            var result = new List<string>();
+            var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in (token as JArray ?? new JArray()).OfType<JObject>())
+            {
+                var id = TokenText(item["id"]);
+                if (!string.IsNullOrWhiteSpace(id) && !seenIds.Add(id.Trim()))
+                {
+                    continue;
+                }
+
+                var name = CleanText(TokenText(item["description"]) ?? TokenText(item["name"]));
+                if (string.IsNullOrWhiteSpace(name) ||
+                    result.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                result.Add(name);
+            }
+
+            return result;
         }
 
         private static List<string> ReadStringArray(JToken token)

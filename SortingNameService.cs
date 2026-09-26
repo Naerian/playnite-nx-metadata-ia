@@ -37,13 +37,13 @@ namespace MetaDataIAPlugin
                 var verifiedSeries = string.IsNullOrWhiteSpace(verifiedOrder.SeriesName) ? assignedSeries : verifiedOrder.SeriesName;
                 if (!string.IsNullOrWhiteSpace(verifiedSeries))
                 {
-                    return Format(verifiedSeries, verifiedOrder.Order, game.Name);
+                    return Format(api, game, verifiedSeries, verifiedOrder.Order, game.Name);
                 }
             }
 
             if (current.Number > 0)
             {
-                return Format(string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number, game.Name);
+                return Format(api, game, string.IsNullOrWhiteSpace(assignedSeries) ? current.BaseName : assignedSeries, current.Number, game.Name);
             }
 
             if (!string.IsNullOrWhiteSpace(assignedSeries))
@@ -59,7 +59,7 @@ namespace MetaDataIAPlugin
                 .Select(x => Analyze(x.Name))
                 .Any(x => x.Number > 1 && SameBase(x.BaseName, current.BaseName));
 
-            return hasSequels ? Format(current.BaseName, 1, game.Name) : string.Empty;
+            return hasSequels ? Format(api, game, current.BaseName, 1, game.Name) : string.Empty;
         }
 
         public static string GenerateSeriesName(IPlayniteAPI api, Game game)
@@ -144,10 +144,108 @@ namespace MetaDataIAPlugin
             return series == null || string.IsNullOrWhiteSpace(series.Name) ? string.Empty : series.Name.Trim();
         }
 
-        private static string Format(string baseName, int number, string gameName)
+        private static string Format(IPlayniteAPI api, Game game, string baseName, int number, string gameName)
         {
-            var prefix = (baseName ?? string.Empty).Trim() + " " + number.ToString("000", CultureInfo.InvariantCulture);
-            return string.IsNullOrWhiteSpace(gameName) ? prefix : prefix + " - " + gameName.Trim();
+            var siblings = SiblingSortingNames(api, game, baseName);
+            return FormatWithLibraryPattern(baseName, number, gameName, siblings);
+        }
+
+        /// <summary>
+        /// Copies the sorting-name shape already used by the rest of the series
+        /// (pad width and whether the full title is appended). No series-specific rules.
+        /// </summary>
+        internal static string FormatWithLibraryPattern(string baseName, int number, string gameName, IEnumerable<string> siblingSortingNames)
+        {
+            var pattern = InferPattern(baseName, siblingSortingNames);
+            var width = Math.Max(pattern.PadWidth, number.ToString(CultureInfo.InvariantCulture).Length);
+            var prefix = pattern.Prefix.Trim() + " " + number.ToString(new string('0', width), CultureInfo.InvariantCulture);
+            if (!pattern.AppendGameName || string.IsNullOrWhiteSpace(gameName))
+            {
+                return prefix;
+            }
+
+            return prefix + " - " + gameName.Trim();
+        }
+
+        private static List<string> SiblingSortingNames(IPlayniteAPI api, Game game, string seriesName)
+        {
+            if (api == null || api.Database == null || game == null)
+            {
+                return new List<string>();
+            }
+
+            return api.Database.Games
+                .Where(other => other != null && other.Id != game.Id && SharesSeries(game, other, seriesName))
+                .Select(other => other.SortingName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
+                .ToList();
+        }
+
+        private static bool SharesSeries(Game game, Game other, string seriesName)
+        {
+            if (game.SeriesIds != null && other.SeriesIds != null &&
+                game.SeriesIds.Any(id => id != Guid.Empty && other.SeriesIds.Contains(id)))
+            {
+                return true;
+            }
+
+            var otherParts = Analyze(other.Name);
+            return SameBase(otherParts.BaseName, seriesName) || SameBase(otherParts.BaseName, Analyze(game.Name).BaseName);
+        }
+
+        private static SortPattern InferPattern(string baseName, IEnumerable<string> siblingSortingNames)
+        {
+            var samples = new List<SortSample>();
+            foreach (var sortingName in siblingSortingNames ?? Enumerable.Empty<string>())
+            {
+                var sample = ParseSortingName(sortingName);
+                if (sample != null && SameBase(sample.Prefix, baseName))
+                {
+                    samples.Add(sample);
+                }
+            }
+
+            if (samples.Count == 0)
+            {
+                return new SortPattern((baseName ?? string.Empty).Trim(), 2, false);
+            }
+
+            var prefix = samples
+                .GroupBy(x => x.Prefix, StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(x => x.Count())
+                .ThenByDescending(x => x.Key.Length)
+                .First().Key;
+            var padWidth = samples
+                .GroupBy(x => x.PadWidth)
+                .OrderByDescending(x => x.Count())
+                .ThenByDescending(x => x.Key)
+                .First().Key;
+            var appendGameName = samples.Count(x => x.HasSuffix) > samples.Count(x => !x.HasSuffix);
+            return new SortPattern(prefix, padWidth, appendGameName);
+        }
+
+        private static SortSample ParseSortingName(string sortingName)
+        {
+            var match = Regex.Match(
+                (sortingName ?? string.Empty).Trim(),
+                @"^(?<prefix>.+?)\s+(?<digits>0*\d{1,4})(?:\s+-\s+(?<suffix>.+))?$");
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            var digits = match.Groups["digits"].Value;
+            int number;
+            if (!int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out number) || number <= 0)
+            {
+                return null;
+            }
+
+            return new SortSample(
+                match.Groups["prefix"].Value.Trim(),
+                Math.Max(1, digits.Length),
+                match.Groups["suffix"].Success && !string.IsNullOrWhiteSpace(match.Groups["suffix"].Value));
         }
 
         private static bool SameBase(string left, string right)
@@ -237,6 +335,34 @@ namespace MetaDataIAPlugin
             {
                 BaseName = baseName;
                 Number = number;
+            }
+        }
+
+        private class SortPattern
+        {
+            public string Prefix { get; private set; }
+            public int PadWidth { get; private set; }
+            public bool AppendGameName { get; private set; }
+
+            public SortPattern(string prefix, int padWidth, bool appendGameName)
+            {
+                Prefix = prefix;
+                PadWidth = Math.Max(1, padWidth);
+                AppendGameName = appendGameName;
+            }
+        }
+
+        private class SortSample
+        {
+            public string Prefix { get; private set; }
+            public int PadWidth { get; private set; }
+            public bool HasSuffix { get; private set; }
+
+            public SortSample(string prefix, int padWidth, bool hasSuffix)
+            {
+                Prefix = prefix;
+                PadWidth = padWidth;
+                HasSuffix = hasSuffix;
             }
         }
     }

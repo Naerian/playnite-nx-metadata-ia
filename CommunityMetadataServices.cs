@@ -24,7 +24,7 @@ namespace MetaDataIAPlugin
             if (game == null || string.IsNullOrWhiteSpace(game.Name)) return null;
             var request = new
             {
-                filters = new object[] { "search", "=", game.Name.Trim() },
+                filters = new object[] { "search", "=", TitleMatchingService.SearchTitle(game.Name) },
                 fields = "title,alttitle,description,released,developers{name},tags{name,category}",
                 results = 10,
                 sort = "searchrank"
@@ -42,10 +42,7 @@ namespace MetaDataIAPlugin
                 Title = TokenText(item["title"]),
                 Description = StripVndbMarkup(TokenText(item["description"])),
                 Developers = Names(item.SelectTokens("developers[*].name")),
-                // VNDB tags are useful factual context for the model, but are not
-                // automatically treated as Playnite tags. Features is the existing
-                // structured-context channel for that supplemental information.
-                Features = Names(item.SelectTokens("tags[*].name")).Take(12).ToList(),
+                Tags = Names(item.SelectTokens("tags[*].name")).Take(12).ToList(),
                 ReleaseDate = TokenText(item["released"]),
                 Links = string.IsNullOrWhiteSpace(id) ? new List<Link>() : new List<Link> { new Link("VNDB", "https://vndb.org/" + id) },
                 IsExactMatch = true
@@ -96,13 +93,7 @@ namespace MetaDataIAPlugin
 
         private static bool Exact(string title, params string[] candidates)
         {
-            var expected = Normalize(title);
-            return !string.IsNullOrWhiteSpace(expected) && candidates.Any(x => string.Equals(expected, Normalize(x), StringComparison.Ordinal));
-        }
-
-        private static string Normalize(string value)
-        {
-            return new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+            return candidates.Any(x => TitleMatchingService.IsReliableMatch(title, x));
         }
 
         // Newtonsoft throws "Can not convert Object to String" on (string)JObject.
@@ -137,18 +128,53 @@ namespace MetaDataIAPlugin
         public async Task<OfficialStoreMetadata> GetContextAsync(Game game, CancellationToken cancellationToken)
         {
             if (game == null || string.IsNullOrWhiteSpace(game.Name)) return null;
-            var search = await GetJsonAsync(Api + "?action=wbsearchentities&format=json&language=en&type=item&limit=10&search=" + Uri.EscapeDataString(game.Name.Trim()), cancellationToken).ConfigureAwait(false);
-            // wbsearchentities returns match as an object { type, language, text }, not a string.
-            var result = search == null ? null : search["search"].OfType<JObject>()
-                .FirstOrDefault(x => Exact(game.Name, TokenText(x["label"]), TokenText(x["match"]), TokenText(x.SelectToken("match.text"))));
-            var id = result == null ? null : TokenText(result["id"]);
-            if (string.IsNullOrWhiteSpace(id)) return null;
+            var title = TitleMatchingService.SearchTitle(game.Name);
+            var metadata = await FindVideoGameAsync(game, title, cancellationToken).ConfigureAwait(false);
+            if (metadata != null || title.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
+            {
+                return metadata;
+            }
 
+            return await FindVideoGameAsync(game, "The " + title, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<OfficialStoreMetadata> FindVideoGameAsync(Game game, string searchTitle, CancellationToken cancellationToken)
+        {
+            var search = await GetJsonAsync(Api + "?action=wbsearchentities&format=json&language=en&type=item&limit=10&search=" + Uri.EscapeDataString(searchTitle ?? string.Empty), cancellationToken).ConfigureAwait(false);
+            var hits = search == null ? null : search["search"] as JArray;
+            var ids = hits == null
+                ? new List<string>()
+                : hits.OfType<JObject>()
+                    .Where(x => Exact(game.Name, TokenText(x["label"]), TokenText(x["match"]), TokenText(x.SelectToken("match.text"))))
+                    .Select(x => TokenText(x["id"]))
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            foreach (var id in ids)
+            {
+                var metadata = await ReadVideoGameAsync(game, id, cancellationToken).ConfigureAwait(false);
+                if (metadata != null)
+                {
+                    return metadata;
+                }
+            }
+
+            return null;
+        }
+
+        private async Task<OfficialStoreMetadata> ReadVideoGameAsync(Game game, string id, CancellationToken cancellationToken)
+        {
             var entityRoot = await GetJsonAsync(Api + "?action=wbgetentities&format=json&props=labels|descriptions|claims&languages=en|es&ids=" + Uri.EscapeDataString(id), cancellationToken).ConfigureAwait(false);
             var entity = entityRoot == null ? null : entityRoot.SelectToken("entities." + id) as JObject;
             if (entity == null || !IsVideoGame(entity)) return null;
 
-            var labels = await GetLabelsAsync(EntityIds(entity, "P178").Concat(EntityIds(entity, "P123")).Concat(EntityIds(entity, "P136")).Concat(EntityIds(entity, "P179")), cancellationToken).ConfigureAwait(false);
+            var platformIds = EntityIds(entity, "P400").ToList();
+            var labels = await GetLabelsAsync(EntityIds(entity, "P178").Concat(EntityIds(entity, "P123")).Concat(EntityIds(entity, "P136")).Concat(EntityIds(entity, "P179")).Concat(platformIds), cancellationToken).ConfigureAwait(false);
+            var platformLabels = platformIds.Select(platformId => labels.ContainsKey(platformId) ? labels[platformId] : null).ToList();
+            var names = game == null || game.Platforms == null ? Enumerable.Empty<string>() : game.Platforms.Select(x => x == null ? null : x.Name);
+            var specifications = game == null || game.Platforms == null ? Enumerable.Empty<string>() : game.Platforms.Select(x => x == null ? null : x.SpecificationId);
+            if (!TitleMatchingService.PlatformLabelsFit(names, specifications, platformLabels)) return null;
+
             var title = Label(entity, "en") ?? Label(entity, "es");
             var description = Description(entity, "en") ?? Description(entity, "es");
             var url = FirstStringClaim(entity, "P856");
@@ -256,13 +282,7 @@ namespace MetaDataIAPlugin
 
         private static bool Exact(string title, params string[] candidates)
         {
-            var expected = Normalize(title);
-            return !string.IsNullOrWhiteSpace(expected) && candidates.Any(x => string.Equals(expected, Normalize(x), StringComparison.Ordinal));
-        }
-
-        private static string Normalize(string value)
-        {
-            return new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+            return candidates.Any(x => TitleMatchingService.IsReliableMatch(title, x));
         }
 
         // Newtonsoft throws "Can not convert Object to String" on (string)JObject.

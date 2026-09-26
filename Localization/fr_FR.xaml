@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">Champ</sys:String>
     <sys:String x:Key="MTDA_Get">Obtenir</sys:String>
     <sys:String x:Key="MTDA_Generate">Générer</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Majuscules</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Si coché, le champ est tout en majuscules. Sinon, seule la première lettre de chaque phrase l'est, selon la langue du plugin.</sys:String>
     <sys:String x:Key="MTDA_Apply">Appliquer</sys:String>
     <sys:String x:Key="MTDA_Format">Format et résolution de sortie</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">Le format et la résolution sélectionnés définissent le fichier final enregistré par Metadata AI. Les candidats peuvent avoir d'autres résolutions d'origine : les images sont redimensionnées et, si le rapport change, recadrées depuis le centre.</sys:String>

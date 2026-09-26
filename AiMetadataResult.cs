@@ -26,6 +26,7 @@ namespace MetaDataIAPlugin
     {
         public List<MetadataFieldProvenance> Provenance { get; set; }
         public List<MetadataFieldConflict> Conflicts { get; set; }
+        public List<string> ResolvedTermFields { get; set; }
         public string Short { get; set; }
         public string Synopsis { get; set; }
         public string Premise { get; set; }
@@ -59,6 +60,7 @@ namespace MetaDataIAPlugin
         {
             Provenance = new List<MetadataFieldProvenance>();
             Conflicts = new List<MetadataFieldConflict>();
+            ResolvedTermFields = new List<string>();
             Features = new List<string>();
             Genres = new List<string>();
             Tags = new List<string>();

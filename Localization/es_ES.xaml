@@ -161,6 +161,8 @@
     <sys:String x:Key="MTDA_Field">Campo</sys:String>
     <sys:String x:Key="MTDA_Get">Obtener</sys:String>
     <sys:String x:Key="MTDA_Generate">Generar</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Mayúsculas</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Si está marcado, ese campo se guarda todo en mayúsculas. Si no, se usa la capitalización del idioma: en inglés cada palabra, en el resto solo la primera letra de cada frase.</sys:String>
     <sys:String x:Key="MTDA_Apply">Aplicar</sys:String>
     <sys:String x:Key="MTDA_Format">Formato y resolución de salida</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">El formato y la resolución seleccionados definen el archivo final que guardará Metadata AI. Los candidatos pueden tener otras resoluciones originales: las imágenes se redimensionan y, si cambia la proporción, se recortan desde el centro.</sys:String>
@@ -502,7 +504,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_LoadMoreMedia">Cargar más (quedan {0})</sys:String>
     <sys:String x:Key="MTDA_AdvancedMode">Modo avanzado</sys:String>
     <sys:String x:Key="MTDA_VocabularyMemory">Memoria local de vocabulario</sys:String>
-    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Terminos reutilizables aprendidos de los metadatos aplicados. Formato: idioma.campo=valor; valor. Ejemplo: es.tags=Disparos; Cooperativo. Edita este texto para unir variantes o forzar tus terminos preferidos.</sys:String>
+    <sys:String x:Key="MTDA_VocabularyMemoryHelp">Texto guardado de versiones anteriores. Ya no se aprende ni se envia al modelo. Los nombres los decide la tienda y, si ya existe el mismo texto, la biblioteca de Playnite.</sys:String>
     <sys:String x:Key="MTDA_OpenInBrowser">Abrir en navegador</sys:String>
     <sys:String x:Key="MTDA_Discard">Descartar</sys:String>
     <sys:String x:Key="MTDA_MediaDiagnosticsTitle">Diagnostico por fuente:</sys:String>

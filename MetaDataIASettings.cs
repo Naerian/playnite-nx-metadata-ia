@@ -169,6 +169,18 @@ namespace MetaDataIAPlugin
         private bool generateLinks = false;
         private bool generateReleaseDate = true;
         private bool generateSeries = true;
+        private bool uppercaseDescription = false;
+        private bool uppercaseGenres = false;
+        private bool uppercaseTags = false;
+        private bool uppercaseFeatures = false;
+        private bool uppercaseDevelopers = false;
+        private bool uppercasePublishers = false;
+        private bool uppercaseAgeRatings = false;
+        private bool uppercaseRegions = false;
+        private bool uppercaseCategories = false;
+        private bool uppercaseSortingName = false;
+        private bool uppercaseLinks = false;
+        private bool uppercaseSeries = false;
         private string descriptionApplyMode = ApplyEmptyOnly;
         private string genresApplyMode = ApplyAppend;
         private string tagsApplyMode = ApplyAppend;
@@ -465,6 +477,18 @@ namespace MetaDataIAPlugin
         public bool GenerateLinks { get { return generateLinks; } set { SetValue(ref generateLinks, value); } }
         public bool GenerateReleaseDate { get { return generateReleaseDate; } set { SetValue(ref generateReleaseDate, value); } }
         public bool GenerateSeries { get { return generateSeries; } set { SetValue(ref generateSeries, value); } }
+        public bool UppercaseDescription { get { return uppercaseDescription; } set { SetValue(ref uppercaseDescription, value); } }
+        public bool UppercaseGenres { get { return uppercaseGenres; } set { SetValue(ref uppercaseGenres, value); } }
+        public bool UppercaseTags { get { return uppercaseTags; } set { SetValue(ref uppercaseTags, value); } }
+        public bool UppercaseFeatures { get { return uppercaseFeatures; } set { SetValue(ref uppercaseFeatures, value); } }
+        public bool UppercaseDevelopers { get { return uppercaseDevelopers; } set { SetValue(ref uppercaseDevelopers, value); } }
+        public bool UppercasePublishers { get { return uppercasePublishers; } set { SetValue(ref uppercasePublishers, value); } }
+        public bool UppercaseAgeRatings { get { return uppercaseAgeRatings; } set { SetValue(ref uppercaseAgeRatings, value); } }
+        public bool UppercaseRegions { get { return uppercaseRegions; } set { SetValue(ref uppercaseRegions, value); } }
+        public bool UppercaseCategories { get { return uppercaseCategories; } set { SetValue(ref uppercaseCategories, value); } }
+        public bool UppercaseSortingName { get { return uppercaseSortingName; } set { SetValue(ref uppercaseSortingName, value); } }
+        public bool UppercaseLinks { get { return uppercaseLinks; } set { SetValue(ref uppercaseLinks, value); } }
+        public bool UppercaseSeries { get { return uppercaseSeries; } set { SetValue(ref uppercaseSeries, value); } }
         public string DescriptionApplyMode { get { return descriptionApplyMode; } set { SetValue(ref descriptionApplyMode, value); } }
         public string GenresApplyMode { get { return genresApplyMode; } set { SetValue(ref genresApplyMode, value); } }
         public string TagsApplyMode { get { return tagsApplyMode; } set { SetValue(ref tagsApplyMode, value); } }
@@ -1010,25 +1034,7 @@ namespace MetaDataIAPlugin
 
         public void LearnVocabulary(string language, AiMetadataResult result)
         {
-            if (result == null)
-            {
-                return;
-            }
-
-            var code = NormalizeLanguageCode(language);
-            var all = ParseVocabularyMemory();
-            Dictionary<string, List<string>> byField;
-            if (!all.TryGetValue(code, out byField))
-            {
-                byField = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-                all[code] = byField;
-            }
-
-            AddVocabularyTerms(byField, "genres", result.Genres, 120);
-            AddVocabularyTerms(byField, "tags", result.Tags, 200);
-            AddVocabularyTerms(byField, "features", result.Features, 200);
-            AddVocabularyTerms(byField, "categories", result.Categories, 120);
-            VocabularyMemory = FormatVocabularyMemory(all);
+            // Kept so existing settings text is not wiped. Generation no longer reads or extends it.
         }
 
         private Dictionary<string, Dictionary<string, List<string>>> ParseVocabularyMemory()

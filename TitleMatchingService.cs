@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
 {
-    internal static class TitleMatchingService
+    public static class TitleMatchingService
     {
         public static bool IsReliableMatch(string expected, string candidate)
         {
@@ -16,9 +16,73 @@ namespace MetaDataIAPlugin
                 return false;
             }
 
-            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase) ||
-                   HasOnlyAllowedStoreSuffix(left, right) ||
-                   HasOnlyAllowedStoreSuffix(right, left);
+            var comparableLeft = WithoutLeadingArticle(left);
+            var comparableRight = WithoutLeadingArticle(right);
+            return string.Equals(comparableLeft, comparableRight, StringComparison.OrdinalIgnoreCase) ||
+                   HasOnlyAllowedStoreSuffix(comparableLeft, comparableRight) ||
+                   HasOnlyAllowedStoreSuffix(comparableRight, comparableLeft);
+        }
+
+        /// <summary>
+        /// A store label fits the game when they share a platform token
+        /// (nintendo, windows). No shared token means a different release.
+        /// Missing platform data does not reject the label.
+        /// </summary>
+        public static bool PlatformLabelsFit(IEnumerable<string> gameNames, IEnumerable<string> specificationIds, IEnumerable<string> storeLabels)
+        {
+            var gameTokens = PlatformTokens(gameNames).Concat(PlatformTokens(specificationIds)).Distinct(StringComparer.Ordinal).ToList();
+            if (gameTokens.Count == 0)
+            {
+                return true;
+            }
+
+            var labels = (storeLabels ?? Enumerable.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+            if (labels.Count == 0)
+            {
+                return true;
+            }
+
+            var storeTokens = PlatformTokens(labels).Distinct(StringComparer.Ordinal).ToList();
+            if (storeTokens.Count == 0)
+            {
+                return true;
+            }
+
+            return gameTokens.Any(token => storeTokens.Contains(token));
+        }
+
+        private static IEnumerable<string> PlatformTokens(IEnumerable<string> values)
+        {
+            foreach (var value in values ?? Enumerable.Empty<string>())
+            {
+                foreach (var token in NormalizeTitle(value).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (token.Length >= 3)
+                    {
+                        yield return token;
+                    }
+                }
+            }
+        }
+
+        private static string WithoutLeadingArticle(string normalized)
+        {
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return normalized ?? string.Empty;
+            }
+
+            if (normalized.StartsWith("the ", StringComparison.Ordinal))
+            {
+                normalized = normalized.Substring(4);
+            }
+
+            if (normalized.EndsWith(" the", StringComparison.Ordinal))
+            {
+                normalized = normalized.Substring(0, normalized.Length - 4).Trim();
+            }
+
+            return normalized;
         }
 
         public static List<string> BuildAliases(string value)
@@ -52,7 +116,31 @@ namespace MetaDataIAPlugin
                 @"\s*\b(?:hd|remastered|remaster|remake|definitive|enhanced|anniversary|director'?s cut)\b.*$",
                 string.Empty,
                 RegexOptions.IgnoreCase));
+
+            var stripped = title;
+            string previous;
+            do
+            {
+                previous = stripped;
+                stripped = Regex.Replace(
+                    stripped,
+                    @"\s*[\[\(]([^\]\)]{1,40})[\]\)]\s*$",
+                    match => IsLibraryDecoration(match.Groups[1].Value) ? string.Empty : match.Value,
+                    RegexOptions.IgnoreCase).Trim();
+            }
+            while (!string.Equals(stripped, previous, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(stripped));
+
+            AddAlias(result, stripped);
             return result;
+        }
+
+        public static string SearchTitle(string value)
+        {
+            var best = BuildAliases(value)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .OrderBy(x => x.Length)
+                .FirstOrDefault();
+            return string.IsNullOrWhiteSpace(best) ? (value ?? string.Empty).Trim() : best.Trim();
         }
 
         public static bool IsOrdinalVariant(string expected, string candidate)
@@ -135,17 +223,58 @@ namespace MetaDataIAPlugin
                 "x",
                 "s",
                 "windows",
-                "pc"
+                "pc",
+                "usa",
+                "europe",
+                "japan",
+                "world",
+                "asia",
+                "korea",
+                "australia",
+                "brazil",
+                "spain",
+                "france",
+                "germany",
+                "italy",
+                "canada",
+                "uk",
+                "pal",
+                "ntsc",
+                "en",
+                "fr",
+                "de",
+                "es",
+                "it",
+                "ja",
+                "proto",
+                "beta",
+                "demo",
+                "unl"
             };
 
             return suffix
                 .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(x => !string.Equals(x, "the", StringComparison.Ordinal))
                 .All(x => allowed.Contains(x));
         }
 
         private static List<string> Tokens(string value)
         {
             return NormalizeTitle(value).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+
+        private static bool IsLibraryDecoration(string inner)
+        {
+            var parts = (inner ?? string.Empty).Split(new[] { ',', '/', '+' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+            {
+                return false;
+            }
+
+            return parts.All(part => Regex.IsMatch(
+                part.Trim(),
+                @"^(usa|u\.s\.a|europe|japan|world|asia|korea|australia|brazil|spain|france|germany|italy|netherlands|sweden|canada|uk|pal|ntsc|en|fr|de|es|it|ja|ko|zh|pt|nl|sv|proto|beta|demo|sample|unl|pirate|rev(\s*[a-z0-9])?|v\d+(\.\d+)?|disc\s*\d+|b\d*|!)$",
+                RegexOptions.IgnoreCase));
         }
 
         private static bool IsOrdinalToken(string value)

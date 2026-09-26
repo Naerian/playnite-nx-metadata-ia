@@ -152,6 +152,8 @@
     <sys:String x:Key="MTDA_Field">Поле</sys:String>
     <sys:String x:Key="MTDA_Get">Получать</sys:String>
     <sys:String x:Key="MTDA_Generate">Генерировать</sys:String>
+    <sys:String x:Key="MTDA_Uppercase">Прописные</sys:String>
+    <sys:String x:Key="MTDA_UppercaseHelp">Если включено, поле пишется прописными. Иначе прописная только первая буква каждого предложения, по языку плагина.</sys:String>
     <sys:String x:Key="MTDA_Apply">Применять</sys:String>
     <sys:String x:Key="MTDA_Format">Формат и разрешение вывода</sys:String>
     <sys:String x:Key="MTDA_OutputFormatHelp">Выбранные формат и разрешение определяют итоговый файл, сохраняемый Metadata AI. Исходное разрешение кандидатов может отличаться: изображения масштабируются, а при изменении соотношения сторон обрезаются по центру.</sys:String>

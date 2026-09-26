@@ -30,10 +30,12 @@ namespace MetaDataIAPlugin
             var token = await GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(token)) return null;
 
-            var title = Escape(game.Name.Trim());
-            var body = "search \"" + title + "\"; fields name,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,franchises.name,collections.name,websites.category,websites.url,age_ratings.category,age_ratings.rating,age_ratings.organization.name,age_ratings.rating_category.rating; limit 5;";
+            var title = Escape(TitleMatchingService.SearchTitle(game.Name));
+            var body = "search \"" + title + "\"; fields name,first_release_date,genres.name,themes.name,keywords.name,game_modes.name,platforms.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,franchises.name,collections.name,websites.category,websites.url,age_ratings.category,age_ratings.rating,age_ratings.organization.name,age_ratings.rating_category.rating; limit 5;";
             var matches = await PostAsync("games", body, token, cancellationToken).ConfigureAwait(false);
-            var selected = matches.OfType<JObject>().FirstOrDefault(x => IsExactTitleMatch(game.Name, (string)x["name"]));
+            var selected = matches.OfType<JObject>()
+                .Where(x => IsExactTitleMatch(game.Name, (string)x["name"]))
+                .FirstOrDefault(x => PlatformsFit(game, x));
             if (selected == null) return null;
 
             var developers = ReadCompanies(selected, "developer");
@@ -48,6 +50,10 @@ namespace MetaDataIAPlugin
                 SourceName = "IGDB",
                 Title = (string)selected["name"],
                 Genres = ReadNames(selected["genres"]),
+                Features = ReadNames(selected["game_modes"]),
+                Tags = ReadNames(selected["themes"]).Concat(ReadNames(selected["keywords"])).Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList(),
+                ListsMatchPluginLanguage = settings != null &&
+                    (settings.Language ?? "en").Trim().StartsWith("en", StringComparison.OrdinalIgnoreCase),
                 Developers = developers,
                 Publishers = publishers,
                 AgeRating = ReadAgeRating(selected["age_ratings"]),
@@ -208,9 +214,18 @@ namespace MetaDataIAPlugin
 
         private static bool IsExactTitleMatch(string gameName, string candidate)
         {
-            var left = NormalizeTitle(gameName);
-            var right = NormalizeTitle(candidate);
-            return !string.IsNullOrWhiteSpace(left) && string.Equals(left, right, StringComparison.Ordinal);
+            return TitleMatchingService.IsReliableMatch(gameName, candidate);
+        }
+
+        private static bool PlatformsFit(Game game, JObject match)
+        {
+            var names = game == null || game.Platforms == null
+                ? Enumerable.Empty<string>()
+                : game.Platforms.Select(x => x == null ? null : x.Name);
+            var specifications = game == null || game.Platforms == null
+                ? Enumerable.Empty<string>()
+                : game.Platforms.Select(x => x == null ? null : x.SpecificationId);
+            return TitleMatchingService.PlatformLabelsFit(names, specifications, ReadNames(match == null ? null : match["platforms"]));
         }
 
         private static string NormalizeTitle(string value)
