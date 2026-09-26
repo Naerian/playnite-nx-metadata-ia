@@ -15,6 +15,25 @@ namespace MetaDataIAPlugin
     {
         public static string Apply(string value, string language, bool uppercase)
         {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value ?? string.Empty;
+            }
+
+            // Leave user prefixes like "[MAI]" untouched; only case the label body.
+            string marker;
+            string separator;
+            string body;
+            if (VocabularyTermNormalizer.TrySplitLeadingMarker(value, out marker, out separator, out body))
+            {
+                return marker + separator + ApplyBody(body, language, uppercase);
+            }
+
+            return ApplyBody(value, language, uppercase);
+        }
+
+        private static string ApplyBody(string value, string language, bool uppercase)
+        {
             if (uppercase)
             {
                 return ToUpper(value, language);

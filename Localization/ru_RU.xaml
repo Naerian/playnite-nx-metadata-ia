@@ -94,7 +94,7 @@
     <sys:String x:Key="MTDA_SourceHintIgn">Verified IGN metadata, covers and promo backgrounds.</sys:String>
     <sys:String x:Key="MTDA_SourceHintVndb">Specialist factual data for visual novels.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWikidata">Community factual fallback for release and companies.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintIgdb">IGDB covers, artworks and structured series data.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintIgdb">IGDB genres, themes, series data, covers and artworks.</sys:String>
     <sys:String x:Key="MTDA_TemplateDefaultStatus">По умолчанию</sys:String>
     <sys:String x:Key="MTDA_TemplateModifiedStatus">Изменено</sys:String>
     <sys:String x:Key="MTDA_TemplateCustomStatus">Пользовательский</sys:String>

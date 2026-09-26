@@ -75,7 +75,64 @@ namespace MetaDataIAPlugin
         public static string CleanTerm(string value)
         {
             var text = Regex.Replace(value ?? string.Empty, @"\s+", " ").Trim();
-            text = text.Trim(' ', '.', ';', ':', '-', '/', '\\', '(', ')', '[', ']', '{', '}', '"', '\'');
+            // Keep user prefixes like "[MAI] Open world". Only unwrap when the whole
+            // term is wrapped in one pair of quotes or brackets: "Action", (Indie), [RPG].
+            string marker;
+            string body;
+            string separator;
+            if (TrySplitLeadingMarker(text, out marker, out separator, out body))
+            {
+                body = TrimDecorativeEdges(body);
+                return string.IsNullOrWhiteSpace(body) ? marker : marker + separator + body;
+            }
+
+            return TrimDecorativeEdges(text);
+        }
+
+        /// <summary>
+        /// Splits a leading "[MAI]" / "(meta)" / "{ai}" marker from the rest of the label.
+        /// Returns false when the whole value is only the wrapped term (unwrap that instead).
+        /// </summary>
+        public static bool TrySplitLeadingMarker(string value, out string marker, out string separator, out string body)
+        {
+            marker = string.Empty;
+            separator = string.Empty;
+            body = string.Empty;
+            var text = value ?? string.Empty;
+            var match = Regex.Match(text, @"^(?<marker>\[[^\]]+\]|\([^\)]+\)|\{[^\}]+\})(?<sep>\s*)(?<body>.+)$");
+            if (!match.Success)
+            {
+                return false;
+            }
+
+            marker = match.Groups["marker"].Value;
+            separator = match.Groups["sep"].Value;
+            body = match.Groups["body"].Value;
+            return !string.IsNullOrWhiteSpace(body);
+        }
+
+        private static string TrimDecorativeEdges(string value)
+        {
+            var text = (value ?? string.Empty).Trim();
+            // Whole-term wrappers only (balanced), then leftover edge punctuation.
+            while (text.Length >= 2)
+            {
+                var first = text[0];
+                var last = text[text.Length - 1];
+                if ((first == '"' && last == '"') ||
+                    (first == '\'' && last == '\'') ||
+                    (first == '(' && last == ')') ||
+                    (first == '[' && last == ']') ||
+                    (first == '{' && last == '}'))
+                {
+                    text = text.Substring(1, text.Length - 2).Trim();
+                    continue;
+                }
+
+                break;
+            }
+
+            text = text.Trim(' ', '.', ';', ':', '-', '/', '\\', '"', '\'');
             return Regex.Replace(text, @"\s+", " ").Trim();
         }
     }

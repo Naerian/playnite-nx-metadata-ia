@@ -108,18 +108,30 @@ namespace MetaDataIAPlugin
                 .Take(settings.MaxFeatures)
                 .ToList();
             Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty);
-            Tags = CleanList(Tags, settings.MaxTags, blacklist, settings.TagPrefix);
+            // Prefixes are applied after casing so "[MAI]" is not title-cased or stripped.
+            Tags = CleanList(Tags, settings.MaxTags, blacklist, string.Empty);
             Developers = CleanList(Developers, settings.MaxDevelopers, blacklist, string.Empty);
             Publishers = CleanList(Publishers, settings.MaxPublishers, blacklist, string.Empty);
             AgeRatings = CleanList(AgeRatings, settings.MaxAgeRatings, blacklist, string.Empty);
             Regions = CleanList(Regions, settings.MaxRegions, blacklist, string.Empty);
-            Categories = CleanList(Categories, settings.MaxCategories, blacklist, settings.CategoryPrefix);
+            Categories = CleanList(Categories, settings.MaxCategories, blacklist, string.Empty);
             Links = CleanLinks(Links, settings.MaxLinks);
             ReleaseDate = Clean(ReleaseDate);
             Series = CleanList(Series, settings.MaxSeries, blacklist, string.Empty);
             AddReliableSourceLinks(game, settings);
             EnsureFeatureFallback(settings, game);
             RefreshDescription(settings, game);
+        }
+
+        public void ApplyConfiguredPrefixes(MetaDataIASettings settings)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            Tags = ApplyPrefixList(Tags, settings.TagPrefix);
+            Categories = ApplyPrefixList(Categories, settings.CategoryPrefix);
         }
 
         public void RefreshDescription(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
@@ -572,6 +584,20 @@ namespace MetaDataIAPlugin
                 .Select(x => AddPrefix(x, prefix))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(maxItems)
+                .ToList();
+        }
+
+        private static List<string> ApplyPrefixList(IEnumerable<string> values, string prefix)
+        {
+            if (values == null)
+            {
+                return new List<string>();
+            }
+
+            return values
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => AddPrefix(x, prefix))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 

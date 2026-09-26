@@ -152,6 +152,7 @@ namespace MetaDataIAPlugin
                 settings.MaxCategories, false);
 
             ApplyUppercase(result, settings);
+            result.ApplyConfiguredPrefixes(settings);
         }
 
         private static void ApplyUppercase(AiMetadataResult result, MetaDataIASettings settings)

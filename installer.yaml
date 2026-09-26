@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.23
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-26
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.23/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_23.pext
+    Changelog:
+      - 'Tag and category prefixes keep brackets and casing as typed (for example [MAI]). Prefixes are applied after capitalization, and Uppercase only affects the label body.'
+      - 'When IGDB metadata is enabled, IGDB genres and themes are always fetched as enrichment alongside store lists (not only when those lists are short). Steam Action/Adventure can merge with IGDB Shooter and Science fiction before the AI organises them.'
+      - 'Genres, tags and features from English sources such as IGDB are translated into the plugin language (for example Shooter to Disparos in Spanish). Mixed Steam+IGDB lists no longer skip translation when Steam alone was already localised.'
   - Version: 1.4.22
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-26

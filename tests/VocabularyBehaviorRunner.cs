@@ -42,6 +42,7 @@ internal static class VocabularyBehaviorRunner
         Test_MissingStoreLists_AskFromKnownFacts();
         Test_ModesAndLanguages();
         Test_Uppercase_UsesLanguageRules();
+        Test_TagPrefix_PreservesBracketsAndCasing();
 
         if (failures == 0)
         {
@@ -372,6 +373,26 @@ internal static class VocabularyBehaviorRunner
             out organized);
         AssertEqual("an empty organize response keeps the store list", "Action, Adventure", Join(organized["genres"]));
 
+        Dictionary<string, List<string>> translated;
+        var translate = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Incoming = new List<string> { "Shooter", "Action", "Adventure" },
+            AlreadyInLanguage = false,
+            Organize = true
+        };
+        AssertTrue(
+            "english store/IGDB genres ask the model",
+            translate.NeedsModel);
+        AssertTrue(
+            "translated spanish genres are accepted",
+            TermFieldResolver.TryApplyResponse(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Disparos\",\"Acción\",\"Aventura\"]}]}",
+                new List<TermFieldRequest> { translate },
+                out translated));
+        AssertEqual("shooter becomes disparos", "Disparos, Acción, Aventura", Join(translated["genres"]));
+
         var features = new TermFieldRequest
         {
             Field = "features",
@@ -380,6 +401,15 @@ internal static class VocabularyBehaviorRunner
             AlreadyInLanguage = true
         };
         AssertTrue("localized features stay on the store list", !features.NeedsModel);
+
+        var englishFeatures = new TermFieldRequest
+        {
+            Field = "features",
+            Mode = "overwrite",
+            Incoming = new List<string> { "Single-player", "Multiplayer" },
+            AlreadyInLanguage = false
+        };
+        AssertTrue("english features ask the model to translate", englishFeatures.NeedsModel);
 
         var append = new TermFieldRequest
         {
@@ -550,6 +580,62 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("es keeps a single capital", "Acción y aventura", TextCapitalization.ToSentence("Acción Y Aventura", "es"));
         AssertEqual("fr sentence case", "Coopératif en ligne", TextCapitalization.ToSentence("COOPÉRATIF EN LIGNE", "fr"));
         AssertEqual("second sentence starts with a capital", "Empieza aquí. Sigue allá.", TextCapitalization.ToSentence("EMPIEZA AQUÍ. SIGUE ALLÁ.", "es"));
+    }
+
+    private static void Test_TagPrefix_PreservesBracketsAndCasing()
+    {
+        AssertEqual(
+            "clean keeps bracket prefix",
+            "[MAI] Open world",
+            VocabularyTermNormalizer.CleanTerm("[MAI] Open world"));
+        AssertEqual(
+            "clean keeps doubled open brackets in prefix text",
+            "[[MAI] Open world",
+            VocabularyTermNormalizer.CleanTerm("[[MAI] Open world"));
+        AssertEqual(
+            "clean unwraps a fully bracketed term",
+            "Action",
+            VocabularyTermNormalizer.CleanTerm("[Action]"));
+        AssertEqual(
+            "clean unwraps quoted term",
+            "Indie",
+            VocabularyTermNormalizer.CleanTerm("\"Indie\""));
+
+        AssertEqual(
+            "title case leaves [MAI] alone",
+            "[MAI] Open World",
+            TextCapitalization.Apply("[MAI] open world", "en", false));
+        AssertEqual(
+            "uppercase option only uppercases the body",
+            "[MAI] OPEN WORLD",
+            TextCapitalization.Apply("[MAI] open world", "en", true));
+        AssertEqual(
+            "sentence case leaves [MAI] alone",
+            "[MAI] Mundo abierto",
+            TextCapitalization.Apply("[MAI] Mundo Abierto", "es", false));
+
+        var settings = CreateSettings("en");
+        settings.TagPrefix = "[MAI] ";
+        settings.CategoryPrefix = "[META] ";
+        var result = CreateResult(new[] { "Action" }, new[] { "extraction shooter", "sci-fi" });
+        result.Categories = new List<string> { "co-op" };
+        result.Normalize(settings, new Game { Name = "ARC Raiders" });
+        result.Tags = VocabularyTermNormalizer.NormalizeField(
+            result.Tags, "tags", "en", new string[0], null, 20, false);
+        result.Categories = VocabularyTermNormalizer.NormalizeField(
+            result.Categories, "categories", "en", new string[0], null, 12, false);
+        result.Tags = TextCapitalization.ApplyList(result.Tags, "en", false);
+        result.Categories = TextCapitalization.ApplyList(result.Categories, "en", false);
+        result.ApplyConfiguredPrefixes(settings);
+
+        AssertEqual(
+            "prefix applied after casing",
+            "[MAI] Extraction Shooter, [MAI] Sci-Fi",
+            Join(result.Tags));
+        AssertEqual(
+            "category prefix applied after casing",
+            "[META] Co-Op",
+            Join(result.Categories));
     }
 
     private static MetaDataIASettings CreateSettings(string language)

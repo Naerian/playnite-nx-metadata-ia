@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 
 namespace MetaDataIAPlugin
 {
-    // IGDB is a factual fallback only. It is used after an official/origin lookup did not
-    // identify the game, and only when its returned title is an exact normalized match.
+    // IGDB supplies structured genres, themes, keywords, companies and series.
+    // It is queried whenever metadata from IGDB is enabled, as an enrichment
+    // source alongside official stores (exact title match only).
     internal sealed class IgdbMetadataContextService
     {
         private static readonly HttpClient Client = new HttpClient();
@@ -51,6 +52,7 @@ namespace MetaDataIAPlugin
                 Title = (string)selected["name"],
                 Genres = ReadNames(selected["genres"]),
                 Features = ReadNames(selected["game_modes"]),
+                // Themes stay in tags (tone/subject). Genres stay in genres (store-style type).
                 Tags = ReadNames(selected["themes"]).Concat(ReadNames(selected["keywords"])).Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList(),
                 ListsMatchPluginLanguage = settings != null &&
                     (settings.Language ?? "en").Trim().StartsWith("en", StringComparison.OrdinalIgnoreCase),

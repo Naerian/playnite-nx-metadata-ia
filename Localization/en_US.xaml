@@ -27,7 +27,7 @@
     <sys:String x:Key="MTDA_SourceHintIgn">Verified IGN metadata, covers and promo backgrounds.</sys:String>
     <sys:String x:Key="MTDA_SourceHintVndb">Specialist factual data for visual novels.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWikidata">Community factual fallback for release and companies.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintIgdb">IGDB covers, artworks and structured series data.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintIgdb">IGDB genres, themes, series data, covers and artworks.</sys:String>
     <sys:String x:Key="MTDA_TabImport">Import</sys:String>
     <sys:String x:Key="MTDA_ImportPageHelp">Choose what Metadata AI should do automatically when Playnite detects new games in your library.</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">Maintenance</sys:String>
@@ -226,7 +226,7 @@
     <sys:String x:Key="MTDA_CompaniesLimitHelp">For companies, the recommended value is 1: the plugin tries to store only the main developer/publisher and avoid support, porting, multiplayer or regional distribution studios.</sys:String>
     <sys:String x:Key="MTDA_SortingLinksHelp">Sorting name is calculated locally: it detects sequels with 2/3, II/III or v2/v3 and generates values like Base name 01, 02, 03. Links try to use official URLs; if the game comes from Steam and has an AppId, the store URL is added reliably.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Tag prefix</sys:String>
-    <sys:String x:Key="MTDA_TagPrefixHelp">If you enter a prefix, it is added before each new tag. Example: AI: Open world.</sys:String>
+    <sys:String x:Key="MTDA_TagPrefixHelp">If you enter a prefix, it is added before each new tag exactly as typed (brackets and casing included). Example: [MAI] Open world.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Category prefix</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Useful to group categories created by the plugin. Example: Meta: Action.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Term blacklist</sys:String>
@@ -1091,7 +1091,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableMobyGames">Enable MobyGames as a source for historical covers and screenshots</sys:String>
     <sys:String x:Key="MTDA_MobyGamesApiKey">MobyGames API key</sys:String>
     <sys:String x:Key="MTDA_TheGamesDbApiKey">TheGamesDB API key</sys:String>
-    <sys:String x:Key="MTDA_EnableIgdbMetadata">Enable IGDB as a metadata source</sys:String>
+    <sys:String x:Key="MTDA_EnableIgdbMetadata">Enable IGDB as a metadata source (genres, themes and related facts)</sys:String>
     <sys:String x:Key="MTDA_EnableIgdb">Enable IGDB as a source for covers, artworks and screenshots</sys:String>
     <sys:String x:Key="MTDA_IgdbClientId">IGDB client ID</sys:String>
     <sys:String x:Key="MTDA_IgdbClientSecret">IGDB client secret</sys:String>

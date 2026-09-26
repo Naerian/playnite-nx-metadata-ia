@@ -3,6 +3,12 @@
 
 
 
+
+## 1.4.23 — 2026-09-26
+- Tag and category prefixes keep brackets and casing as typed (for example [MAI]). Prefixes are applied after capitalization, and Uppercase only affects the label body.
+- When IGDB metadata is enabled, IGDB genres and themes are always fetched as enrichment alongside store lists (not only when those lists are short). Steam Action/Adventure can merge with IGDB Shooter and Science fiction before the AI organises them.
+- Genres, tags and features from English sources such as IGDB are translated into the plugin language (for example Shooter to Disparos in Spanish). Mixed Steam+IGDB lists no longer skip translation when Steam alone was already localised.
+
 ## 1.4.22 — 2026-09-26
 - Library â†’ Fields table row backgrounds span all six columns again after the Uppercase column was added.
 - Batch result dialog shows short reasons, a View detail modal for the full error, status badges for updated and pending games, and tooltips on the action buttons.

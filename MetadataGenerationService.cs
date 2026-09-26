@@ -285,6 +285,8 @@ namespace MetaDataIAPlugin
             result.Categories = VocabularyTermNormalizer.NormalizeField(
                 result.Categories, "categories", settings.Language, categoriesLibrary, null,
                 settings.MaxCategories, settings.PreferExistingCategories);
+
+            result.ApplyConfiguredPrefixes(settings);
         }
 
         private void ApplyTrustedFactualFields(AiMetadataResult result, Game game)
@@ -306,23 +308,25 @@ namespace MetaDataIAPlugin
             DetectListConflict(result, "ageRatings", sources, x => string.IsNullOrWhiteSpace(x.AgeRating) ? new List<string>() : new List<string> { x.AgeRating });
             DetectListConflict(result, "regions", sources, x => x.Regions);
 
-            // A store that already returned this field wins. The model does not add a second list.
+            // A store that already returned this field wins order of preference, but lists
+            // from every exact match (Steam + IGDB, etc.) are merged before the organise step.
             // Epic, GOG and other PC libraries usually have no structured genres/features, so the
-            // first allowed store that does (often Steam, in the plugin language) is used.
-            // When no allowed store has the field, the model output is kept.
+            // first allowed store that does (often Steam, in the plugin language) leads the list.
+            // Collect a pool larger than Max* so a second source (e.g. IGDB Shooter) is not
+            // truncated away when Steam already filled Action/Adventure.
             if (settings.GenerateGenres)
             {
-                result.Genres = CollectStoreTerms(x => x.Genres, settings.MaxGenres, false, game);
+                result.Genres = CollectStoreTerms(x => x.Genres, TermPoolSize(settings.MaxGenres), false, game);
             }
 
             if (settings.GenerateFeatures)
             {
-                result.Features = CollectStoreTerms(x => x.Features, settings.MaxFeatures, true, game);
+                result.Features = CollectStoreTerms(x => x.Features, TermPoolSize(settings.MaxFeatures), true, game);
             }
 
             if (settings.GenerateTags)
             {
-                result.Tags = CollectStoreTerms(x => x.Tags, 20, false, game);
+                result.Tags = CollectStoreTerms(x => x.Tags, TermPoolSize(20), false, game);
             }
 
             if (settings.GenerateLinks)
@@ -1285,7 +1289,10 @@ namespace MetaDataIAPlugin
                 officialContextForCurrentRequest.AddRange(officialContext);
             }
 
-            if (CanQueryIgdb() && settings.UseIgdbMetadata && (HasMissingTrustedEvidence() || TermListsAreShort(game)))
+            // When IGDB metadata is enabled, always try it as an enrichment source even if
+            // Steam/PSN/Xbox already returned genres or tags. Store lists stay primary;
+            // IGDB genres/themes/keywords are merged and organised with them later.
+            if (CanQueryIgdb() && settings.UseIgdbMetadata)
             {
                 var igdbContext = await new IgdbMetadataContextService(settings).GetContextAsync(game, cancellationToken).ConfigureAwait(false);
                 if (igdbContext != null && igdbContext.HasUsefulData())
@@ -2615,43 +2622,6 @@ namespace MetaDataIAPlugin
             }
         }
 
-        private bool NeedsTrustedEnrichment()
-        {
-            return (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateDevelopers && settings.DevelopersApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GeneratePublishers && settings.PublishersApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateAgeRatings && settings.AgeRatingsApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateRegions && settings.RegionsApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateReleaseDate && settings.ReleaseDateApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateSeries && settings.SeriesApplyMode != MetaDataIASettings.ApplySkip) ||
-                   (settings.GenerateLinks && settings.LinksApplyMode != MetaDataIASettings.ApplySkip);
-        }
-
-        private bool ShouldUseTrustedEnrichment(Game game)
-        {
-            return game != null &&
-                   NeedsTrustedEnrichment() &&
-                   !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
-                   (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
-        }
-
-        private bool HasMissingTrustedEvidence()
-        {
-            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
-                .Where(x => x != null && x.IsExactMatch)
-                .ToList();
-            if (sources.Count == 0) return true;
-
-            return (settings.GenerateGenres && !sources.Any(x => x.Genres != null && x.Genres.Count > 0)) ||
-                   (settings.GenerateDevelopers && !sources.Any(x => x.Developers != null && x.Developers.Count > 0)) ||
-                   (settings.GeneratePublishers && !sources.Any(x => x.Publishers != null && x.Publishers.Count > 0)) ||
-                   (settings.GenerateAgeRatings && !sources.Any(x => !string.IsNullOrWhiteSpace(x.AgeRating))) ||
-                   (settings.GenerateRegions && !sources.Any(x => x.Regions != null && x.Regions.Count > 0)) ||
-                   (settings.GenerateReleaseDate && !sources.Any(x => !string.IsNullOrWhiteSpace(x.ReleaseDate))) ||
-                   (settings.GenerateSeries && !sources.Any(x => x.Series != null && x.Series.Count > 0)) ||
-                   (settings.GenerateLinks && !sources.Any(x => x.Links != null && x.Links.Count > 0));
-        }
-
         private void ApplyStrictFactualGuard(AiMetadataResult result, Game game)
         {
             if (result == null)
@@ -2945,29 +2915,16 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private static int TermPoolSize(int maxItems)
+        {
+            return Math.Min(20, Math.Max(Math.Max(1, maxItems) * 3, 8));
+        }
+
         private bool CanQueryIgdb()
         {
             return settings != null &&
                    !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                    (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken));
-        }
-
-        private bool TermListsAreShort(Game game)
-        {
-            if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip &&
-                CollectStoreTerms(x => x.Genres, settings.MaxGenres, false, game).Count < 2)
-            {
-                return true;
-            }
-
-            if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip &&
-                CollectStoreTerms(x => x.Features, settings.MaxFeatures, true, game).Count < 3)
-            {
-                return true;
-            }
-
-            return settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip &&
-                   CollectStoreTerms(x => x.Tags, 20, false, game).Count < 4;
         }
 
         private bool HasContextSource(string sourceName)
@@ -3016,8 +2973,6 @@ namespace MetaDataIAPlugin
 
         private bool StoreTermsAreInPluginLanguage(Func<OfficialStoreMetadata, List<string>> selector, int targetCount, bool filterFeatures, Game game)
         {
-            var count = 0;
-            var target = Math.Max(1, targetCount);
             var saw = false;
             foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
             {
@@ -3038,15 +2993,11 @@ namespace MetaDataIAPlugin
                 }
 
                 saw = true;
+                // Any English/IGDB (or other non-localised) list in the merge means the
+                // combined terms still need the model to translate into the plugin language.
                 if (!source.ListsMatchPluginLanguage)
                 {
                     return false;
-                }
-
-                count += values.Count(x => !string.IsNullOrWhiteSpace(x));
-                if (count >= target)
-                {
-                    return true;
                 }
             }
 

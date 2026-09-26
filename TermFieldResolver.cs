@@ -120,13 +120,16 @@ namespace MetaDataIAPlugin
             "You edit short game metadata labels. Return only JSON, no markdown. " +
             "Response shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
             "Echo each input field once. " +
-            "terms are the final labels in the requested language. " +
+            "terms are the final labels in the requested language (the language field). " +
+            "Translate every common-noun label into that language. Do not leave English store or IGDB wording " +
+            "such as Shooter, Action, Adventure, Science fiction, Single-player or Multiplayer when the language is not English. " +
+            "Proper names (series, franchises, game titles) stay unchanged. " +
             "Use only concepts present in that field's existing and incoming lists. " +
             "You may translate an incoming label into the requested language. Do not add a concept that is not in those lists. " +
             "platform is the game's real platform. Drop a label that names a different platform. Keep store themes, genres and play styles that were in the lists. " +
             "Keep one label per concept. " +
             "If a broad label is only the sum of more specific labels in the same lists, keep the specific labels and drop the broad one. " +
-            "Example: existing \"Action and adventure\" plus incoming \"Action\" and \"Adventure\" becomes \"Action\" and \"Adventure\". " +
+            "Example: existing \"Action and adventure\" plus incoming \"Action\" and \"Adventure\" becomes \"Action\" and \"Adventure\" in English, or the equivalent pair in the requested language. " +
             "mode overwrite: ignore existing. " +
             "mode append: keep unrelated existing labels, add incoming labels, and drop only labels that repeat a concept you kept. " +
             "Do not copy the same concept into more than one field when several fields are present. " +
@@ -136,7 +139,8 @@ namespace MetaDataIAPlugin
         public const string KnowledgePrompt =
             "No store returned a list for the fields in this request. Choose short labels from the game facts. Return only JSON, no markdown. " +
             "Response shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
-            "Echo each input field once. terms are the final labels in the requested language. " +
+            "Echo each input field once. terms are the final labels in the requested language (the language field). " +
+            "Write every common-noun label in that language; do not leave English genre, tag or feature wording when the language is not English. " +
             "game and editions identify which release this is: title, platform, library source, release date, developers, publishers, series, age ratings, description and links. " +
             "Use that release. Do not use a remake, port or edition on a different platform. " +
             "If the facts are not enough to tell which game this is, return an empty terms array. " +
@@ -147,10 +151,30 @@ namespace MetaDataIAPlugin
             "mode overwrite: ignore existing. " +
             "mode append: keep unrelated existing labels and add labels for this release.";
 
+        public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields)
+        {
+            var payload = new JObject();
+            payload["language"] = language ?? "en";
+            payload["languageName"] = LanguageDisplayName(language);
+            payload["platform"] = new JArray(platforms ?? new List<string>());
+            payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
+            {
+                var item = new JObject();
+                item["field"] = field.Field;
+                item["mode"] = field.Mode;
+                item["existing"] = new JArray(field.Existing ?? new List<string>());
+                item["incoming"] = new JArray(field.Incoming ?? new List<string>());
+                item["alreadyInLanguage"] = field.AlreadyInLanguage;
+                return item;
+            }));
+            return payload.ToString(Newtonsoft.Json.Formatting.None);
+        }
+
         public static string BuildKnowledgeJson(string language, JObject game, IList<TermFieldRequest> fields)
         {
             var payload = new JObject();
             payload["language"] = language ?? "en";
+            payload["languageName"] = LanguageDisplayName(language);
             payload["game"] = game ?? new JObject();
             payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
             {
@@ -164,21 +188,22 @@ namespace MetaDataIAPlugin
             return payload.ToString(Newtonsoft.Json.Formatting.None);
         }
 
-        public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields)
+        private static string LanguageDisplayName(string language)
         {
-            var payload = new JObject();
-            payload["language"] = language ?? "en";
-            payload["platform"] = new JArray(platforms ?? new List<string>());
-            payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
-            {
-                var item = new JObject();
-                item["field"] = field.Field;
-                item["mode"] = field.Mode;
-                item["existing"] = new JArray(field.Existing ?? new List<string>());
-                item["incoming"] = new JArray(field.Incoming ?? new List<string>());
-                return item;
-            }));
-            return payload.ToString(Newtonsoft.Json.Formatting.None);
+            var code = (language ?? "en").Trim().ToLowerInvariant();
+            if (code.StartsWith("es", StringComparison.Ordinal)) return "Spanish";
+            if (code.StartsWith("fr", StringComparison.Ordinal)) return "French";
+            if (code.StartsWith("de", StringComparison.Ordinal)) return "German";
+            if (code.StartsWith("it", StringComparison.Ordinal)) return "Italian";
+            if (code.StartsWith("pt", StringComparison.Ordinal)) return "Portuguese";
+            if (code.StartsWith("pl", StringComparison.Ordinal)) return "Polish";
+            if (code.StartsWith("nl", StringComparison.Ordinal)) return "Dutch";
+            if (code.StartsWith("ru", StringComparison.Ordinal)) return "Russian";
+            if (code.StartsWith("ja", StringComparison.Ordinal)) return "Japanese";
+            if (code.StartsWith("ko", StringComparison.Ordinal)) return "Korean";
+            if (code.StartsWith("zh", StringComparison.Ordinal)) return "Chinese";
+            if (code.StartsWith("tr", StringComparison.Ordinal)) return "Turkish";
+            return "English";
         }
 
         public static bool TryApplyResponse(string content, IList<TermFieldRequest> fields, out Dictionary<string, List<string>> resolved)
@@ -259,8 +284,11 @@ namespace MetaDataIAPlugin
                     .Select(LibraryNameMatching.NormalizeKey)
                     .Where(key => key.Length > 0),
                 StringComparer.Ordinal);
+            // Translations change spelling (Shooter → Disparos), so they look "novel" under
+            // NormalizeKey. Allow up to one translated label per incoming concept.
             var novel = cleaned.Count(term => !allowed.Contains(LibraryNameMatching.NormalizeKey(term)));
-            if (novel > (field.Incoming ?? new List<string>()).Count)
+            var incomingCount = Math.Max(1, (field.Incoming ?? new List<string>()).Count);
+            if (novel > incomingCount)
             {
                 return false;
             }

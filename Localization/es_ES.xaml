@@ -27,7 +27,7 @@
     <sys:String x:Key="MTDA_SourceHintIgn">Metadatos verificados de IGN, portadas y fondos promo.</sys:String>
     <sys:String x:Key="MTDA_SourceHintVndb">Datos factuales especializados para novelas visuales.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWikidata">Fallback factual comunitario para fecha y compañías.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintIgdb">Portadas, artworks y series estructuradas de IGDB.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintIgdb">Géneros, temas, series, portadas y artworks de IGDB.</sys:String>
     <sys:String x:Key="MTDA_TabImport">Importación</sys:String>
     <sys:String x:Key="MTDA_ImportPageHelp">Elige qué debe hacer Metadata AI automáticamente cuando Playnite detecte juegos nuevos en tu biblioteca.</sys:String>
     <sys:String x:Key="MTDA_TabMaintenance">Mantenimiento</sys:String>
@@ -226,7 +226,7 @@
     <sys:String x:Key="MTDA_CompaniesLimitHelp">Para compañías, el valor recomendado es 1: el plugin intenta guardar solo el estudio/editor principal y evitar estudios de apoyo, ports, multijugador o distribución regional.</sys:String>
     <sys:String x:Key="MTDA_SortingLinksHelp">Orden de nombre se calcula localmente: detecta secuelas con 2/3, II/III o v2/v3 y genera valores como Nombre base 01, 02, 03. Enlaces intenta usar URLs oficiales; si el juego viene de Steam y tiene AppId, se añade la URL de tienda de forma fiable.</sys:String>
     <sys:String x:Key="MTDA_TagPrefix">Prefijo para etiquetas</sys:String>
-    <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva. Ejemplo: IA: Mundo abierto.</sys:String>
+    <sys:String x:Key="MTDA_TagPrefixHelp">Si escribes un prefijo, se antepone a cada etiqueta nueva tal cual (incluye corchetes y mayúsculas). Ejemplo: [MAI] Mundo abierto.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefijo para categorias</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Sirve para agrupar categorias creadas por el plugin. Ejemplo: Meta: Accion.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Lista negra de terminos</sys:String>
@@ -1067,7 +1067,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableMobyGames">Activar MobyGames como fuente de portadas y capturas históricas</sys:String>
     <sys:String x:Key="MTDA_MobyGamesApiKey">Clave API de MobyGames</sys:String>
     <sys:String x:Key="MTDA_TheGamesDbApiKey">Clave API de TheGamesDB</sys:String>
-    <sys:String x:Key="MTDA_EnableIgdbMetadata">Activar IGDB como fuente de metadatos</sys:String>
+    <sys:String x:Key="MTDA_EnableIgdbMetadata">Activar IGDB como fuente de metadatos (géneros, temas y datos relacionados)</sys:String>
     <sys:String x:Key="MTDA_EnableIgdb">Activar IGDB como fuente de portadas, artworks y capturas</sys:String>
     <sys:String x:Key="MTDA_IgdbClientId">Client ID de IGDB</sys:String>
     <sys:String x:Key="MTDA_IgdbClientSecret">Client Secret de IGDB</sys:String>
