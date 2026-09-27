@@ -1,8 +1,14 @@
 # Changelog
 
 ## 1.4.26 — 2026-09-27
-- The organize/normalize AI prompt for genres, tags and features is stricter: one canonical label per concept, full translation into the plugin language, no mixed-language synonyms, and clearer overwrite/append/empty behaviour.
-- When the plugin language is not English, raw English store/IGDB labels (Adventure, Shooter, RPG, …) are rejected after the model call. Fallback uses plugin-language store lists only, so failed organizes no longer create English duplicates next to Spanish ones. The dedicated organize pass always runs after full metadata generation. Genre/tag/feature matching ignores letter case so uppercase settings do not fork the library.
+- IGDB accepts the same release when the title only differs by a roman range or a year: IV-VI matches IV•V•VI Remastered (2025), and not the Deluxe or I-III entries. If a query has no usable hit, up to four search variants are tried.
+- Store and IGDB searches use the library title as written. Edition, year, region and remaster words are no longer stripped from the query.
+- Organize accepts both JSON shapes: fields[].terms and the flat genres/tags/features arrays. A valid model answer is no longer discarded as a failed organize.
+- Genre, tag and feature merges reserve room for non-localized sources such as IGDB, so a short Steam list cannot drop the rest before the model runs.
+- Removed the hard-coded English reject list. Item caps are applied after the model response. Organize and the main metadata call use the same genre, tag and feature rules.
+- HTML description templates keep their original casing. Sentence case no longer lowercases the whole HTML block.
+- The dedicated organize pass still runs after full metadata generation. Genre, tag and feature matching ignores letter case.
+- Main metadata, organize, knowledge and system-requirements prompts were rewritten shorter and stricter. Prefer-existing genres, tags and features are included in playniteLibraryVocabulary when those options are enabled.
 
 ## 1.4.25 — 2026-09-27
 - After the main metadata call, genres/tags/features that are still not in the plugin language are re-organized and translated (for example Shooter to Disparos). Empty-only fields that are vacant also go through that pass instead of keeping raw English store labels.

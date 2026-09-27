@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
 {
@@ -10,9 +11,12 @@ namespace MetaDataIAPlugin
     /// Casing uses the culture of the plugin language.
     /// Uppercase is every letter. English capitalizes each word.
     /// Other languages capitalize the first letter of each sentence.
+    /// HTML descriptions are handled separately so tags do not steal sentence capitals.
     /// </summary>
     public static class TextCapitalization
     {
+        private static readonly Regex HtmlTagRegex = new Regex("<[^>]+>", RegexOptions.Compiled);
+
         public static string Apply(string value, string language, bool uppercase)
         {
             if (string.IsNullOrEmpty(value))
@@ -30,6 +34,32 @@ namespace MetaDataIAPlugin
             }
 
             return ApplyBody(value, language, uppercase);
+        }
+
+        /// <summary>
+        /// Descriptions often embed the user HTML template. Sentence/title casing must not
+        /// ToLower the whole string: the first letter of &lt;h3&gt;/&lt;p&gt; would consume the
+        /// capitalize flag and leave real copy in lowercase.
+        /// </summary>
+        public static string ApplyDescription(string value, string language, bool uppercase)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value ?? string.Empty;
+            }
+
+            if (!LooksLikeHtml(value))
+            {
+                return Apply(value, language, uppercase);
+            }
+
+            if (!uppercase)
+            {
+                // Keep template headings and model token casing as composed.
+                return value;
+            }
+
+            return ApplyToHtmlTextNodes(value, language, true);
         }
 
         private static string ApplyBody(string value, string language, bool uppercase)
@@ -99,6 +129,40 @@ namespace MetaDataIAPlugin
         public static List<string> ToUpperList(IEnumerable<string> values, string language)
         {
             return ApplyList(values, language, true);
+        }
+
+        public static bool LooksLikeHtml(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+
+            return HtmlTagRegex.IsMatch(value);
+        }
+
+        private static string ApplyToHtmlTextNodes(string value, string language, bool uppercase)
+        {
+            var builder = new StringBuilder(value.Length);
+            var last = 0;
+            foreach (Match match in HtmlTagRegex.Matches(value))
+            {
+                if (match.Index > last)
+                {
+                    var text = value.Substring(last, match.Index - last);
+                    builder.Append(ApplyBody(text, language, uppercase));
+                }
+
+                builder.Append(match.Value);
+                last = match.Index + match.Length;
+            }
+
+            if (last < value.Length)
+            {
+                builder.Append(ApplyBody(value.Substring(last), language, uppercase));
+            }
+
+            return builder.ToString();
         }
 
         public static CultureInfo CultureFor(string language)

@@ -39,7 +39,7 @@ internal static class VocabularyBehaviorRunner
         Test_TermResolve_InvalidJsonFallsBack();
         Test_AiJson_OverEscapedQuotesAreRepaired();
         Test_AiJson_WrappedJsonStringIsUnwrapped();
-        Test_TermResolve_RejectsEnglishLeftoversInSpanish();
+        Test_TermResolve_AcceptsTranslatedSpanishGenres();
         Test_RomTitle_MatchesStoreTitle();
         Test_ArticleAndPlatform_SeparateRomFromRemake();
         Test_Genres_AreOrganizedEvenWhenAlreadyLocalized();
@@ -369,7 +369,7 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("wrapped genres parse", "Puzzle, Adventure", Join(resolved["genres"]));
     }
 
-    private static void Test_TermResolve_RejectsEnglishLeftoversInSpanish()
+    private static void Test_TermResolve_AcceptsTranslatedSpanishGenres()
     {
         var field = new TermFieldRequest
         {
@@ -377,30 +377,37 @@ internal static class VocabularyBehaviorRunner
             Mode = "overwrite",
             Language = "es",
             Existing = new List<string>(),
-            Incoming = new List<string> { "Adventure", "Shooter", "Indie" },
-            LocalizedIncoming = new List<string> { "Aventura", "Disparos", "Indie" },
-            MaxItems = 8,
+            Incoming = new List<string> { "Acción", "Aventura", "Shooter", "Puzzle", "Strategy", "Adventure" },
+            LocalizedIncoming = new List<string> { "Acción", "Aventura" },
+            MaxItems = 4,
             Organize = true
         };
 
-        Dictionary<string, List<string>> mixed;
-        var mixedOk = TermFieldResolver.TryApplyResponse(
-            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Aventura\",\"Shooter\",\"Indie\"]}]}",
-            new List<TermFieldRequest> { field },
-            out mixed);
-        AssertTrue("mixed EN/ES response is not accepted as-is", !mixedOk || !Join(mixed["genres"]).Contains("Shooter"));
-        AssertEqual("fallback prefers localized store list", "Aventura, Disparos, Indie", Join(mixed["genres"]));
-
         Dictionary<string, List<string>> clean;
         var cleanOk = TermFieldResolver.TryApplyResponse(
-            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Aventura\",\"Disparos\",\"Indie\"]}]}",
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Aventura\",\"Disparos\",\"Puzle\",\"Estrategia\"]}]}",
             new List<TermFieldRequest> { field },
             out clean);
-        AssertTrue("fully translated response is accepted", cleanOk);
-        AssertEqual("translated genres kept", "Aventura, Disparos, Indie", Join(clean["genres"]));
+        AssertTrue("translated Gemini-style response is accepted", cleanOk);
+        AssertEqual("max items keeps first four", "Acción, Aventura, Disparos, Puzle", Join(clean["genres"]));
 
-        AssertTrue("Adventure is flagged as untranslated English", TermFieldResolver.LooksLikeUntranslatedEnglish("Adventure"));
-        AssertTrue("Indie loanword is allowed", !TermFieldResolver.LooksLikeUntranslatedEnglish("Indie"));
+        Dictionary<string, List<string>> flat;
+        var flatOk = TermFieldResolver.TryApplyResponse(
+            "{\"genres\":[\"Acción\",\"Disparos\",\"Puzle\",\"Estrategia\"]}",
+            new List<TermFieldRequest> { field },
+            out flat);
+        AssertTrue("flat main-call JSON shape is accepted", flatOk);
+        AssertEqual("flat genres kept", "Acción, Disparos, Puzle, Estrategia", Join(flat["genres"]));
+
+        Dictionary<string, List<string>> fallback;
+        TermFieldResolver.TryApplyResponse(
+            "not-json",
+            new List<TermFieldRequest> { field },
+            out fallback);
+        AssertEqual(
+            "invalid JSON falls back to full merged incoming",
+            "Acción, Aventura, Shooter, Puzzle",
+            Join(fallback["genres"]));
     }
 
     private static void Test_RomTitle_MatchesStoreTitle()
@@ -409,9 +416,35 @@ internal static class VocabularyBehaviorRunner
             "region tag matches the store title",
             TitleMatchingService.IsReliableMatch("Battle of Olympus (USA)", "Battle of Olympus"));
         AssertEqual(
-            "search title drops the region tag",
-            "Battle of Olympus",
+            "search title keeps the region tag",
+            "Battle of Olympus (USA)",
             TitleMatchingService.SearchTitle("Battle of Olympus (USA)"));
+        AssertEqual(
+            "remastered stays in the search title",
+            "Tomb Raider IV-VI Remastered",
+            TitleMatchingService.SearchTitle("Tomb Raider IV-VI Remastered"));
+        AssertTrue(
+            "IV-VI matches IGDB IV•V•VI plus a year",
+            TitleMatchingService.IsSameReleaseTitle(
+                "Tomb Raider IV-VI Remastered",
+                "Tomb Raider IV•V•VI Remastered (2025)"));
+        AssertTrue(
+            "deluxe edition is a different IGDB entry",
+            !TitleMatchingService.IsSameReleaseTitle(
+                "Tomb Raider IV-VI Remastered",
+                "Tomb Raider IV•V•VI Remastered: Deluxe Edition (2025)"));
+        AssertTrue(
+            "I-III is not IV-VI",
+            !TitleMatchingService.IsSameReleaseTitle(
+                "Tomb Raider IV-VI Remastered",
+                "Tomb Raider I•II•III Remastered (2024)"));
+        AssertTrue(
+            "expanded roman query is one of the fallbacks",
+            TitleMatchingService.IgdbSearchQueries("Tomb Raider IV-VI Remastered")
+                .Any(x => string.Equals(x, "Tomb Raider IV V VI Remastered", StringComparison.Ordinal)));
+        AssertTrue(
+            "IGDB search stops at four queries",
+            TitleMatchingService.IgdbSearchQueries("A-B-C-D-E-F Game").Count <= 4);
         AssertTrue(
             "a subtitle is not treated as a region tag",
             !TitleMatchingService.IsReliableMatch("Trine 4: The Nightmare Prince", "Trine 4"));
@@ -670,6 +703,15 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("es keeps a single capital", "Acción y aventura", TextCapitalization.ToSentence("Acción Y Aventura", "es"));
         AssertEqual("fr sentence case", "Coopératif en ligne", TextCapitalization.ToSentence("COOPÉRATIF EN LIGNE", "fr"));
         AssertEqual("second sentence starts with a capital", "Empieza aquí. Sigue allá.", TextCapitalization.ToSentence("EMPIEZA AQUÍ. SIGUE ALLÁ.", "es"));
+        var html = "<h3>Descripcion breve</h3>\n<p>Disfruta de la trilogía clásica.</p>";
+        AssertEqual("html description keeps template casing", html, TextCapitalization.ApplyDescription(html, "es", false));
+        AssertEqual(
+            "html description uppercase only touches text nodes",
+            "<h3>DESCRIPCION BREVE</h3>\n<p>DISFRUTA DE LA TRILOGÍA CLÁSICA.</p>",
+            TextCapitalization.ApplyDescription(html, "es", true));
+        AssertTrue(
+            "broken html casing would lowercase real copy",
+            TextCapitalization.Apply(html, "es", false).IndexOf("disfruta", StringComparison.Ordinal) >= 0);
     }
 
     private static void Test_TagPrefix_PreservesBracketsAndCasing()

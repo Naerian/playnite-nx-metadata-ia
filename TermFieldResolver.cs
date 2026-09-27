@@ -131,13 +131,15 @@ namespace MetaDataIAPlugin
 
         private IEnumerable<string> PreferredIncoming()
         {
-            var localized = LocalizedIncoming ?? new List<string>();
-            if (localized.Count > 0)
+            // Prefer the full merged store list (Steam + IGDB, …). Localized-only fallback
+            // discarded enrichment genres whenever the organize JSON shape was not recognized.
+            var incoming = Incoming ?? new List<string>();
+            if (incoming.Count > 0)
             {
-                return TermFieldResolver.StripUntranslatedEnglish(localized, Language);
+                return incoming;
             }
 
-            return TermFieldResolver.StripUntranslatedEnglish(Incoming ?? new List<string>(), Language);
+            return LocalizedIncoming ?? new List<string>();
         }
 
         private List<string> Take(IEnumerable<string> values)
@@ -148,42 +150,53 @@ namespace MetaDataIAPlugin
 
     public static class TermFieldResolver
     {
+        // Keep policy in sync with MetadataGenerationService.BuildSystemPrompt Field Categorization Rules
+        // (same organize rules; this call uses language/languageName + fields[].terms JSON shape).
         public const string SystemPrompt =
             "You edit short game metadata labels. Return ONLY valid JSON, no markdown blocks. " +
             "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
             "Rules: " +
-            "1. Output format: Echo each input field category once. In \"terms\", return only the final normalized labels. " +
-            "2. Language: Read target language from \"language\" and \"languageName\". " +
-            "If not English: translate common descriptive terms completely into the requested language (e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, or equivalent in the target language). " +
+            "1. Output format: Echo each input field once. In \"terms\", return only the final normalized labels. " +
+            "2. Source and Grounding: Organize strictly from each field's existing and incoming lists. " +
+            "Never invent concepts absent from those lists. If an incoming list is empty, return an empty terms array for that field. " +
+            "3. Language: Read target language from \"language\" and \"languageName\". " +
+            "If not English: You MUST translate all common-noun labels into the requested language " +
+            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or the equivalent). " +
             "If English: keep standard English labels. " +
-            "Globally recognized loanwords/subgenres may stay as-is (e.g., Roguelike, Metroidvania, Indie). " +
-            "3. Canonical label and deduplication: " +
-            "Exactly one label per concept. Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"RPG\" / \"Role-playing (rpg)\"; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
-            "Keep labels concise (1-3 words max). " +
-            "Do not repeat the same concept across multiple fields (e.g., player count/modes belong to features, do not duplicate them into genres or tags). " +
-            "4. Handling \"mode\": " +
-            "\"overwrite\": \"terms\" must contain only normalized concepts from \"incoming\". " +
-            "\"append\": merge unique concepts from \"existing\" and \"incoming\". If a concept already exists in \"existing\", do not add a translated/synonym duplicate from \"incoming\". " +
-            "\"empty\": if \"existing\" already has items, return \"existing\" unchanged; if \"existing\" is empty, populate from \"incoming\". " +
-            "5. Grounding: Do NOT invent new concepts. Base \"terms\" strictly on the provided \"incoming\" and \"existing\" lists.";
+            "Loanwords/subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+            "4. Canonical label and Deduplication: Exactly one label per concept. " +
+            "Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"RPG\" / \"Role-playing (rpg)\"; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
+            "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
+            "Do not repeat the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
+            "5. Handling mode: " +
+            "overwrite: terms must contain only normalized concepts from incoming. " +
+            "append: merge unique concepts from existing and incoming; if a concept already exists in existing, do not add a translated/synonym duplicate from incoming. " +
+            "empty: if existing already has items, return existing unchanged; if existing is empty, populate from incoming. " +
+            "Item caps are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.";
 
         public const string KnowledgePrompt =
-            "No store returned a list for the fields in this request. Choose short labels from the game facts. Return ONLY valid JSON, no markdown blocks. " +
+            "No store returned a list for the fields in this request. Propose short, accurate metadata labels strictly using the provided game release facts. " +
+            "Return ONLY valid JSON, no markdown blocks. " +
             "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
-            "Echo each input field once. Read target language from \"language\" and \"languageName\". " +
-            "terms are the final labels in that language: translate common descriptive terms completely when the language is not English; keep standard English labels when it is English. " +
-            "Globally recognized loanwords/subgenres may stay as-is (e.g., Roguelike, Metroidvania, Indie). " +
-            "Exactly one label per concept; never mix synonyms or languages for the same concept. Keep labels concise (1-3 words max). " +
-            "game and editions identify which release this is: title, platform, library source, release date, developers, publishers, series, age ratings, description and links. " +
-            "Use that release. Do not use a remake, port or edition on a different platform. " +
-            "If the facts are not enough to tell which game this is, return an empty terms array. " +
-            "Genres are store-style genres. Tags are themes and play style. " +
-            "Features are how this release is played: player count, co-op and controller support. Do not copy a feature that belongs to another platform. " +
-            "Do not put player count, controller support or achievements into genres or tags. Put those in features when features is in this request. If features is not in this request, leave them out. " +
-            "Do not repeat a concept across fields. " +
-            "mode overwrite: ignore existing. " +
-            "mode append: keep unrelated existing labels and add labels for this release. " +
-            "mode empty: if existing already has items, return existing unchanged; if existing is empty, populate for this release.";
+            "Rules: " +
+            "1. Target Language and Scope: Echo each input field once. Read target language from \"language\" and \"languageName\". " +
+            "If language is NOT English: translate all common terms completely into the requested language " +
+            "(e.g., Shooter -> Disparos, Action -> Acción, Adventure -> Aventura, Puzzle -> Puzle, or the equivalent). " +
+            "If English: keep standard English labels. " +
+            "Global subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+            "2. Strict Concept Normalization: Exactly one label per concept. Never output mixed languages or synonyms " +
+            "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"RPG\" or \"Role-playing (rpg)\"; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
+            "Concise labels: 1 to 3 words max. Never repeat the same concept across multiple fields. " +
+            "3. Platform and Release Grounding (Zero Hallucination): Anchor labels strictly to the specific platform and release facts provided. " +
+            "Do NOT extrapolate features or genres from modern remakes or subsequent ports. " +
+            "For retro releases, never invent modern technical features (e.g., no cloud saves or online co-op for 8/16-bit console titles). " +
+            "If game facts are insufficient to identify the game with high confidence, return an empty terms array. " +
+            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, and gameplay mechanics. " +
+            "features: Functional gameplay traits for this specific platform release only (player count, local co-op, controller support). " +
+            "At most 4 concise feature items. Never put player counts or features into genres or tags. " +
+            "5. Handling mode: overwrite: terms must contain only new normalized labels. " +
+            "append: preserve existing labels and add missing unique labels for this release without adding synonyms or language duplicates. " +
+            "empty: if existing already has items, return existing unchanged; otherwise populate.";
 
         public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields)
         {
@@ -266,7 +279,6 @@ namespace MetaDataIAPlugin
                 }
 
                 var cleaned = DistinctTerms(terms).Take(Math.Max(1, field.MaxItems)).ToList();
-                cleaned = StripUntranslatedEnglish(cleaned, field.Language).ToList();
                 if (cleaned.Count == 0)
                 {
                     resolved[field.Field] = field.FallbackTerms();
@@ -297,45 +309,6 @@ namespace MetaDataIAPlugin
             return result;
         }
 
-        /// <summary>
-        /// English store/IGDB wording that must not remain when the plugin language is not English.
-        /// This is a reject list, not a translation map.
-        /// </summary>
-        private static readonly HashSet<string> UntranslatedEnglishKeys = new HashSet<string>(StringComparer.Ordinal)
-        {
-            "action", "adventure", "shooter", "puzzle", "strategy", "rpg", "role playing", "role playing rpg",
-            "platform", "platformer", "platforms", "racing", "sports", "simulation", "fighting", "fight",
-            "hack and slash", "hack and slash beat em up", "beat em up", "free to play", "f2p",
-            "single player", "singleplayer", "multiplayer", "massively multiplayer", "mmo",
-            "open world", "survival", "turn based", "turn based strategy", "real time strategy", "rts",
-            "point and click", "card game", "board game", "visual novel",
-            "utilities", "web publishing", "animation modeling", "video production", "design illustration",
-            "software training", "audio production", "photo editing", "accounting", "game development"
-        };
-
-        public static bool RequiresTranslation(string language)
-        {
-            var code = (language ?? "en").Trim();
-            return code.Length > 0 && !code.StartsWith("en", StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static bool LooksLikeUntranslatedEnglish(string term)
-        {
-            var key = LibraryNameMatching.NormalizeKey(term);
-            return key.Length > 0 && UntranslatedEnglishKeys.Contains(key);
-        }
-
-        public static IEnumerable<string> StripUntranslatedEnglish(IEnumerable<string> values, string language)
-        {
-            if (!RequiresTranslation(language))
-            {
-                return values ?? Enumerable.Empty<string>();
-            }
-
-            return (values ?? Enumerable.Empty<string>())
-                .Where(value => !LooksLikeUntranslatedEnglish(value));
-        }
-
         private static bool Accept(TermFieldRequest field, IList<TermFieldRequest> allFields, List<string> terms)
         {
             var cleaned = DistinctTerms(terms);
@@ -343,12 +316,6 @@ namespace MetaDataIAPlugin
             if (cleaned.Count == 0)
             {
                 return union.Count == 0;
-            }
-
-            // Model left raw English store wording in a non-English library → reject and fall back.
-            if (RequiresTranslation(field.Language) && cleaned.Any(LooksLikeUntranslatedEnglish))
-            {
-                return false;
             }
 
             if (field.FromKnowledge)
@@ -361,7 +328,9 @@ namespace MetaDataIAPlugin
                 return !string.Equals(field.Mode, "append", StringComparison.OrdinalIgnoreCase) || KeepsExisting(field, cleaned);
             }
 
-            if (cleaned.Count > Math.Max(union.Count, Math.Max(1, field.MaxItems)))
+            // MaxItems is enforced after Accept via Take. Do not reject a valid overshoot
+            // (e.g. model returns 5 labels when MaxItems is 4) — truncate instead.
+            if (cleaned.Count > Math.Max(union.Count, 1))
             {
                 return false;
             }
@@ -444,24 +413,50 @@ namespace MetaDataIAPlugin
         private static Dictionary<string, List<string>> ReadFields(JObject json)
         {
             var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            var fields = json["fields"] as JArray;
-            if (fields == null)
+            if (json == null)
             {
                 return map;
             }
 
-            foreach (var item in fields.OfType<JObject>())
+            var fields = json["fields"] as JArray;
+            if (fields != null)
             {
-                var name = ((string)item["field"] ?? string.Empty).Trim();
-                if (name.Length == 0)
+                foreach (var item in fields.OfType<JObject>())
+                {
+                    var name = ((string)item["field"] ?? string.Empty).Trim();
+                    if (name.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var terms = (item["terms"] as JArray ?? new JArray())
+                        .Select(token => (string)token)
+                        .ToList();
+                    map[name] = terms;
+                }
+            }
+
+            // Some models reuse the main-call shape: {"genres":["..."],"tags":["..."]}
+            // instead of {"fields":[{"field":"genres","terms":["..."]}]}.
+            foreach (var property in json.Properties())
+            {
+                if (string.Equals(property.Name, "fields", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                var terms = (item["terms"] as JArray ?? new JArray())
-                    .Select(token => (string)token)
-                    .ToList();
-                map[name] = terms;
+                var array = property.Value as JArray;
+                if (array == null || map.ContainsKey(property.Name))
+                {
+                    continue;
+                }
+
+                if (!array.All(token => token == null || token.Type == JTokenType.String || token.Type == JTokenType.Integer))
+                {
+                    continue;
+                }
+
+                map[property.Name] = array.Select(token => token == null ? null : token.ToString()).ToList();
             }
 
             return map;

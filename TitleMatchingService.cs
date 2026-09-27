@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MetaDataIAPlugin
@@ -88,59 +89,46 @@ namespace MetaDataIAPlugin
         public static List<string> BuildAliases(string value)
         {
             var result = new List<string>();
-            AddAlias(result, value);
-
-            var title = value ?? string.Empty;
-            title = Regex.Replace(title, "\\s+", " ").Trim();
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                return result;
-            }
-
-            // Library imports often preserve machine-readable separators (for example
-            // Watch_Dogs). IGDB search treats those less consistently than spaces even
-            // though both spellings normalize to the same title locally.
-            AddAlias(result, Regex.Replace(title, "[_\\-]+", " "));
-
-            AddAlias(result, Regex.Replace(
-                title,
-                "\\s*[\\(\\[](?:\\d{4}|classic|original|legacy|[^\\)\\]]*(?:edition|deluxe|standard|ultimate|goty|game of the year|complete|collector|collectors|premium|gold|digital)[^\\)\\]]*)[\\)\\]]\\s*$",
-                string.Empty,
-                RegexOptions.IgnoreCase));
-
-            var editionWords = "(?:digital\\s+)?(?:standard|deluxe|ultimate|goty|game\\s+of\\s+the\\s+year|complete|collector|collectors|premium|gold|special|limited)(?:\\s+edition)?";
-            AddAlias(result, Regex.Replace(title, "\\s*[:\\-\\u2013\\u2014]\\s*" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-            AddAlias(result, Regex.Replace(title, "\\s+" + editionWords + "\\s*$", string.Empty, RegexOptions.IgnoreCase));
-            AddAlias(result, Regex.Replace(
-                title,
-                @"\s*\b(?:hd|remastered|remaster|remake|definitive|enhanced|anniversary|director'?s cut)\b.*$",
-                string.Empty,
-                RegexOptions.IgnoreCase));
-
-            var stripped = title;
-            string previous;
-            do
-            {
-                previous = stripped;
-                stripped = Regex.Replace(
-                    stripped,
-                    @"\s*[\[\(]([^\]\)]{1,40})[\]\)]\s*$",
-                    match => IsLibraryDecoration(match.Groups[1].Value) ? string.Empty : match.Value,
-                    RegexOptions.IgnoreCase).Trim();
-            }
-            while (!string.Equals(stripped, previous, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(stripped));
-
-            AddAlias(result, stripped);
+            AddAlias(result, SearchTitle(value));
             return result;
         }
 
+        /// <summary>
+        /// Search uses the library title as written. Edition, year, region and
+        /// remaster words stay in the query so a shorter alias cannot select another release.
+        /// </summary>
         public static string SearchTitle(string value)
         {
-            var best = BuildAliases(value)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .OrderBy(x => x.Length)
-                .FirstOrDefault();
-            return string.IsNullOrWhiteSpace(best) ? (value ?? string.Empty).Trim() : best.Trim();
+            return Regex.Replace(value ?? string.Empty, "\\s+", " ").Trim();
+        }
+
+        /// <summary>
+        /// Up to four IGDB search strings. The library title is first.
+        /// Later queries only change separators or fill a roman-numeral range
+        /// (IV-VI and IV•V•VI are the same release). Words are not removed.
+        /// </summary>
+        public static List<string> IgdbSearchQueries(string value)
+        {
+            var queries = new List<string>();
+            var title = SearchTitle(value);
+            AddSearchQuery(queries, title);
+            var spaced = Regex.Replace(title, @"[_‐‑‒–—―\-]+", " ");
+            spaced = Regex.Replace(spaced, "\\s+", " ").Trim();
+            AddSearchQuery(queries, spaced);
+            AddSearchQuery(queries, ExpandRomanSeparators(title));
+            AddSearchQuery(queries, ExpandRomanSeparators(spaced));
+            return queries;
+        }
+
+        /// <summary>
+        /// Same release when the only differences are punctuation, a trailing year,
+        /// or how a roman range is written (IV-VI vs IV•V•VI).
+        /// </summary>
+        public static bool IsSameReleaseTitle(string expected, string candidate)
+        {
+            var left = ReleaseKey(expected);
+            var right = ReleaseKey(candidate);
+            return left.Length > 0 && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsOrdinalVariant(string expected, string candidate)
@@ -263,20 +251,6 @@ namespace MetaDataIAPlugin
             return NormalizeTitle(value).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
         }
 
-        private static bool IsLibraryDecoration(string inner)
-        {
-            var parts = (inner ?? string.Empty).Split(new[] { ',', '/', '+' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0)
-            {
-                return false;
-            }
-
-            return parts.All(part => Regex.IsMatch(
-                part.Trim(),
-                @"^(usa|u\.s\.a|europe|japan|world|asia|korea|australia|brazil|spain|france|germany|italy|netherlands|sweden|canada|uk|pal|ntsc|en|fr|de|es|it|ja|ko|zh|pt|nl|sv|proto|beta|demo|sample|unl|pirate|rev(\s*[a-z0-9])?|v\d+(\.\d+)?|disc\s*\d+|b\d*|!)$",
-                RegexOptions.IgnoreCase));
-        }
-
         private static bool IsOrdinalToken(string value)
         {
             int number;
@@ -289,6 +263,134 @@ namespace MetaDataIAPlugin
                 value,
                 @"^m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$",
                 RegexOptions.IgnoreCase) && Regex.IsMatch(value, @"[ivxlcdm]", RegexOptions.IgnoreCase);
+        }
+
+        private static void AddSearchQuery(List<string> queries, string value)
+        {
+            var cleaned = Regex.Replace(value ?? string.Empty, "\\s+", " ").Trim();
+            if (cleaned.Length == 0 || queries.Count >= 4 ||
+                queries.Any(x => string.Equals(x, cleaned, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            queries.Add(cleaned);
+        }
+
+        private static string ReleaseKey(string value)
+        {
+            var normalized = NormalizeTitle(ExpandRomanSeparators(value));
+            return Regex.Replace(normalized, @"\s+(19|20)\d{2}$", string.Empty).Trim();
+        }
+
+        private static string ExpandRomanSeparators(string value)
+        {
+            var text = value ?? string.Empty;
+            text = Regex.Replace(
+                text,
+                @"\b([IVXLCDM]{1,8})\s*[-‐‑‒–—―]\s*([IVXLCDM]{1,8})\b",
+                match =>
+                {
+                    var expanded = ExpandRomanRange(match.Groups[1].Value, match.Groups[2].Value);
+                    return expanded ?? match.Value;
+                },
+                RegexOptions.IgnoreCase);
+
+            for (var pass = 0; pass < 6; pass++)
+            {
+                var next = Regex.Replace(
+                    text,
+                    @"\b([IVXLCDM]{1,8})\s*[•·∙]\s*([IVXLCDM]{1,8})\b",
+                    "$1 $2",
+                    RegexOptions.IgnoreCase);
+                if (string.Equals(next, text, StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                text = next;
+            }
+
+            return text;
+        }
+
+        private static string ExpandRomanRange(string startText, string endText)
+        {
+            var start = RomanToInt(startText);
+            var end = RomanToInt(endText);
+            if (start < 1 || end <= start || end - start > 12)
+            {
+                return null;
+            }
+
+            var parts = new List<string>();
+            for (var number = start; number <= end; number++)
+            {
+                parts.Add(ToRoman(number));
+            }
+
+            return string.Join(" ", parts);
+        }
+
+        private static int RomanToInt(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return 0;
+            }
+
+            var value = text.Trim().ToUpperInvariant();
+            var total = 0;
+            var previous = 0;
+            for (var index = value.Length - 1; index >= 0; index--)
+            {
+                int current;
+                switch (value[index])
+                {
+                    case 'I': current = 1; break;
+                    case 'V': current = 5; break;
+                    case 'X': current = 10; break;
+                    case 'L': current = 50; break;
+                    case 'C': current = 100; break;
+                    case 'D': current = 500; break;
+                    case 'M': current = 1000; break;
+                    default: return 0;
+                }
+
+                if (current < previous)
+                {
+                    total -= current;
+                }
+                else
+                {
+                    total += current;
+                    previous = current;
+                }
+            }
+
+            return total > 0 && total <= 39 && string.Equals(ToRoman(total), value, StringComparison.OrdinalIgnoreCase) ? total : 0;
+        }
+
+        private static string ToRoman(int number)
+        {
+            var map = new[]
+            {
+                new[] { "M", "1000" }, new[] { "CM", "900" }, new[] { "D", "500" }, new[] { "CD", "400" },
+                new[] { "C", "100" }, new[] { "XC", "90" }, new[] { "L", "50" }, new[] { "XL", "40" },
+                new[] { "X", "10" }, new[] { "IX", "9" }, new[] { "V", "5" }, new[] { "IV", "4" }, new[] { "I", "1" }
+            };
+            var result = new StringBuilder();
+            foreach (var pair in map)
+            {
+                var arabic = int.Parse(pair[1]);
+                while (number >= arabic)
+                {
+                    result.Append(pair[0]);
+                    number -= arabic;
+                }
+            }
+
+            return result.ToString();
         }
 
         private static void AddAlias(List<string> result, string value)

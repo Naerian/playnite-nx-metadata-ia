@@ -737,21 +737,30 @@ namespace MetaDataIAPlugin
         private string BuildSystemRequirementsLocalizationSystemPrompt()
         {
             var languageName = TargetLanguageName(settings.Language);
-            return "You localize PC game system requirement lists. " +
+            return "You localize PC game system requirements. " +
                    "Output language: " + languageName + " (" + settings.Language + "). " +
-                   "Return only a JSON object with minimumSystemRequirements and recommendedSystemRequirements. " +
-                   "Each value must be plain text, one requirement per line, in the form Label: value. " +
-                   "Translate labels and any leftover English connecting phrases into that language. " +
-                   "Keep hardware names, product names, SKUs and all numbers unchanged. " +
-                   "Do not add, remove or reorder lines. Do not invent specs. Do not use HTML or markdown.";
+                   "Return ONLY a valid JSON object matching the requested schema, without markdown formatting blocks. " +
+                   "Output Schema: {\"minimumSystemRequirements\": \"string\", \"recommendedSystemRequirements\": \"string\"}. " +
+                   "Rules: " +
+                   "1. Formatting and Line Structure: Each requirement must be on its own line using the format \"Label: value\". " +
+                   "Separate lines inside the JSON string exclusively with escaped newlines (\\n). Do NOT use raw unescaped control characters. " +
+                   "Clean Plain Text: Strip all HTML tags (e.g., <br>, <strong>) and markdown from the source text. Output pure plain text only. " +
+                   "Line Integrity: Preserve the original line count and order. Do not merge, add, or omit lines. " +
+                   "2. Translation Scope: Translate requirement labels into " + languageName +
+                   " (e.g., OS, Processor, Memory, Graphics, Storage, Additional Notes, or target language equivalents). " +
+                   "Translate connecting phrases (e.g., \"or equivalent\", \"required\", \"broadband internet connection\"). " +
+                   "NEVER translate hardware models, brand names, architecture, SKUs, or specs " +
+                   "(keep Intel, AMD, NVIDIA, GeForce, Radeon, DirectX, GHz, GB, MB, 64-bit strictly as-is). " +
+                   "3. Grounding: Do NOT invent or alter any technical specifications. If an input field is empty, return an empty string.";
         }
 
         private string BuildSystemRequirementsLocalizationUserPrompt(string minimum, string recommended, string language)
         {
-            return "Localize these store system requirements into " + TargetLanguageName(language) +
-                   ". Keep the same line count and the same facts.\n\n" +
-                   "minimumSystemRequirements:\n" + (minimum ?? string.Empty) + "\n\n" +
-                   "recommendedSystemRequirements:\n" + (recommended ?? string.Empty);
+            var languageName = TargetLanguageName(language);
+            return "Localize these store system requirements into " + languageName + " (" + (language ?? string.Empty) + ").\n" +
+                   "Preserve exact line count, facts, hardware names, and numbers. Strip any HTML formatting.\n\n" +
+                   "minimumSystemRequirements:\n\"\"\"\n" + (minimum ?? string.Empty) + "\n\"\"\"\n\n" +
+                   "recommendedSystemRequirements:\n\"\"\"\n" + (recommended ?? string.Empty) + "\n\"\"\"";
         }
 
         private async Task<string> SendConstrainedPromptAsync(string systemPrompt, string userPrompt, int maxTokens, CancellationToken cancellationToken)
@@ -1281,91 +1290,136 @@ namespace MetaDataIAPlugin
         {
             var parts = new List<string>();
             parts.Add(
-                "You are a careful video game metadata editor for Playnite. " +
-                "Return only valid JSON, without markdown. " +
-                "Use the requested output language (targetLanguage / targetLanguageName) for every user-facing value, including descriptions and free-form list labels, unless a field is locked by playniteLibraryVocabulary. " +
-                "When playniteLibraryVocabulary lists values for a field, that list is the only allowed vocabulary for that field: copy those exact spellings, do not translate them, and skip items that do not fit. " +
-                "Never rewrite list labels from one natural language into another after choosing them. " +
-                "Your job is to normalize and structure provided facts, not to invent missing metadata. " +
-                "Prioritize factual accuracy over filling every field. If a fact is uncertain, leave that field empty. " +
-                "Respond with a JSON object that contains only the keys listed in jsonShape. Do not add keys that are absent from jsonShape. " +
-                "Do not invent factual metadata. Normalize, translate and structure only facts that are present in officialStoreContext, existing metadata, the game source, platforms, termCandidates or the provided game identity. similarGamesList is the exception: when those tokens are requested, comparable well-known game names are allowed even if they are not listed in officialStoreContext. " +
-                "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative: do not guess developers, publishers, age ratings, regions, links, release-specific features, platform capabilities or store-specific claims. Leave uncertain fields empty. " +
-                "Respect tone, length, tokenLengths, blacklist and prefixes. " +
-                "If playniteLibraryVocabulary is present for a field, that field is locked: you MUST pick only values from that exact list (same spelling). Do not invent new wording, do not translate those library names into the output language, and omit the item when nothing in the list fits. " +
-                "If existingMetadataMode is Normalize, preserve the intent of current metadata but correct language, duplicates, formatting and coherence. " +
-                "If officialStoreContext is present, treat it as the primary factual source material for description, companies, ratings and links. Do not add extra factual claims that are not supported by officialStoreContext, termCandidates or existing metadata. Do not copy store marketing headings verbatim unless they fit the selected template. If officialStoreContext conflicts with existing metadata, prefer the official store context for factual fields and use existing metadata only as secondary context. " +
-                "short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes and recommendedFor must be text strings, not arrays. " +
-                "features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories and series must be arrays of strings. releaseDate must be an ISO date string or empty. links must be an array of objects with name and url.");
+                "You are a video game metadata editor for Playnite. Return ONLY valid JSON matching jsonShape, without markdown blocks. " +
+                "Core Rules: " +
+                "1. Target Language: Use targetLanguage / targetLanguageName for all user-facing text, descriptions, and list labels. " +
+                "If playniteLibraryVocabulary is provided for a field: choose values ONLY from that exact list. " +
+                "If both a translated term and an English term exist in that list for the same concept (e.g., \"Aventura\" vs \"Adventure\"), ALWAYS pick the one matching targetLanguage. " +
+                "If no value in playniteLibraryVocabulary fits the concept, omit the item. " +
+                "2. Factual Grounding (No Hallucinations): Normalize, translate, and structure only facts present in officialStoreContext, existing metadata, game source, platforms, termCandidates, or game identity. " +
+                "Do NOT invent companies, dates, or tags. If uncertain, leave the field empty. " +
+                "Exception: similarGamesList may suggest well-known titles if requested. " +
+                "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative and leave uncertain factual fields empty. " +
+                "3. Source Priority: If officialStoreContext is present, treat it as the primary factual source for descriptions, companies, ratings, and links. " +
+                "If existingMetadataMode is Normalize, preserve intent but fix grammar, language consistency, duplicates, and formatting. " +
+                "4. Constraints and Schema Types: Obey tone, length, tokenLengths, blacklist, and prefixes. " +
+                "Respond with a JSON object that contains only the keys listed in jsonShape. " +
+                "Strings: short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes, recommendedFor. " +
+                "ISO date string or empty: releaseDate. " +
+                "Array of objects {name, url}: links. " +
+                "Array of strings: features, similarGamesList, genres, tags, developers, publishers, ageRatings, regions, categories, series.");
 
             if (settings.GenerateDescription)
             {
                 parts.Add(
-                    "Text tokens must contain content only: no titles, headings, field labels, markdown or HTML. Do not write labels such as 'Description:', 'Premise:', 'Synopsis:' or 'Main features:' inside any value. " +
-                    "Do not mention, compare with, or recommend other games, other sagas, or unrelated companies in short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes or recommendedFor. Focus only on the current game. " +
-                    "If requestedDescriptionTokens contains similarGames or similarGamesList, you MUST populate similarGamesList with 3 to 6 comparable game names as an array of strings (names only, no sentences). This is required for the description template. Do not leave similarGamesList empty when those tokens are requested unless the game is so obscure that no reasonable comparison exists. Other description fields must still not mention other games. " +
-                    "If requestedDescriptionTokens contains features, populate the features array with individual short feature labels in order. Never add JSON keys named feature_1, feature_2, similar_game_1, similar_game_2, feature_N or similar_game_N; those are description placeholders filled by the plugin from the features and similarGamesList arrays. " +
-                    "If requestedDescriptionTokens contains min_sys_req or recommended_sys_req, do not return minimumSystemRequirements or recommendedSystemRequirements. The plugin copies store facts and localizes those lines in a dedicated step. Do not invent hardware specs. " +
-                    "Interpret tokenLengths for short as: Short = 1 brief sentence; Medium = 2 or 3 sentences; Long = 1 paragraph; Extra long = 2 compact paragraphs. " +
-                    "Interpret tokenLengths for synopsis as: Short = 1 paragraph of 4 to 6 sentences; Medium = 2 paragraphs of 4 to 6 sentences each; Long = 3 paragraphs of 4 to 6 sentences each; Extra long = 4 or 5 paragraphs of 4 to 6 sentences each. " +
-                    "If tokenLengths.synopsis is Medium, Long or Extra long, separate paragraphs inside the JSON string using escaped double newlines (\\n\\n). Do not return synopsis as a single paragraph. " +
-                    "Inside JSON strings, never use raw line breaks; always use escaped \\n or \\n\\n. " +
-                    "Each paragraph must be substantial, not a single sentence, except fields configured as Short. " +
-                    "For other text fields: Short = 1 brief sentence; Medium = 1 paragraph of 3 to 5 sentences; Long = 2 paragraphs of 3 to 5 sentences; Extra long = 3 paragraphs of 3 to 5 sentences. " +
-                    "For lists, length controls how many useful items to return within each max value: Short = few essentials; Medium = balanced coverage; Long = broad coverage; Extra long = use the max only when enough reliable information exists. " +
-                    "short and synopsis must always be different: short is a compact editorial description of what the game is; synopsis develops premise, context and structure without repeating short literally.");
+                    "Description Generation Rules: " +
+                    "1. Text Formatting and Cleanliness: Output pure text content: NO headings, NO titles, NO markdown/HTML, and NO field labels (e.g., never write \"Description:\" or \"Synopsis:\"). " +
+                    "Ensure the JSON output is valid: format multi-paragraph text fields using standard escaped newlines (\\n\\n). Never output invalid unescaped control characters. " +
+                    "2. Editorial Scope and Game Focus: Focus exclusively on the current game. Never reference, compare to, or recommend other games, franchises, or unrelated studios inside text fields (short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes, recommendedFor). " +
+                    "\"short\" vs \"synopsis\": \"short\" is a concise editorial hook defining what the game is. \"synopsis\" expands on premise, setting, and narrative without literally duplicating \"short\". " +
+                    "3. Array and Placeholder Handling: similarGamesList: If requested, provide 3 to 6 comparable game titles as an array of strings (names only, no sentences). Do not mention them in the narrative text fields. " +
+                    "features: Populate as an array of short feature strings. NEVER create dynamic keys like \"feature_1\" or \"similar_game_1\". " +
+                    "System Requirements: Do NOT return minimumSystemRequirements or recommendedSystemRequirements (handled externally by the plugin). " +
+                    "4. Length Mapping (tokenLengths): " +
+                    "short: Short = 1 sentence | Medium = 2-3 sentences | Long = 1 paragraph | Extra long = 2 paragraphs. " +
+                    "synopsis: Short = 1 paragraph (4-6 sentences) | Medium = 2 paragraphs | Long = 3 paragraphs | Extra long = 4-5 paragraphs. Paragraphs must be substantial and separated by \\n\\n. " +
+                    "other text fields: Short = 1 sentence | Medium = 1 paragraph (3-5 sentences) | Long = 2 paragraphs | Extra long = 3 paragraphs. " +
+                    "lists: Short = minimal essentials | Medium = balanced coverage | Long = broad coverage | Extra long = comprehensive (up to max items).");
             }
 
             if (NeedsTermOrganizeInMainCall())
             {
+                // Keep in sync with TermFieldResolver.SystemPrompt (same organize policy; different JSON shape).
                 parts.Add(
-                    "When termCandidates is present, organize genres, tags and features in this same response. " +
-                    "Read targetLanguage / targetLanguageName. If not English, translate every common store/IGDB label " +
-                    "completely into that language (Adventure -> Aventura, Shooter -> Disparos, or the equivalent). " +
-                    "Exactly one canonical label per concept: never keep mixed-language synonyms such as Adventure and Aventura, " +
-                    "or RPG and Rol, in the same list. Loanwords such as Roguelike, Metroidvania or Indie may stay as-is. " +
-                    "Use only concepts from each field's existing and incoming lists in termCandidates. " +
-                    "Do not invent a concept that is not in those lists. Keep labels concise (1-3 words). " +
-                    "mode overwrite: ignore existing. mode append: keep unrelated existing labels and add incoming ones without synonym duplicates. " +
-                    "Player count, input, co-op, achievements and controller support belong in features. Store genres stay in genres. Theme and style stay in tags. " +
-                    "If a field's incoming list is empty, leave that array empty unless the game identity in context is enough to choose a short factual label; otherwise leave it empty. " +
-                    "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features when enough evidence exists, not generic phrases. " +
-                    "Features must be stable between repeated runs and follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations. " +
-                    "For tags and categories, write short reusable names in the requested language. Reuse playniteLibraryVocabulary spelling when that field is locked.");
+                    "Field Categorization Rules (genres, tags, features): " +
+                    "1. Source and Grounding: When termCandidates is present, organize genres, tags, and features strictly from each field's existing and incoming lists. " +
+                    "Never invent concepts absent from those lists. If an incoming list is empty, return an empty array for that field. " +
+                    "2. Mandatory Localization and Deduplication: Read target language from targetLanguage / targetLanguageName. " +
+                    "If not English: You MUST translate all common-noun labels into the requested language " +
+                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or the equivalent). " +
+                    "If English: keep standard English labels. " +
+                    "Loanwords/subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+                    "Exactly one label per concept. Never mix synonyms or languages for the same concept " +
+                    "(pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"RPG\" / \"Role-playing (rpg)\"; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
+                    "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
+                    "If playniteLibraryVocabulary is locked, reuse that exact spelling, preferring the localized term if duplicates exist. " +
+                    "3. Field Sorting Logic: features: Player count, input devices, co-op modes, achievements, and controller support. " +
+                    "Populate between 3 and " + settings.MaxFeatures + " items if evidence exists; if evidence is weaker, return only verified items. " +
+                    "genres: Core video game store genres only. " +
+                    "tags: Setting, theme, artistic style, perspective, and gameplay mechanics. " +
+                    "Do not duplicate the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
+                    "4. Handling mode: overwrite: Output only normalized concepts derived from incoming. " +
+                    "append: Keep existing labels and append unique concepts from incoming; if a concept already exists in existing, do not add a translated/synonym duplicate from incoming. " +
+                    "empty: If existing already has items, return existing unchanged; if existing is empty, populate from incoming. " +
+                    "Item caps (MaxGenres / MaxTags / MaxFeatures) are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.");
             }
             else if (settings.GenerateFeatures && settings.GenerateDescription)
             {
                 parts.Add(
-                    "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features of the game, not generic phrases. " +
-                    "Features must be stable between repeated runs: prefer the most factual and durable features over subjective wording. " +
-                    "For features, use source and platforms as context only when reasonably certain: controls, local/online multiplayer, achievements, cloud saves, controller support or platform features. " +
-                    "Features must follow a Steam-like style in the requested language: very short, scannable labels, preferably 1 to 5 words, no full sentences, no final punctuation and no explanations.");
+                    "Features Generation Rules (standalone): " +
+                    "1. Formatting and Scope: Follow a Steam-like feature style in the requested target language. " +
+                    "Very short, scannable labels (1 to 5 words max). No full sentences, no explanations, no final periods. " +
+                    "Never output genres, story synopsis, or marketing adjectives as features. Confine strictly to functional, technical, and gameplay mode traits: " +
+                    "e.g., controls, local/online multiplayer, co-op, achievements, cloud saves, and controller support. " +
+                    "2. Mandatory Localization: If target language is NOT English: You MUST translate every feature term completely into the requested language " +
+                    "(e.g., Single-player -> Un jugador, Full controller support -> Compatibilidad total con mando, or the equivalent). " +
+                    "Never leave raw English feature labels when target language is not English. " +
+                    "3. Grounding and Count: Output between 3 and " + settings.MaxFeatures + " concrete, factually verified features based on source and platforms context. " +
+                    "If there is not enough reliable evidence to confirm at least 3 features, return ONLY the verified ones or leave the array empty. Do NOT invent unsupported platform capabilities or features.");
             }
 
             if (settings.GenerateCategories)
             {
                 parts.Add(
-                    "Categories must also be in the requested language. They are Playnite library grouping categories, not store tags. Use short reusable category names in the requested language, such as backlog/completed/co-op/retro/narrative equivalents, only when they fit the current game. Do not return Spanish category names unless the requested language is Spanish.");
+                    "Categories Generation Rules: " +
+                    "1. Nature and Scope: Categories are high-level Playnite library grouping buckets, NOT granular store tags. " +
+                    "Assign broad, objective organizational themes only when they clearly apply (equivalents in the target language of themes such as Retro, Multiplayer, Narrative, Local Co-op). " +
+                    "Never infer or assign personal play-status categories (do NOT output Backlog, Completed, Playing, or similar user-state labels). " +
+                    "2. Mandatory Localization: Output all category names strictly in the requested target language (targetLanguage / targetLanguageName). " +
+                    "If the target language is NOT English, never output raw English category terms. " +
+                    "If playniteLibraryVocabulary is locked for categories, use only matching spellings from that list. " +
+                    "3. Formatting and Restraint: Short, reusable category names (1 to 3 words max). " +
+                    "Select only 1 to 3 high-confidence categories. If none clearly apply, return an empty array. Do not invent niche categories.");
             }
 
             if (settings.GenerateLinks)
             {
                 parts.Add(
-                    "If fieldsToGenerate includes links, links must contain at most " + settings.MaxLinks + " useful and verifiable links for the game. Include only official or very reliable URLs: official website, source store page, official Discord, official wiki or official support. Do not invent URLs, do not use generic searches, and leave links empty if you do not know concrete links.");
+                    "Links Generation Rules: " +
+                    "1. Schema and Object Shape: links must be an array of objects matching {\"name\": \"string\", \"url\": \"string\"}. " +
+                    "Output at most " + settings.MaxLinks + " links. " +
+                    "2. Source Reliability and Grounding: Extract URLs strictly from officialStoreContext or verified official sources: " +
+                    "official game website, official store page, official Discord, official wiki, or publisher support. " +
+                    "NEVER guess or fabricate URLs. Never use search engine query links. If verifiable URLs are missing from context, return an empty array. " +
+                    "3. Localization and Naming: Localize the name property according to the requested target language " +
+                    "(e.g., official site / store page / Discord / wiki equivalents in that language).");
             }
 
             if (settings.GenerateDevelopers || settings.GeneratePublishers || settings.GenerateAgeRatings || settings.GenerateRegions)
             {
                 parts.Add(
-                    "Developers must contain only the main credited developer studio for the base game. Publishers must contain only the main publisher. If maxDevelopers is 1, return one developer at most and choose the primary developer only. Do not include support studios, porting studios, multiplayer support studios, QA, localization, regional distributors, supervisors or collaborators unless they are one of the primary credited developers. If there is reasonable doubt, leave the field empty. " +
-                    "For developers and publishers, prioritize accuracy over quantity. Return at most maxDevelopers and maxPublishers. If maxDevelopers is 1, developers must contain only the primary credited developer studio. Do not include support, porting, multiplayer, QA, localization, remaster, regional distribution, supervision or collaboration studios unless they are primary credited developers and maxDevelopers allows more than one. " +
-                    "If strictCompanyAgeRegion is true, leave developers, publishers, ageRatings or regions empty when not reasonably sure.");
+                    "Companies, Ratings and Regions Rules: " +
+                    "1. Developers and Publishers: Return strictly the primary lead creator studio and main publisher. " +
+                    "Exclude support, porting, remaster, QA, localization, outsourced multiplayer, or regional distribution studios " +
+                    "unless explicitly credited as a primary co-developer and limits allow. " +
+                    "Obey maxDevelopers and maxPublishers. If maxDevelopers is 1, return ONLY the single primary lead studio. " +
+                    "Keep original company names unchanged. Never translate studio or publisher names. " +
+                    "2. Age Ratings and Regions: ageRatings: Output standard official rating board acronyms/categories (e.g., ESRB, PEGI, CERO) only when verified. " +
+                    "regions: Output standard region or market names in the target language when applicable; keep well-known English region labels only when that is the local convention. " +
+                    "3. Strict Verification: Prioritize accuracy over completeness. " +
+                    "If strictCompanyAgeRegion is true or if context lacks verified data, leave uncertain fields as empty arrays. Never guess studios, ratings, or regions.");
             }
 
             if (settings.GenerateSeries)
             {
                 parts.Add(
-                    "If fieldsToGenerate includes series, reuse the exact spelling from existing.series, knownSeriesCandidates or officialStoreContext whenever one of them matches the game. Do not translate franchise or series proper names and do not create a new spelling variant.");
+                    "Series / Franchises Rules: " +
+                    "1. Matching and Source Priority: Reuse the EXACT spelling from existing.series, knownSeriesCandidates, or officialStoreContext whenever an explicit match exists. " +
+                    "Do NOT create new spelling variants or punctuation tweaks. " +
+                    "Never translate franchise, saga, or series names into the target language. " +
+                    "2. Standalone Games and Restraint: If the game is a standalone title and has no verified franchise continuity, return an empty array. " +
+                    "Do NOT invent series names based solely on the game title, theme, or developer. " +
+                    "3. Granularity and Count: Return at most 1 canonical series name (up to 2 only for official crossover titles).");
             }
 
             return string.Join(" ", parts);
@@ -2046,6 +2100,21 @@ namespace MetaDataIAPlugin
             }
 
             var vocabulary = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (settings.PreferExistingGenres)
+            {
+                vocabulary["genres"] = Names(playniteApi.Database.Genres);
+            }
+
+            if (settings.PreferExistingTags)
+            {
+                vocabulary["tags"] = Names(playniteApi.Database.Tags);
+            }
+
+            if (settings.PreferExistingFeatures)
+            {
+                vocabulary["features"] = Names(playniteApi.Database.Features);
+            }
+
             if (settings.PreferExistingCategories)
             {
                 vocabulary["categories"] = Names(playniteApi.Database.Categories);
@@ -2948,7 +3017,11 @@ namespace MetaDataIAPlugin
                 mode = "append";
             }
 
-            var target = string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ? 20 : Math.Max(1, maxItems);
+            // Pool must be larger than MaxItems: Spanish Steam is preferred first and would
+            // otherwise fill the entire incoming list before English IGDB concepts are merged.
+            var target = string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase)
+                ? 20
+                : TermPoolSize(maxItems);
             var filterFeatures = string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
             var incoming = storeSelector == null
                 ? new List<string>()
@@ -3151,21 +3224,62 @@ namespace MetaDataIAPlugin
             Game game,
             bool pluginLanguageOnly)
         {
-            var result = new List<string>();
-            var seen = new HashSet<string>(StringComparer.Ordinal);
             var target = Math.Max(1, targetCount);
-            // Prefer plugin-language store lists first so Spanish Steam labels win over English IGDB.
             var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
                 .Where(x => x != null && !IsLibraryIntegrationSource(x))
-                .OrderByDescending(x => x.ListsMatchPluginLanguage)
                 .ToList();
-            foreach (var source in sources)
+            var localizedSources = sources.Where(x => x.ListsMatchPluginLanguage).ToList();
+            var otherSources = sources.Where(x => !x.ListsMatchPluginLanguage).ToList();
+
+            if (pluginLanguageOnly)
             {
-                if (pluginLanguageOnly && !source.ListsMatchPluginLanguage)
+                return CollectFromSources(localizedSources, selector, filterFeatures, game, target);
+            }
+
+            // Always leave room for non-localized enrichment (IGDB English genres/themes).
+            // Otherwise Steam/PSN alone can fill the pool and Shooter/Puzzle never reach the model.
+            var otherTerms = CollectFromSources(otherSources, selector, filterFeatures, game, target);
+            var reserved = Math.Min(otherTerms.Count, Math.Max(target / 2, Math.Min(4, target)));
+            var localizedCap = Math.Max(0, target - reserved);
+            var localizedTerms = CollectFromSources(localizedSources, selector, filterFeatures, game, localizedCap);
+
+            var result = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var value in localizedTerms.Concat(otherTerms))
+            {
+                var key = LibraryNameMatching.NormalizeKey(value);
+                if (key.Length == 0 || !seen.Add(key))
                 {
                     continue;
                 }
 
+                result.Add(value);
+                if (result.Count >= target)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        private static List<string> CollectFromSources(
+            IList<OfficialStoreMetadata> sources,
+            Func<OfficialStoreMetadata, List<string>> selector,
+            bool filterFeatures,
+            Game game,
+            int targetCount)
+        {
+            var result = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var target = Math.Max(0, targetCount);
+            if (target == 0 || sources == null || selector == null)
+            {
+                return result;
+            }
+
+            foreach (var source in sources)
+            {
                 var values = selector(source);
                 if (filterFeatures)
                 {

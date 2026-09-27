@@ -31,12 +31,25 @@ namespace MetaDataIAPlugin
             var token = await GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(token)) return null;
 
-            var title = Escape(TitleMatchingService.SearchTitle(game.Name));
-            var body = "search \"" + title + "\"; fields name,first_release_date,genres.name,themes.name,keywords.name,game_modes.name,platforms.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,franchises.name,collections.name,websites.category,websites.url,age_ratings.category,age_ratings.rating,age_ratings.organization.name,age_ratings.rating_category.rating; limit 5;";
-            var matches = await PostAsync("games", body, token, cancellationToken).ConfigureAwait(false);
-            var selected = matches.OfType<JObject>()
-                .Where(x => IsExactTitleMatch(game.Name, (string)x["name"]))
-                .FirstOrDefault(x => PlatformsFit(game, x));
+            JObject selected = null;
+            foreach (var query in TitleMatchingService.IgdbSearchQueries(game.Name))
+            {
+                var body = "search \"" + Escape(query) + "\"; fields name,first_release_date,genres.name,themes.name,keywords.name,game_modes.name,platforms.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,franchises.name,collections.name,websites.category,websites.url,age_ratings.category,age_ratings.rating,age_ratings.organization.name,age_ratings.rating_category.rating; limit 20;";
+                var matches = await PostAsync("games", body, token, cancellationToken).ConfigureAwait(false);
+                var named = matches.OfType<JObject>()
+                    .Where(x => TitleMatchingService.IsSameReleaseTitle(game.Name, (string)x["name"]))
+                    .ToList();
+                var fitting = named.Where(x => PlatformsFit(game, x)).ToList();
+                var pool = fitting.Count > 0 ? fitting : named;
+                selected = pool
+                    .OrderBy(x => ((string)x["name"] ?? string.Empty).Length)
+                    .FirstOrDefault();
+                if (selected != null)
+                {
+                    break;
+                }
+            }
+
             if (selected == null) return null;
 
             var developers = ReadCompanies(selected, "developer");
@@ -212,11 +225,6 @@ namespace MetaDataIAPlugin
                 case 39: return "RC";
                 default: return null;
             }
-        }
-
-        private static bool IsExactTitleMatch(string gameName, string candidate)
-        {
-            return TitleMatchingService.IsReliableMatch(gameName, candidate);
         }
 
         private static bool PlatformsFit(Game game, JObject match)

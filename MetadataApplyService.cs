@@ -161,7 +161,7 @@ namespace MetaDataIAPlugin
         private static void ApplyUppercase(AiMetadataResult result, MetaDataIASettings settings)
         {
             var language = settings.Language;
-            result.Description = TextCapitalization.Apply(result.Description, language, settings.UppercaseDescription);
+            result.Description = TextCapitalization.ApplyDescription(result.Description, language, settings.UppercaseDescription);
             result.Genres = TextCapitalization.ApplyList(result.Genres, language, settings.UppercaseGenres);
             result.Tags = TextCapitalization.ApplyList(result.Tags, language, settings.UppercaseTags);
             result.Features = TextCapitalization.ApplyList(result.Features, language, settings.UppercaseFeatures);
