@@ -1,9 +1,13 @@
 # Changelog
 
-
-
-
-
+## 1.4.25 — 2026-09-27
+- After the main metadata call, genres/tags/features that are still not in the plugin language are re-organized and translated (for example Shooter to Disparos). Empty-only fields that are vacant also go through that pass instead of keeping raw English store labels.
+- Progress dialogs name the active action (for example Organizing genres). A single game shows the title after a middle dot; multi-game batches omit the title and show an honest status such as "2 in progress · 12/70 done" while up to two games run in parallel, still in library list order.
+- Completion messages list the metadata fields that actually changed (for example Genres and Tags), including after cancel or partial batch errors. If nothing changed, the dialog says so instead of a generic update count.
+- A malformed AI JSON response for one game no longer stops the rest of a multi-game metadata batch; that game is skipped and others continue.
+- Set genres, tags, features or categories skips the large metadata request and keeps the small organize/normalize AI call over store and IGDB lists.
+- Full metadata generation organizes genres, tags and features in the same main AI response instead of a second round-trip. Focused menus send a shorter system prompt limited to the active fields.
+- HTTP 429 responses retry with backoff and no longer stop the whole batch after retries are exhausted.
 
 ## 1.4.24 — 2026-09-27
 - Tag and category prefixes are applied only to labels newly added by the plugin. Existing tags and categories already on the game are left unchanged in Append without deleting mode.

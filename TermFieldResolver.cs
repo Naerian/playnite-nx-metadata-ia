@@ -50,14 +50,21 @@ namespace MetaDataIAPlugin
                            string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase);
                 }
 
-                if (Incoming.Count == 0 || string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase))
+                if (Incoming.Count == 0)
+                {
+                    return false;
+                }
+
+                // Empty-only with a filled field: keep current labels, no model.
+                if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
                 {
                     return false;
                 }
 
                 if (Organize &&
                     (string.Equals(Mode, "overwrite", StringComparison.OrdinalIgnoreCase) ||
-                     string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase)))
+                     string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase)))
                 {
                     return true;
                 }
@@ -69,7 +76,8 @@ namespace MetaDataIAPlugin
 
                 return !AlreadyInLanguage &&
                        (string.Equals(Mode, "overwrite", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase));
+                        string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase));
             }
         }
 
@@ -78,6 +86,11 @@ namespace MetaDataIAPlugin
             if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
             {
                 return Take(Existing);
+            }
+
+            if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count == 0)
+            {
+                return Take(Incoming);
             }
 
             if (string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) && Existing.Count == 0)

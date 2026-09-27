@@ -295,6 +295,18 @@ internal static class VocabularyBehaviorRunner
         };
         AssertTrue("filled empty-only skips the model", !empty.NeedsModel);
         AssertEqual("empty-only keeps current", "Retro", Join(empty.DirectTerms()));
+
+        var emptyFill = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "empty",
+            Existing = new List<string>(),
+            Incoming = new List<string> { "Shooter", "Action" },
+            AlreadyInLanguage = false,
+            Organize = true
+        };
+        AssertTrue("empty-only with empty field and English store asks the model", emptyFill.NeedsModel);
+        AssertEqual("empty-only fill uses incoming as direct fallback", "Shooter, Action", Join(emptyFill.DirectTerms()));
     }
 
     private static void Test_TermResolve_InvalidJsonFallsBack()

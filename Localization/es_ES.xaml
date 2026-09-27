@@ -276,7 +276,7 @@ Errores de fallback:
 {0}</sys:String>
     <sys:String x:Key="MTDA_ErrorMalformedAiJson">La IA devolvió una respuesta con un formato no válido y no pudo interpretarse.
 
-El complemento continuará con el resto de juegos. Puedes volver a intentar este juego, reducir la longitud del texto o cambiar a un modelo que siga JSON de manera más confiable.
+Se omitió este juego; el resto del lote debería seguir procesándose. Puedes volver a intentar este juego, reducir la longitud del texto o cambiar a un modelo que siga JSON de manera más confiable.
 
 Breve detalle:</sys:String>
     <sys:String x:Key="MTDA_ErrorMediaProviderNotConfigured">Los medios de metadatos AI no están configurados. Abra la configuración del complemento y configure al menos una fuente de medios utilizable.</sys:String>
@@ -365,11 +365,17 @@ Puedes esperar unos minutos, probar otro modelo o cambiar a otro proveedor.</sys
     <sys:String x:Key="MTDA_TestGiantBomb">Probar Giant Bomb</sys:String>
     <sys:String x:Key="MTDA_MessageAppliedMediaFiles">La IA de metadatos aplicó {0} archivo(s) multimedia.</sys:String>
     <sys:String x:Key="MTDA_MessageBatchErrorsHeader">Metadata AI actualizó {0} juego(s). Errores: {1}</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchErrorsHeaderWithFields">Metadata AI actualizó {1} en {0} juego(s). Errores: {2}</sys:String>
     <sys:String x:Key="MTDA_MessageGamesNotUpdated">Juegos no actualizados ({0}):</sys:String>
     <sys:String x:Key="MTDA_MessageBatchCancelled">Metadata AI canceló la operación. Juegos procesados: {0}.</sys:String>
+    <sys:String x:Key="MTDA_MessageBatchCancelledWithFields">Metadata AI canceló la operación. Actualizó {1} en {0} juego(s).</sys:String>
     <sys:String x:Key="MTDA_MessageMediaCancelled">Metadata AI canceló la operación de media. Juegos procesados: {0}. Archivos aplicados: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMediaUpdated">Metadata AI actualizó medios para {0} juego(s). Archivos aplicados: {1}.</sys:String>
     <sys:String x:Key="MTDA_MessageMetadataUpdated">Metadata AI actualizó {0} juego(s).</sys:String>
+    <sys:String x:Key="MTDA_MessageMetadataUpdatedWithFields">Metadata AI actualizó {1} en {0} juego(s).</sys:String>
+    <sys:String x:Key="MTDA_MessageMetadataUpdatedNoChanges">Metadata AI procesó {0} juego(s) pero no modificó ningún campo.</sys:String>
+    <sys:String x:Key="MTDA_ListJoinTwo">{0} y {1}</sys:String>
+    <sys:String x:Key="MTDA_ListJoinLast">{0} y {1}</sys:String>
     <sys:String x:Key="MTDA_MessageNoCandidatesForMediaType">No hay candidatos para este tipo de medio.</sys:String>
     <sys:String x:Key="MTDA_MessageNoGamesCurrentList">No hay juegos en la lista actual.</sys:String>
     <sys:String x:Key="MTDA_MessageNoGamesMedia">No hay juegos a los que aplicar medios.</sys:String>
@@ -424,9 +430,21 @@ Puedes esperar unos minutos, probar otro modelo o cambiar a otro proveedor.</sys
     <sys:String x:Key="MTDA_OptionToneStore">Tienda</sys:String>
     <sys:String x:Key="MTDA_OptionToneTechnical">Técnico</sys:String>
     <sys:String x:Key="MTDA_ProgressApplyingMediaKind">Aplicando {0}...</sys:String>
-    <sys:String x:Key="MTDA_ProgressDownloadingMedia">Descargando medios:</sys:String>
+    <sys:String x:Key="MTDA_ProgressDownloadingMedia">Descargando medios: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressDownloadingMediaKinds">Descargando {0}: {1}</sys:String>
     <sys:String x:Key="MTDA_ProgressGeneratingMetadata">Generando metadatos de IA...</sys:String>
-    <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">Generando metadatos de IA:</sys:String>
+    <sys:String x:Key="MTDA_ProgressGeneratingMetadataGame">Generando metadatos de IA: {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressGameAction">{0}: {1}</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionGeneratingMetadata">Generando metadatos de IA</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionGeneratingDescription">Generando descripción</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionOrganizingFields">Organizando {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionUpdatingField">Actualizando {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionUpdatingFields">Actualizando {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionSimulating">Simulando cambios de metadatos</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionSortingName">Aplicando nombre de ordenación</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionDownloadingMedia">Descargando medios</sys:String>
+    <sys:String x:Key="MTDA_ProgressActionDownloadingKinds">Descargando {0}</sys:String>
+    <sys:String x:Key="MTDA_ProgressBatchStatus">{0} · {1} en curso · {2}/{3} hechos</sys:String>
     <sys:String x:Key="MTDA_ProgressSearchingMediaKind">Buscando {0} en fuentes multimedia...</sys:String>
     <sys:String x:Key="MTDA_ProviderBillingClaude">La API de Claude suele requerir facturación propia; tener Claude Pro en la web no significa tener crédito de API.</sys:String>
     <sys:String x:Key="MTDA_ProviderBillingCustom">Consulte los términos del proveedor antes de procesar bibliotecas grandes.</sys:String>
@@ -631,12 +649,13 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SimulationTitle">Simulación de Metadata AI</sys:String>
     <sys:String x:Key="MTDA_SimulationHelp">Todavía no se ha escrito ningún cambio. Al aplicar se reutilizarán estos resultados sin volver a consultar al proveedor de IA. Para un solo juego también puedes elegir candidatos de portada, icono y fondo antes de aplicar.</sys:String>
     <sys:String x:Key="MTDA_SimulationQuotaWarning">La simulación consultará al proveedor de IA para {0} juegos y puede consumir cuota. No modificará la biblioteca. ¿Continuar?</sys:String>
-    <sys:String x:Key="MTDA_ProgressSimulatingGame">Simulando cambios: </sys:String>
+    <sys:String x:Key="MTDA_ProgressSimulatingGame">Simulando cambios: {0}</sys:String>
     <sys:String x:Key="MTDA_SimulationApply">Aplicar cambios simulados</sys:String>
     <sys:String x:Key="MTDA_SimulationNoChanges">Las reglas actuales no producirían ningún cambio.</sys:String>
     <sys:String x:Key="MTDA_SimulationBefore">Antes</sys:String>
     <sys:String x:Key="MTDA_SimulationAfter">Después</sys:String>
     <sys:String x:Key="MTDA_SimulationApplied">Metadata AI aplicó los cambios simulados a {0} juego(s).</sys:String>
+    <sys:String x:Key="MTDA_SimulationAppliedWithFields">Metadata AI aplicó {1} a {0} juego(s).</sys:String>
     <sys:String x:Key="MTDA_SimulationRecommendationHelp">Las recomendaciones se calculan localmente según la información disponible, la procedencia, la confianza y la posible pérdida de datos. No vuelven a consultar al proveedor de IA ni sustituyen tu revisión.</sys:String>
     <sys:String x:Key="MTDA_SimulationSelectRecommended">Seleccionar recomendados</sys:String>
     <sys:String x:Key="MTDA_SimulationSelectAll">Seleccionar todo</sys:String>
@@ -851,6 +870,7 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_SourceStatusTested">Probada</sys:String>
     <sys:String x:Key="MTDA_SourceStatusError">Error</sys:String>
     <sys:String x:Key="MTDA_BatchNotProcessedAfterStop">No se procesó porque el lote se detuvo tras el error anterior.</sys:String>
+    <sys:String x:Key="MTDA_BatchNotProcessedUnknown">No se procesó.</sys:String>
     <sys:String x:Key="MTDA_Game">Juego</sys:String>
     <sys:String x:Key="MTDA_BatchFailureReason">Causa</sys:String>
     <sys:String x:Key="MTDA_BatchUpdatedBadge">Actualizados: {0}</sys:String>
