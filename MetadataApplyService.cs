@@ -30,7 +30,7 @@ namespace MetaDataIAPlugin
                 game.GenreIds = MergeIds(
                     api.Database.Genres,
                     game.GenreIds,
-                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), false, true),
+                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), false, false),
                     TermApplyMode(result, "genres", settings.GenresApplyMode),
                     settings.MaxGenres,
                     "genres",
@@ -42,7 +42,7 @@ namespace MetaDataIAPlugin
                 game.TagIds = MergeIds(
                     api.Database.Tags,
                     game.TagIds,
-                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), false, true),
+                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), false, false),
                     TermApplyMode(result, "tags", settings.TagsApplyMode),
                     settings.MaxTags,
                     "tags",
@@ -54,7 +54,7 @@ namespace MetaDataIAPlugin
                 game.FeatureIds = MergeIds(
                     api.Database.Features,
                     game.FeatureIds,
-                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), false, true),
+                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), false, false),
                     TermApplyMode(result, "features", settings.FeaturesApplyMode),
                     settings.MaxFeatures,
                     "features",

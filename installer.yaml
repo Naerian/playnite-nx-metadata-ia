@@ -1,5 +1,10 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.26
+    RequiredApiVersion: 6.15.0
+    Changelog:
+      - 'The organize/normalize AI prompt for genres, tags and features is stricter: one canonical label per concept, full translation into the plugin language, no mixed-language synonyms, and clearer overwrite/append/empty behaviour.'
+      - 'When the plugin language is not English, raw English store/IGDB labels (Adventure, Shooter, RPG, …) are rejected after the model call. Fallback uses plugin-language store lists only, so failed organizes no longer create English duplicates next to Spanish ones. The dedicated organize pass always runs after full metadata generation. Genre/tag/feature matching ignores letter case so uppercase settings do not fork the library.'
   - Version: 1.4.25
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-27

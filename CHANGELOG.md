@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.26 — 2026-09-27
+- The organize/normalize AI prompt for genres, tags and features is stricter: one canonical label per concept, full translation into the plugin language, no mixed-language synonyms, and clearer overwrite/append/empty behaviour.
+- When the plugin language is not English, raw English store/IGDB labels (Adventure, Shooter, RPG, …) are rejected after the model call. Fallback uses plugin-language store lists only, so failed organizes no longer create English duplicates next to Spanish ones. The dedicated organize pass always runs after full metadata generation. Genre/tag/feature matching ignores letter case so uppercase settings do not fork the library.
+
 ## 1.4.25 — 2026-09-27
 - After the main metadata call, genres/tags/features that are still not in the plugin language are re-organized and translated (for example Shooter to Disparos). Empty-only fields that are vacant also go through that pass instead of keeping raw English store labels.
 - Progress dialogs name the active action (for example Organizing genres). A single game shows the title after a middle dot; multi-game batches omit the title and show an honest status such as "2 in progress · 12/70 done" while up to two games run in parallel, still in library list order.

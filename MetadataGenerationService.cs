@@ -1320,9 +1320,13 @@ namespace MetaDataIAPlugin
             {
                 parts.Add(
                     "When termCandidates is present, organize genres, tags and features in this same response. " +
-                    "Use only concepts from each field's existing and incoming lists in termCandidates. You may translate common-noun labels into the requested language; keep proper names unchanged. " +
-                    "Do not invent a concept that is not in those lists. Keep one label per concept and drop broad labels that are only the sum of more specific ones already listed. " +
-                    "mode overwrite: ignore existing. mode append: keep unrelated existing labels and add incoming ones. " +
+                    "Read targetLanguage / targetLanguageName. If not English, translate every common store/IGDB label " +
+                    "completely into that language (Adventure -> Aventura, Shooter -> Disparos, or the equivalent). " +
+                    "Exactly one canonical label per concept: never keep mixed-language synonyms such as Adventure and Aventura, " +
+                    "or RPG and Rol, in the same list. Loanwords such as Roguelike, Metroidvania or Indie may stay as-is. " +
+                    "Use only concepts from each field's existing and incoming lists in termCandidates. " +
+                    "Do not invent a concept that is not in those lists. Keep labels concise (1-3 words). " +
+                    "mode overwrite: ignore existing. mode append: keep unrelated existing labels and add incoming ones without synonym duplicates. " +
                     "Player count, input, co-op, achievements and controller support belong in features. Store genres stay in genres. Theme and style stay in tags. " +
                     "If a field's incoming list is empty, leave that array empty unless the game identity in context is enough to choose a short factual label; otherwise leave it empty. " +
                     "If fieldsToGenerate includes features, features must contain between 3 and " + settings.MaxFeatures + " concrete features when enough evidence exists, not generic phrases. " +
@@ -2852,15 +2856,9 @@ namespace MetaDataIAPlugin
             }
 
             var organizeFields = modelFields.Where(x => !x.FromKnowledge).ToList();
-            if (termsOrganizedByMainCall)
-            {
-                // Main call may leave English store/IGDB wording (Shooter, Action, …).
-                // Keep the dedicated organize/translate pass whenever lists are not already
-                // in the plugin language, or when the main call left the field empty.
-                organizeFields = organizeFields
-                    .Where(x => !HasAnyTerms(GetResultTermList(result, x.Field)) || !x.AlreadyInLanguage)
-                    .ToList();
-            }
+            // Always keep the dedicated organize pass for genres/tags/features, even after the
+            // main metadata call: that call's termCandidates wording is weaker and often leaves
+            // English store/IGDB labels that would otherwise skip this stricter prompt.
 
             var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
             var resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -2952,18 +2950,31 @@ namespace MetaDataIAPlugin
 
             var target = string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ? 20 : Math.Max(1, maxItems);
             var filterFeatures = string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
-            var fromStore = storeSelector != null && CollectStoreTerms(storeSelector, target, filterFeatures, game).Count > 0;
-            var incoming = TermFieldResolver.DistinctTerms(current).Take(Math.Min(20, Math.Max(maxItems, 1) * 2)).ToList();
+            var incoming = storeSelector == null
+                ? new List<string>()
+                : CollectStoreTerms(storeSelector, target, filterFeatures, game, false);
+            if (incoming.Count == 0)
+            {
+                incoming = TermFieldResolver.DistinctTerms(current).Take(Math.Min(20, Math.Max(maxItems, 1) * 2)).ToList();
+            }
+
+            var localizedIncoming = storeSelector == null
+                ? new List<string>()
+                : CollectStoreTerms(storeSelector, target, filterFeatures, game, true);
+            var fromStore = incoming.Count > 0;
             return new TermFieldRequest
             {
                 Field = field,
                 Mode = mode,
+                Language = settings.Language,
                 Existing = TermFieldResolver.DistinctTerms(existing).Take(20).ToList(),
                 Incoming = incoming,
+                LocalizedIncoming = localizedIncoming,
                 MaxItems = Math.Max(1, maxItems),
                 AlreadyInLanguage = !fromStore || StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
                 Organize = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase),
+                           string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(field, "features", StringComparison.OrdinalIgnoreCase),
                 FromKnowledge = (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(field, "features", StringComparison.OrdinalIgnoreCase)) &&
@@ -3130,12 +3141,27 @@ namespace MetaDataIAPlugin
 
         private List<string> CollectStoreTerms(Func<OfficialStoreMetadata, List<string>> selector, int targetCount, bool filterFeatures, Game game)
         {
+            return CollectStoreTerms(selector, targetCount, filterFeatures, game, false);
+        }
+
+        private List<string> CollectStoreTerms(
+            Func<OfficialStoreMetadata, List<string>> selector,
+            int targetCount,
+            bool filterFeatures,
+            Game game,
+            bool pluginLanguageOnly)
+        {
             var result = new List<string>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var target = Math.Max(1, targetCount);
-            foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+            // Prefer plugin-language store lists first so Spanish Steam labels win over English IGDB.
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && !IsLibraryIntegrationSource(x))
+                .OrderByDescending(x => x.ListsMatchPluginLanguage)
+                .ToList();
+            foreach (var source in sources)
             {
-                if (source == null || IsLibraryIntegrationSource(source))
+                if (pluginLanguageOnly && !source.ListsMatchPluginLanguage)
                 {
                     continue;
                 }

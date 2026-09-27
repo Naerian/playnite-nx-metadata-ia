@@ -39,6 +39,7 @@ internal static class VocabularyBehaviorRunner
         Test_TermResolve_InvalidJsonFallsBack();
         Test_AiJson_OverEscapedQuotesAreRepaired();
         Test_AiJson_WrappedJsonStringIsUnwrapped();
+        Test_TermResolve_RejectsEnglishLeftoversInSpanish();
         Test_RomTitle_MatchesStoreTitle();
         Test_ArticleAndPlatform_SeparateRomFromRemake();
         Test_Genres_AreOrganizedEvenWhenAlreadyLocalized();
@@ -366,6 +367,40 @@ internal static class VocabularyBehaviorRunner
         var ok = TermFieldResolver.TryApplyResponse(content, new List<TermFieldRequest> { field }, out resolved);
         AssertTrue("JSON string wrapper is unwrapped", ok);
         AssertEqual("wrapped genres parse", "Puzzle, Adventure", Join(resolved["genres"]));
+    }
+
+    private static void Test_TermResolve_RejectsEnglishLeftoversInSpanish()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Existing = new List<string>(),
+            Incoming = new List<string> { "Adventure", "Shooter", "Indie" },
+            LocalizedIncoming = new List<string> { "Aventura", "Disparos", "Indie" },
+            MaxItems = 8,
+            Organize = true
+        };
+
+        Dictionary<string, List<string>> mixed;
+        var mixedOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Aventura\",\"Shooter\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { field },
+            out mixed);
+        AssertTrue("mixed EN/ES response is not accepted as-is", !mixedOk || !Join(mixed["genres"]).Contains("Shooter"));
+        AssertEqual("fallback prefers localized store list", "Aventura, Disparos, Indie", Join(mixed["genres"]));
+
+        Dictionary<string, List<string>> clean;
+        var cleanOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Aventura\",\"Disparos\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { field },
+            out clean);
+        AssertTrue("fully translated response is accepted", cleanOk);
+        AssertEqual("translated genres kept", "Aventura, Disparos, Indie", Join(clean["genres"]));
+
+        AssertTrue("Adventure is flagged as untranslated English", TermFieldResolver.LooksLikeUntranslatedEnglish("Adventure"));
+        AssertTrue("Indie loanword is allowed", !TermFieldResolver.LooksLikeUntranslatedEnglish("Indie"));
     }
 
     private static void Test_RomTitle_MatchesStoreTitle()
