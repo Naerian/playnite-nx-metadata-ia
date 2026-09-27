@@ -1,4 +1,5 @@
 using MetaDataIAPlugin;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Playnite.SDK.Models;
 using System;
@@ -36,6 +37,8 @@ internal static class VocabularyBehaviorRunner
         Test_TermResolve_AppendRejectsDroppingUnrelated();
         Test_TermResolve_LocalizedOverwriteSkipsModel();
         Test_TermResolve_InvalidJsonFallsBack();
+        Test_AiJson_OverEscapedQuotesAreRepaired();
+        Test_AiJson_WrappedJsonStringIsUnwrapped();
         Test_RomTitle_MatchesStoreTitle();
         Test_ArticleAndPlatform_SeparateRomFromRemake();
         Test_Genres_AreOrganizedEvenWhenAlreadyLocalized();
@@ -323,6 +326,46 @@ internal static class VocabularyBehaviorRunner
         var ok = TermFieldResolver.TryApplyResponse("not json", new List<TermFieldRequest> { field }, out resolved);
         AssertTrue("invalid json is a fallback", !ok);
         AssertEqual("fallback keeps both", "Un jugador, Cooperativo", Join(resolved["features"]));
+    }
+
+    private static void Test_AiJson_OverEscapedQuotesAreRepaired()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Existing = new List<string>(),
+            Incoming = new List<string> { "Adventure", "Cooperative" },
+            MaxItems = 8,
+            Organize = true
+        };
+        // Models sometimes return object literals with escaped quotes:
+        // { \"genres\": [\"Adventure\"] }
+        var content =
+            "{\n  \\\"fields\\\": [\n    {\n      \\\"field\\\": \\\"genres\\\",\n      \\\"terms\\\": [\\\"Adventure\\\", \\\"Cooperative\\\"]\n    }\n  ]\n}";
+        Dictionary<string, List<string>> resolved;
+        var ok = TermFieldResolver.TryApplyResponse(content, new List<TermFieldRequest> { field }, out resolved);
+        AssertTrue("over-escaped JSON is repaired", ok);
+        AssertEqual("over-escaped genres parse", "Adventure, Cooperative", Join(resolved["genres"]));
+    }
+
+    private static void Test_AiJson_WrappedJsonStringIsUnwrapped()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Existing = new List<string>(),
+            Incoming = new List<string> { "Puzzle", "Adventure" },
+            MaxItems = 8,
+            Organize = true
+        };
+        var inner = "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Puzzle\",\"Adventure\"]}]}";
+        var content = JsonConvert.SerializeObject(inner);
+        Dictionary<string, List<string>> resolved;
+        var ok = TermFieldResolver.TryApplyResponse(content, new List<TermFieldRequest> { field }, out resolved);
+        AssertTrue("JSON string wrapper is unwrapped", ok);
+        AssertEqual("wrapped genres parse", "Puzzle, Adventure", Join(resolved["genres"]));
     }
 
     private static void Test_RomTitle_MatchesStoreTitle()

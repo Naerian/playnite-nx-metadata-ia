@@ -395,28 +395,7 @@ namespace MetaDataIAPlugin
 
         private static bool TryParseObject(string content, out JObject json)
         {
-            json = null;
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return false;
-            }
-
-            var start = content.IndexOf('{');
-            var end = content.LastIndexOf('}');
-            if (start < 0 || end <= start)
-            {
-                return false;
-            }
-
-            try
-            {
-                json = JObject.Parse(content.Substring(start, end - start + 1));
-                return true;
-            }
-            catch (Newtonsoft.Json.JsonException)
-            {
-                return false;
-            }
+            return AiResponseJson.TryParseObject(content, out json);
         }
     }
 }

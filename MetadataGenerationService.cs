@@ -2130,17 +2130,7 @@ namespace MetaDataIAPlugin
 
         private static AiMetadataResult ParseResult(string content)
         {
-            var cleaned = content.Trim();
-            if (cleaned.StartsWith("```", StringComparison.Ordinal))
-            {
-                cleaned = cleaned.Trim('`').Trim();
-                if (cleaned.StartsWith("json", StringComparison.OrdinalIgnoreCase))
-                {
-                    cleaned = cleaned.Substring(4).Trim();
-                }
-            }
-
-            cleaned = ExtractJsonObject(cleaned);
+            var cleaned = content == null ? string.Empty : content.Trim();
             JObject json = null;
             Exception parseError = null;
             try
@@ -2154,18 +2144,13 @@ namespace MetaDataIAPlugin
 
             if (json == null)
             {
-                var loose = ParseLooseResult(cleaned);
+                var loose = ParseLooseResult(AiResponseJson.PrepareForLooseParse(cleaned));
                 if (HasUsefulData(loose))
                 {
                     return loose;
                 }
 
                 throw parseError ?? new InvalidOperationException(Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted."));
-            }
-
-            if (json == null)
-            {
-                throw new InvalidOperationException(Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted."));
             }
 
             var features = List(json, "features");
@@ -2404,121 +2389,26 @@ namespace MetaDataIAPlugin
 
         private static JObject ParseJsonObject(string content)
         {
-            try
+            JObject json;
+            JsonReaderException parseError;
+            if (AiResponseJson.TryParseObject(content, out json, out parseError))
             {
-                return JObject.Parse(content);
+                return json;
             }
-            catch (JsonReaderException firstError)
-            {
-                var repaired = EscapeRawControlCharactersInJsonStrings(content);
-                if (!string.Equals(content, repaired, StringComparison.Ordinal))
-                {
-                    try
-                    {
-                        return JObject.Parse(repaired);
-                    }
-                    catch (JsonReaderException secondError)
-                    {
-                        throw CreateMalformedJsonException(secondError, firstError);
-                    }
-                }
 
-                throw CreateMalformedJsonException(firstError, null);
-            }
+            throw CreateMalformedJsonException(parseError);
         }
 
-        private static Exception CreateMalformedJsonException(JsonReaderException error, JsonReaderException originalError)
+        private static Exception CreateMalformedJsonException(JsonReaderException error)
         {
-            var detail = originalError == null ? error.Message : originalError.Message;
+            var detail = error == null
+                ? Loc("MTDA_ErrorAiResponseNotParsed", "The AI response could not be interpreted.")
+                : error.Message;
             // Soft failure: one bad model response must not abort a multi-game batch.
             return new AiProviderException(
                 Loc("MTDA_ErrorMalformedAiJson", "The AI returned a response with an invalid format and it could not be interpreted.\n\nThis game was skipped; other games in the batch should still be processed. You can retry this game, reduce text length, or switch to a model that follows JSON more reliably.\n\nBrief detail: ") + SanitizeForUser(detail),
                 false,
                 detail);
-        }
-
-        private static string EscapeRawControlCharactersInJsonStrings(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-            {
-                return content;
-            }
-
-            var builder = new StringBuilder(content.Length + 32);
-            var inString = false;
-            var escaped = false;
-            var changed = false;
-
-            foreach (var character in content)
-            {
-                if (escaped)
-                {
-                    builder.Append(character);
-                    escaped = false;
-                    continue;
-                }
-
-                if (inString && character == '\\')
-                {
-                    builder.Append(character);
-                    escaped = true;
-                    continue;
-                }
-
-                if (character == '"')
-                {
-                    inString = !inString;
-                    builder.Append(character);
-                    continue;
-                }
-
-                if (inString)
-                {
-                    if (character == '\r')
-                    {
-                        changed = true;
-                        continue;
-                    }
-
-                    if (character == '\n')
-                    {
-                        builder.Append("\\n");
-                        changed = true;
-                        continue;
-                    }
-
-                    if (character == '\t')
-                    {
-                        builder.Append("\\t");
-                        changed = true;
-                        continue;
-                    }
-
-                    if (char.IsControl(character))
-                    {
-                        builder.Append("\\u");
-                        builder.Append(((int)character).ToString("x4"));
-                        changed = true;
-                        continue;
-                    }
-                }
-
-                builder.Append(character);
-            }
-
-            return changed ? builder.ToString() : content;
-        }
-
-        private static string ExtractJsonObject(string content)
-        {
-            var start = content.IndexOf('{');
-            var end = content.LastIndexOf('}');
-            if (start >= 0 && end > start)
-            {
-                return content.Substring(start, end - start + 1);
-            }
-
-            return content;
         }
 
         private static string Text(JObject json, params string[] names)

@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="AiMetadataResult.cs" />
     <Compile Include="AiProviderException.cs" />
+    <Compile Include="AiResponseJson.cs" />
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MetadataHistoryService.cs" />
