@@ -761,5 +761,9 @@ namespace MetaDataIAPlugin
         public string Method { get; set; }
         public string Confidence { get; set; }
         public string Detail { get; set; }
+        /// <summary>AI provider preset used when this field was written. Empty for local/media-only entries.</summary>
+        public string Provider { get; set; }
+        /// <summary>AI model id used when this field was written. Empty for local/media-only or legacy history.</summary>
+        public string Model { get; set; }
     }
 }

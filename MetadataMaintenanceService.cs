@@ -971,7 +971,9 @@ namespace MetaDataIAPlugin
                         catch (Exception ex) { result = new LibraryAuditRepairResult { Resolved = false, Message = ex.Message }; }
                         completed.Add(Tuple.Create(originalIssue, result));
                     }
-                });
+                },
+                plugin.CurrentProviderPreset,
+                plugin.CurrentModelName);
             progress.ShowUntilCompleted();
             var repaired = 0;
             var unresolved = 0;

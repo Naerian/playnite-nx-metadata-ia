@@ -1,5 +1,23 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.27
+    RequiredApiVersion: 6.15.0
+    Changelog:
+      - 'History and provenance record the AI provider and model used for each field when Metadata AI writes or normalizes values. Older history entries without a model show Not recorded.'
+      - 'Ordered backup provider profiles replace free local LM Studio/Ollama fallback. Existing local fallback settings migrate once into the chain.'
+      - 'AI Provider settings split into Primary and Backup tabs. Backup list uses icon actions; add/edit open a form dialog with the same provider page link, short provider hint, and editable model dropdown (with refresh) as Primary. Usage becomes Check limit (modal) plus Open usage page, with a notice when the provider exposes none. Form and usage modals use the same DPI-aware centering as the setup assistant (Playnite main window / its monitor work area).'
+      - 'On a hard provider failure mid-batch (rate limit, quota, auth, saturation, connection), remaining games continue on the next enabled profile after a short probe. Soft failures stay per-game. Rate-limited games requeue on the backup instead of failing the rest of the batch on the same provider.'
+      - 'The batch results dialog can retry pending games with the same provider or with another profile from a dropdown.'
+      - 'When the plugin language is not English, organize applies the model response. Leftovers that are exact copies of non-localized Incoming (Incoming − LocalizedIncoming for that request) trigger one retry and are stripped; there is no hard-coded English word list.'
+      - 'If the organize/knowledge provider call fails (for example HTTP 503 high demand), the plugin waits and retries once. After retries the game is reported as not updated instead of applying a localized-store-only list that would look complete while omitting IGDB and other sources. Unusable model JSON likewise fails the game for non-English libraries.'
+      - 'Before a metadata batch (or single-game generate), the plugin probes the AI provider with a tiny ping. If the provider is saturated or unreachable, it shows the error and starts no games.'
+      - 'Cancel unblocks the progress dialog immediately instead of waiting for in-flight provider calls; remaining games are marked cancelled.'
+      - 'Progress dialogs drop the in-progress count. The footer shows elapsed time (hh:mm:ss), provider and model as hint text.'
+      - 'Organize retries once when the model returns unparseable JSON, and once when the answer still copies non-localized store labels. Knowledge guesses (no store list) always get one localization confirmation retry when the plugin language is not English. Prompts require a single JSON object, forbid mixed-language terms for ordinary nouns, and ask for acronyms in UPPERCASE (MMO, RPG). Short all-caps acronyms are preserved by casing.'
+      - 'Organize, knowledge and main-call genre/tag/feature prompts spell out universal gaming loanwords and acronyms (Roguelike, Metroidvania, Indie, MOBA, RPG, …) so the model keeps them without a hard-coded allowlist in code.'
+      - 'Organize/apply writes an append-only debug log at ExtensionsData/<plugin-id>/logs/organize-debug.log with metadata sources (Steam, PSN, Xbox, Epic, IGDB, IGN, VNDB, Wikidata, …), request JSON, model response, retry, and final applied terms.'
+      - 'Current-metadata mode is advanced-only, simplified to Use as context / Ignore (legacy Normalize maps to context), with a clearer help text. Persisted values are stable codes (context / ignore), not UI language strings.'
+
   - Version: 1.4.26
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-27

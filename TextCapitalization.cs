@@ -75,7 +75,37 @@ namespace MetaDataIAPlugin
                 return string.IsNullOrEmpty(value) ? value ?? string.Empty : culture.TextInfo.ToTitleCase(value.ToLower(culture));
             }
 
+            // Preserve short all-caps acronyms (MMO, RPG, RTS) — sentence case would turn them into Mmo/Rpg.
+            if (LooksLikeAcronym(value))
+            {
+                return value;
+            }
+
             return ToSentence(value, language);
+        }
+
+        private static bool LooksLikeAcronym(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var text = value.Trim();
+            if (text.Length < 2 || text.Length > 5)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < text.Length; i++)
+            {
+                if (!char.IsLetter(text[i]) || !char.IsUpper(text[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static List<string> ApplyList(IEnumerable<string> values, string language, bool uppercase)

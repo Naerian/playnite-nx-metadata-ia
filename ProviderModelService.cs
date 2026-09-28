@@ -59,7 +59,7 @@ namespace MetaDataIAPlugin
                         .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Id))
                         .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
                         .Select(x => x.First())
-                        .OrderBy(x => x.DisplayName ?? x.Id, StringComparer.CurrentCultureIgnoreCase)
+                        .OrderBy(x => x.Id, StringComparer.CurrentCultureIgnoreCase)
                         .ToList();
                 }
             }

@@ -63,6 +63,7 @@
     <Compile Include="AiMetadataResult.cs" />
     <Compile Include="AiProviderException.cs" />
     <Compile Include="AiResponseJson.cs" />
+    <Compile Include="MetadataDebugLog.cs" />
     <Compile Include="MetadataApplyService.cs" />
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MetadataHistoryService.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="ProviderModelService.cs" />
     <Compile Include="TitleMatchingService.cs" />
     <Compile Include="MetaDataIAPlugin.cs" />
+    <Compile Include="MetaDataIAPlugin.ProviderFailover.cs" />
     <Compile Include="MetaDataIAProvider.cs" />
     <Compile Include="MetaDataIAPreviewViewModel.cs" />
     <Compile Include="MetaDataIAPreviewWindow.xaml.cs">

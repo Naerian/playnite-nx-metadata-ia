@@ -499,7 +499,9 @@ namespace MetaDataIAPlugin
                 Source = value.Source,
                 Method = value.Method,
                 Confidence = value.Confidence,
-                Detail = value.Detail
+                Detail = value.Detail,
+                Provider = value.Provider,
+                Model = value.Model
             };
         }
 

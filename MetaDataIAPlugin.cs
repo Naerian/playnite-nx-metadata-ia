@@ -61,7 +61,7 @@ namespace MetaDataIAPlugin
         }
     }
 
-    public class MetaDataIAPlugin : MetadataPlugin
+    public partial class MetaDataIAPlugin : MetadataPlugin
     {
         private static readonly ILogger logger = LogManager.GetLogger();
         private readonly MetaDataIASettingsViewModel settings;
@@ -82,6 +82,7 @@ namespace MetaDataIAPlugin
             public Game Game { get; set; }
             public AiMetadataResult Result { get; set; }
             public Exception Error { get; set; }
+            public MetaDataIASettings UsedSettings { get; set; }
         }
 
         private sealed class MediaPickerCandidateFilter
@@ -113,6 +114,7 @@ namespace MetaDataIAPlugin
             public double ProgressMaxValue { get; set; }
             public double CurrentProgressValue { get; set; }
             public Action<string> Report { get; set; }
+            public Action<string, string> ReportProvider { get; set; }
             public string Text
             {
                 set
@@ -123,6 +125,14 @@ namespace MetaDataIAPlugin
                     }
                 }
             }
+
+            public void SetProviderFooter(string providerName, string modelName)
+            {
+                if (ReportProvider != null)
+                {
+                    ReportProvider(providerName, modelName);
+                }
+            }
         }
 
         private sealed class PluginProgressResult
@@ -131,14 +141,20 @@ namespace MetaDataIAPlugin
             public Exception Error { get; set; }
         }
 
-        private PluginProgressResult RunPluginProgress(string message, Action<PluginProgressHandle> operation, Window owner = null)
+        private PluginProgressResult RunPluginProgress(
+            string message,
+            Action<PluginProgressHandle> operation,
+            Window owner = null,
+            MetaDataIASettings activeSettings = null)
         {
             var progressOwner = owner ?? (PlayniteApi == null || PlayniteApi.Dialogs == null ? null : PlayniteApi.Dialogs.GetCurrentAppWindow());
             var handle = new PluginProgressHandle
             {
                 MainDispatcher = Application.Current == null ? Dispatcher.CurrentDispatcher : Application.Current.Dispatcher
             };
-            var window = new MetadataAuditProgressWindow(
+            var footerSettings = activeSettings ?? (settings == null ? null : settings.Settings);
+            MetadataAuditProgressWindow window = null;
+            window = new MetadataAuditProgressWindow(
                 this,
                 progressOwner,
                 message ?? PluginTitle,
@@ -146,8 +162,17 @@ namespace MetaDataIAPlugin
                 {
                     handle.CancelToken = token;
                     handle.Report = report;
+                    handle.ReportProvider = (providerName, modelName) =>
+                    {
+                        if (window != null)
+                        {
+                            window.UpdateProviderFooter(providerName, modelName);
+                        }
+                    };
                     operation(handle);
-                });
+                },
+                footerSettings == null ? null : footerSettings.ProviderPreset,
+                footerSettings == null ? null : footerSettings.Model);
             try
             {
                 window.ShowUntilCompleted();
@@ -619,230 +644,26 @@ namespace MetaDataIAPlugin
 
         private void GenerateAndApply(List<Game> games, MetaDataIASettings activeSettings, bool silent = false)
         {
-            games = NormalizeGamesForBatch(games);
-            if (games == null || games.Count == 0 || !EnsureConfigured())
-            {
-                if (!silent && (games == null || games.Count == 0))
-                {
-                    PlayniteApi.Dialogs.ShowMessage(Loc("MTDA_MessageNoGamesMetadata", "There are no games to apply Metadata AI to."), PluginTitle);
-                }
+            GenerateAndApplyWithProviderFailover(games, activeSettings, silent);
+        }
 
-                return;
+        public string CurrentProviderPreset
+        {
+            get
+            {
+                return settings == null || settings.Settings == null
+                    ? null
+                    : settings.Settings.ProviderPreset;
             }
+        }
 
-            try
+        public string CurrentModelName
+        {
+            get
             {
-                var processed = 0;
-                var cancelled = false;
-                var batchStopped = false;
-                var errors = new List<string>();
-                var updatedGameIds = new HashSet<Guid>();
-                var failureReasons = new Dictionary<Guid, string>();
-                var historyOperation = history.BeginOperation(silent
-                    ? Loc("MTDA_HistoryAutoImportMetadata", "Automatic metadata import")
-                    : Loc("MTDA_HistoryApplyMetadata", "Apply AI metadata"));
-                var progressResult = RunPluginProgress(PluginTitle, progress =>
-                {
-                    progress.ProgressMaxValue = games.Count;
-                    const int maxParallel = 2;
-                    var pending = new Queue<Game>(games);
-                    var inFlight = new List<Task<MetadataBatchItemResult>>();
-                    var actionLabel = DescribeMetadataProgressAction(activeSettings);
-                    string focusGameName = null;
-
-                    Action refreshProgress = () =>
-                    {
-                        progress.MainDispatcher.Invoke(new Action(() =>
-                        {
-                            progress.Text = BuildParallelBatchProgressText(
-                                actionLabel,
-                                inFlight.Count,
-                                processed + errors.Count,
-                                games.Count,
-                                focusGameName);
-                            progress.CurrentProgressValue = processed + errors.Count;
-                        }));
-                    };
-
-                    Action startNext = () =>
-                    {
-                        while (inFlight.Count < maxParallel &&
-                               pending.Count > 0 &&
-                               !batchStopped &&
-                               !progress.CancelToken.IsCancellationRequested)
-                        {
-                            var game = pending.Dequeue();
-                            focusGameName = game.Name;
-                            var task = Task.Run(() =>
-                            {
-                                try
-                                {
-                                    var result = new MetadataGenerationService(activeSettings, PlayniteApi)
-                                        .GenerateAsync(game, progress.CancelToken)
-                                        .GetAwaiter()
-                                        .GetResult();
-                                    return new MetadataBatchItemResult { Game = game, Result = result };
-                                }
-                                catch (Exception ex)
-                                {
-                                    return new MetadataBatchItemResult { Game = game, Error = ex };
-                                }
-                            }, progress.CancelToken);
-                            inFlight.Add(task);
-                            refreshProgress();
-                        }
-                    };
-
-                    startNext();
-                    while (inFlight.Count > 0)
-                    {
-                        if (progress.CancelToken.IsCancellationRequested)
-                        {
-                            cancelled = true;
-                            break;
-                        }
-
-                        Task<MetadataBatchItemResult> finished;
-                        try
-                        {
-                            finished = Task.WhenAny(inFlight).GetAwaiter().GetResult();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            cancelled = true;
-                            break;
-                        }
-
-                        inFlight.Remove(finished);
-                        MetadataBatchItemResult item;
-                        try
-                        {
-                            item = finished.GetAwaiter().GetResult();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            cancelled = true;
-                            break;
-                        }
-                        catch (AggregateException aggregate)
-                        {
-                            if (aggregate.InnerExceptions.Any(x => x is OperationCanceledException))
-                            {
-                                cancelled = true;
-                                break;
-                            }
-
-                            throw;
-                        }
-
-                        var game = item.Game;
-                        focusGameName = game == null ? focusGameName : game.Name;
-                        if (item.Error != null)
-                        {
-                            var ex = item.Error;
-                            if (ex is OperationCanceledException)
-                            {
-                                if (progress.CancelToken.IsCancellationRequested)
-                                {
-                                    cancelled = true;
-                                    break;
-                                }
-
-                                logger.Error("AI metadata request timed out for " + game.Name);
-                                var reason = Loc(
-                                    "MTDA_ErrorProviderTimeout",
-                                    "The request timed out or was interrupted before completion. Check your network connection and AI provider, then try again.");
-                                errors.Add(game.Name + ": " + reason);
-                                failureReasons[game.Id] = reason;
-                            }
-                            else
-                            {
-                                logger.Error(ex, "Failed to process AI metadata for " + game.Name);
-                                var reason = UserError(ex);
-                                errors.Add(game.Name + ": " + reason);
-                                failureReasons[game.Id] = reason;
-
-                                var providerException = ex as AiProviderException;
-                                if (providerException != null && providerException.StopBatch)
-                                {
-                                    batchStopped = true;
-                                    pending.Clear();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            progress.MainDispatcher.Invoke(new Action(() =>
-                            {
-                                var resultToApply = PrepareResultForDirectBatchApply(item.Result, activeSettings, games.Count > 1 || silent);
-                                var before = history.Capture(game, historyOperation, false);
-                                MetadataApplyService.Apply(PlayniteApi, game, resultToApply, activeSettings);
-                                var after = history.Capture(game, historyOperation, false);
-                                history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
-                                LearnVocabulary(activeSettings, resultToApply);
-                            }));
-                            processed++;
-                            updatedGameIds.Add(game.Id);
-                        }
-
-                        if (cancelled || batchStopped)
-                        {
-                            refreshProgress();
-                            break;
-                        }
-
-                        startNext();
-                        refreshProgress();
-                    }
-                });
-
-                if (progressResult != null && progressResult.Error != null)
-                {
-                    logger.Error(progressResult.Error, "Metadata AI batch progress aborted unexpectedly.");
-                    batchStopped = true;
-                    if (errors.Count == 0)
-                    {
-                        errors.Add(UserError(progressResult.Error));
-                    }
-                }
-
-                history.SaveOperation(historyOperation);
-
-                if (errors.Count > 0)
-                {
-                    if (silent)
-                    {
-                        logger.Warn("Metadata AI auto-import metadata completed with errors: " + string.Join(" | ", errors));
-                    }
-                    else
-                    {
-                        var failedGames = BuildBatchFailures(games, updatedGameIds, failureReasons, batchStopped || cancelled);
-                        ShowBatchErrors(
-                            processed,
-                            errors,
-                            0,
-                            failedGames,
-                            () => GenerateAndApply(failedGames.Select(x => x.Game).Where(x => x != null).ToList(), activeSettings),
-                            FormatLocalizedFieldList(CollectChangedFields(historyOperation)),
-                            CountUpdatedGames(historyOperation));
-                    }
-                }
-                else if (cancelled && !silent)
-                {
-                    PlayniteApi.Dialogs.ShowMessage(BuildMetadataBatchCancelledMessage(processed, historyOperation), PluginTitle);
-                }
-                else if (!silent)
-                {
-                    PlayniteApi.Dialogs.ShowMessage(BuildMetadataUpdatedMessage(processed, historyOperation), PluginTitle);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Failed to generate and apply AI metadata.");
-                if (!silent)
-                {
-                    PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
-                }
+                return settings == null || settings.Settings == null
+                    ? null
+                    : settings.Settings.Model;
             }
         }
 
@@ -4026,7 +3847,7 @@ namespace MetaDataIAPlugin
             return label + ": " + game.Name;
         }
 
-        private string BuildParallelBatchProgressText(string action, int inProgress, int done, int total, string focusGameName)
+        private string BuildParallelBatchProgressText(string action, int done, int total, string focusGameName)
         {
             var label = (action ?? string.Empty).Trim().TrimEnd(':').TrimEnd();
             if (string.IsNullOrWhiteSpace(label))
@@ -4045,9 +3866,8 @@ namespace MetaDataIAPlugin
             }
 
             return string.Format(
-                Loc("MTDA_ProgressBatchStatus", "{0} · {1} in progress · {2}/{3} done"),
+                Loc("MTDA_ProgressBatchStatus", "{0} · {1}/{2} done"),
                 label,
-                Math.Max(0, inProgress),
                 Math.Max(0, done),
                 Math.Max(0, total));
         }
@@ -4222,7 +4042,8 @@ namespace MetaDataIAPlugin
             IEnumerable<BatchFailedGame> notUpdatedGames = null,
             Action retryAction = null,
             string changedFieldsSummary = null,
-            int updatedGameCount = -1)
+            int updatedGameCount = -1,
+            MetaDataIASettings batchSettings = null)
         {
             var failedGames = (notUpdatedGames ?? Enumerable.Empty<BatchFailedGame>())
                 .Select(item =>
@@ -4284,6 +4105,7 @@ namespace MetaDataIAPlugin
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var summaryRow = new Grid { Margin = new Thickness(0, 0, 0, qualitySkipped > 0 ? 8 : 12) };
@@ -4422,6 +4244,50 @@ namespace MetaDataIAPlugin
             root.Children.Add(listHost);
 
             var retryRequested = false;
+            var retryOtherRequested = false;
+            ProviderProfile selectedRetryProfile = null;
+
+            var otherProfiles = GetAlternateRetryProfiles(batchSettings);
+            if (otherProfiles.Count > 0 && failedGames.Count > 0)
+            {
+                var retryOtherRow = new DockPanel
+                {
+                    LastChildFill = true,
+                    Margin = new Thickness(0, 12, 0, 0)
+                };
+                var retryOtherButton = new Button
+                {
+                    Content = Loc("MTDA_RetryOtherProvider", "Retry with another provider"),
+                    MinWidth = 180,
+                    Margin = new Thickness(8, 0, 0, 0),
+                    ToolTip = Loc(
+                        "MTDA_RetryOtherProviderHelp",
+                        "Runs the pending games again using the provider selected in the list.")
+                };
+                DockPanel.SetDock(retryOtherButton, Dock.Right);
+                var providerCombo = new ComboBox
+                {
+                    ItemsSource = otherProfiles,
+                    DisplayMemberPath = "ListLabel",
+                    SelectedIndex = 0,
+                    MinWidth = 220,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                retryOtherButton.Click += (sender, args) =>
+                {
+                    selectedRetryProfile = providerCombo.SelectedItem as ProviderProfile;
+                    if (selectedRetryProfile != null)
+                    {
+                        retryOtherRequested = true;
+                        window.Close();
+                    }
+                };
+                retryOtherRow.Children.Add(retryOtherButton);
+                retryOtherRow.Children.Add(providerCombo);
+                Grid.SetRow(retryOtherRow, 3);
+                root.Children.Add(retryOtherRow);
+            }
+
             var buttons = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -4483,15 +4349,53 @@ namespace MetaDataIAPlugin
             };
             okButton.Click += (sender, args) => window.Close();
             buttons.Children.Add(okButton);
-            Grid.SetRow(buttons, 3);
+            Grid.SetRow(buttons, 4);
             root.Children.Add(buttons);
 
             window.Content = root;
             window.ShowDialog();
-            if (retryRequested)
+            if (retryOtherRequested && selectedRetryProfile != null)
+            {
+                var template = batchSettings ?? (settings == null ? null : settings.Settings);
+                var retrySettings = BindSettingsToProfile(template, selectedRetryProfile);
+                GenerateAndApply(failedGames.Select(x => x.Game).Where(x => x != null).ToList(), retrySettings);
+            }
+            else if (retryRequested && retryAction != null)
             {
                 retryAction();
             }
+        }
+
+        private List<ProviderProfile> GetAlternateRetryProfiles(MetaDataIASettings batchSettings)
+        {
+            var root = settings == null ? null : settings.Settings;
+            if (root == null)
+            {
+                return new List<ProviderProfile>();
+            }
+
+            root.EnsureProviderProfiles();
+            var enabled = root.GetEnabledProviderProfiles();
+            if (enabled == null || enabled.Count <= 1)
+            {
+                return new List<ProviderProfile>();
+            }
+
+            return enabled
+                .Where(profile => profile != null && !IsSameProviderProfile(profile, batchSettings))
+                .ToList();
+        }
+
+        private static bool IsSameProviderProfile(ProviderProfile profile, MetaDataIASettings batchSettings)
+        {
+            if (profile == null || batchSettings == null)
+            {
+                return false;
+            }
+
+            return string.Equals(profile.ProviderPreset, batchSettings.ProviderPreset, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals((profile.Model ?? string.Empty).Trim(), (batchSettings.Model ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals((profile.Endpoint ?? string.Empty).Trim(), (batchSettings.Endpoint ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         private TextBlock CreateBatchColumnHeader(string text, int column)

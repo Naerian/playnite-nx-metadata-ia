@@ -104,6 +104,46 @@
         <Style x:Key="FieldHintText" TargetType="TextBlock" BasedOn="{StaticResource HintText}">
             <Setter Property="Margin" Value="0,8,0,16"/>
         </Style>
+        <Style x:Key="BackupProvidersListItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBd" Property="Background" Value="{DynamicResource Narian.Hover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBd" Property="Background" Value="{DynamicResource Narian.Selected}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ItemBd" Property="Background" Value="{DynamicResource Narian.Selected}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="IconSquareButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
@@ -116,6 +156,35 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Narian.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Narian.Hover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="NarianPrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="{DynamicResource Narian.Accent}"/>
@@ -834,7 +903,7 @@
                                     </DockPanel>
                                     <DockPanel Style="{StaticResource SummaryStatusRow}">
                                         <Border Style="{StaticResource SummaryPill}" DockPanel.Dock="Right" Margin="8,0,0,0"><TextBlock x:Name="ConfigurationLocalFallbackStatusText"/></Border>
-                                        <TextBlock Text="{DynamicResource MTDA_SummaryLocalFallback}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{DynamicResource MTDA_SummaryBackupProviders}" VerticalAlignment="Center"/>
                                     </DockPanel>
                                 </StackPanel>
                             </Border>
@@ -852,14 +921,14 @@
                 <TabControl Style="{StaticResource SettingsNavigationTabControl}"
                             Tag="{DynamicResource MTDA_TabAI}"
                             SelectionChanged="RootTabsSelectionChanged">
-                        <TabItem Header="{DynamicResource MTDA_Provider}">
+                        <TabItem Header="{DynamicResource MTDA_ProviderPrimaryTab}">
                             <ScrollViewer Style="{StaticResource FillScrollViewer}">
                                 <StackPanel Margin="8,8,8,16">
                         <StackPanel Style="{StaticResource PageSection}">
                             <Border Style="{StaticResource PageHeader}">
-                                <TextBlock Text="{DynamicResource MTDA_Provider}" Style="{StaticResource SectionHeaderText}"/>
+                                <TextBlock Text="{DynamicResource MTDA_ProviderPrimaryTab}" Style="{StaticResource SectionHeaderText}"/>
                             </Border>
-                            <TextBlock Text="{DynamicResource MTDA_AiSectionProvider}" Style="{StaticResource SectionSubtitleText}"/>
+                            <TextBlock Text="{DynamicResource MTDA_ProviderPrimaryTabHelp}" Style="{StaticResource SectionSubtitleText}"/>
                         </StackPanel>
 
                         <Border Style="{StaticResource SettingsCard}">
@@ -988,13 +1057,10 @@
                                 <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_ProviderUsageTitle}" Style="{StaticResource SectionHeaderText}"/>
                                 </Border>
-                                <ProgressBar x:Name="ProviderUsageProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8" Visibility="Collapsed"/>
-                                <TextBlock x:Name="ProviderUsageStatusText" TextWrapping="Wrap"/>
-                                <TextBlock x:Name="ProviderUsageDetailsText" TextWrapping="Wrap" Margin="0,8,0,0"/>
-                                <TextBlock x:Name="ProviderUsageUpdatedText" TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.75"/>
-                                <StackPanel x:Name="ProviderUsageActionsPanel" Orientation="Horizontal" Margin="0,12,0,8">
+                                <StackPanel x:Name="ProviderUsageActionsPanel" Orientation="Horizontal" Margin="0,0,0,8">
                                     <Button x:Name="RefreshProviderUsageButton"
-                                            Content="{DynamicResource MTDA_RefreshProviderUsage}"
+                                            Content="{DynamicResource MTDA_CheckProviderLimit}"
+                                            Style="{StaticResource NarianPrimaryButton}"
                                             MinWidth="150"
                                             Margin="0,0,8,0"
                                             Click="RefreshProviderUsage_OnClick"/>
@@ -1003,16 +1069,189 @@
                                             MinWidth="170"
                                             Click="OpenProviderUsage_OnClick"/>
                                 </StackPanel>
-                                <TextBlock x:Name="ProviderUsageProbeHelpText"
-                                           Text="{DynamicResource MTDA_ProviderUsageProbeHelp}"
-                                           Style="{StaticResource HintText}"
-                                           Margin="0"/>
+                                <Border x:Name="ProviderUsageUnavailableNotice"
+                                        Style="{StaticResource TestOperationBorder}"
+                                        Visibility="Collapsed"
+                                        Margin="0">
+                                    <TextBlock x:Name="ProviderUsageUnavailableNoticeText"
+                                               Text="{DynamicResource MTDA_ProviderUsageNoInfoNotice}"
+                                               TextWrapping="Wrap"
+                                               Style="{StaticResource FieldHintText}"
+                                               Margin="0"/>
+                                </Border>
+                                <!-- Kept for code-behind refresh helpers; not shown inline. -->
+                                <ProgressBar x:Name="ProviderUsageProgress" IsIndeterminate="True" Height="4" Margin="0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ProviderUsageStatusText" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ProviderUsageDetailsText" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ProviderUsageUpdatedText" Visibility="Collapsed"/>
+                                <TextBlock x:Name="ProviderUsageProbeHelpText" Visibility="Collapsed"/>
                             </StackPanel>
                         </Border>
 
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
+
+                        <TabItem Header="{DynamicResource MTDA_ProviderBackupTab}">
+                            <ScrollViewer Style="{StaticResource FillScrollViewer}">
+                                <StackPanel Margin="8,8,8,16">
+                        <StackPanel Style="{StaticResource PageSection}">
+                            <Border Style="{StaticResource PageHeader}">
+                                <TextBlock Text="{DynamicResource MTDA_ProviderBackupTab}" Style="{StaticResource SectionHeaderText}"/>
+                            </Border>
+                            <TextBlock Text="{DynamicResource MTDA_ProviderBackupTabHelp}" Style="{StaticResource SectionSubtitleText}"/>
+                        </StackPanel>
+
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_BackupProviders}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_BackupProvidersHelp}" Style="{StaticResource FieldHintText}" Margin="0,0,0,12"/>
+
+                                <DockPanel LastChildFill="False" Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <Button x:Name="AddBackupProviderButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                ToolTip="{DynamicResource MTDA_BackupProviderAdd}"
+                                                Click="AddBackupProvider_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M12,5 L12,19 M5,12 L19,12" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button x:Name="EditBackupProviderButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                ToolTip="{DynamicResource MTDA_BackupProviderEdit}"
+                                                Click="EditBackupProvider_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M12,20 L20,20 M4.5,15.5 L14,6 L18,10 L8.5,19.5 L4,20.5 Z" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button x:Name="MoveBackupProviderUpButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                ToolTip="{DynamicResource MTDA_BackupProviderMoveUp}"
+                                                Click="MoveBackupProviderUp_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M12,19 L12,5 M6,11 L12,5 L18,11" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button x:Name="MoveBackupProviderDownButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                ToolTip="{DynamicResource MTDA_BackupProviderMoveDown}"
+                                                Click="MoveBackupProviderDown_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M12,5 L12,19 M6,13 L12,19 L18,13" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button x:Name="RemoveBackupProviderButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                ToolTip="{DynamicResource MTDA_Delete}"
+                                                Click="RemoveBackupProvider_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M4,7 L20,7 M10,11 L10,17 M14,11 L14,17 M5,7 L6,19 A2,2 0 0 0 8,21 L16,21 A2,2 0 0 0 18,19 L19,7 M9,7 L9,4 A1,1 0 0 1 10,3 L14,3 A1,1 0 0 1 15,4 L15,7" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button x:Name="CheckBackupProviderLimitButton"
+                                                Style="{StaticResource IconSquareButton}"
+                                                Margin="0"
+                                                ToolTip="{DynamicResource MTDA_CheckProviderLimit}"
+                                                Click="CheckBackupProviderLimit_OnClick">
+                                            <Viewbox Width="16" Height="16" Stretch="Uniform">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M4,20 L4,10 L8,10 L8,20 Z M10,20 L10,4 L14,4 L14,20 Z M16,20 L16,12 L20,12 L20,20 Z" Stroke="{DynamicResource TextBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                    </StackPanel>
+                                    <Button x:Name="TestBackupProviderButton"
+                                            DockPanel.Dock="Right"
+                                            Content="{DynamicResource MTDA_TestProvider}"
+                                            Style="{StaticResource NarianPrimaryButton}"
+                                            MinWidth="130"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Click="TestBackupProvider_OnClick"/>
+                                </DockPanel>
+
+                                <ListBox x:Name="BackupProvidersList"
+                                         MinHeight="160"
+                                         MaxHeight="320"
+                                         SelectionChanged="BackupProvidersList_OnSelectionChanged">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource BackupProvidersListItem}"/>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel LastChildFill="True">
+                                                <Border DockPanel.Dock="Right"
+                                                        Margin="12,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border" BasedOn="{StaticResource SourceStatusBadge}">
+                                                            <Setter Property="Margin" Value="12,0,0,0"/>
+                                                            <Setter Property="Background" Value="{DynamicResource Narian.BadgeMutedBg}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Enabled}" Value="True">
+                                                                    <Setter Property="Background" Value="{DynamicResource Narian.BadgeSuccessBg}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock FontWeight="SemiBold" VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{DynamicResource MTDA_SourceStatusInactive}"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource Narian.TextMuted}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Enabled}" Value="True">
+                                                                        <Setter Property="Text" Value="{DynamicResource MTDA_SourceStatusActive}"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource PositiveRatingBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                                <TextBlock Text="{Binding ListLabel}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Border x:Name="BackupProviderTestStatusPanel" Style="{StaticResource TestOperationBorder}" Visibility="Collapsed" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <ProgressBar x:Name="BackupProviderTestProgress" IsIndeterminate="True" Height="4" Margin="0,0,0,8"/>
+                                        <TextBlock x:Name="BackupProviderTestStatusText" TextWrapping="Wrap"/>
+                                        <DockPanel Margin="0,8,0,0">
+                                            <TextBlock x:Name="BackupProviderTestElapsedText" VerticalAlignment="Center" Opacity="0.75"/>
+                                            <Button x:Name="BackupProviderTestCancelButton"
+                                                    Content="{DynamicResource MTDA_CancelTest}"
+                                                    MinWidth="110"
+                                                    DockPanel.Dock="Right"
+                                                    HorizontalAlignment="Right"
+                                                    Click="CancelBackupProviderTest_OnClick"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
                         <TabItem Header="{DynamicResource MTDA_AiGeneration}">
                             <ScrollViewer Style="{StaticResource FillScrollViewer}">
                                 <StackPanel Margin="8,8,8,16" HorizontalAlignment="Stretch">
@@ -1033,7 +1272,8 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SettingsCard}">
+                        <Border Style="{StaticResource AdvancedSettingsCard}"
+                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel>
                                 <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_AiSectionReliability}" Style="{StaticResource SectionHeaderText}"/>
@@ -1144,29 +1384,6 @@
                                     <CheckBox Grid.Row="12" Grid.Column="1" IsChecked="{Binding Settings.OverrideRecommendedForLength}" Margin="4,0"/>
                                     <ComboBox Grid.Row="12" Grid.Column="2" ItemsSource="{Binding Settings.LengthOptions}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Settings.RecommendedForLength}" IsEnabled="{Binding Settings.OverrideRecommendedForLength}" Margin="8,0,8,0"/>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource AdvancedSettingsCard}"
-                                Visibility="{Binding Settings.ShowAdvancedOptions, Converter={StaticResource BoolToVisibility}}">
-                            <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderBorder}">
-                                <TextBlock Text="{DynamicResource MTDA_FreeLocalFallback}" Style="{StaticResource SectionHeaderText}"/>
-                            </Border>
-                                <StackPanel>
-                                    <CheckBox Content="{DynamicResource MTDA_LocalFallbackCheckbox}" IsChecked="{Binding Settings.EnableLocalFallback}" Margin="0,0,0,8"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <CheckBox Content="LM Studio" IsChecked="{Binding Settings.TryLmStudioFallback}" Width="110"/>
-                                        <TextBlock Text="{DynamicResource MTDA_Model}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBox Text="{Binding Settings.LmStudioFallbackModel, UpdateSourceTrigger=PropertyChanged}" MinWidth="180"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <CheckBox Content="Ollama" IsChecked="{Binding Settings.TryOllamaFallback}" Width="110"/>
-                                        <TextBlock Text="{DynamicResource MTDA_Model}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBox Text="{Binding Settings.OllamaFallbackModel, UpdateSourceTrigger=PropertyChanged}" MinWidth="180"/>
-                                    </StackPanel>
-                                    <TextBlock Text="{DynamicResource MTDA_LocalFallbackHelp}" Style="{StaticResource FieldHintText}"/>
-                                </StackPanel>
                             </StackPanel>
                         </Border>
 

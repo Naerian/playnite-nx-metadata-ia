@@ -27,10 +27,15 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip)
             {
+                var limited = Limit(result.Genres, settings.MaxGenres).ToList();
+                MetadataDebugLog.Write(
+                    "apply-genres | " + (game.Name ?? string.Empty),
+                    "mode=" + TermApplyMode(result, "genres", settings.GenresApplyMode) +
+                    "\nwriting=[" + string.Join(", ", limited) + "]");
                 game.GenreIds = MergeIds(
                     api.Database.Genres,
                     game.GenreIds,
-                    Ensure(api.Database.Genres, Limit(result.Genres, settings.MaxGenres), false, false),
+                    Ensure(api.Database.Genres, limited, false, false),
                     TermApplyMode(result, "genres", settings.GenresApplyMode),
                     settings.MaxGenres,
                     "genres",

@@ -118,6 +118,281 @@ namespace MetaDataIAPlugin
         {
         }
 
+        /// <summary>
+        /// Same DPI-aware centering used by the setup assistant: center on Playnite's main
+        /// window (or its screen work area when maximized), not the primary monitor alone.
+        /// </summary>
+        public static void CenterWindowOnPlaynite(Window window)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            try
+            {
+                window.UpdateLayout();
+                var width = window.ActualWidth;
+                var height = window.ActualHeight;
+                if (width < 100 || height < 100 || double.IsNaN(width) || double.IsNaN(height))
+                {
+                    return;
+                }
+
+                var anchor = GetPlayniteCenteringAnchor(window);
+                Point? centerDip = null;
+                if (anchor == null || anchor.WindowState != WindowState.Maximized)
+                {
+                    centerDip = TryGetWindowCenterDip(window, anchor);
+                }
+
+                double left;
+                double top;
+                if (centerDip.HasValue)
+                {
+                    left = centerDip.Value.X - (width / 2.0);
+                    top = centerDip.Value.Y - (height / 2.0);
+                }
+                else
+                {
+                    var workArea = GetWorkAreaDip(window, anchor);
+                    left = workArea.Left + ((workArea.Width - width) / 2.0);
+                    top = workArea.Top + ((workArea.Height - height) / 2.0);
+                }
+
+                var clampArea = GetWorkAreaDip(window, anchor);
+                if (width <= clampArea.Width)
+                {
+                    left = Math.Min(Math.Max(left, clampArea.Left), clampArea.Right - width);
+                }
+                else
+                {
+                    left = clampArea.Left;
+                }
+
+                if (height <= clampArea.Height)
+                {
+                    top = Math.Min(Math.Max(top, clampArea.Top), clampArea.Bottom - height);
+                }
+                else
+                {
+                    top = clampArea.Top;
+                }
+
+                if (!double.IsNaN(left) && !double.IsNaN(top) &&
+                    !double.IsInfinity(left) && !double.IsInfinity(top))
+                {
+                    window.Left = left;
+                    window.Top = top;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public static void ScheduleCenterWindowOnPlaynite(Window window)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            Action center = () => CenterWindowOnPlaynite(window);
+            EventHandler onRendered = null;
+            onRendered = (s, e) =>
+            {
+                window.ContentRendered -= onRendered;
+                center();
+                window.Dispatcher.BeginInvoke(center, DispatcherPriority.ApplicationIdle);
+            };
+            window.ContentRendered += onRendered;
+
+            if (window.IsLoaded)
+            {
+                center();
+                window.Dispatcher.BeginInvoke(center, DispatcherPriority.Loaded);
+                window.Dispatcher.BeginInvoke(center, DispatcherPriority.ApplicationIdle);
+                return;
+            }
+
+            RoutedEventHandler onLoaded = null;
+            onLoaded = (s, e) =>
+            {
+                window.Loaded -= onLoaded;
+                CenterWindowOnPlaynite(window);
+                window.Dispatcher.BeginInvoke(center, DispatcherPriority.Loaded);
+                window.Dispatcher.BeginInvoke(center, DispatcherPriority.ApplicationIdle);
+            };
+            window.Loaded += onLoaded;
+        }
+
+        private static Window GetPlayniteCenteringAnchor(Window window)
+        {
+            try
+            {
+                var main = Application.Current == null ? null : Application.Current.MainWindow;
+                if (main != null &&
+                    main.IsVisible &&
+                    main.WindowState != WindowState.Minimized &&
+                    main.ActualWidth > 0 &&
+                    main.ActualHeight > 0)
+                {
+                    return main;
+                }
+            }
+            catch
+            {
+            }
+
+            return window == null ? null : window.Owner;
+        }
+
+        private static Point? TryGetWindowCenterDip(Window dialog, Window anchor)
+        {
+            if (anchor == null ||
+                !anchor.IsVisible ||
+                anchor.WindowState == WindowState.Minimized ||
+                anchor.ActualWidth <= 0 ||
+                anchor.ActualHeight <= 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                var centerPx = anchor.PointToScreen(new Point(
+                    anchor.ActualWidth / 2.0,
+                    anchor.ActualHeight / 2.0));
+                var fromDevice = GetTransformFromDevice(dialog) ?? GetTransformFromDevice(anchor);
+                if (fromDevice == null)
+                {
+                    return new Point(centerPx.X, centerPx.Y);
+                }
+
+                return fromDevice.Value.Transform(new Point(centerPx.X, centerPx.Y));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static Rect GetWorkAreaDip(Window dialog, Window anchor)
+        {
+            try
+            {
+                var screen = GetScreenForWindow(anchor) ?? GetScreenForWindow(dialog) ?? Forms.Screen.PrimaryScreen;
+                if (screen == null)
+                {
+                    return SystemParameters.WorkArea;
+                }
+
+                var pixel = screen.WorkingArea;
+                var fromDevice = GetTransformFromDevice(anchor) ?? GetTransformFromDevice(dialog);
+                if (fromDevice == null)
+                {
+                    return new Rect(pixel.Left, pixel.Top, pixel.Width, pixel.Height);
+                }
+
+                var topLeft = fromDevice.Value.Transform(new Point(pixel.Left, pixel.Top));
+                var bottomRight = fromDevice.Value.Transform(new Point(pixel.Right, pixel.Bottom));
+                return new Rect(topLeft, bottomRight);
+            }
+            catch
+            {
+                return SystemParameters.WorkArea;
+            }
+        }
+
+        private static Forms.Screen GetScreenForWindow(Window window)
+        {
+            if (window == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var handle = new WindowInteropHelper(window).Handle;
+                if (handle != IntPtr.Zero)
+                {
+                    return Forms.Screen.FromHandle(handle);
+                }
+
+                if (!double.IsNaN(window.Left) && !double.IsNaN(window.Top))
+                {
+                    var px = GetTransformToDevice(window);
+                    if (px != null)
+                    {
+                        var point = px.Value.Transform(new Point(window.Left + 8, window.Top + 8));
+                        return Forms.Screen.FromPoint(new System.Drawing.Point(
+                            (int)Math.Round(point.X),
+                            (int)Math.Round(point.Y)));
+                    }
+
+                    return Forms.Screen.FromPoint(new System.Drawing.Point(
+                        (int)Math.Round(window.Left + 8),
+                        (int)Math.Round(window.Top + 8)));
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
+        private static Matrix? GetTransformFromDevice(Window window)
+        {
+            var source = GetPresentationSource(window);
+            if (source == null || source.CompositionTarget == null)
+            {
+                return null;
+            }
+
+            return source.CompositionTarget.TransformFromDevice;
+        }
+
+        private static Matrix? GetTransformToDevice(Window window)
+        {
+            var source = GetPresentationSource(window);
+            if (source == null || source.CompositionTarget == null)
+            {
+                return null;
+            }
+
+            return source.CompositionTarget.TransformToDevice;
+        }
+
+        private static PresentationSource GetPresentationSource(Window window)
+        {
+            if (window == null)
+            {
+                return null;
+            }
+
+            var source = PresentationSource.FromVisual(window);
+            if (source != null)
+            {
+                return source;
+            }
+
+            try
+            {
+                var handle = new WindowInteropHelper(window).Handle;
+                if (handle != IntPtr.Zero)
+                {
+                    return HwndSource.FromHwnd(handle);
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
+
         private static bool IsPlayniteWindowBase(Window window)
         {
             for (var type = window == null ? null : window.GetType(); type != null; type = type.BaseType)
@@ -1005,6 +1280,64 @@ namespace MetaDataIAPlugin
             return string.IsNullOrWhiteSpace(source) ? plugin.Loc("MTDA_Unknown", "Unknown") : source;
         }
 
+        public static bool ProvenanceUsedAi(MetadataFieldProvenance item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Provider) || !string.IsNullOrWhiteSpace(item.Model))
+            {
+                return true;
+            }
+
+            if (string.Equals(item.Method, "ai-normalized", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(item.Method, "generated-from-identity", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var source = item.Source ?? string.Empty;
+            return source.StartsWith("AI provider:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static string ProvenanceProviderDisplay(MetaDataIAPlugin plugin, MetadataFieldProvenance item)
+        {
+            if (item == null)
+            {
+                return plugin.Loc("MTDA_ProvenanceNotRecorded", "Not recorded");
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Provider))
+            {
+                return item.Provider.Trim();
+            }
+
+            const string providerPrefix = "AI provider: ";
+            var source = item.Source ?? string.Empty;
+            if (source.StartsWith(providerPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var fromSource = source.Substring(providerPrefix.Length).Trim();
+                if (!string.IsNullOrWhiteSpace(fromSource))
+                {
+                    return fromSource;
+                }
+            }
+
+            return plugin.Loc("MTDA_ProvenanceNotRecorded", "Not recorded");
+        }
+
+        public static string ProvenanceModelDisplay(MetaDataIAPlugin plugin, MetadataFieldProvenance item)
+        {
+            if (item != null && !string.IsNullOrWhiteSpace(item.Model))
+            {
+                return item.Model.Trim();
+            }
+
+            return plugin.Loc("MTDA_ProvenanceNotRecorded", "Not recorded");
+        }
+
         public static string ProvenanceExplanation(MetaDataIAPlugin plugin, MetadataFieldProvenance item)
         {
             if (item == null)
@@ -1715,7 +2048,15 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            providerModelIds.Insert(0, model.Trim());
+            var modelId = model.Trim();
+            var index = 0;
+            while (index < providerModelIds.Count &&
+                   string.Compare(providerModelIds[index], modelId, StringComparison.CurrentCultureIgnoreCase) < 0)
+            {
+                index++;
+            }
+
+            providerModelIds.Insert(index, modelId);
         }
 
         private void CancelProviderModelsRefresh()
@@ -1856,7 +2197,10 @@ namespace MetaDataIAPlugin
             working.CoverImageApplyMode = MetaDataIASettings.ApplyEmptyOnly;
             working.IconApplyMode = MetaDataIASettings.ApplyEmptyOnly;
             working.BackgroundImageApplyMode = MetaDataIASettings.ApplyEmptyOnly;
-            working.ExistingMetadataMode = profile == "normalize" ? "Normalizar" : working.ExistingMetadataMode;
+            if (string.Equals(profile, "normalize", StringComparison.OrdinalIgnoreCase))
+            {
+                working.ExistingMetadataMode = MetaDataIASettings.ExistingMetadataContext;
+            }
         }
 
         private string ResolvePlayniteLanguage()
@@ -1983,231 +2327,12 @@ namespace MetaDataIAPlugin
             suppressRecenter = true;
             try
             {
-                UpdateLayout();
-                var width = ActualWidth;
-                var height = ActualHeight;
-                if (width < 100 || height < 100 || double.IsNaN(width) || double.IsNaN(height))
-                {
-                    return;
-                }
-
-                var anchor = GetCenteringAnchor();
-                Point? centerDip = null;
-                if (anchor == null || anchor.WindowState != WindowState.Maximized)
-                {
-                    centerDip = TryGetWindowCenterDip(anchor);
-                }
-
-                double left;
-                double top;
-                if (centerDip.HasValue)
-                {
-                    left = centerDip.Value.X - (width / 2.0);
-                    top = centerDip.Value.Y - (height / 2.0);
-                }
-                else
-                {
-                    var workArea = GetWorkAreaDip(anchor);
-                    left = workArea.Left + ((workArea.Width - width) / 2.0);
-                    top = workArea.Top + ((workArea.Height - height) / 2.0);
-                }
-
-                var clampArea = GetWorkAreaDip(anchor);
-                if (width <= clampArea.Width)
-                {
-                    left = Math.Min(Math.Max(left, clampArea.Left), clampArea.Right - width);
-                }
-                else
-                {
-                    left = clampArea.Left;
-                }
-
-                if (height <= clampArea.Height)
-                {
-                    top = Math.Min(Math.Max(top, clampArea.Top), clampArea.Bottom - height);
-                }
-                else
-                {
-                    top = clampArea.Top;
-                }
-
-                if (!double.IsNaN(left) && !double.IsNaN(top) &&
-                    !double.IsInfinity(left) && !double.IsInfinity(top))
-                {
-                    Left = left;
-                    Top = top;
-                }
+                MetadataTrustUi.CenterWindowOnPlaynite(this);
             }
             finally
             {
                 suppressRecenter = false;
             }
-        }
-
-        private Window GetCenteringAnchor()
-        {
-            try
-            {
-                var main = Application.Current != null ? Application.Current.MainWindow : null;
-                if (main != null &&
-                    main.IsVisible &&
-                    main.WindowState != WindowState.Minimized &&
-                    main.ActualWidth > 0 &&
-                    main.ActualHeight > 0)
-                {
-                    return main;
-                }
-            }
-            catch
-            {
-            }
-
-            return Owner;
-        }
-
-        private Point? TryGetWindowCenterDip(Window window)
-        {
-            if (window == null ||
-                !window.IsVisible ||
-                window.WindowState == WindowState.Minimized ||
-                window.ActualWidth <= 0 ||
-                window.ActualHeight <= 0)
-            {
-                return null;
-            }
-
-            try
-            {
-                var centerPx = window.PointToScreen(new Point(
-                    window.ActualWidth / 2.0,
-                    window.ActualHeight / 2.0));
-                var fromDevice = GetTransformFromDevice(this) ?? GetTransformFromDevice(window);
-                if (fromDevice == null)
-                {
-                    return new Point(centerPx.X, centerPx.Y);
-                }
-
-                return fromDevice.Value.Transform(new Point(centerPx.X, centerPx.Y));
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private Rect GetWorkAreaDip(Window anchor)
-        {
-            try
-            {
-                var screen = GetScreenForWindow(anchor) ?? GetScreenForWindow(this) ?? Forms.Screen.PrimaryScreen;
-                if (screen == null)
-                {
-                    return SystemParameters.WorkArea;
-                }
-
-                var pixel = screen.WorkingArea;
-                var fromDevice = GetTransformFromDevice(anchor) ?? GetTransformFromDevice(this);
-                if (fromDevice == null)
-                {
-                    return new Rect(pixel.Left, pixel.Top, pixel.Width, pixel.Height);
-                }
-
-                var topLeft = fromDevice.Value.Transform(new Point(pixel.Left, pixel.Top));
-                var bottomRight = fromDevice.Value.Transform(new Point(pixel.Right, pixel.Bottom));
-                return new Rect(topLeft, bottomRight);
-            }
-            catch
-            {
-                return SystemParameters.WorkArea;
-            }
-        }
-
-        private static Forms.Screen GetScreenForWindow(Window window)
-        {
-            if (window == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                var handle = new WindowInteropHelper(window).Handle;
-                if (handle != IntPtr.Zero)
-                {
-                    return Forms.Screen.FromHandle(handle);
-                }
-
-                if (!double.IsNaN(window.Left) && !double.IsNaN(window.Top))
-                {
-                    var px = GetTransformToDevice(window);
-                    if (px != null)
-                    {
-                        var point = px.Value.Transform(new Point(window.Left + 8, window.Top + 8));
-                        return Forms.Screen.FromPoint(new System.Drawing.Point(
-                            (int)Math.Round(point.X),
-                            (int)Math.Round(point.Y)));
-                    }
-
-                    return Forms.Screen.FromPoint(new System.Drawing.Point(
-                        (int)Math.Round(window.Left + 8),
-                        (int)Math.Round(window.Top + 8)));
-                }
-            }
-            catch
-            {
-            }
-
-            return null;
-        }
-
-        private static Matrix? GetTransformFromDevice(Window window)
-        {
-            var source = GetPresentationSource(window);
-            if (source == null || source.CompositionTarget == null)
-            {
-                return null;
-            }
-
-            return source.CompositionTarget.TransformFromDevice;
-        }
-
-        private static Matrix? GetTransformToDevice(Window window)
-        {
-            var source = GetPresentationSource(window);
-            if (source == null || source.CompositionTarget == null)
-            {
-                return null;
-            }
-
-            return source.CompositionTarget.TransformToDevice;
-        }
-
-        private static PresentationSource GetPresentationSource(Window window)
-        {
-            if (window == null)
-            {
-                return null;
-            }
-
-            var source = PresentationSource.FromVisual(window);
-            if (source != null)
-            {
-                return source;
-            }
-
-            try
-            {
-                var handle = new WindowInteropHelper(window).Handle;
-                if (handle != IntPtr.Zero)
-                {
-                    return HwndSource.FromHwnd(handle);
-                }
-            }
-            catch
-            {
-            }
-
-            return null;
         }
 
         private static TextBlock Label(string value)
@@ -2814,10 +2939,15 @@ namespace MetaDataIAPlugin
 
             if (change.Provenance != null)
             {
-                panel.Children.Add(MetadataTrustUi.Hint(
-                    plugin.Loc("MTDA_ProvenanceSource", "Source") + ": " + MetadataTrustUi.ProvenanceSource(plugin, change.Provenance.Source) +
-                    "  |  " + plugin.Loc("MTDA_ProvenanceConfidence", "Confidence") + ": " + MetadataTrustUi.Confidence(plugin, change.Provenance.Confidence),
-                    new Thickness(0, 10, 0, 0)));
+                var hint = plugin.Loc("MTDA_ProvenanceSource", "Source") + ": " + MetadataTrustUi.ProvenanceSource(plugin, change.Provenance.Source) +
+                    "  |  " + plugin.Loc("MTDA_ProvenanceConfidence", "Confidence") + ": " + MetadataTrustUi.Confidence(plugin, change.Provenance.Confidence);
+                if (MetadataTrustUi.ProvenanceUsedAi(change.Provenance))
+                {
+                    hint += "  |  " + plugin.Loc("MTDA_Provider", "Provider") + ": " + MetadataTrustUi.ProvenanceProviderDisplay(plugin, change.Provenance) +
+                        "  |  " + plugin.Loc("MTDA_Model", "Model") + ": " + MetadataTrustUi.ProvenanceModelDisplay(plugin, change.Provenance);
+                }
+
+                panel.Children.Add(MetadataTrustUi.Hint(hint, new Thickness(0, 10, 0, 0)));
             }
 
             return panel;
@@ -3225,6 +3355,23 @@ namespace MetaDataIAPlugin
                 info.Children.Add(MetadataTrustUi.Hint(plugin.Loc("MTDA_ProvenanceSource", "Source") + ": " + string.Join(", ", sources), new Thickness(0, 4, 0, 0)));
             }
 
+            var aiEndpoints = (entry.Provenance ?? new List<MetadataFieldProvenance>())
+                .Where(MetadataTrustUi.ProvenanceUsedAi)
+                .Select(x =>
+                {
+                    var provider = MetadataTrustUi.ProvenanceProviderDisplay(plugin, x);
+                    var model = MetadataTrustUi.ProvenanceModelDisplay(plugin, x);
+                    return provider + " · " + model;
+                })
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            if (aiEndpoints.Count > 0)
+            {
+                info.Children.Add(MetadataTrustUi.Hint(
+                    plugin.Loc("MTDA_HistoryAiEndpoint", "AI provider / model") + ": " + string.Join(", ", aiEndpoints),
+                    new Thickness(0, 4, 0, 0)));
+            }
+
             var undoGame = new Button { Content = plugin.Loc("MTDA_HistoryUndoGame", "Undo this game"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 0) };
             MetadataTrustUi.StyleSecondaryButton(undoGame);
             undoGame.MinWidth = 150;
@@ -3455,7 +3602,13 @@ namespace MetaDataIAPlugin
         private readonly Action<CancellationToken, Action<string>> operation;
         private readonly Window operationOwner;
         private readonly Button cancelButton = new Button();
+        private readonly DateTime startedUtc = DateTime.UtcNow;
+        private readonly DispatcherTimer elapsedTimer;
+        private readonly MetaDataIAPlugin plugin;
         private TextBlock messageText;
+        private TextBlock elapsedText;
+        private TextBlock providerText;
+        private TextBlock modelText;
         private bool completed;
         private bool ownerHitTestVisible;
 
@@ -3463,13 +3616,20 @@ namespace MetaDataIAPlugin
         public bool Cancelled { get; private set; }
 
         public MetadataAuditProgressWindow(MetaDataIAPlugin plugin, Window owner, string message, Action<CancellationToken> operation)
-            : this(plugin, owner, message, (token, report) => operation(token))
+            : this(plugin, owner, message, (token, report) => operation(token), null, null)
         {
         }
 
-        public MetadataAuditProgressWindow(MetaDataIAPlugin plugin, Window owner, string message, Action<CancellationToken, Action<string>> operation)
+        public MetadataAuditProgressWindow(
+            MetaDataIAPlugin plugin,
+            Window owner,
+            string message,
+            Action<CancellationToken, Action<string>> operation,
+            string providerName = null,
+            string modelName = null)
         {
             this.operation = operation;
+            this.plugin = plugin;
             operationOwner = owner;
             Title = plugin.Loc("MTDA_PluginName", "Metadata AI");
             Width = 480;
@@ -3506,6 +3666,7 @@ namespace MetaDataIAPlugin
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var title = MetadataTrustUi.Text(plugin.Loc("MTDA_PluginName", "Metadata AI"));
             title.FontSize = 20;
@@ -3520,19 +3681,55 @@ namespace MetaDataIAPlugin
             Grid.SetRow(messageText, 1);
             root.Children.Add(messageText);
 
-            var progress = new ProgressBar { IsIndeterminate = true, Height = 8, Margin = new Thickness(0, 0, 0, 22) };
+            var progress = new ProgressBar { IsIndeterminate = true, Height = 8, Margin = new Thickness(0, 0, 0, 16) };
             Grid.SetRow(progress, 2);
             root.Children.Add(progress);
+
+            var footer = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+            elapsedText = MetadataTrustUi.Hint(
+                FormatElapsedLabel(plugin, TimeSpan.Zero),
+                new Thickness(0, 0, 0, 2));
+            footer.Children.Add(elapsedText);
+            providerText = MetadataTrustUi.Hint(
+                FormatProviderLabel(plugin, providerName),
+                new Thickness(0, 0, 0, 2));
+            footer.Children.Add(providerText);
+            modelText = MetadataTrustUi.Hint(
+                FormatModelLabel(plugin, modelName),
+                new Thickness(0));
+            footer.Children.Add(modelText);
+            Grid.SetRow(footer, 3);
+            root.Children.Add(footer);
 
             cancelButton.Content = plugin.Loc("MTDA_Cancel", "Cancel");
             cancelButton.MinWidth = 110;
             cancelButton.HorizontalAlignment = HorizontalAlignment.Right;
             MetadataTrustUi.StyleSecondaryButton(cancelButton);
-            cancelButton.Click += (s, e) => { Cancelled = true; cancelButton.IsEnabled = false; cancellation.Cancel(); };
-            Grid.SetRow(cancelButton, 3);
+            cancelButton.Click += (s, e) =>
+            {
+                Cancelled = true;
+                cancelButton.IsEnabled = false;
+                if (messageText != null)
+                {
+                    messageText.Text = plugin.Loc("MTDA_Cancelling", "Cancelling…");
+                }
+
+                cancellation.Cancel();
+            };
+            Grid.SetRow(cancelButton, 4);
             root.Children.Add(cancelButton);
             shell.Child = root;
             Content = shell;
+
+            elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            elapsedTimer.Tick += (s, e) =>
+            {
+                if (elapsedText != null)
+                {
+                    elapsedText.Text = FormatElapsedLabel(plugin, DateTime.UtcNow - startedUtc);
+                }
+            };
+            elapsedTimer.Start();
 
             PreviewKeyDown += (s, e) =>
             {
@@ -3541,6 +3738,11 @@ namespace MetaDataIAPlugin
                     e.Handled = true;
                     Cancelled = true;
                     cancelButton.IsEnabled = false;
+                    if (messageText != null)
+                    {
+                        messageText.Text = plugin.Loc("MTDA_Cancelling", "Cancelling…");
+                    }
+
                     cancellation.Cancel();
                 }
             };
@@ -3555,9 +3757,67 @@ namespace MetaDataIAPlugin
             };
             Closed += (s, e) =>
             {
+                if (elapsedTimer != null)
+                {
+                    elapsedTimer.Stop();
+                }
+
                 if (operationOwner != null && operationOwner.IsVisible) operationOwner.IsHitTestVisible = ownerHitTestVisible;
                 ReleaseModalOwners(owner);
             };
+        }
+
+        public void UpdateProviderFooter(string providerName, string modelName)
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (providerText != null)
+                    {
+                        providerText.Text = FormatProviderLabel(plugin, providerName);
+                    }
+
+                    if (modelText != null)
+                    {
+                        modelText.Text = FormatModelLabel(plugin, modelName);
+                    }
+                }));
+            }
+            catch
+            {
+            }
+        }
+
+        private static string FormatProviderLabel(MetaDataIAPlugin plugin, string providerName)
+        {
+            return string.Format(
+                plugin.Loc("MTDA_ProgressFooterProvider", "Provider: {0}"),
+                string.IsNullOrWhiteSpace(providerName) ? "—" : providerName.Trim());
+        }
+
+        private static string FormatModelLabel(MetaDataIAPlugin plugin, string modelName)
+        {
+            return string.Format(
+                plugin.Loc("MTDA_ProgressFooterModel", "Model: {0}"),
+                string.IsNullOrWhiteSpace(modelName) ? "—" : modelName.Trim());
+        }
+
+        private static string FormatElapsedLabel(MetaDataIAPlugin plugin, TimeSpan elapsed)
+        {
+            if (elapsed < TimeSpan.Zero)
+            {
+                elapsed = TimeSpan.Zero;
+            }
+
+            var clock = string.Format(
+                "{0:00}:{1:00}:{2:00}",
+                (int)elapsed.TotalHours,
+                elapsed.Minutes,
+                elapsed.Seconds);
+            return string.Format(
+                plugin.Loc("MTDA_ProgressFooterElapsed", "Elapsed time: {0}"),
+                clock);
         }
 
         // ShowDialog creates a theme-dependent modal backdrop in Playnite that can
@@ -3753,6 +4013,24 @@ namespace MetaDataIAPlugin
             Grid.SetColumn(method, 2);
             facts.Children.Add(method);
             panel.Children.Add(facts);
+
+            if (MetadataTrustUi.ProvenanceUsedAi(item))
+            {
+                var endpoint = new Grid { Margin = new Thickness(0, 9, 0, 0) };
+                endpoint.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                endpoint.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+                endpoint.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                endpoint.Children.Add(BuildFact(
+                    plugin.Loc("MTDA_Provider", "Provider"),
+                    MetadataTrustUi.ProvenanceProviderDisplay(plugin, item)));
+                var model = BuildFact(
+                    plugin.Loc("MTDA_Model", "Model"),
+                    MetadataTrustUi.ProvenanceModelDisplay(plugin, item));
+                Grid.SetColumn(model, 2);
+                endpoint.Children.Add(model);
+                panel.Children.Add(endpoint);
+            }
+
             panel.Children.Add(BuildConfidence(plugin, item.Confidence));
             panel.Children.Add(MetadataTrustUi.Hint(MetadataTrustUi.ProvenanceExplanation(plugin, item), new Thickness(0, 9, 0, 0)));
             if (string.Equals(item.Method, "downloaded-media", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.Detail))

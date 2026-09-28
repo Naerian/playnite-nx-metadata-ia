@@ -17,6 +17,8 @@ namespace MetaDataIAPlugin
     public class MetadataGenerationService
     {
         private const int ProviderRateLimitRetries = 3;
+        private const int OrganizeProviderRetries = 1;
+        private const int OrganizeProviderRetryDelaySeconds = 8;
         private static readonly HttpClient SharedHttpClient = CreateSharedHttpClient();
 
         private readonly MetaDataIASettings settings;
@@ -37,25 +39,46 @@ namespace MetaDataIAPlugin
             return client;
         }
 
+        public async Task ProbeProviderAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            MetadataDebugLog.Write(
+                "provider-probe | " + (settings.ProviderPreset ?? string.Empty),
+                "model=" + (settings.Model ?? string.Empty));
+
+            string content;
+            if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
+            {
+                content = await SendAnthropicTextAsync(
+                    "Reply with the single word OK.",
+                    "ping",
+                    8,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                content = await SendOpenAICompatibleTextAsync(
+                    "Reply with the single word OK.",
+                    "ping",
+                    8,
+                    false,
+                    false,
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                throw new InvalidOperationException(
+                    Loc("MTDA_ErrorAiNoUsefulText", "The AI provider did not return useful text."));
+            }
+
+            MetadataDebugLog.Write("provider-probe-ok", (content ?? string.Empty).Trim());
+        }
+
         public async Task<AiMetadataResult> GenerateAsync(Game game, CancellationToken cancellationToken = default(CancellationToken))
         {
-            Exception primaryError = null;
-
-            try
-            {
-                return await GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                if (!ShouldTryLocalFallback(ex))
-                {
-                    throw;
-                }
-
-                primaryError = ex;
-            }
-
-            return await TryLocalFallbacksAsync(game, primaryError, cancellationToken).ConfigureAwait(false);
+            // Provider failover is owned by the batch runner (ordered ProviderProfiles).
+            // Per-game local LM Studio/Ollama fallback is no longer used.
+            return await GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<AiMetadataResult> GenerateCurrentAsync(Game game, CancellationToken cancellationToken)
@@ -1045,7 +1068,7 @@ namespace MetaDataIAPlugin
         {
             if (official != null)
             {
-                return new MetadataFieldProvenance
+                var fromOfficial = new MetadataFieldProvenance
                 {
                     Field = field,
                     Source = official.SourceName,
@@ -1055,28 +1078,41 @@ namespace MetaDataIAPlugin
                         ? "The source was supplied as factual context and the AI normalized it."
                         : "The value was constrained by trusted source context."
                 };
+                return editorial ? AttachAiEndpoint(fromOfficial) : fromOfficial;
             }
 
-            if (hasExisting && !string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
+            if (hasExisting && !MetaDataIASettings.IsExistingMetadataIgnored(settings.ExistingMetadataMode))
             {
-                return new MetadataFieldProvenance
+                return AttachAiEndpoint(new MetadataFieldProvenance
                 {
                     Field = field,
                     Source = "Existing Playnite metadata",
                     Method = "ai-normalized",
                     Confidence = "medium",
                     Detail = "Current library metadata was supplied as context and normalized by the AI."
-                };
+                });
             }
 
-            return new MetadataFieldProvenance
+            return AttachAiEndpoint(new MetadataFieldProvenance
             {
                 Field = field,
                 Source = "AI provider: " + settings.ProviderPreset,
                 Method = "generated-from-identity",
                 Confidence = "low",
                 Detail = "No field-specific trusted source was available. Review this value before applying it."
-            };
+            });
+        }
+
+        private MetadataFieldProvenance AttachAiEndpoint(MetadataFieldProvenance item)
+        {
+            if (item == null)
+            {
+                return null;
+            }
+
+            item.Provider = settings == null ? string.Empty : (settings.ProviderPreset ?? string.Empty).Trim();
+            item.Model = settings == null ? string.Empty : (settings.Model ?? string.Empty).Trim();
+            return item;
         }
 
         private bool RequiresGeneratedDescription()
@@ -1301,7 +1337,7 @@ namespace MetaDataIAPlugin
                 "Exception: similarGamesList may suggest well-known titles if requested. " +
                 "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative and leave uncertain factual fields empty. " +
                 "3. Source Priority: If officialStoreContext is present, treat it as the primary factual source for descriptions, companies, ratings, and links. " +
-                "If existingMetadataMode is Normalize, preserve intent but fix grammar, language consistency, duplicates, and formatting. " +
+                "If existing metadata is included, treat it as secondary context only — do not copy it blindly over trusted store data. " +
                 "4. Constraints and Schema Types: Obey tone, length, tokenLengths, blacklist, and prefixes. " +
                 "Respond with a JSON object that contains only the keys listed in jsonShape. " +
                 "Strings: short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes, recommendedFor. " +
@@ -1334,13 +1370,20 @@ namespace MetaDataIAPlugin
                     "Field Categorization Rules (genres, tags, features): " +
                     "1. Source and Grounding: When termCandidates is present, organize genres, tags, and features strictly from each field's existing and incoming lists. " +
                     "Never invent concepts absent from those lists. If an incoming list is empty, return an empty array for that field. " +
-                    "2. Mandatory Localization and Deduplication: Read target language from targetLanguage / targetLanguageName. " +
-                    "If not English: You MUST translate all common-noun labels into the requested language " +
-                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or the equivalent). " +
+                    "2. Language and universal gaming loanwords: Read target language from targetLanguage / targetLanguageName. " +
+                    "If not English: translate EVERY common noun and descriptive term into the requested language " +
+                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, Action -> Acción, or the equivalent). " +
+                    "Do not leave those English store strings unchanged. Do not mix languages in the same array " +
+                    "(never both \"Aventura\" and \"Adventure\"; never \"Shooter\" beside \"Disparos\"). " +
                     "If English: keep standard English labels. " +
-                    "Loanwords/subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+                    "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is in their standard form in every language. " +
+                    "Examples include subgenre neologisms (Roguelike, Roguelite, Metroidvania, Soulslike), " +
+                    "gameplay formats and styles (Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell), " +
+                    "and production/format scope (Indie). " +
+                    "Acronyms: keep standard universal industry acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established in the vocabulary. " +
+                    "Copying an English incoming string unchanged is allowed ONLY for those true loanwords/acronyms. " +
                     "Exactly one label per concept. Never mix synonyms or languages for the same concept " +
-                    "(pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"RPG\" / \"Role-playing (rpg)\"; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
+                    "(pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
                     "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
                     "If playniteLibraryVocabulary is locked, reuse that exact spelling, preferring the localized term if duplicates exist. " +
                     "3. Field Sorting Logic: features: Player count, input devices, co-op modes, achievements, and controller support. " +
@@ -1361,9 +1404,10 @@ namespace MetaDataIAPlugin
                     "Very short, scannable labels (1 to 5 words max). No full sentences, no explanations, no final periods. " +
                     "Never output genres, story synopsis, or marketing adjectives as features. Confine strictly to functional, technical, and gameplay mode traits: " +
                     "e.g., controls, local/online multiplayer, co-op, achievements, cloud saves, and controller support. " +
-                    "2. Mandatory Localization: If target language is NOT English: You MUST translate every feature term completely into the requested language " +
+                    "2. Mandatory Localization: If target language is NOT English: translate common nouns and descriptive feature labels into the requested language " +
                     "(e.g., Single-player -> Un jugador, Full controller support -> Compatibilidad total con mando, or the equivalent). " +
-                    "Never leave raw English feature labels when target language is not English. " +
+                    "Keep universal gaming loanwords and industry acronyms as-is when that is the local convention (see genre/tag loanword rules). " +
+                    "Never leave raw English descriptive feature labels when target language is not English. " +
                     "3. Grounding and Count: Output between 3 and " + settings.MaxFeatures + " concrete, factually verified features based on source and platforms context. " +
                     "If there is not enough reliable evidence to confirm at least 3 features, return ONLY the verified ones or leave the array empty. Do NOT invent unsupported platform capabilities or features.");
             }
@@ -1458,7 +1502,7 @@ namespace MetaDataIAPlugin
             context["officialStoreContextEnabled"] = true;
             await LoadOfficialContextAsync(game, cancellationToken).ConfigureAwait(false);
 
-            if (!string.Equals(settings.ExistingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
+            if (!MetaDataIASettings.IsExistingMetadataIgnored(settings.ExistingMetadataMode))
             {
                 context["existing"] = BuildExistingMetadataForPrompt(game);
                 context["existingMetadataMode"] = NormalizeExistingMetadataModeForPrompt(settings.ExistingMetadataMode);
@@ -1688,18 +1732,7 @@ namespace MetaDataIAPlugin
 
         private static string NormalizeExistingMetadataModeForPrompt(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return value;
-            }
-
-            switch (value.Trim().ToLowerInvariant())
-            {
-                case "usar como contexto": return "Use as context";
-                case "normalizar": return "Normalize";
-                case "ignorar": return "Ignore";
-                default: return value;
-            }
+            return MetaDataIASettings.IsExistingMetadataIgnored(value) ? "Ignore" : "Use as context";
         }
 
         private Dictionary<string, bool> BuildFieldsToGenerate(IList<string> requestedTokens)
@@ -2665,7 +2698,10 @@ namespace MetaDataIAPlugin
                     response = await SharedHttpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
                 }
 
-                if ((int)response.StatusCode != 429 || attempt >= ProviderRateLimitRetries)
+                var statusCode = (int)response.StatusCode;
+                // Only 429 is retried here. 503 is soft-failed to the caller so organize/knowledge
+                // can do a single delayed retry without stacking multi-minute backoff in a batch.
+                if (statusCode != 429 || attempt >= ProviderRateLimitRetries)
                 {
                     return response;
                 }
@@ -2748,12 +2784,12 @@ namespace MetaDataIAPlugin
             if (statusCode == 429)
             {
                 // Retries already happened in SendProviderRequestWithRetriesAsync.
-                // Soft-fail this game so the rest of a multi-game batch can continue.
+                // Stop the batch slot so the runner can fail over to the next provider profile.
                 return new AiProviderException(
                     AppendProviderDetail(
                         Loc("MTDA_ErrorProviderRateLimit", "The AI provider has temporarily limited requests.\n\nTry waiting a few minutes, processing fewer games at once, or using a model/local endpoint with fewer restrictions."),
                         providerMessage),
-                    false,
+                    true,
                     responseText);
             }
 
@@ -2762,6 +2798,8 @@ namespace MetaDataIAPlugin
                 providerMessage.IndexOf("overloaded", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 providerMessage.IndexOf("unavailable", StringComparison.OrdinalIgnoreCase) >= 0)
             {
+                // Stop the multi-game batch after retries: remaining games stay untouched and
+                // appear in the batch results dialog so the user can retry when it recovers.
                 return new AiProviderException(
                     AppendProviderDetail(
                         Loc("MTDA_ErrorProviderUnavailable", "The AI provider is overloaded or the selected model is temporarily unavailable.\n\nIf you are using Gemini, this can happen even if you have Gemini Pro/Google AI Pro in the app: the Gemini API has its own limits and availability, separate from the app subscription.\n\nWhat you can do without paying:\n- Wait a few minutes and try again.\n- Switch to gemini-3.5-flash-lite if you were using another model.\n- Process fewer games at once.\n- Use LM Studio or Ollama locally if you want to avoid external quotas."),
@@ -2779,7 +2817,7 @@ namespace MetaDataIAPlugin
                     AppendProviderDetail(
                         Loc("MTDA_ErrorProviderAuth", "The AI provider did not accept the authentication.\n\nCheck the API key, endpoint and configured model. If you use LM Studio or Ollama locally, the API key can usually be empty."),
                         providerMessage),
-                    false,
+                    true,
                     responseText);
             }
 
@@ -2907,16 +2945,27 @@ namespace MetaDataIAPlugin
             {
                 // Localized overwrite/append-empty and filled empty-only apply store lists
                 // without a model call; keep those values on the result.
+                List<string> applied;
                 if (string.Equals(field.Mode, "empty", StringComparison.OrdinalIgnoreCase) && field.Existing.Count > 0)
                 {
-                    AssignTermField(result, field.Field, field.DirectTerms());
+                    applied = field.DirectTerms();
+                    AssignTermField(result, field.Field, applied);
                 }
                 else if (string.Equals(field.Mode, "overwrite", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(field.Mode, "append", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(field.Mode, "empty", StringComparison.OrdinalIgnoreCase))
                 {
-                    AssignTermField(result, field.Field, field.DirectTerms());
+                    applied = field.DirectTerms();
+                    AssignTermField(result, field.Field, applied);
                 }
+                else
+                {
+                    continue;
+                }
+
+                MetadataDebugLog.Write(
+                    "direct-apply | " + (game.Name ?? string.Empty),
+                    field.Field + "=[" + string.Join(", ", applied ?? new List<string>()) + "] (no model)");
             }
 
             if (modelFields.Count == 0)
@@ -2930,13 +2979,19 @@ namespace MetaDataIAPlugin
             // English store/IGDB labels that would otherwise skip this stricter prompt.
 
             var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
+            var gameTitle = game.Name ?? string.Empty;
+            LogTermOrganizeContext(gameTitle, organizeFields, knowledgeFields);
+
             var resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             if (organizeFields.Count > 0)
             {
+                var userJson = TermFieldResolver.BuildUserJson(settings.Language, PlatformLabels(game), organizeFields);
                 foreach (var pair in await AskTermModelAsync(
                     TermFieldResolver.SystemPrompt,
-                    TermFieldResolver.BuildUserJson(settings.Language, PlatformLabels(game), organizeFields),
+                    userJson,
                     organizeFields,
+                    gameTitle,
+                    "organize",
                     cancellationToken).ConfigureAwait(false))
                 {
                     resolved[pair.Key] = pair.Value;
@@ -2945,10 +3000,13 @@ namespace MetaDataIAPlugin
 
             if (knowledgeFields.Count > 0)
             {
+                var knowledgeJson = TermFieldResolver.BuildKnowledgeJson(settings.Language, BuildKnownGameFacts(game), knowledgeFields);
                 foreach (var pair in await AskTermModelAsync(
                     TermFieldResolver.KnowledgePrompt,
-                    TermFieldResolver.BuildKnowledgeJson(settings.Language, BuildKnownGameFacts(game), knowledgeFields),
+                    knowledgeJson,
                     knowledgeFields,
+                    gameTitle,
+                    "knowledge",
                     cancellationToken).ConfigureAwait(false))
                 {
                     resolved[pair.Key] = pair.Value;
@@ -2965,7 +3023,7 @@ namespace MetaDataIAPlugin
                 List<string> terms;
                 if (resolved == null || !resolved.TryGetValue(field.Field, out terms))
                 {
-                    terms = field.FallbackTerms();
+                    terms = field.FailedOrganizeTerms();
                 }
 
                 AssignTermField(result, field.Field, terms);
@@ -2974,6 +3032,13 @@ namespace MetaDataIAPlugin
                     result.ResolvedTermFields.Add(field.Field);
                 }
             }
+
+            MetadataDebugLog.Write(
+                "term-final | " + (game.Name ?? string.Empty),
+                "genres=[" + string.Join(", ", result.Genres ?? new List<string>()) + "]\n" +
+                "tags=[" + string.Join(", ", result.Tags ?? new List<string>()) + "]\n" +
+                "features=[" + string.Join(", ", result.Features ?? new List<string>()) + "]\n" +
+                "categories=[" + string.Join(", ", result.Categories ?? new List<string>()) + "]");
 
             result.RefreshDescription(settings, game);
         }
@@ -3034,6 +3099,9 @@ namespace MetaDataIAPlugin
             var localizedIncoming = storeSelector == null
                 ? new List<string>()
                 : CollectStoreTerms(storeSelector, target, filterFeatures, game, true);
+            var nonLocalizedIncoming = storeSelector == null
+                ? new List<string>()
+                : CollectNonLocalizedStoreTerms(storeSelector, target, filterFeatures, game);
             var fromStore = incoming.Count > 0;
             return new TermFieldRequest
             {
@@ -3043,6 +3111,7 @@ namespace MetaDataIAPlugin
                 Existing = TermFieldResolver.DistinctTerms(existing).Take(20).ToList(),
                 Incoming = incoming,
                 LocalizedIncoming = localizedIncoming,
+                NonLocalizedIncoming = nonLocalizedIncoming,
                 MaxItems = Math.Max(1, maxItems),
                 AlreadyInLanguage = !fromStore || StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
                 Organize = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
@@ -3056,31 +3125,228 @@ namespace MetaDataIAPlugin
             };
         }
 
+        private List<string> CollectNonLocalizedStoreTerms(
+            Func<OfficialStoreMetadata, List<string>> selector,
+            int targetCount,
+            bool filterFeatures,
+            Game game)
+        {
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && !IsLibraryIntegrationSource(x) && !x.ListsMatchPluginLanguage)
+                .ToList();
+            return CollectFromSources(sources, selector, filterFeatures, game, Math.Max(1, targetCount));
+        }
+
         private async Task<Dictionary<string, List<string>>> AskTermModelAsync(
             string systemPrompt,
             string userJson,
             List<TermFieldRequest> fields,
+            string gameTitle,
+            string callKind,
             CancellationToken cancellationToken)
         {
-            try
+            Exception lastError = null;
+            for (var attempt = 0; attempt <= OrganizeProviderRetries; attempt++)
             {
-                var content = await SendConstrainedPromptAsync(systemPrompt, userJson, 700, cancellationToken).ConfigureAwait(false);
-                Dictionary<string, List<string>> resolved;
-                TermFieldResolver.TryApplyResponse(content, fields, out resolved);
-                return resolved ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            }
-            catch (OperationCanceledException)
-            {
-                if (cancellationToken.IsCancellationRequested)
+                try
+                {
+                    if (attempt > 0)
+                    {
+                        MetadataDebugLog.Write(
+                            callKind + " provider-retry | " + gameTitle,
+                            "attempt=" + (attempt + 1) +
+                            " delaySeconds=" + OrganizeProviderRetryDelaySeconds);
+                        await Task.Delay(
+                            TimeSpan.FromSeconds(OrganizeProviderRetryDelaySeconds),
+                            cancellationToken).ConfigureAwait(false);
+                    }
+
+                    MetadataDebugLog.Write(
+                        callKind + " request | " + gameTitle,
+                        "model=" + (settings.Model ?? string.Empty) +
+                        "\nlanguage=" + (settings.Language ?? string.Empty) +
+                        "\nsystemPromptChars=" + (systemPrompt == null ? 0 : systemPrompt.Length) +
+                        "\nuserJson=\n" + (userJson ?? string.Empty));
+
+                    var content = await SendConstrainedPromptAsync(systemPrompt, userJson, 700, cancellationToken).ConfigureAwait(false);
+                    MetadataDebugLog.Write(callKind + " response | " + gameTitle, content ?? string.Empty);
+
+                    var jsonRetried = false;
+                    if (!TermFieldResolver.ResponseIsParseableJson(content))
+                    {
+                        jsonRetried = true;
+                        var jsonRetry = userJson +
+                            "\n\nRETRY: Your previous answer was not valid JSON. " +
+                            "Return ONLY one JSON object that starts with { and ends with }. " +
+                            "No markdown fences, no commentary, no JSON wrapped inside a string. " +
+                            "Use shape {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} with flat string arrays in \"terms\".";
+                        content = await SendConstrainedPromptAsync(systemPrompt, jsonRetry, 700, cancellationToken).ConfigureAwait(false);
+                        MetadataDebugLog.Write(callKind + " json-retry-response | " + gameTitle, content ?? string.Empty);
+                    }
+
+                    var translationRetried = false;
+                    if (TermFieldResolver.ResponseNeedsTranslationRetry(content, fields))
+                    {
+                        translationRetried = true;
+                        var knowledgeHint = fields.Any(f => f != null && f.FromKnowledge)
+                            ? "This was a knowledge guess with no store list: every common noun MUST be in the target language " +
+                              "(e.g. Shooter -> Disparos in Spanish). "
+                            : string.Empty;
+                        var retryJson = userJson +
+                            "\n\nRETRY: Your previous answer still copied raw store/IGDB labels that are not in the target language. " +
+                            knowledgeHint +
+                            "Translate EVERY common noun (Shooter, Adventure, Puzzle, Action, …). " +
+                            "Do not mix languages in the same terms array. " +
+                            "Keep only true universal loanwords/acronyms unchanged, and keep those acronyms in UPPERCASE (MMO, RPG, RTS). " +
+                            "Return the full JSON object again.";
+                        content = await SendConstrainedPromptAsync(systemPrompt, retryJson, 700, cancellationToken).ConfigureAwait(false);
+                        MetadataDebugLog.Write(callKind + " retry-response | " + gameTitle, content ?? string.Empty);
+                    }
+
+                    Dictionary<string, List<string>> resolved;
+                    var accepted = TermFieldResolver.TryApplyResponse(content, fields, out resolved);
+                    resolved = resolved ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    MetadataDebugLog.Write(
+                        callKind + " resolved | " + gameTitle,
+                        "accepted=" + accepted +
+                        " jsonRetried=" + jsonRetried +
+                        " translationRetried=" + translationRetried +
+                        "\n" + FormatResolvedTerms(resolved, fields));
+
+                    if (!accepted)
+                    {
+                        throw new InvalidOperationException(
+                            Loc(
+                                "MTDA_ErrorOrganizeFailed",
+                                "The AI could not organize genres, tags or features for this game. No incomplete store-only list was applied. You can retry this game from the batch results."));
+                    }
+
+                    return resolved;
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    lastError = new InvalidOperationException(
+                        Loc(
+                            "MTDA_ErrorProviderTimeout",
+                            "The request timed out or was interrupted before completion. Check your network connection and AI provider, then try again."));
+                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, lastError.ToString());
+                    if (attempt >= OrganizeProviderRetries)
+                    {
+                        throw lastError;
+                    }
+                }
+                catch (AiProviderException ex)
+                {
+                    lastError = ex;
+                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, ex.ToString());
+                    if (!IsTransientOrganizeProviderFailure(ex) || attempt >= OrganizeProviderRetries)
+                    {
+                        throw;
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    lastError = ex;
+                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, ex.ToString());
+                    if (attempt >= OrganizeProviderRetries)
+                    {
+                        throw;
+                    }
+                }
+                catch (InvalidOperationException)
                 {
                     throw;
                 }
             }
-            catch
+
+            throw lastError ?? new InvalidOperationException(
+                Loc(
+                    "MTDA_ErrorOrganizeFailed",
+                    "The AI could not organize genres, tags or features for this game. No incomplete store-only list was applied. You can retry this game from the batch results."));
+        }
+
+        private static bool IsTransientOrganizeProviderFailure(AiProviderException ex)
+        {
+            if (ex == null)
             {
+                return false;
             }
 
-            return fields.ToDictionary(x => x.Field, x => x.FallbackTerms(), StringComparer.OrdinalIgnoreCase);
+            var text = ((ex.Message ?? string.Empty) + "\n" + (ex.TechnicalDetails ?? string.Empty)).ToLowerInvariant();
+            return text.IndexOf("high demand", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("overloaded", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("unavailable", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("temporarily limited", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("503", StringComparison.Ordinal) >= 0 ||
+                   text.IndexOf("429", StringComparison.Ordinal) >= 0;
+        }
+
+        private void LogTermOrganizeContext(string gameTitle, List<TermFieldRequest> organizeFields, List<TermFieldRequest> knowledgeFields)
+        {
+            var details = new System.Text.StringBuilder();
+            details.AppendLine("language=" + (settings.Language ?? string.Empty));
+            details.AppendLine("model=" + (settings.Model ?? string.Empty));
+            details.AppendLine("provider=" + (settings.ProviderPreset ?? string.Empty));
+            details.AppendLine("metadataSources=");
+            var anySource = false;
+            foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+            {
+                if (source == null)
+                {
+                    continue;
+                }
+
+                anySource = true;
+                details.Append("  - ")
+                    .Append(source.SourceName ?? "?")
+                    .Append(" matchLanguage=")
+                    .Append(source.ListsMatchPluginLanguage)
+                    .Append(" genres=[")
+                    .Append(string.Join(", ", source.Genres ?? new List<string>()))
+                    .Append("]")
+                    .AppendLine();
+            }
+
+            if (!anySource)
+            {
+                details.AppendLine("  (none returned for this game)");
+            }
+
+            foreach (var field in (organizeFields ?? new List<TermFieldRequest>())
+                .Concat(knowledgeFields ?? new List<TermFieldRequest>()))
+            {
+                details.AppendLine("field=" + field.Field + " mode=" + field.Mode + " needsModel=" + field.NeedsModel + " fromKnowledge=" + field.FromKnowledge);
+                details.AppendLine("  existing=[" + string.Join(", ", field.Existing ?? new List<string>()) + "]");
+                details.AppendLine("  incoming=[" + string.Join(", ", field.Incoming ?? new List<string>()) + "]");
+                details.AppendLine("  localizedIncoming=[" + string.Join(", ", field.LocalizedIncoming ?? new List<string>()) + "]");
+                details.AppendLine("  nonLocalizedIncoming=[" + string.Join(", ", field.NonLocalizedIncoming ?? new List<string>()) + "]");
+                details.AppendLine("  rawForeign=[" + string.Join(", ", TermFieldResolver.RawForeignIncomingKeys(field)) + "]");
+                details.AppendLine("  preferredFallback=[" + string.Join(", ", field.FallbackTerms()) + "]");
+            }
+
+            MetadataDebugLog.Write("term-context | " + gameTitle, details.ToString());
+        }
+
+        private static string FormatResolvedTerms(Dictionary<string, List<string>> resolved, List<TermFieldRequest> fields)
+        {
+            var details = new System.Text.StringBuilder();
+            foreach (var field in fields ?? new List<TermFieldRequest>())
+            {
+                List<string> terms;
+                if (resolved == null || !resolved.TryGetValue(field.Field, out terms))
+                {
+                    terms = new List<string>();
+                }
+
+                details.AppendLine(field.Field + "=[" + string.Join(", ", terms ?? new List<string>()) + "]");
+            }
+
+            return details.ToString();
         }
 
         private JObject BuildKnownGameFacts(Game game)
@@ -3173,7 +3439,7 @@ namespace MetaDataIAPlugin
             return new List<string>();
         }
 
-        private static void AssignTermField(AiMetadataResult result, string field, List<string> terms)
+        private void AssignTermField(AiMetadataResult result, string field, List<string> terms)
         {
             var values = terms ?? new List<string>();
             if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase))
@@ -3389,7 +3655,7 @@ namespace MetaDataIAPlugin
                 return official;
             }
 
-            if (!string.Equals(existingMetadataMode, "Ignorar", StringComparison.OrdinalIgnoreCase))
+            if (!MetaDataIASettings.IsExistingMetadataIgnored(existingMetadataMode))
             {
                 return CleanStrictValues(existingValues, maxItems);
             }

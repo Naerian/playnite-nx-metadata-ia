@@ -367,6 +367,14 @@ internal static class VocabularyBehaviorRunner
         var ok = TermFieldResolver.TryApplyResponse(content, new List<TermFieldRequest> { field }, out resolved);
         AssertTrue("JSON string wrapper is unwrapped", ok);
         AssertEqual("wrapped genres parse", "Puzzle, Adventure", Join(resolved["genres"]));
+
+        AssertTrue(
+            "plain prose is not parseable JSON",
+            !TermFieldResolver.ResponseIsParseableJson("Sure, here are the genres: Action, Adventure"));
+        AssertTrue(
+            "valid organize JSON is parseable",
+            TermFieldResolver.ResponseIsParseableJson(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Aventura\"]}]}"));
     }
 
     private static void Test_TermResolve_AcceptsTranslatedSpanishGenres()
@@ -399,15 +407,154 @@ internal static class VocabularyBehaviorRunner
         AssertTrue("flat main-call JSON shape is accepted", flatOk);
         AssertEqual("flat genres kept", "Acción, Disparos, Puzle, Estrategia", Join(flat["genres"]));
 
+        Dictionary<string, List<string>> mixed;
+        var mixedOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Shooter\",\"Disparos\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { field },
+            out mixed);
+        AssertTrue("mixed response keeps translated terms", mixedOk);
+        // Shooter is in non-localized Incoming and was copied unchanged → stripped.
+        // Indie was not in Incoming here, so the safety strip does not touch it.
+        AssertEqual("raw non-localized Incoming leftovers are stripped", "Acción, Disparos, Indie", Join(mixed["genres"]));
+        AssertTrue(
+            "mixed English leftovers need a translation retry",
+            TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Shooter\"]}]}",
+                new List<TermFieldRequest> { field }));
+
+        var loanwordField = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Acción", "Indie", "Shooter" },
+            LocalizedIncoming = new List<string> { "Acción", "Indie" },
+            MaxItems = 4,
+            Organize = true
+        };
+        Dictionary<string, List<string>> loanwords;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Indie\",\"Disparos\"]}]}",
+            new List<TermFieldRequest> { loanwordField },
+            out loanwords);
+        AssertEqual("loanword already in localized incoming is kept", "Acción, Indie, Disparos", Join(loanwords["genres"]));
+
         Dictionary<string, List<string>> fallback;
         TermFieldResolver.TryApplyResponse(
             "not-json",
             new List<TermFieldRequest> { field },
             out fallback);
         AssertEqual(
-            "invalid JSON falls back to full merged incoming",
-            "Acción, Aventura, Shooter, Puzzle",
+            "invalid JSON leaves non-English genres empty (no localized false-success)",
+            string.Empty,
             Join(fallback["genres"]));
+
+        var onlyEnglishIncoming = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Action", "Adventure", "Indie" },
+            LocalizedIncoming = new List<string>(),
+            MaxItems = 4,
+            Organize = true
+        };
+        AssertEqual(
+            "es with no localized store data does not fall back to English Incoming",
+            string.Empty,
+            Join(onlyEnglishIncoming.FallbackTerms()));
+        Dictionary<string, List<string>> onlyEnFallback;
+        TermFieldResolver.TryApplyResponse(
+            "not-json",
+            new List<TermFieldRequest> { onlyEnglishIncoming },
+            out onlyEnFallback);
+        AssertEqual(
+            "failed organize without usable model leaves genres empty (no localized false-success)",
+            string.Empty,
+            Join(onlyEnFallback["genres"]));
+        AssertEqual(
+            "FailedOrganizeTerms is empty for non-English",
+            string.Empty,
+            Join(onlyEnglishIncoming.FailedOrganizeTerms()));
+
+        var steamEnglishLeftover = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Acción", "Aventura", "Shooter", "Indie" },
+            LocalizedIncoming = new List<string> { "Acción", "Aventura", "Shooter", "Indie" },
+            NonLocalizedIncoming = new List<string> { "Shooter", "Adventure" },
+            MaxItems = 4,
+            Organize = true
+        };
+        // DirectTerms may still prefer LocalizedIncoming when the model is not needed.
+        // Failed organizes must not apply that list (incomplete vs IGDB/other sources).
+        AssertEqual(
+            "localized steam list remains available for direct apply",
+            "Acción, Aventura, Shooter, Indie",
+            Join(steamEnglishLeftover.FallbackTerms()));
+        AssertEqual(
+            "failed organize does not apply localized-only Steam list",
+            string.Empty,
+            Join(steamEnglishLeftover.FailedOrganizeTerms()));
+        Dictionary<string, List<string>> steamFailApply;
+        TermFieldResolver.TryApplyResponse(
+            "not-json",
+            new List<TermFieldRequest> { steamEnglishLeftover },
+            out steamFailApply);
+        AssertEqual(
+            "unparseable organize response leaves non-English genres empty",
+            string.Empty,
+            Join(steamFailApply["genres"]));
+
+        var igdbOnlyEnglish = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Acción", "Aventura", "Shooter", "Indie" },
+            LocalizedIncoming = new List<string> { "Acción", "Aventura", "Indie" },
+            NonLocalizedIncoming = new List<string> { "Shooter" },
+            MaxItems = 4,
+            Organize = true
+        };
+        Dictionary<string, List<string>> mixedIgdb;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Shooter\",\"Indie\",\"Disparos\"]}]}",
+            new List<TermFieldRequest> { igdbOnlyEnglish },
+            out mixedIgdb);
+        AssertEqual(
+            "unchanged non-localized Incoming leftover is stripped",
+            "Acción, Indie, Disparos",
+            Join(mixedIgdb["genres"]));
+        AssertTrue(
+            "non-localized Incoming leftover needs a translation retry",
+            TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Shooter\"]}]}",
+                new List<TermFieldRequest> { igdbOnlyEnglish }));
+
+        var knowledgeField = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string>(),
+            LocalizedIncoming = new List<string>(),
+            MaxItems = 4,
+            Organize = true,
+            FromKnowledge = true
+        };
+        AssertTrue(
+            "knowledge answers always need a localization retry when language is not English",
+            TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Shooter\"]}]}",
+                new List<TermFieldRequest> { knowledgeField }));
+        AssertTrue(
+            "knowledge Spanish answers still get one localization confirmation retry",
+            TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Disparos\",\"Acción\"]}]}",
+                new List<TermFieldRequest> { knowledgeField }));
     }
 
     private static void Test_RomTitle_MatchesStoreTitle()
@@ -701,6 +848,9 @@ internal static class VocabularyBehaviorRunner
         AssertEqual("en capitalizes each word", "Full Controller Support", TextCapitalization.Apply("FULL CONTROLLER SUPPORT", "en", false));
         AssertEqual("en-GB uses the same word capitals", "Action And Adventure", TextCapitalization.Apply("action and adventure", "en-GB", false));
         AssertEqual("es keeps a single capital", "Acción y aventura", TextCapitalization.ToSentence("Acción Y Aventura", "es"));
+        AssertEqual("es keeps MMO acronym uppercase", "MMO", TextCapitalization.Apply("MMO", "es", false));
+        AssertEqual("es keeps RPG acronym uppercase", "RPG", TextCapitalization.Apply("RPG", "es", false));
+        AssertEqual("es sentence-cases ordinary words", "Disparos", TextCapitalization.Apply("DISPAROS", "es", false));
         AssertEqual("fr sentence case", "Coopératif en ligne", TextCapitalization.ToSentence("COOPÉRATIF EN LIGNE", "fr"));
         AssertEqual("second sentence starts with a capital", "Empieza aquí. Sigue allá.", TextCapitalization.ToSentence("EMPIEZA AQUÍ. SIGUE ALLÁ.", "es"));
         var html = "<h3>Descripcion breve</h3>\n<p>Disfruta de la trilogía clásica.</p>";

@@ -8,6 +8,148 @@ using System.Linq;
 
 namespace MetaDataIAPlugin
 {
+    public class ProviderProfile : ObservableObject
+    {
+        private string id;
+        private string displayName;
+        private string providerPreset;
+        private string endpoint;
+        private string apiKey;
+        private string model;
+        private bool enabled = true;
+
+        public string Id
+        {
+            get { return id; }
+            set { SetValue(ref id, value); }
+        }
+
+        public string DisplayName
+        {
+            get { return displayName; }
+            set
+            {
+                SetValue(ref displayName, value);
+                OnPropertyChanged("ListLabel");
+            }
+        }
+
+        public string ProviderPreset
+        {
+            get { return providerPreset; }
+            set
+            {
+                SetValue(ref providerPreset, value);
+                OnPropertyChanged("ListLabel");
+            }
+        }
+
+        public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
+        public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
+
+        public string Model
+        {
+            get { return model; }
+            set
+            {
+                SetValue(ref model, value);
+                OnPropertyChanged("ListLabel");
+            }
+        }
+
+        public bool Enabled { get { return enabled; } set { SetValue(ref enabled, value); } }
+
+        [DontSerialize]
+        public string ListLabel
+        {
+            get
+            {
+                var name = string.IsNullOrWhiteSpace(DisplayName) ? (ProviderPreset ?? string.Empty) : DisplayName.Trim();
+                var modelLabel = string.IsNullOrWhiteSpace(Model) ? string.Empty : Model.Trim();
+                if (name.Length == 0)
+                {
+                    return modelLabel.Length == 0 ? "—" : modelLabel;
+                }
+
+                return modelLabel.Length == 0 ? name : name + " · " + modelLabel;
+            }
+        }
+
+        public ProviderProfile()
+        {
+            Id = Guid.NewGuid().ToString("N");
+        }
+
+        public ProviderProfile(string displayName, string providerPreset, string endpoint, string apiKey, string model, bool enabled = true)
+            : this()
+        {
+            DisplayName = displayName;
+            ProviderPreset = providerPreset;
+            Endpoint = endpoint;
+            ApiKey = apiKey;
+            Model = model;
+            Enabled = enabled;
+        }
+        public void ApplyPresetEndpoint()
+        {
+            if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderOpenAI, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://api.openai.com/v1/chat/completions";
+                Model = "gpt-4.1-mini";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderLmStudio, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "http://localhost:1234/v1/chat/completions";
+                Model = "local-model";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderOllama, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "http://localhost:11434/v1/chat/completions";
+                Model = "llama3.1";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderGemini, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+                Model = "gemini-3.5-flash-lite";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderClaude, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://api.anthropic.com/v1/messages";
+                Model = "claude-sonnet-4-5";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderOpenRouter, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+                Model = "openrouter/auto";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderOpenRouterFree, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://openrouter.ai/api/v1/chat/completions";
+                Model = "openrouter/free";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderGroq, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://api.groq.com/openai/v1/chat/completions";
+                Model = "llama-3.1-8b-instant";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderCerebras, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://api.cerebras.ai/v1/chat/completions";
+                Model = "gpt-oss-120b";
+            }
+            else if (string.Equals(ProviderPreset, MetaDataIASettings.ProviderMistral, StringComparison.OrdinalIgnoreCase))
+            {
+                Endpoint = "https://api.mistral.ai/v1/chat/completions";
+                Model = "mistral-small-latest";
+            }
+        }
+
+        public void ApplyPresetDefaults()
+        {
+            ApplyPresetEndpoint();
+        }
+    }
+
     public class TemplateProfile : ObservableObject
     {
         private string name;
@@ -125,6 +267,8 @@ namespace MetaDataIAPlugin
         }
 
         public const string ApplyOverwrite = "Sobrescribir";
+        public const string ExistingMetadataContext = "context";
+        public const string ExistingMetadataIgnore = "ignore";
         public const string ProviderOpenAI = "OpenAI";
         public const string ProviderLmStudio = "LM Studio local";
         public const string ProviderOllama = "Ollama local";
@@ -240,7 +384,7 @@ namespace MetaDataIAPlugin
         private bool overrideNotesLength = true;
         private bool overrideRecommendedForLength = true;
         private string extraInstructions = string.Empty;
-        private string existingMetadataMode = "Usar como contexto";
+        private string existingMetadataMode = ExistingMetadataContext;
         private bool useOfficialStoreContext = true;
         private bool strictCompanyAgeRegion = true;
         private bool enableLocalFallback = true;
@@ -248,6 +392,8 @@ namespace MetaDataIAPlugin
         private bool tryOllamaFallback = true;
         private string lmStudioFallbackModel = "local-model";
         private string ollamaFallbackModel = "llama3.1";
+        private bool providerProfilesMigrated = false;
+        private ObservableCollection<ProviderProfile> providerProfiles;
         private bool companyLimitDefaultsMigrated = false;
         private bool safeDefaultsMigrated = false;
         private bool setupWizardCompleted = false;
@@ -404,6 +550,7 @@ namespace MetaDataIAPlugin
 
                 SetValue(ref providerPreset, value);
                 OnPropertyChanged("ProviderKeyHelp");
+                OnPropertyChanged("ProviderKeyHelpShort");
                 OnPropertyChanged("ProviderKeyUrl");
                 OnPropertyChanged("ProviderUsageUrl");
                 OnPropertyChanged("ProviderBillingHelp");
@@ -573,7 +720,11 @@ namespace MetaDataIAPlugin
         public bool OverrideNotesLength { get { return overrideNotesLength; } set { SetValue(ref overrideNotesLength, value); } }
         public bool OverrideRecommendedForLength { get { return overrideRecommendedForLength; } set { SetValue(ref overrideRecommendedForLength, value); } }
         public string ExtraInstructions { get { return extraInstructions; } set { SetValue(ref extraInstructions, value); } }
-        public string ExistingMetadataMode { get { return existingMetadataMode; } set { SetValue(ref existingMetadataMode, value); } }
+        public string ExistingMetadataMode
+        {
+            get { return existingMetadataMode; }
+            set { SetValue(ref existingMetadataMode, NormalizeExistingMetadataModeValue(value)); }
+        }
         public bool UseOfficialStoreContext { get { return useOfficialStoreContext; } set { SetValue(ref useOfficialStoreContext, value); } }
         public bool StrictCompanyAgeRegion { get { return strictCompanyAgeRegion; } set { SetValue(ref strictCompanyAgeRegion, value); } }
         public bool EnableLocalFallback { get { return enableLocalFallback; } set { SetValue(ref enableLocalFallback, value); } }
@@ -581,6 +732,31 @@ namespace MetaDataIAPlugin
         public bool TryOllamaFallback { get { return tryOllamaFallback; } set { SetValue(ref tryOllamaFallback, value); } }
         public string LmStudioFallbackModel { get { return lmStudioFallbackModel; } set { SetValue(ref lmStudioFallbackModel, value); } }
         public string OllamaFallbackModel { get { return ollamaFallbackModel; } set { SetValue(ref ollamaFallbackModel, value); } }
+
+        public bool ProviderProfilesMigrated
+        {
+            get { return providerProfilesMigrated; }
+            set { SetValue(ref providerProfilesMigrated, value); }
+        }
+
+        public ObservableCollection<ProviderProfile> ProviderProfiles
+        {
+            get
+            {
+                if (providerProfiles == null)
+                {
+                    providerProfiles = new ObservableCollection<ProviderProfile>();
+                }
+
+                return providerProfiles;
+            }
+            set
+            {
+                providerProfiles = value ?? new ObservableCollection<ProviderProfile>();
+                OnPropertyChanged("ProviderProfiles");
+            }
+        }
+
         public bool CompanyLimitDefaultsMigrated { get { return companyLimitDefaultsMigrated; } set { SetValue(ref companyLimitDefaultsMigrated, value); } }
         public bool SafeDefaultsMigrated { get { return safeDefaultsMigrated; } set { SetValue(ref safeDefaultsMigrated, value); } }
         public bool SetupWizardCompleted { get { return setupWizardCompleted; } set { SetValue(ref setupWizardCompleted, value); } }
@@ -978,6 +1154,198 @@ namespace MetaDataIAPlugin
                     ? DefaultMediumTemplate
                     : active.Template;
             }
+
+            ExistingMetadataMode = NormalizeExistingMetadataModeValue(ExistingMetadataMode);
+            EnsureProviderProfiles();
+        }
+
+        public void EnsureProviderProfiles()
+        {
+            EnsureProviderProfilesStorage();
+
+            if (!ProviderProfilesMigrated || ProviderProfiles.Count == 0)
+            {
+                ProviderProfiles.Clear();
+                ProviderProfiles.Add(CreateProfileFromPrimary(
+                    PluginLocalization.GetString("MTDA_ProviderProfilePrimary", "Primary")));
+
+                if (EnableLocalFallback && TryLmStudioFallback)
+                {
+                    AddBackupProfileIfMissing(
+                        PluginLocalization.GetString("MTDA_ProviderLmStudio", "LM Studio local"),
+                        ProviderLmStudio,
+                        "http://localhost:1234/v1/chat/completions",
+                        string.Empty,
+                        string.IsNullOrWhiteSpace(LmStudioFallbackModel) ? "local-model" : LmStudioFallbackModel);
+                }
+
+                if (EnableLocalFallback && TryOllamaFallback)
+                {
+                    AddBackupProfileIfMissing(
+                        PluginLocalization.GetString("MTDA_ProviderOllama", "Ollama local"),
+                        ProviderOllama,
+                        "http://localhost:11434/v1/chat/completions",
+                        string.Empty,
+                        string.IsNullOrWhiteSpace(OllamaFallbackModel) ? "llama3.1" : OllamaFallbackModel);
+                }
+
+                EnableLocalFallback = false;
+                ProviderProfilesMigrated = true;
+            }
+
+            SyncPrimaryIntoProfileZero();
+        }
+
+        public void SyncPrimaryIntoProfileZero()
+        {
+            EnsureProviderProfilesStorage();
+            if (ProviderProfiles.Count == 0)
+            {
+                ProviderProfiles.Add(CreateProfileFromPrimary(
+                    PluginLocalization.GetString("MTDA_ProviderProfilePrimary", "Primary")));
+                return;
+            }
+
+            var primary = ProviderProfiles[0];
+            if (primary == null)
+            {
+                ProviderProfiles[0] = CreateProfileFromPrimary(
+                    PluginLocalization.GetString("MTDA_ProviderProfilePrimary", "Primary"));
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(primary.DisplayName))
+            {
+                primary.DisplayName = PluginLocalization.GetString("MTDA_ProviderProfilePrimary", "Primary");
+            }
+
+            primary.ProviderPreset = ProviderPreset;
+            primary.Endpoint = Endpoint;
+            primary.ApiKey = ApiKey;
+            primary.Model = Model;
+            primary.Enabled = true;
+        }
+
+        public IList<ProviderProfile> GetEnabledProviderProfiles()
+        {
+            EnsureProviderProfiles();
+            SyncPrimaryIntoProfileZero();
+            return ProviderProfiles
+                .Where(x => x != null && x.Enabled && !string.IsNullOrWhiteSpace(x.ProviderPreset))
+                .ToList();
+        }
+
+        public MetaDataIASettings CreateSettingsForProfile(ProviderProfile profile)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException("profile");
+            }
+
+            var clone = Serialization.GetClone(this);
+            clone.ProviderPreset = profile.ProviderPreset;
+            clone.Endpoint = profile.Endpoint ?? string.Empty;
+            clone.ApiKey = profile.ApiKey ?? string.Empty;
+            clone.Model = profile.Model ?? string.Empty;
+            clone.EnableLocalFallback = false;
+            clone.TryLmStudioFallback = false;
+            clone.TryOllamaFallback = false;
+            return clone;
+        }
+
+        public ProviderProfile CreateProfileFromPrimary(string displayName)
+        {
+            return new ProviderProfile(
+                displayName,
+                ProviderPreset,
+                Endpoint,
+                ApiKey,
+                Model,
+                true);
+        }
+
+        public void AddBackupProviderProfile()
+        {
+            EnsureProviderProfiles();
+            SyncPrimaryIntoProfileZero();
+            var profile = new ProviderProfile(
+                PluginLocalization.GetString("MTDA_ProviderProfileBackup", "Backup"),
+                ProviderGroq,
+                "https://api.groq.com/openai/v1/chat/completions",
+                string.Empty,
+                "llama-3.1-8b-instant",
+                true);
+            profile.ApplyPresetEndpoint();
+            ProviderProfiles.Add(profile);
+        }
+
+        public bool RemoveProviderProfile(ProviderProfile profile)
+        {
+            EnsureProviderProfiles();
+            if (profile == null || ProviderProfiles.Count == 0)
+            {
+                return false;
+            }
+
+            var index = ProviderProfiles.IndexOf(profile);
+            if (index <= 0)
+            {
+                return false;
+            }
+
+            ProviderProfiles.RemoveAt(index);
+            return true;
+        }
+
+        public bool MoveProviderProfile(ProviderProfile profile, int direction)
+        {
+            EnsureProviderProfiles();
+            if (profile == null || direction == 0 || ProviderProfiles.Count < 2)
+            {
+                return false;
+            }
+
+            var index = ProviderProfiles.IndexOf(profile);
+            if (index <= 0)
+            {
+                return false;
+            }
+
+            var target = index + (direction < 0 ? -1 : 1);
+            if (target <= 0 || target >= ProviderProfiles.Count)
+            {
+                return false;
+            }
+
+            ProviderProfiles.Move(index, target);
+            return true;
+        }
+
+        public IList<ProviderProfile> GetBackupProviderProfiles()
+        {
+            EnsureProviderProfiles();
+            SyncPrimaryIntoProfileZero();
+            return ProviderProfiles.Skip(1).Where(x => x != null).ToList();
+        }
+
+        private void EnsureProviderProfilesStorage()
+        {
+            if (providerProfiles == null)
+            {
+                providerProfiles = new ObservableCollection<ProviderProfile>();
+            }
+        }
+
+        private void AddBackupProfileIfMissing(string displayName, string preset, string endpoint, string apiKey, string model)
+        {
+            if (ProviderProfiles.Any(x =>
+                x != null &&
+                string.Equals(x.ProviderPreset, preset, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            ProviderProfiles.Add(new ProviderProfile(displayName, preset, endpoint, apiKey, model, true));
         }
 
         private void EnsureMediaDefaults(bool existingSettings)
@@ -1165,6 +1533,36 @@ namespace MetaDataIAPlugin
         private static string EnsureOption(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        /// <summary>
+        /// Stable persisted values: <see cref="ExistingMetadataContext"/> or <see cref="ExistingMetadataIgnore"/>.
+        /// Legacy Spanish/English labels (and removed "Normalizar") map onto those codes.
+        /// </summary>
+        internal static string NormalizeExistingMetadataModeValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return ExistingMetadataContext;
+            }
+
+            var trimmed = value.Trim();
+            if (string.Equals(trimmed, ExistingMetadataIgnore, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "Ignorar", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "Ignore", StringComparison.OrdinalIgnoreCase))
+            {
+                return ExistingMetadataIgnore;
+            }
+
+            return ExistingMetadataContext;
+        }
+
+        public static bool IsExistingMetadataIgnored(string mode)
+        {
+            return string.Equals(
+                NormalizeExistingMetadataModeValue(mode),
+                ExistingMetadataIgnore,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         public Dictionary<string, List<string>> GetVocabularyTerms(string language)
@@ -2012,6 +2410,65 @@ namespace MetaDataIAPlugin
         }
 
         [DontSerialize]
+        public string ProviderKeyHelpShort
+        {
+            get
+            {
+                if (ProviderPreset == ProviderOpenAI)
+                {
+                    return Loc("MTDA_ProviderHintOpenAI", "Create the key at platform.openai.com. ChatGPT Plus does not include API usage.");
+                }
+
+                if (ProviderPreset == ProviderGemini)
+                {
+                    return Loc("MTDA_ProviderHintGemini", "Create the key in Google AI Studio.");
+                }
+
+                if (ProviderPreset == ProviderClaude)
+                {
+                    return Loc("MTDA_ProviderHintClaude", "Create the key in Anthropic Console (separate from claude.ai).");
+                }
+
+                if (ProviderPreset == ProviderOpenRouter)
+                {
+                    return Loc("MTDA_ProviderHintOpenRouter", "Create the key in OpenRouter. Free (:free) models have limits.");
+                }
+
+                if (ProviderPreset == ProviderOpenRouterFree)
+                {
+                    return Loc("MTDA_ProviderHintOpenRouterFree", "Free API key and openrouter/free router; availability varies.");
+                }
+
+                if (ProviderPreset == ProviderGroq)
+                {
+                    return Loc("MTDA_ProviderHintGroq", "Create the key in GroqCloud Console.");
+                }
+
+                if (ProviderPreset == ProviderCerebras)
+                {
+                    return Loc("MTDA_ProviderHintCerebras", "Free key in Cerebras Cloud; lower rate limits, fast inference.");
+                }
+
+                if (ProviderPreset == ProviderMistral)
+                {
+                    return Loc("MTDA_ProviderHintMistral", "Create the key in Mistral Studio. Free mode has usage limits.");
+                }
+
+                if (ProviderPreset == ProviderLmStudio)
+                {
+                    return Loc("MTDA_ProviderHintLmStudio", "No API key. Enable the local server in the Developer tab.");
+                }
+
+                if (ProviderPreset == ProviderOllama)
+                {
+                    return Loc("MTDA_ProviderHintOllama", "No API key. Keep the local Ollama service running.");
+                }
+
+                return Loc("MTDA_ProviderHintCustom", "Use the URL, model, and API key from your provider.");
+            }
+        }
+
+        [DontSerialize]
         public string ProviderKeyHelp
         {
             get
@@ -2245,9 +2702,8 @@ namespace MetaDataIAPlugin
             {
                 return new List<LocalizedOption>
                 {
-                    Option("Usar como contexto", "MTDA_OptionMetadataContext", "Use as context"),
-                    Option("Normalizar", "MTDA_OptionMetadataNormalize", "Normalize"),
-                    Option("Ignorar", "MTDA_OptionMetadataIgnore", "Ignore")
+                    Option(ExistingMetadataContext, "MTDA_OptionMetadataContext", "Use as context"),
+                    Option(ExistingMetadataIgnore, "MTDA_OptionMetadataIgnore", "Ignore")
                 };
             }
         }
@@ -2612,6 +3068,10 @@ namespace MetaDataIAPlugin
         public void EndEdit()
         {
             SyncSelectedTemplate();
+            if (Settings != null)
+            {
+                Settings.SyncPrimaryIntoProfileZero();
+            }
 
             plugin.SaveSettingsSecurely(Settings);
         }

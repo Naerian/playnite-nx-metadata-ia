@@ -22,6 +22,11 @@ namespace MetaDataIAPlugin
         /// Avoids writing raw English IGDB/Steam labels into a non-English library.
         /// </summary>
         public List<string> LocalizedIncoming { get; set; }
+        /// <summary>
+        /// Labels taken only from non-plugin-language sources (typically IGDB English).
+        /// Used for debug and to expand the raw-foreign safety net.
+        /// </summary>
+        public List<string> NonLocalizedIncoming { get; set; }
         public int MaxItems { get; set; }
         public bool AlreadyInLanguage { get; set; }
         public bool Organize { get; set; }
@@ -32,6 +37,7 @@ namespace MetaDataIAPlugin
             Existing = new List<string>();
             Incoming = new List<string>();
             LocalizedIncoming = new List<string>();
+            NonLocalizedIncoming = new List<string>();
             MaxItems = 12;
             AlreadyInLanguage = true;
             Language = "en";
@@ -131,15 +137,36 @@ namespace MetaDataIAPlugin
 
         private IEnumerable<string> PreferredIncoming()
         {
-            // Prefer the full merged store list (Steam + IGDB, …). Localized-only fallback
-            // discarded enrichment genres whenever the organize JSON shape was not recognized.
+            // Used when the model is not needed (DirectTerms) or as a last-resort source for
+            // English libraries. Provider/organize failures must not apply this for non-English
+            // languages — that looks updated while omitting non-localized sources (e.g. IGDB).
+            var localized = LocalizedIncoming ?? new List<string>();
+            if (TermFieldResolver.RequiresTranslation(Language))
+            {
+                return localized;
+            }
+
             var incoming = Incoming ?? new List<string>();
             if (incoming.Count > 0)
             {
                 return incoming;
             }
 
-            return LocalizedIncoming ?? new List<string>();
+            return localized;
+        }
+
+        /// <summary>
+        /// Terms to keep when the model answer is unusable. Non-English libraries get empty
+        /// lists so a failed organize never looks like a successful partial Steam-only apply.
+        /// </summary>
+        public List<string> FailedOrganizeTerms()
+        {
+            if (TermFieldResolver.RequiresTranslation(Language))
+            {
+                return new List<string>();
+            }
+
+            return FallbackTerms();
         }
 
         private List<string> Take(IEnumerable<string> values)
@@ -153,19 +180,27 @@ namespace MetaDataIAPlugin
         // Keep policy in sync with MetadataGenerationService.BuildSystemPrompt Field Categorization Rules
         // (same organize rules; this call uses language/languageName + fields[].terms JSON shape).
         public const string SystemPrompt =
-            "You edit short game metadata labels. Return ONLY valid JSON, no markdown blocks. " +
+            "You edit short game metadata labels. Return ONLY one JSON object. " +
+            "The response must start with { and end with }. No markdown fences, no prose before/after, no JSON wrapped inside a string. " +
             "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
             "Rules: " +
-            "1. Output format: Echo each input field once. In \"terms\", return only the final normalized labels. " +
+            "1. Output format: Echo each input field once. In \"terms\", return only the final normalized labels as a flat string array (not nested arrays). " +
             "2. Source and Grounding: Organize strictly from each field's existing and incoming lists. " +
             "Never invent concepts absent from those lists. If an incoming list is empty, return an empty terms array for that field. " +
-            "3. Language: Read target language from \"language\" and \"languageName\". " +
-            "If not English: You MUST translate all common-noun labels into the requested language " +
-            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or the equivalent). " +
+            "3. Language and universal gaming loanwords: Read target language from \"language\" and \"languageName\". " +
+            "If not English: translate EVERY common noun and descriptive term into the requested language " +
+            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, Action -> Acción, or the equivalent). " +
+            "Do not leave any of those English store strings unchanged. Do not mix languages in the same terms array " +
+            "(never return both \"Aventura\" and \"Adventure\", and never leave \"Shooter\" beside \"Disparos\"). " +
             "If English: keep standard English labels. " +
-            "Loanwords/subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+            "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is in their standard form in every language. " +
+            "Examples include subgenre neologisms (Roguelike, Roguelite, Metroidvania, Soulslike), " +
+            "gameplay formats and styles (Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell), " +
+            "and production/format scope (Indie). " +
+            "Acronyms: keep standard universal industry acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established in the vocabulary. " +
+            "Copying an English incoming string unchanged is allowed ONLY for those true loanwords/acronyms — never for ordinary nouns like Shooter/Adventure/Puzzle. " +
             "4. Canonical label and Deduplication: Exactly one label per concept. " +
-            "Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"RPG\" / \"Role-playing (rpg)\"; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
+            "Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
             "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
             "Do not repeat the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
             "5. Handling mode: " +
@@ -176,16 +211,20 @@ namespace MetaDataIAPlugin
 
         public const string KnowledgePrompt =
             "No store returned a list for the fields in this request. Propose short, accurate metadata labels strictly using the provided game release facts. " +
-            "Return ONLY valid JSON, no markdown blocks. " +
+            "Return ONLY one JSON object. The response must start with { and end with }. No markdown fences, no prose, no JSON wrapped inside a string. " +
             "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
             "Rules: " +
-            "1. Target Language and Scope: Echo each input field once. Read target language from \"language\" and \"languageName\". " +
-            "If language is NOT English: translate all common terms completely into the requested language " +
+            "1. Target Language and Universal Gaming Loanwords: Echo each input field once. In \"terms\", return a flat string array. " +
+            "Read target language from \"language\" and \"languageName\". " +
+            "If language is NOT English: translate EVERY common noun and descriptive term into the requested language " +
             "(e.g., Shooter -> Disparos, Action -> Acción, Adventure -> Aventura, Puzzle -> Puzle, or the equivalent). " +
+            "Do not leave those English strings unchanged. Do not mix languages in the same terms array. " +
             "If English: keep standard English labels. " +
-            "Global subgenres allowed as-is: Roguelike, Metroidvania, Indie. " +
+            "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is " +
+            "(e.g., Roguelike, Roguelite, Metroidvania, Soulslike, Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell, Indie). " +
+            "Keep standard universal acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established. " +
             "2. Strict Concept Normalization: Exactly one label per concept. Never output mixed languages or synonyms " +
-            "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"RPG\" or \"Role-playing (rpg)\"; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
+            "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
             "Concise labels: 1 to 3 words max. Never repeat the same concept across multiple fields. " +
             "3. Platform and Release Grounding (Zero Hallucination): Anchor labels strictly to the specific platform and release facts provided. " +
             "Do NOT extrapolate features or genres from modern remakes or subsequent ports. " +
@@ -197,6 +236,12 @@ namespace MetaDataIAPlugin
             "5. Handling mode: overwrite: terms must contain only new normalized labels. " +
             "append: preserve existing labels and add missing unique labels for this release without adding synonyms or language duplicates. " +
             "empty: if existing already has items, return existing unchanged; otherwise populate.";
+
+        public static bool ResponseIsParseableJson(string content)
+        {
+            JObject unused;
+            return TryParseObject(content, out unused);
+        }
 
         public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields)
         {
@@ -262,33 +307,135 @@ namespace MetaDataIAPlugin
             {
                 foreach (var field in requested)
                 {
-                    resolved[field.Field] = field.FallbackTerms();
+                    resolved[field.Field] = field.FailedOrganizeTerms();
                 }
 
                 return false;
             }
 
             var returned = ReadFields(json);
+            var anyAccepted = false;
             foreach (var field in requested)
             {
                 List<string> terms;
                 if (!returned.TryGetValue(field.Field, out terms) || !Accept(field, requested, terms))
                 {
-                    resolved[field.Field] = field.FallbackTerms();
+                    resolved[field.Field] = field.FailedOrganizeTerms();
                     continue;
                 }
 
-                var cleaned = DistinctTerms(terms).Take(Math.Max(1, field.MaxItems)).ToList();
+                var cleaned = DistinctTerms(terms);
+                cleaned = StripRawForeignIncoming(cleaned, field).ToList();
+                cleaned = cleaned.Take(Math.Max(1, field.MaxItems)).ToList();
                 if (cleaned.Count == 0)
                 {
-                    resolved[field.Field] = field.FallbackTerms();
+                    resolved[field.Field] = field.FailedOrganizeTerms();
                     continue;
                 }
 
                 resolved[field.Field] = cleaned;
+                anyAccepted = true;
             }
 
-            return true;
+            return anyAccepted || requested.Count == 0;
+        }
+
+        public static bool ResponseNeedsTranslationRetry(string content, IList<TermFieldRequest> fields)
+        {
+            var requested = (fields ?? new List<TermFieldRequest>())
+                .Where(field => RequiresTranslation(field.Language))
+                .ToList();
+            if (requested.Count == 0)
+            {
+                return false;
+            }
+
+            JObject json;
+            if (!TryParseObject(content, out json))
+            {
+                return true;
+            }
+
+            var returned = ReadFields(json);
+            foreach (var field in requested)
+            {
+                List<string> terms;
+                if (!returned.TryGetValue(field.Field, out terms))
+                {
+                    return true;
+                }
+
+                var cleaned = DistinctTerms(terms);
+                if (cleaned.Count == 0)
+                {
+                    continue;
+                }
+
+                // Knowledge has no store Incoming to compare against, so mixed/untranslated
+                // English labels (e.g. "Shooter") would never trigger the Incoming-based check.
+                // Force one localization retry when the plugin language is not English.
+                if (field.FromKnowledge)
+                {
+                    return true;
+                }
+
+                if (RawForeignIncomingKeys(field).Overlaps(cleaned.Select(LibraryNameMatching.NormalizeKey)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool RequiresTranslation(string language)
+        {
+            var code = (language ?? "en").Trim();
+            return code.Length > 0 && !code.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Labels that appear in Incoming but not in LocalizedIncoming for this request.
+        /// Dynamic per request (store/IGDB pool), not a hard-coded English dictionary.
+        /// Used only when the model copies those non-localized store strings unchanged.
+        /// </summary>
+        public static HashSet<string> RawForeignIncomingKeys(TermFieldRequest field)
+        {
+            var raw = new HashSet<string>(StringComparer.Ordinal);
+            if (field == null || !RequiresTranslation(field.Language))
+            {
+                return raw;
+            }
+
+            var localized = new HashSet<string>(
+                (field.LocalizedIncoming ?? new List<string>())
+                    .Select(LibraryNameMatching.NormalizeKey)
+                    .Where(key => key.Length > 0),
+                StringComparer.Ordinal);
+            foreach (var term in field.Incoming ?? new List<string>())
+            {
+                var key = LibraryNameMatching.NormalizeKey(term);
+                if (key.Length == 0 || localized.Contains(key))
+                {
+                    continue;
+                }
+
+                raw.Add(key);
+            }
+
+            return raw;
+        }
+
+        public static IEnumerable<string> StripRawForeignIncoming(IEnumerable<string> values, TermFieldRequest field)
+        {
+            var raw = RawForeignIncomingKeys(field);
+            if (raw.Count == 0)
+            {
+                return values ?? Enumerable.Empty<string>();
+            }
+
+            return (values ?? Enumerable.Empty<string>())
+                .Where(value => !raw.Contains(LibraryNameMatching.NormalizeKey(value)));
         }
 
         public static List<string> DistinctTerms(IEnumerable<string> values)
@@ -317,6 +464,10 @@ namespace MetaDataIAPlugin
             {
                 return union.Count == 0;
             }
+
+            // Leave raw foreign Incoming labels for StripRawForeignIncoming after Accept so a
+            // mixed answer can keep already-translated terms (Acción + Disparos) instead of
+            // discarding the whole field when one English leftover remains.
 
             if (field.FromKnowledge)
             {
