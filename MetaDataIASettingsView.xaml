@@ -2438,6 +2438,21 @@
                         <Border Style="{StaticResource SettingsCard}">
                             <StackPanel>
                                 <Border Style="{StaticResource SectionHeaderBorder}">
+                                    <TextBlock Text="{DynamicResource MTDA_LocalTermFallback}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <ComboBox ItemsSource="{Binding Settings.LocalTermFallbackModeOptions}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding Settings.LocalTermFallbackMode}"
+                                          HorizontalAlignment="Left"
+                                          MinWidth="280"
+                                          Margin="0"/>
+                                <TextBlock Text="{DynamicResource MTDA_LocalTermFallbackHelp}" Style="{StaticResource HintText}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_FieldAccuracyNotesTitle}" Style="{StaticResource SectionHeaderText}"/>
                                 </Border>
                                 <TextBlock Text="{DynamicResource MTDA_DeveloperPublisherAccuracyNote}"
@@ -2482,6 +2497,22 @@
                                  MinHeight="90"
                                   Margin="0"/>
                         <TextBlock Text="{DynamicResource MTDA_BlacklistHelp}" Style="{StaticResource HintText}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                        <Border Style="{StaticResource SectionHeaderBorder}">
+                            <TextBlock Text="{DynamicResource MTDA_KeptLoanwordsTitle}" Style="{StaticResource SectionHeaderText}"/>
+                        </Border>
+                        <TextBlock Text="{DynamicResource MTDA_KeptLoanwords}" Margin="0,0,0,2"/>
+                        <TextBox Text="{Binding Settings.KeptLoanwords, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 MinHeight="90"
+                                  Margin="0"/>
+                        <TextBlock Text="{DynamicResource MTDA_KeptLoanwordsHelp}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

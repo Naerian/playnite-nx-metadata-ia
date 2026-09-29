@@ -287,6 +287,8 @@ namespace MetaDataIAPlugin
             settings = new MetaDataIASettingsViewModel(this);
             history = new MetadataHistoryService(api, GetPluginUserDataPath());
             maintenanceState = new MetadataMaintenanceStateService(GetPluginUserDataPath());
+            MetadataDebugLog.SetUserDataPathResolver(() => GetPluginUserDataPath());
+            MetadataDebugLog.Initialize(GetPluginUserDataPath());
             Properties = new MetadataPluginProperties
             {
                 HasSettings = true

@@ -73,6 +73,7 @@
     <Compile Include="LibraryNameMatching.cs" />
     <Compile Include="VocabularyTermNormalizer.cs" />
     <Compile Include="TermFieldResolver.cs" />
+    <Compile Include="GamingLoanwordVocabulary.cs" />
     <Compile Include="TextCapitalization.cs" />
     <Compile Include="CommunityMetadataServices.cs" />
     <Compile Include="MetadataMaintenanceService.cs" />

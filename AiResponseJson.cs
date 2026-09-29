@@ -18,6 +18,16 @@ namespace MetaDataIAPlugin
             @"\{\s*\\""",
             RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+        // One object that packs several field/terms pairs (duplicate "field" keys). Newtonsoft
+        // keeps only the last pair; split into separate array elements before parse.
+        private static readonly Regex CollapsedFieldObject = new Regex(
+            @"\{(?:\s*""field""\s*:\s*""[^""]*""\s*,\s*""terms""\s*:\s*(?:\[[^\]]*\]|""[^""]*"")\s*,?){2,}\s*\}",
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+        private static readonly Regex FieldTermsPair = new Regex(
+            @"""field""\s*:\s*""(?<name>[^""]*)""\s*,\s*""terms""\s*:\s*(?<terms>\[[^\]]*\]|""[^""]*"")",
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
         public static bool TryParseObject(string content, out JObject json)
         {
             JsonReaderException unused;
@@ -64,17 +74,20 @@ namespace MetaDataIAPlugin
                 return content ?? string.Empty;
             }
 
-            var prepared = StripMarkdownFence(content.Trim());
+            var prepared = StripLanguageFence(content.Trim());
             prepared = ExtractObjectSpan(prepared);
+            prepared = RepairCollapsedFieldEntries(prepared);
             var unwrapped = TryUnwrapJsonString(prepared);
             if (!string.IsNullOrWhiteSpace(unwrapped))
             {
                 prepared = ExtractObjectSpan(unwrapped.Trim());
+                prepared = RepairCollapsedFieldEntries(prepared);
             }
 
             if (LooksOverEscaped(prepared))
             {
                 prepared = UnescapeOverEscaped(prepared);
+                prepared = RepairCollapsedFieldEntries(prepared);
             }
 
             return prepared;
@@ -96,54 +109,100 @@ namespace MetaDataIAPlugin
 
         private static IEnumerable<string> BuildCandidates(string content)
         {
-            var trimmed = StripMarkdownFence(content.Trim());
-            var extracted = ExtractObjectSpan(trimmed);
+            var trimmed = StripLanguageFence(content.Trim());
+            var extracted = RepairCollapsedFieldEntries(ExtractObjectSpan(trimmed));
             yield return extracted;
             yield return trimmed;
+            yield return RepairCollapsedFieldEntries(trimmed);
 
             var unwrapped = TryUnwrapJsonString(extracted);
             if (!string.IsNullOrWhiteSpace(unwrapped))
             {
-                var inner = ExtractObjectSpan(unwrapped.Trim());
+                var inner = RepairCollapsedFieldEntries(ExtractObjectSpan(unwrapped.Trim()));
                 yield return inner;
                 if (LooksOverEscaped(inner))
                 {
-                    yield return UnescapeOverEscaped(inner);
+                    yield return RepairCollapsedFieldEntries(UnescapeOverEscaped(inner));
                 }
             }
 
             if (LooksOverEscaped(extracted))
             {
-                yield return UnescapeOverEscaped(extracted);
+                yield return RepairCollapsedFieldEntries(UnescapeOverEscaped(extracted));
             }
 
             var repairedControls = EscapeRawControlCharactersInJsonStrings(extracted);
             if (!string.Equals(repairedControls, extracted, StringComparison.Ordinal))
             {
-                yield return repairedControls;
+                yield return RepairCollapsedFieldEntries(repairedControls);
             }
 
             if (LooksOverEscaped(extracted))
             {
                 var unescapedThenControls = EscapeRawControlCharactersInJsonStrings(UnescapeOverEscaped(extracted));
-                yield return unescapedThenControls;
+                yield return RepairCollapsedFieldEntries(unescapedThenControls);
             }
         }
 
-        private static string StripMarkdownFence(string content)
+        /// <summary>
+        /// Strips ``` / ```json fences and a bare leading "json" label (models often emit
+        /// "json\n{...}" without backticks).
+        /// </summary>
+        private static string StripLanguageFence(string content)
         {
-            if (string.IsNullOrWhiteSpace(content) || !content.StartsWith("```", StringComparison.Ordinal))
+            if (string.IsNullOrWhiteSpace(content))
             {
                 return content;
             }
 
-            var cleaned = content.Trim('`').Trim();
+            var cleaned = content.Trim();
+            if (cleaned.StartsWith("```", StringComparison.Ordinal))
+            {
+                cleaned = cleaned.Trim('`').Trim();
+            }
+
             if (cleaned.StartsWith("json", StringComparison.OrdinalIgnoreCase))
             {
-                cleaned = cleaned.Substring(4).Trim();
+                var after = cleaned.Length == 4 ? string.Empty : cleaned.Substring(4);
+                if (after.Length == 0 || char.IsWhiteSpace(after[0]) || after[0] == '\n' || after[0] == '\r')
+                {
+                    cleaned = after.Trim();
+                }
             }
 
             return cleaned;
+        }
+
+        /// <summary>
+        /// Turns {"field":"genres","terms":[...],"field":"tags","terms":[...]} into two
+        /// separate objects so both fields survive Newtonsoft's last-key-wins parse.
+        /// </summary>
+        internal static string RepairCollapsedFieldEntries(string content)
+        {
+            if (string.IsNullOrEmpty(content) ||
+                content.IndexOf("\"field\"", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return content ?? string.Empty;
+            }
+
+            return CollapsedFieldObject.Replace(content, match =>
+            {
+                var pairs = FieldTermsPair.Matches(match.Value);
+                if (pairs.Count < 2)
+                {
+                    return match.Value;
+                }
+
+                var parts = new List<string>(pairs.Count);
+                foreach (Match pair in pairs)
+                {
+                    parts.Add(
+                        "{\"field\":\"" + pair.Groups["name"].Value +
+                        "\",\"terms\":" + pair.Groups["terms"].Value + "}");
+                }
+
+                return string.Join(",", parts);
+            });
         }
 
         private static string ExtractObjectSpan(string content)

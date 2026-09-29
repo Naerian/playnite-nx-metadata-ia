@@ -76,7 +76,7 @@ namespace MetaDataIAPlugin
 
         public void Normalize(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
-            var blacklist = settings.GetBlacklistTerms();
+            var blacklist = settings.GetBlacklistRules();
             Short = Clean(Short);
             Synopsis = Clean(Synopsis);
             Synopsis = EnsureParagraphCount(Synopsis, settings.SynopsisLength);
@@ -121,6 +121,30 @@ namespace MetaDataIAPlugin
             AddReliableSourceLinks(game, settings);
             EnsureFeatureFallback(settings, game);
             RefreshDescription(settings, game);
+        }
+
+        /// <summary>
+        /// Re-apply the Library term blacklist to genres/tags/features/categories.
+        /// Organize, DirectTerms and English store fallbacks assign raw lists after
+        /// <see cref="Normalize"/>, so blacklist must run again before prefixes/apply.
+        /// </summary>
+        public void ApplyTermBlacklist(MetaDataIASettings settings)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            var blacklist = settings.GetBlacklistRules();
+            Genres = CleanList(Genres, settings.MaxGenres, blacklist, string.Empty);
+            Tags = CleanList(Tags, settings.MaxTags, blacklist, string.Empty);
+            Features = CleanList(Features, settings.MaxFeatures, blacklist, string.Empty)
+                .Select(CleanFeature)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(settings.MaxFeatures)
+                .ToList();
+            Categories = CleanList(Categories, settings.MaxCategories, blacklist, string.Empty);
         }
 
         public void ApplyConfiguredPrefixes(
@@ -573,19 +597,19 @@ namespace MetaDataIAPlugin
             return 1;
         }
 
-        private static List<string> CleanList(IEnumerable<string> values, int maxItems, IEnumerable<string> blacklist, string prefix)
+        private static List<string> CleanList(IEnumerable<string> values, int maxItems, IEnumerable<BlacklistTermRule> blacklist, string prefix)
         {
             if (values == null)
             {
                 return new List<string>();
             }
 
-            var blocked = blacklist == null ? new List<string>() : blacklist.ToList();
+            var blocked = blacklist == null ? new List<BlacklistTermRule>() : blacklist.ToList();
             return values
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(Clean)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Where(x => !blocked.Any(blockedTerm => x.IndexOf(blockedTerm, StringComparison.OrdinalIgnoreCase) >= 0))
+                .Where(x => !blocked.Any(rule => MetaDataIASettings.IsBlockedByBlacklist(x, rule)))
                 .Select(x => AddPrefix(x, prefix))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(maxItems)

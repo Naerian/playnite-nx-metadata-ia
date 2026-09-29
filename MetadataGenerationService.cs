@@ -1366,26 +1366,26 @@ namespace MetaDataIAPlugin
             if (NeedsTermOrganizeInMainCall())
             {
                 // Keep in sync with TermFieldResolver.SystemPrompt (same organize policy; different JSON shape).
+                // keepLoanwords is supplied in the request JSON from GamingLoanwordVocabulary / settings.
                 parts.Add(
                     "Field Categorization Rules (genres, tags, features): " +
                     "1. Source and Grounding: When termCandidates is present, organize genres, tags, and features strictly from each field's existing and incoming lists. " +
                     "Never invent concepts absent from those lists. If an incoming list is empty, return an empty array for that field. " +
-                    "2. Language and universal gaming loanwords: Read target language from targetLanguage / targetLanguageName. " +
-                    "If not English: translate EVERY common noun and descriptive term into the requested language " +
-                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, Action -> Acción, or the equivalent). " +
-                    "Do not leave those English store strings unchanged. Do not mix languages in the same array " +
-                    "(never both \"Aventura\" and \"Adventure\"; never \"Shooter\" beside \"Disparos\"). " +
-                    "If English: keep standard English labels. " +
-                    "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is in their standard form in every language. " +
-                    "Examples include subgenre neologisms (Roguelike, Roguelite, Metroidvania, Soulslike), " +
-                    "gameplay formats and styles (Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell), " +
-                    "and production/format scope (Indie). " +
-                    "Acronyms: keep standard universal industry acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established in the vocabulary. " +
-                    "Copying an English incoming string unchanged is allowed ONLY for those true loanwords/acronyms. " +
+                    "2. Language and Terminology: Read target language from targetLanguage / targetLanguageName. " +
+                    "If target language is NOT English: translate all common descriptive nouns and generic store terms completely into the target language " +
+                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or equivalent). " +
+                    "Keeplist: keep any incoming label that appears in keepLoanwords exactly as written (prefer keepLoanwords spelling). " +
+                    "Do not translate, synonymize, or replace those labels (e.g. Action never becomes Acción). Uppercase acronyms in keepLoanwords stay UPPERCASE. " +
+                    "For other industry labels not in keepLoanwords: translate into the target language like ordinary store terms. " +
+                    "Gaming-domain sense: translate within the video game context. Never replace an industry genre or tag with a literal, non-gaming everyday definition " +
+                    "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
+                    "Consistency: never output synonyms, mixed languages, or both localized and raw English variants for the same concept. " +
+                    "If target language IS English: keep standard canonical English labels. " +
+                    "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
+                    "(except keepLoanwords entries, which win over everyday translations). " +
                     "Exactly one label per concept. Never mix synonyms or languages for the same concept " +
                     "(pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
                     "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
-                    "If playniteLibraryVocabulary is locked, reuse that exact spelling, preferring the localized term if duplicates exist. " +
                     "3. Field Sorting Logic: features: Player count, input devices, co-op modes, achievements, and controller support. " +
                     "Populate between 3 and " + settings.MaxFeatures + " items if evidence exists; if evidence is weaker, return only verified items. " +
                     "genres: Core video game store genres only. " +
@@ -1406,7 +1406,7 @@ namespace MetaDataIAPlugin
                     "e.g., controls, local/online multiplayer, co-op, achievements, cloud saves, and controller support. " +
                     "2. Mandatory Localization: If target language is NOT English: translate common nouns and descriptive feature labels into the requested language " +
                     "(e.g., Single-player -> Un jugador, Full controller support -> Compatibilidad total con mando, or the equivalent). " +
-                    "Keep universal gaming loanwords and industry acronyms as-is when that is the local convention (see genre/tag loanword rules). " +
+                    "Keep labels listed in keepLoanwords unchanged. " +
                     "Never leave raw English descriptive feature labels when target language is not English. " +
                     "3. Grounding and Count: Output between 3 and " + settings.MaxFeatures + " concrete, factually verified features based on source and platforms context. " +
                     "If there is not enough reliable evidence to confirm at least 3 features, return ONLY the verified ones or leave the array empty. Do NOT invent unsupported platform capabilities or features.");
@@ -1495,6 +1495,7 @@ namespace MetaDataIAPlugin
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
             context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
             context["blacklist"] = settings.GetBlacklistTerms();
+            context["keepLoanwords"] = settings.GetKeptLoanwordTerms();
             context["tagPrefix"] = settings.TagPrefix;
             context["categoryPrefix"] = settings.CategoryPrefix;
             context["extraInstructions"] = settings.ExtraInstructions;
@@ -3006,13 +3007,28 @@ namespace MetaDataIAPlugin
             // English store/IGDB labels that would otherwise skip this stricter prompt.
 
             var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
+            var insufficientLocalFields = active.Where(x => x.SkippedInsufficientLocalText).ToList();
             var gameTitle = game.Name ?? string.Empty;
             LogTermOrganizeContext(gameTitle, organizeFields, knowledgeFields);
+
+            if (insufficientLocalFields.Count > 0 &&
+                organizeFields.Count == 0 &&
+                knowledgeFields.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    Loc(
+                        "MTDA_ErrorLocalTermTextInsufficient",
+                        "Could not derive genres, tags or features: no store/IGDB list was available and the local description/game text is too thin. Add or generate a richer description, then retry."));
+            }
 
             var resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             if (organizeFields.Count > 0)
             {
-                var userJson = TermFieldResolver.BuildUserJson(settings.Language, PlatformLabels(game), organizeFields);
+                var userJson = TermFieldResolver.BuildUserJson(
+                    settings.Language,
+                    PlatformLabels(game),
+                    organizeFields,
+                    settings.GetKeptLoanwordTerms());
                 foreach (var pair in await AskTermModelAsync(
                     TermFieldResolver.SystemPrompt,
                     userJson,
@@ -3027,7 +3043,11 @@ namespace MetaDataIAPlugin
 
             if (knowledgeFields.Count > 0)
             {
-                var knowledgeJson = TermFieldResolver.BuildKnowledgeJson(settings.Language, BuildKnownGameFacts(game), knowledgeFields);
+                var knowledgeJson = TermFieldResolver.BuildKnowledgeJson(
+                    settings.Language,
+                    BuildKnownGameFacts(game),
+                    knowledgeFields,
+                    settings.GetKeptLoanwordTerms());
                 foreach (var pair in await AskTermModelAsync(
                     TermFieldResolver.KnowledgePrompt,
                     knowledgeJson,
@@ -3059,6 +3079,10 @@ namespace MetaDataIAPlugin
                     result.ResolvedTermFields.Add(field.Field);
                 }
             }
+
+            // Organize / DirectTerms / English FailedOrganizeTerms assign raw store+IGDB
+            // lists after Normalize, so blacklist must run again here.
+            result.ApplyTermBlacklist(settings);
 
             MetadataDebugLog.Write(
                 "term-final | " + (game.Name ?? string.Empty),
@@ -3130,6 +3154,12 @@ namespace MetaDataIAPlugin
                 ? new List<string>()
                 : CollectNonLocalizedStoreTerms(storeSelector, target, filterFeatures, game);
             var fromStore = incoming.Count > 0;
+            var isTermListField = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
+            var allowLocalFallback = MetaDataIASettings.AllowsLocalTermFallback(settings.LocalTermFallbackMode);
+            var wantsLocalFallback = isTermListField && !fromStore && mode != "skip" && allowLocalFallback;
+            var hasLocalEvidence = wantsLocalFallback && HasSufficientLocalTermEvidence(game, officialContextForCurrentRequest);
             return new TermFieldRequest
             {
                 Field = field,
@@ -3141,15 +3171,79 @@ namespace MetaDataIAPlugin
                 NonLocalizedIncoming = nonLocalizedIncoming,
                 MaxItems = Math.Max(1, maxItems),
                 AlreadyInLanguage = !fromStore || StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
-                Organize = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(field, "features", StringComparison.OrdinalIgnoreCase),
-                FromKnowledge = (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(field, "features", StringComparison.OrdinalIgnoreCase)) &&
-                                incoming.Count == 0 &&
-                                mode != "skip"
+                Organize = isTermListField,
+                FromKnowledge = wantsLocalFallback && hasLocalEvidence,
+                SkippedInsufficientLocalText = wantsLocalFallback && !hasLocalEvidence
             };
+        }
+
+        /// <summary>
+        /// Cheap gate before the local-text knowledge call: need a usable description and/or
+        /// enough local facts so the model is not inventing from the title alone.
+        /// </summary>
+        public static bool HasSufficientLocalTermEvidence(Game game, IList<OfficialStoreMetadata> stores = null)
+        {
+            if (game == null)
+            {
+                return false;
+            }
+
+            var descriptionChars = LongestPlainDescriptionLength(game, stores);
+            var factScore = 0;
+            if (PlatformLabels(game).Count > 0) factScore++;
+            if (Names(game.Developers).Count > 0) factScore++;
+            if (Names(game.Publishers).Count > 0) factScore++;
+            if (game.ReleaseDate.HasValue) factScore++;
+            if (Names(game.Series).Count > 0) factScore++;
+            if (Names(game.Genres).Count > 0) factScore++;
+            if (Names(game.Tags).Count > 0) factScore++;
+            if (Names(game.Features).Count > 0) factScore++;
+            if (game.Source != null && !string.IsNullOrWhiteSpace(game.Source.Name)) factScore++;
+
+            if (descriptionChars >= 280)
+            {
+                return true;
+            }
+
+            if (descriptionChars >= 120 && factScore >= 3)
+            {
+                return true;
+            }
+
+            if (descriptionChars >= 40 && factScore >= 5)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int LongestPlainDescriptionLength(Game game, IList<OfficialStoreMetadata> stores)
+        {
+            var best = PlainTextLength(game == null ? null : game.Description);
+            foreach (var source in stores ?? Enumerable.Empty<OfficialStoreMetadata>())
+            {
+                if (source == null)
+                {
+                    continue;
+                }
+
+                best = Math.Max(best, PlainTextLength(source.Description));
+            }
+
+            return best;
+        }
+
+        private static int PlainTextLength(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return 0;
+            }
+
+            var text = Regex.Replace(value, "<[^>]+>", " ");
+            text = Regex.Replace(text, @"\s+", " ").Trim();
+            return text.Length;
         }
 
         private List<string> CollectNonLocalizedStoreTerms(
@@ -3173,6 +3267,7 @@ namespace MetaDataIAPlugin
             CancellationToken cancellationToken)
         {
             Exception lastError = null;
+            var keepLoanwords = settings.GetKeptLoanwordTerms();
             for (var attempt = 0; attempt <= OrganizeProviderRetries; attempt++)
             {
                 try
@@ -3212,7 +3307,7 @@ namespace MetaDataIAPlugin
                     }
 
                     var translationRetried = false;
-                    if (TermFieldResolver.ResponseNeedsTranslationRetry(content, fields))
+                    if (TermFieldResolver.ResponseNeedsTranslationRetry(content, fields, keepLoanwords))
                     {
                         translationRetried = true;
                         var knowledgeHint = fields.Any(f => f != null && f.FromKnowledge)
@@ -3224,20 +3319,45 @@ namespace MetaDataIAPlugin
                             knowledgeHint +
                             "Translate EVERY common noun (Shooter, Adventure, Puzzle, Action, …). " +
                             "Do not mix languages in the same terms array. " +
-                            "Keep only true universal loanwords/acronyms unchanged, and keep those acronyms in UPPERCASE (MMO, RPG, RTS). " +
+                            "Keep labels listed in keepLoanwords unchanged (and acronyms UPPERCASE). " +
                             "Return the full JSON object again.";
                         content = await SendConstrainedPromptAsync(systemPrompt, retryJson, 700, cancellationToken).ConfigureAwait(false);
                         MetadataDebugLog.Write(callKind + " retry-response | " + gameTitle, content ?? string.Empty);
                     }
 
                     Dictionary<string, List<string>> resolved;
-                    var accepted = TermFieldResolver.TryApplyResponse(content, fields, out resolved);
+                    var accepted = TermFieldResolver.TryApplyResponse(content, fields, keepLoanwords, out resolved);
+                    var shapeRetried = false;
+                    // Parseable-but-unusable answers (collapsed duplicate field keys, one
+                    // comma-joined terms string, missing fields) used to skip the JSON retry
+                    // and fail the game. Give the model one shape correction pass.
+                    if (!accepted)
+                    {
+                        shapeRetried = true;
+                        var fieldShape = string.Join(
+                            ",",
+                            (fields ?? new List<TermFieldRequest>()).Select(f =>
+                                "{\"field\":\"" + (f.Field ?? string.Empty) + "\",\"terms\":[\"...\"]}"));
+                        var shapeRetry = userJson +
+                            "\n\nRETRY: Your previous answer was unusable for this extension. " +
+                            "Return ONLY one JSON object that starts with { and ends with }. " +
+                            "Shape: {\"fields\":[" + fieldShape + "]} " +
+                            "Echo ONLY the requested field names. Each field must be its own object — never put two \"field\" keys in the same object. " +
+                            "\"terms\" must be a flat array of separate short strings (never one comma-joined string). " +
+                            "For append mode, you may return only new incoming labels; existing labels are preserved by the plugin. " +
+                            "Organize strictly from each field's existing and incoming lists. Do not invent labels.";
+                        content = await SendConstrainedPromptAsync(systemPrompt, shapeRetry, 700, cancellationToken).ConfigureAwait(false);
+                        MetadataDebugLog.Write(callKind + " shape-retry-response | " + gameTitle, content ?? string.Empty);
+                        accepted = TermFieldResolver.TryApplyResponse(content, fields, keepLoanwords, out resolved);
+                    }
+
                     resolved = resolved ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
                     MetadataDebugLog.Write(
                         callKind + " resolved | " + gameTitle,
                         "accepted=" + accepted +
                         " jsonRetried=" + jsonRetried +
                         " translationRetried=" + translationRetried +
+                        " shapeRetried=" + shapeRetried +
                         "\n" + FormatResolvedTerms(resolved, fields));
 
                     if (!accepted)
@@ -3335,8 +3455,17 @@ namespace MetaDataIAPlugin
                     .Append(source.ListsMatchPluginLanguage)
                     .Append(" genres=[")
                     .Append(string.Join(", ", source.Genres ?? new List<string>()))
-                    .Append("]")
-                    .AppendLine();
+                    .Append("] features=[")
+                    .Append(string.Join(", ", source.Features ?? new List<string>()))
+                    .Append("] tags=[")
+                    .Append(string.Join(", ", source.Tags ?? new List<string>()))
+                    .Append("]");
+                if (string.Equals(source.SourceName, "IGDB", StringComparison.OrdinalIgnoreCase))
+                {
+                    details.Append(" (themes+keywords)");
+                }
+
+                details.AppendLine();
             }
 
             if (!anySource)
@@ -3347,7 +3476,7 @@ namespace MetaDataIAPlugin
             foreach (var field in (organizeFields ?? new List<TermFieldRequest>())
                 .Concat(knowledgeFields ?? new List<TermFieldRequest>()))
             {
-                details.AppendLine("field=" + field.Field + " mode=" + field.Mode + " needsModel=" + field.NeedsModel + " fromKnowledge=" + field.FromKnowledge);
+                details.AppendLine("field=" + field.Field + " mode=" + field.Mode + " needsModel=" + field.NeedsModel + " fromKnowledge=" + field.FromKnowledge + " skippedInsufficientLocal=" + field.SkippedInsufficientLocalText);
                 details.AppendLine("  existing=[" + string.Join(", ", field.Existing ?? new List<string>()) + "]");
                 details.AppendLine("  incoming=[" + string.Join(", ", field.Incoming ?? new List<string>()) + "]");
                 details.AppendLine("  localizedIncoming=[" + string.Join(", ", field.LocalizedIncoming ?? new List<string>()) + "]");
@@ -3387,6 +3516,9 @@ namespace MetaDataIAPlugin
             facts["publishers"] = new JArray(game == null ? new List<string>() : Names(game.Publishers));
             facts["series"] = new JArray(game == null ? new List<string>() : Names(game.Series));
             facts["ageRatings"] = new JArray(game == null ? new List<string>() : Names(game.AgeRatings));
+            facts["existingGenres"] = new JArray(game == null ? new List<string>() : Names(game.Genres));
+            facts["existingTags"] = new JArray(game == null ? new List<string>() : Names(game.Tags));
+            facts["existingFeatures"] = new JArray(game == null ? new List<string>() : Names(game.Features));
             var links = game == null || game.Links == null
                 ? new List<string>()
                 : game.Links
@@ -3397,6 +3529,7 @@ namespace MetaDataIAPlugin
             facts["links"] = new JArray(links);
 
             var editions = new JArray();
+            var bestDescription = PlainFact(game == null ? null : game.Description, 900);
             foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
             {
                 if (source == null || editions.Count >= 4)
@@ -3413,29 +3546,29 @@ namespace MetaDataIAPlugin
                 edition["publishers"] = new JArray(source.Publishers ?? new List<string>());
                 edition["series"] = new JArray(source.Series ?? new List<string>());
                 edition["ageRating"] = source.AgeRating ?? string.Empty;
-                var description = ShortFact(source.Description);
+                var description = PlainFact(source.Description, 900);
                 if (description.Length > 0)
                 {
                     edition["description"] = description;
+                    if (description.Length > bestDescription.Length)
+                    {
+                        bestDescription = description;
+                    }
                 }
 
                 editions.Add(edition);
             }
 
             facts["editions"] = editions;
-            if (editions.Count == 0 && game != null)
+            if (bestDescription.Length > 0)
             {
-                var libraryDescription = ShortFact(game.Description);
-                if (libraryDescription.Length > 0)
-                {
-                    facts["description"] = libraryDescription;
-                }
+                facts["description"] = bestDescription;
             }
 
             return facts;
         }
 
-        private static string ShortFact(string value)
+        private static string PlainFact(string value, int maxChars)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -3444,7 +3577,17 @@ namespace MetaDataIAPlugin
 
             var text = Regex.Replace(value, "<[^>]+>", " ");
             text = Regex.Replace(text, @"\s+", " ").Trim();
-            return text.Length <= 480 ? text : text.Substring(0, 480).Trim();
+            if (maxChars < 1 || text.Length <= maxChars)
+            {
+                return text;
+            }
+
+            return text.Substring(0, maxChars).Trim();
+        }
+
+        private static string ShortFact(string value)
+        {
+            return PlainFact(value, 480);
         }
 
         private static bool HasAnyTerms(IEnumerable<string> values)

@@ -37,13 +37,19 @@ internal static class VocabularyBehaviorRunner
         Test_TermResolve_AppendRejectsDroppingUnrelated();
         Test_TermResolve_LocalizedOverwriteSkipsModel();
         Test_TermResolve_InvalidJsonFallsBack();
+        Test_TermResolve_AppendMergesExistingWhenModelOmitsThem();
         Test_AiJson_OverEscapedQuotesAreRepaired();
         Test_AiJson_WrappedJsonStringIsUnwrapped();
+        Test_AiJson_CollapsedFieldsAndCommaTermsAreRepaired();
         Test_TermResolve_AcceptsTranslatedSpanishGenres();
         Test_RomTitle_MatchesStoreTitle();
         Test_ArticleAndPlatform_SeparateRomFromRemake();
         Test_Genres_AreOrganizedEvenWhenAlreadyLocalized();
         Test_MissingStoreLists_AskFromKnownFacts();
+        Test_LocalTermFallback_ModeAndEvidence();
+        Test_TermBlacklist_AppliesAfterOrganizeAssign();
+        Test_Blacklist_ExactQuotedVsSubstring();
+        Test_KeptLoanwords_ProtectsIndieFromStrip();
         Test_ModesAndLanguages();
         Test_Uppercase_UsesLanguageRules();
         Test_TagPrefix_PreservesBracketsAndCasing();
@@ -325,8 +331,47 @@ internal static class VocabularyBehaviorRunner
         };
         Dictionary<string, List<string>> resolved;
         var ok = TermFieldResolver.TryApplyResponse("not json", new List<TermFieldRequest> { field }, out resolved);
-        AssertTrue("invalid json is a fallback", !ok);
+        AssertTrue("invalid json uses English store fallback", ok);
         AssertEqual("fallback keeps both", "Un jugador, Cooperativo", Join(resolved["features"]));
+    }
+
+    private static void Test_TermResolve_AppendMergesExistingWhenModelOmitsThem()
+    {
+        var field = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "append",
+            Language = "en",
+            Existing = new List<string> { "[EMT] Video Micro missing", "[HLTB] 20 to 30 hours" },
+            Incoming = new List<string> { "Action", "Comedy", "jungle", "boss fight" },
+            MaxItems = 20,
+            Organize = true
+        };
+
+        // Gemma-style: returns only incoming tags under the wrong field name, omits existing.
+        Dictionary<string, List<string>> wrongField;
+        var wrongOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Action\",\"Comedy\",\"jungle\",\"boss fight\"]}]}",
+            new List<TermFieldRequest> { field },
+            out wrongField);
+        AssertTrue("single-field wrong name is remapped", wrongOk);
+        AssertTrue("existing EMT tag kept", wrongField["tags"].Any(t => t.IndexOf("EMT", StringComparison.OrdinalIgnoreCase) >= 0));
+        AssertTrue("incoming jungle kept", wrongField["tags"].Any(t => string.Equals(t, "jungle", StringComparison.OrdinalIgnoreCase)));
+
+        // Model omits existing user tags ([EMT]/[HLTB]). Accept fails KeepsExisting, but
+        // English FailedOrganizeTerms must still apply existing + incoming instead of erroring.
+        Dictionary<string, List<string>> omittedExisting;
+        var omitOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"tags\",\"terms\":[\"Action\",\"Comedy\",\"jungle\",\"boss fight\"]}]}",
+            new List<TermFieldRequest> { field },
+            out omittedExisting);
+        AssertTrue("append that omits existing falls back to existing+incoming", omitOk);
+        AssertTrue(
+            "HLTB existing kept via English fallback",
+            omittedExisting["tags"].Any(t => t.IndexOf("HLTB", StringComparison.OrdinalIgnoreCase) >= 0));
+        AssertTrue(
+            "incoming jungle kept via English fallback",
+            omittedExisting["tags"].Any(t => string.Equals(t, "jungle", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static void Test_AiJson_OverEscapedQuotesAreRepaired()
@@ -375,6 +420,73 @@ internal static class VocabularyBehaviorRunner
             "valid organize JSON is parseable",
             TermFieldResolver.ResponseIsParseableJson(
                 "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Aventura\"]}]}"));
+    }
+
+    private static void Test_AiJson_CollapsedFieldsAndCommaTermsAreRepaired()
+    {
+        // Discord DK64-style: bare "json" label, duplicate field keys in one object,
+        // and comma-joined terms blobs instead of separate strings.
+        var genres = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "en",
+            Existing = new List<string>(),
+            Incoming = new List<string> { "Action", "Platform", "Adventure" },
+            MaxItems = 8,
+            Organize = true
+        };
+        var tags = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "overwrite",
+            Language = "en",
+            Existing = new List<string>(),
+            Incoming = new List<string>
+            {
+                "Action", "Comedy", "gravity", "photography", "minigames", "guitar playing",
+                "death", "fairy", "multiple protagonists", "multiple endings", "artificial intelligence",
+                "jungle", "camera", "level selection", "giant insects", "high score",
+                "day/night cycle", "hip-hop", "boss fight", "death match"
+            },
+            MaxItems = 20,
+            Organize = true
+        };
+
+        var content =
+            "json\n{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Action, Comedy\"],\"field\":\"tags\",\"terms\":[\"Action, Comedy, gravity, photography, minigames, guitar playing, death, fairy, multiple protagonists, multiple endings, artificial intelligence, jungle, camera, level selection, giant insects, high score, day/night cycle, hip-hop, boss fight, death match\"]}]}\n";
+
+        AssertTrue(
+            "DK64-style collapsed organize JSON is parseable after repair",
+            TermFieldResolver.ResponseIsParseableJson(content));
+
+        Dictionary<string, List<string>> resolved;
+        var ok = TermFieldResolver.TryApplyResponse(
+            content,
+            new List<TermFieldRequest> { genres, tags },
+            out resolved);
+        AssertTrue("collapsed fields + comma terms are accepted", ok);
+        AssertEqual("genres recovered from collapsed object", "Action, Comedy", Join(resolved["genres"]));
+        AssertTrue("tags expanded from comma blob", resolved["tags"].Count >= 10);
+        AssertTrue("tags include jungle", resolved["tags"].Any(t => string.Equals(t, "jungle", StringComparison.OrdinalIgnoreCase)));
+        AssertTrue("tags include boss fight", resolved["tags"].Any(t => string.Equals(t, "boss fight", StringComparison.OrdinalIgnoreCase)));
+
+        var stringTerms = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "en",
+            Incoming = new List<string> { "Action", "Adventure" },
+            MaxItems = 8,
+            Organize = true
+        };
+        Dictionary<string, List<string>> fromString;
+        var stringOk = TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":\"Action, Adventure\"}]}",
+            new List<TermFieldRequest> { stringTerms },
+            out fromString);
+        AssertTrue("string terms value is expanded", stringOk);
+        AssertEqual("string terms become separate labels", "Action, Adventure", Join(fromString["genres"]));
     }
 
     private static void Test_TermResolve_AcceptsTranslatedSpanishGenres()
@@ -595,6 +707,18 @@ internal static class VocabularyBehaviorRunner
         AssertTrue(
             "a subtitle is not treated as a region tag",
             !TitleMatchingService.IsReliableMatch("Trine 4: The Nightmare Prince", "Trine 4"));
+        AssertTrue(
+            "Pokemon without accent matches IGDB Pokémon",
+            TitleMatchingService.IsSameReleaseTitle("Pokemon Stadium 2", "Pokémon Stadium 2"));
+        AssertTrue(
+            "Pokemon Snap matches accented store title",
+            TitleMatchingService.IsReliableMatch("Pokemon Snap (USA)", "Pokémon Snap"));
+        AssertTrue(
+            "accent-only difference is the same release key",
+            string.Equals(
+                TitleMatchingService.NormalizeTitle("Pokémon"),
+                TitleMatchingService.NormalizeTitle("Pokemon"),
+                StringComparison.Ordinal));
     }
 
     private static void Test_ArticleAndPlatform_SeparateRomFromRemake()
@@ -763,6 +887,206 @@ internal static class VocabularyBehaviorRunner
         var json = TermFieldResolver.BuildKnowledgeJson("es", facts, new List<TermFieldRequest> { genres });
         AssertTrue("the guess names the title", json.Contains("High On Life"));
         AssertTrue("the guess names the platform", json.Contains("pc_windows"));
+    }
+
+    private static void Test_LocalTermFallback_ModeAndEvidence()
+    {
+        AssertEqual(
+            "default local-term fallback is leave empty",
+            MetaDataIASettings.LocalTermFallbackOff,
+            MetaDataIASettings.NormalizeLocalTermFallbackModeValue(null));
+        AssertTrue(
+            "local mode enables fallback",
+            MetaDataIASettings.AllowsLocalTermFallback(MetaDataIASettings.LocalTermFallbackFromLocalText));
+        AssertTrue(
+            "off mode disables fallback",
+            !MetaDataIASettings.AllowsLocalTermFallback(MetaDataIASettings.LocalTermFallbackOff));
+
+        var thin = new Game { Name = "Thin Title Only" };
+        AssertTrue(
+            "title alone is not enough local evidence",
+            !MetadataGenerationService.HasSufficientLocalTermEvidence(thin));
+
+        var rich = new Game
+        {
+            Name = "Rich Local Game",
+            Description =
+                "An open-world action adventure where you explore ruins, solve environmental puzzles, " +
+                "and battle creatures across a sprawling jungle. Play solo or with a friend in local co-op, " +
+                "collect relics, unlock new traversal abilities, and uncover the story of a lost civilization " +
+                "through temples, side quests, and optional challenge arenas."
+        };
+        AssertTrue(
+            "a substantial description is enough local evidence",
+            MetadataGenerationService.HasSufficientLocalTermEvidence(rich));
+
+        var offRequest = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "overwrite",
+            Incoming = new List<string>(),
+            Organize = true,
+            FromKnowledge = false,
+            SkippedInsufficientLocalText = false
+        };
+        AssertTrue("leave-empty with no store list does not ask the model", !offRequest.NeedsModel);
+
+        var localReady = new TermFieldRequest
+        {
+            Field = "tags",
+            Mode = "overwrite",
+            Incoming = new List<string>(),
+            Organize = true,
+            FromKnowledge = true
+        };
+        AssertTrue("local-text with evidence asks the model", localReady.NeedsModel);
+    }
+
+    private static void Test_Blacklist_ExactQuotedVsSubstring()
+    {
+        var exactSettings = CreateSettings("en");
+        exactSettings.Blacklist = "\"Death\"";
+        var exactRule = exactSettings.GetBlacklistRules().Single();
+        AssertTrue("quoted rule is exact match", exactRule.ExactMatch);
+        AssertTrue(
+            "quoted Death is exact-only",
+            !MetaDataIASettings.IsBlockedByBlacklist("Deathmatch", exactRule));
+        AssertTrue(
+            "quoted Death blocks exact tag",
+            MetaDataIASettings.IsBlockedByBlacklist("Death", exactRule));
+
+        var substringSettings = CreateSettings("en");
+        substringSettings.Blacklist = "Death";
+        var substringRule = substringSettings.GetBlacklistRules().Single();
+        AssertTrue("unquoted rule is substring", !substringRule.ExactMatch);
+        AssertTrue(
+            "unquoted Death is substring",
+            MetaDataIASettings.IsBlockedByBlacklist("Deathmatch", substringRule));
+
+        var settings = CreateSettings("en");
+        settings.Blacklist = "\"Death\", Retro";
+        var result = CreateResult(
+            new[] { "Action" },
+            new[] { "Death", "Deathmatch", "RetroAchievements" });
+        result.ApplyTermBlacklist(settings);
+        AssertEqual("exact Death only", "Deathmatch", Join(result.Tags));
+    }
+
+    private static void Test_TermBlacklist_AppliesAfterOrganizeAssign()
+    {
+        var settings = CreateSettings("en");
+        settings.Blacklist = "Achievements, Death, Retro";
+        var result = CreateResult(
+            genres: new[] { "Action", "Indie" },
+            tags: new[] { "Action", "Death", "jungle", "boss fight", "RetroAchievements" });
+
+        // Simulate organize / English fallback overwriting Normalize with raw IGDB lists.
+        result.Tags = new List<string> { "Action", "Death", "jungle", "boss fight", "RetroAchievements" };
+        result.ApplyTermBlacklist(settings);
+
+        AssertEqual(
+            "blacklist drops Death after organize assign",
+            "Action, jungle, boss fight",
+            Join(result.Tags));
+        AssertTrue(
+            "substring blacklist also drops RetroAchievements",
+            !result.Tags.Any(t => t.IndexOf("Retro", StringComparison.OrdinalIgnoreCase) >= 0));
+    }
+
+    private static void Test_KeptLoanwords_ProtectsIndieFromStrip()
+    {
+        var settings = CreateSettings("es");
+        settings.EnsureKeptLoanwordsDefaults();
+        AssertTrue("defaults include Indie", settings.GetKeptLoanwordTerms().Any(t =>
+            string.Equals(t, "Indie", StringComparison.OrdinalIgnoreCase)));
+        AssertTrue("defaults include Party", settings.GetKeptLoanwordTerms().Any(t =>
+            string.Equals(t, "Party", StringComparison.OrdinalIgnoreCase)));
+
+        // Among Us style: Steam Casual (localized) + IGDB Strategy/Indie (English only).
+        var amongUs = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Casual", "Strategy", "Indie" },
+            LocalizedIncoming = new List<string> { "Casual" },
+            NonLocalizedIncoming = new List<string> { "Strategy", "Indie" },
+            MaxItems = 4,
+            Organize = true
+        };
+
+        Dictionary<string, List<string>> withoutKeep;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Casual\",\"Estrategia\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { amongUs },
+            null,
+            out withoutKeep);
+        AssertEqual(
+            "without keep-list Indie is stripped as raw foreign",
+            "Casual, Estrategia",
+            Join(withoutKeep["genres"]));
+
+        Dictionary<string, List<string>> withKeep;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Casual\",\"Estrategia\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { amongUs },
+            settings.GetKeptLoanwordTerms(),
+            out withKeep);
+        AssertEqual(
+            "keep-list preserves Indie with translated Strategy",
+            "Casual, Estrategia, Indie",
+            Join(withKeep["genres"]));
+
+        AssertTrue(
+            "Indie alone does not force translation retry when in keep-list",
+            !TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Casual\",\"Estrategia\",\"Indie\"]}]}",
+                new List<TermFieldRequest> { amongUs },
+                settings.GetKeptLoanwordTerms()));
+        AssertTrue(
+            "Strategy leftover still forces translation retry",
+            TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Casual\",\"Strategy\",\"Indie\"]}]}",
+                new List<TermFieldRequest> { amongUs },
+                settings.GetKeptLoanwordTerms()));
+
+        var json = TermFieldResolver.BuildUserJson(
+            "es",
+            new[] { "PC" },
+            new List<TermFieldRequest> { amongUs },
+            settings.GetKeptLoanwordTerms());
+        AssertTrue("user JSON includes keepLoanwords", json.IndexOf("keepLoanwords", StringComparison.Ordinal) >= 0);
+        AssertTrue("user JSON lists Indie", json.IndexOf("Indie", StringComparison.Ordinal) >= 0);
+
+        // User added Action to the keep-list: model/store "Acción" must become Action.
+        var keepWithAction = settings.GetKeptLoanwordTerms().Concat(new[] { "Action" }).ToList();
+        var arcRaiders = new TermFieldRequest
+        {
+            Field = "genres",
+            Mode = "overwrite",
+            Language = "es",
+            Incoming = new List<string> { "Action", "Shooter", "Indie" },
+            LocalizedIncoming = new List<string>(),
+            NonLocalizedIncoming = new List<string> { "Action", "Shooter", "Indie" },
+            MaxItems = 4,
+            Organize = true
+        };
+        Dictionary<string, List<string>> actionForced;
+        TermFieldResolver.TryApplyResponse(
+            "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Disparos\",\"Indie\"]}]}",
+            new List<TermFieldRequest> { arcRaiders },
+            keepWithAction,
+            out actionForced);
+        AssertEqual(
+            "keep-list Action replaces Acción alias",
+            "Disparos, Indie, Action",
+            Join(actionForced["genres"]));
+        AssertTrue(
+            "Acción alias of kept Action does not force translation retry",
+            !TermFieldResolver.ResponseNeedsTranslationRetry(
+                "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Disparos\",\"Indie\"]}]}",
+                new List<TermFieldRequest> { arcRaiders },
+                keepWithAction));
     }
 
     private static void Test_ModesAndLanguages()

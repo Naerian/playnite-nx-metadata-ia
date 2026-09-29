@@ -31,6 +31,11 @@ namespace MetaDataIAPlugin
         public bool AlreadyInLanguage { get; set; }
         public bool Organize { get; set; }
         public bool FromKnowledge { get; set; }
+        /// <summary>
+        /// True when local-text fallback was enabled but the game description/facts were too thin
+        /// to justify a knowledge call. Fields stay empty instead of inventing labels.
+        /// </summary>
+        public bool SkippedInsufficientLocalText { get; set; }
 
         public TermFieldRequest()
         {
@@ -179,6 +184,7 @@ namespace MetaDataIAPlugin
     {
         // Keep policy in sync with MetadataGenerationService.BuildSystemPrompt Field Categorization Rules
         // (same organize rules; this call uses language/languageName + fields[].terms JSON shape).
+        // keepLoanwords is supplied in the user JSON from GamingLoanwordVocabulary / settings.
         public const string SystemPrompt =
             "You edit short game metadata labels. Return ONLY one JSON object. " +
             "The response must start with { and end with }. No markdown fences, no prose before/after, no JSON wrapped inside a string. " +
@@ -187,18 +193,21 @@ namespace MetaDataIAPlugin
             "1. Output format: Echo each input field once. In \"terms\", return only the final normalized labels as a flat string array (not nested arrays). " +
             "2. Source and Grounding: Organize strictly from each field's existing and incoming lists. " +
             "Never invent concepts absent from those lists. If an incoming list is empty, return an empty terms array for that field. " +
-            "3. Language and universal gaming loanwords: Read target language from \"language\" and \"languageName\". " +
-            "If not English: translate EVERY common noun and descriptive term into the requested language " +
-            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, Action -> Acción, or the equivalent). " +
-            "Do not leave any of those English store strings unchanged. Do not mix languages in the same terms array " +
-            "(never return both \"Aventura\" and \"Adventure\", and never leave \"Shooter\" beside \"Disparos\"). " +
-            "If English: keep standard English labels. " +
-            "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is in their standard form in every language. " +
-            "Examples include subgenre neologisms (Roguelike, Roguelite, Metroidvania, Soulslike), " +
-            "gameplay formats and styles (Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell), " +
-            "and production/format scope (Indie). " +
-            "Acronyms: keep standard universal industry acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established in the vocabulary. " +
-            "Copying an English incoming string unchanged is allowed ONLY for those true loanwords/acronyms — never for ordinary nouns like Shooter/Adventure/Puzzle. " +
+            "3. Language and Terminology: " +
+            "Read target language from \"language\" and \"languageName\". " +
+            "If target language is NOT English: " +
+            "Translate all common descriptive nouns and generic store terms completely into the target language " +
+            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or equivalent). " +
+            "Keeplist: keep any incoming label that appears in keepLoanwords exactly as written (prefer the spelling from keepLoanwords). " +
+            "Do not translate, synonymize, or replace those labels (e.g. if keepLoanwords contains Action, output Action — never Acción/Aktion). " +
+            "Uppercase acronyms in keepLoanwords stay UPPERCASE. " +
+            "For other industry labels not in keepLoanwords: translate into the target language like ordinary store terms. " +
+            "Gaming-domain sense: translate within the video game context. Never replace an industry genre or tag with a literal, non-gaming everyday definition " +
+            "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
+            "Consistency: never output synonyms, mixed languages, or both localized and raw English variants for the same concept. " +
+            "If target language IS English: keep standard canonical English labels. " +
+            "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
+            "(except keepLoanwords entries, which win over everyday translations). " +
             "4. Canonical label and Deduplication: Exactly one label per concept. " +
             "Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
             "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
@@ -210,28 +219,30 @@ namespace MetaDataIAPlugin
             "Item caps are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.";
 
         public const string KnowledgePrompt =
-            "No store returned a list for the fields in this request. Propose short, accurate metadata labels strictly using the provided game release facts. " +
+            "No store returned a list for the fields in this request. Extract short, accurate metadata labels only from the provided game facts and description. " +
             "Return ONLY one JSON object. The response must start with { and end with }. No markdown fences, no prose, no JSON wrapped inside a string. " +
             "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
             "Rules: " +
-            "1. Target Language and Universal Gaming Loanwords: Echo each input field once. In \"terms\", return a flat string array. " +
+            "1. Language and Terminology: Echo each input field once. In \"terms\", return a flat string array. " +
             "Read target language from \"language\" and \"languageName\". " +
-            "If language is NOT English: translate EVERY common noun and descriptive term into the requested language " +
+            "If language is NOT English: translate all common descriptive nouns into the requested language " +
             "(e.g., Shooter -> Disparos, Action -> Acción, Adventure -> Aventura, Puzzle -> Puzle, or the equivalent). " +
-            "Do not leave those English strings unchanged. Do not mix languages in the same terms array. " +
+            "Keeplist: keep any label that appears in keepLoanwords exactly as written (prefer keepLoanwords spelling; acronyms stay UPPERCASE). " +
+            "Do not translate or replace keepLoanwords entries (e.g. Action stays Action, never Acción). Other labels not in keepLoanwords: translate like ordinary terms. " +
+            "Gaming-domain sense: translate within the video game context; never a literal non-gaming everyday definition " +
+            "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
+            "Consistency: never mix languages or synonyms for the same concept. " +
             "If English: keep standard English labels. " +
-            "Universal gaming terms (loanwords): keep recognized industry subgenres and gameplay mechanics as-is " +
-            "(e.g., Roguelike, Roguelite, Metroidvania, Soulslike, Hack and slash, Battle Royale, MOBA, Deckbuilder, Sandbox, Auto Battler, Bullet Hell, Indie). " +
-            "Keep standard universal acronyms in UPPERCASE (e.g., RPG, MMO, RTS) unless a clear native canonical counterpart is already established. " +
             "2. Strict Concept Normalization: Exactly one label per concept. Never output mixed languages or synonyms " +
             "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
             "Concise labels: 1 to 3 words max. Never repeat the same concept across multiple fields. " +
-            "3. Platform and Release Grounding (Zero Hallucination): Anchor labels strictly to the specific platform and release facts provided. " +
+            "3. Local-text grounding (Zero Hallucination): Anchor labels strictly to phrases and facts in the provided description and release fields. " +
+            "Do NOT use outside knowledge of the title beyond those supplied facts. " +
             "Do NOT extrapolate features or genres from modern remakes or subsequent ports. " +
             "For retro releases, never invent modern technical features (e.g., no cloud saves or online co-op for 8/16-bit console titles). " +
-            "If game facts are insufficient to identify the game with high confidence, return an empty terms array. " +
-            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, and gameplay mechanics. " +
-            "features: Functional gameplay traits for this specific platform release only (player count, local co-op, controller support). " +
+            "If the description/facts are insufficient to support a label with high confidence, omit it. If the game cannot be identified from the supplied facts, return an empty terms array. " +
+            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, and gameplay mechanics clearly supported by the text. " +
+            "features: Functional gameplay traits for this specific platform release only when the text states them explicitly (player count, local co-op, controller support). " +
             "At most 4 concise feature items. Never put player counts or features into genres or tags. " +
             "5. Handling mode: overwrite: terms must contain only new normalized labels. " +
             "append: preserve existing labels and add missing unique labels for this release without adding synonyms or language duplicates. " +
@@ -243,12 +254,13 @@ namespace MetaDataIAPlugin
             return TryParseObject(content, out unused);
         }
 
-        public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields)
+        public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields, IEnumerable<string> keepLoanwords = null)
         {
             var payload = new JObject();
             payload["language"] = language ?? "en";
             payload["languageName"] = LanguageDisplayName(language);
             payload["platform"] = new JArray(platforms ?? new List<string>());
+            payload["keepLoanwords"] = new JArray(NormalizeKeepList(keepLoanwords));
             payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
             {
                 var item = new JObject();
@@ -262,12 +274,13 @@ namespace MetaDataIAPlugin
             return payload.ToString(Newtonsoft.Json.Formatting.None);
         }
 
-        public static string BuildKnowledgeJson(string language, JObject game, IList<TermFieldRequest> fields)
+        public static string BuildKnowledgeJson(string language, JObject game, IList<TermFieldRequest> fields, IEnumerable<string> keepLoanwords = null)
         {
             var payload = new JObject();
             payload["language"] = language ?? "en";
             payload["languageName"] = LanguageDisplayName(language);
             payload["game"] = game ?? new JObject();
+            payload["keepLoanwords"] = new JArray(NormalizeKeepList(keepLoanwords));
             payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
             {
                 var item = new JObject();
@@ -278,6 +291,15 @@ namespace MetaDataIAPlugin
                 return item;
             }));
             return payload.ToString(Newtonsoft.Json.Formatting.None);
+        }
+
+        private static List<string> NormalizeKeepList(IEnumerable<string> keepLoanwords)
+        {
+            return (keepLoanwords ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private static string LanguageDisplayName(string language)
@@ -300,8 +322,18 @@ namespace MetaDataIAPlugin
 
         public static bool TryApplyResponse(string content, IList<TermFieldRequest> fields, out Dictionary<string, List<string>> resolved)
         {
+            return TryApplyResponse(content, fields, null, out resolved);
+        }
+
+        public static bool TryApplyResponse(
+            string content,
+            IList<TermFieldRequest> fields,
+            IEnumerable<string> keepLoanwords,
+            out Dictionary<string, List<string>> resolved)
+        {
             resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             var requested = fields ?? new List<TermFieldRequest>();
+            var keepKeys = GamingLoanwordVocabulary.ToKeySet(keepLoanwords);
             JObject json;
             if (!TryParseObject(content, out json))
             {
@@ -310,7 +342,9 @@ namespace MetaDataIAPlugin
                     resolved[field.Field] = field.FailedOrganizeTerms();
                 }
 
-                return false;
+                // English libraries already have FailedOrganizeTerms filled from store Incoming.
+                // Treat that as a usable apply so a parse miss does not discard good store lists.
+                return HasUsableEnglishFallback(requested, resolved);
             }
 
             var returned = ReadFields(json);
@@ -318,14 +352,16 @@ namespace MetaDataIAPlugin
             foreach (var field in requested)
             {
                 List<string> terms;
-                if (!returned.TryGetValue(field.Field, out terms) || !Accept(field, requested, terms))
+                if (!TryGetReturnedTerms(returned, field, requested, out terms) ||
+                    !Accept(field, requested, terms))
                 {
                     resolved[field.Field] = field.FailedOrganizeTerms();
                     continue;
                 }
 
                 var cleaned = DistinctTerms(terms);
-                cleaned = StripRawForeignIncoming(cleaned, field).ToList();
+                cleaned = StripRawForeignIncoming(cleaned, field, keepKeys).ToList();
+                cleaned = GamingLoanwordVocabulary.EnforceKeepListSpelling(cleaned, field, keepLoanwords);
                 cleaned = cleaned.Take(Math.Max(1, field.MaxItems)).ToList();
                 if (cleaned.Count == 0)
                 {
@@ -337,10 +373,89 @@ namespace MetaDataIAPlugin
                 anyAccepted = true;
             }
 
-            return anyAccepted || requested.Count == 0;
+            if (anyAccepted || requested.Count == 0)
+            {
+                return true;
+            }
+
+            return HasUsableEnglishFallback(requested, resolved);
+        }
+
+        private static bool HasUsableEnglishFallback(
+            IList<TermFieldRequest> requested,
+            Dictionary<string, List<string>> resolved)
+        {
+            if (requested == null || requested.Count == 0 || resolved == null)
+            {
+                return false;
+            }
+
+            var any = false;
+            foreach (var field in requested)
+            {
+                if (RequiresTranslation(field.Language))
+                {
+                    return false;
+                }
+
+                List<string> terms;
+                if (!resolved.TryGetValue(field.Field, out terms) || terms == null || terms.Count == 0)
+                {
+                    // Empty is fine when both Existing and Incoming were empty.
+                    var union = DistinctTerms(
+                        (field.Existing ?? new List<string>()).Concat(field.Incoming ?? new List<string>()));
+                    if (union.Count > 0)
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                any = true;
+            }
+
+            return any;
+        }
+
+        private static bool TryGetReturnedTerms(
+            Dictionary<string, List<string>> returned,
+            TermFieldRequest field,
+            IList<TermFieldRequest> requested,
+            out List<string> terms)
+        {
+            terms = null;
+            if (returned == null || field == null)
+            {
+                return false;
+            }
+
+            if (returned.TryGetValue(field.Field, out terms))
+            {
+                return true;
+            }
+
+            // Tiny local models often dump the only requested field under "genres".
+            if (requested != null &&
+                requested.Count == 1 &&
+                returned.Count == 1)
+            {
+                terms = returned.Values.FirstOrDefault();
+                return terms != null;
+            }
+
+            return false;
         }
 
         public static bool ResponseNeedsTranslationRetry(string content, IList<TermFieldRequest> fields)
+        {
+            return ResponseNeedsTranslationRetry(content, fields, null);
+        }
+
+        public static bool ResponseNeedsTranslationRetry(
+            string content,
+            IList<TermFieldRequest> fields,
+            IEnumerable<string> keepLoanwords)
         {
             var requested = (fields ?? new List<TermFieldRequest>())
                 .Where(field => RequiresTranslation(field.Language))
@@ -350,6 +465,7 @@ namespace MetaDataIAPlugin
                 return false;
             }
 
+            var keepKeys = GamingLoanwordVocabulary.ToKeySet(keepLoanwords);
             JObject json;
             if (!TryParseObject(content, out json))
             {
@@ -379,7 +495,33 @@ namespace MetaDataIAPlugin
                     return true;
                 }
 
-                if (RawForeignIncomingKeys(field).Overlaps(cleaned.Select(LibraryNameMatching.NormalizeKey)))
+                var leftoverKeys = cleaned
+                    .Select(LibraryNameMatching.NormalizeKey)
+                    .Where(key =>
+                    {
+                        if (key.Length == 0)
+                        {
+                            return false;
+                        }
+
+                        if (keepKeys.Contains(key))
+                        {
+                            return false;
+                        }
+
+                        // Locale aliases of a keep-list term (Acción when Action is kept)
+                        // are rewritten after apply — do not force a translation retry for them.
+                        foreach (var keepTerm in keepLoanwords ?? Enumerable.Empty<string>())
+                        {
+                            if (GamingLoanwordVocabulary.AliasKeysFor(keepTerm).Contains(key))
+                            {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    });
+                if (RawForeignIncomingKeys(field).Overlaps(leftoverKeys))
                 {
                     return true;
                 }
@@ -428,21 +570,39 @@ namespace MetaDataIAPlugin
 
         public static IEnumerable<string> StripRawForeignIncoming(IEnumerable<string> values, TermFieldRequest field)
         {
+            return StripRawForeignIncoming(values, field, null);
+        }
+
+        public static IEnumerable<string> StripRawForeignIncoming(
+            IEnumerable<string> values,
+            TermFieldRequest field,
+            HashSet<string> keepLoanwordKeys)
+        {
             var raw = RawForeignIncomingKeys(field);
             if (raw.Count == 0)
             {
                 return values ?? Enumerable.Empty<string>();
             }
 
+            var keep = keepLoanwordKeys ?? new HashSet<string>(StringComparer.Ordinal);
             return (values ?? Enumerable.Empty<string>())
-                .Where(value => !raw.Contains(LibraryNameMatching.NormalizeKey(value)));
+                .Where(value =>
+                {
+                    var key = LibraryNameMatching.NormalizeKey(value);
+                    if (keep.Contains(key))
+                    {
+                        return true;
+                    }
+
+                    return !raw.Contains(key);
+                });
         }
 
         public static List<string> DistinctTerms(IEnumerable<string> values)
         {
             var result = new List<string>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var value in values ?? Enumerable.Empty<string>())
+            foreach (var value in ExpandCommaJoinedTerms(values))
             {
                 var cleaned = VocabularyTermNormalizer.CleanTerm(value);
                 if (string.IsNullOrWhiteSpace(cleaned) || cleaned.Length > 80 || !seen.Add(cleaned))
@@ -454,6 +614,58 @@ namespace MetaDataIAPlugin
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Models sometimes return ["Action, Comedy, jungle"] instead of ["Action","Comedy","jungle"].
+        /// Expand only when every comma segment looks like a short label.
+        /// </summary>
+        internal static List<string> ExpandCommaJoinedTerms(IEnumerable<string> values)
+        {
+            var result = new List<string>();
+            foreach (var value in values ?? Enumerable.Empty<string>())
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (value.IndexOf(',') < 0)
+                {
+                    result.Add(value);
+                    continue;
+                }
+
+                var parts = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => part.Trim())
+                    .Where(part => part.Length > 0)
+                    .ToList();
+                if (parts.Count >= 2 && parts.All(LooksLikeShortLabel))
+                {
+                    result.AddRange(parts);
+                    continue;
+                }
+
+                result.Add(value);
+            }
+
+            return result;
+        }
+
+        private static bool LooksLikeShortLabel(string part)
+        {
+            if (string.IsNullOrWhiteSpace(part) || part.Length > 40)
+            {
+                return false;
+            }
+
+            if (part.IndexOf('.') >= 0)
+            {
+                return false;
+            }
+
+            var words = part.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return words.Length > 0 && words.Length <= 6;
         }
 
         private static bool Accept(TermFieldRequest field, IList<TermFieldRequest> allFields, List<string> terms)
@@ -580,10 +792,7 @@ namespace MetaDataIAPlugin
                         continue;
                     }
 
-                    var terms = (item["terms"] as JArray ?? new JArray())
-                        .Select(token => (string)token)
-                        .ToList();
-                    map[name] = terms;
+                    map[name] = ReadTermsToken(item["terms"]);
                 }
             }
 
@@ -596,21 +805,52 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                var array = property.Value as JArray;
-                if (array == null || map.ContainsKey(property.Name))
+                if (map.ContainsKey(property.Name))
                 {
                     continue;
                 }
 
-                if (!array.All(token => token == null || token.Type == JTokenType.String || token.Type == JTokenType.Integer))
+                if (property.Value is JArray ||
+                    (property.Value != null && property.Value.Type == JTokenType.String))
                 {
-                    continue;
+                    var terms = ReadTermsToken(property.Value);
+                    if (terms.Count > 0 || property.Value is JArray)
+                    {
+                        map[property.Name] = terms;
+                    }
                 }
-
-                map[property.Name] = array.Select(token => token == null ? null : token.ToString()).ToList();
             }
 
             return map;
+        }
+
+        private static List<string> ReadTermsToken(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return new List<string>();
+            }
+
+            if (token.Type == JTokenType.String)
+            {
+                return ExpandCommaJoinedTerms(new[] { token.Value<string>() });
+            }
+
+            var array = token as JArray;
+            if (array == null)
+            {
+                return new List<string>();
+            }
+
+            if (!array.All(item => item == null ||
+                                   item.Type == JTokenType.String ||
+                                   item.Type == JTokenType.Integer))
+            {
+                return new List<string>();
+            }
+
+            return ExpandCommaJoinedTerms(
+                array.Select(item => item == null ? null : item.ToString()));
         }
 
         private static bool TryParseObject(string content, out JObject json)

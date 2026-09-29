@@ -269,6 +269,8 @@ namespace MetaDataIAPlugin
         public const string ApplyOverwrite = "Sobrescribir";
         public const string ExistingMetadataContext = "context";
         public const string ExistingMetadataIgnore = "ignore";
+        public const string LocalTermFallbackOff = "off";
+        public const string LocalTermFallbackFromLocalText = "local";
         public const string ProviderOpenAI = "OpenAI";
         public const string ProviderLmStudio = "LM Studio local";
         public const string ProviderOllama = "Ollama local";
@@ -352,6 +354,8 @@ namespace MetaDataIAPlugin
         private string tagPrefix = string.Empty;
         private string categoryPrefix = string.Empty;
         private string blacklist = string.Empty;
+        private string keptLoanwords = string.Empty;
+        private bool keptLoanwordsInitialized;
         private bool preferExistingGenres = false;
         private bool preferExistingTags = false;
         private bool preferExistingFeatures = false;
@@ -385,6 +389,7 @@ namespace MetaDataIAPlugin
         private bool overrideRecommendedForLength = true;
         private string extraInstructions = string.Empty;
         private string existingMetadataMode = ExistingMetadataContext;
+        private string localTermFallbackMode = LocalTermFallbackOff;
         private bool useOfficialStoreContext = true;
         private bool strictCompanyAgeRegion = true;
         private bool enableLocalFallback = true;
@@ -695,6 +700,16 @@ namespace MetaDataIAPlugin
         public string TagPrefix { get { return tagPrefix; } set { SetValue(ref tagPrefix, value); } }
         public string CategoryPrefix { get { return categoryPrefix; } set { SetValue(ref categoryPrefix, value); } }
         public string Blacklist { get { return blacklist; } set { SetValue(ref blacklist, value); } }
+        /// <summary>
+        /// Industry loanwords/acronyms kept untranslated in every language.
+        /// Seeded once from <see cref="GamingLoanwordVocabulary.DefaultTerms"/>.
+        /// </summary>
+        public string KeptLoanwords { get { return keptLoanwords; } set { SetValue(ref keptLoanwords, value); } }
+        public bool KeptLoanwordsInitialized
+        {
+            get { return keptLoanwordsInitialized; }
+            set { SetValue(ref keptLoanwordsInitialized, value); }
+        }
         public bool PreferExistingGenres { get { return preferExistingGenres; } set { SetValue(ref preferExistingGenres, value); } }
         public bool PreferExistingTags { get { return preferExistingTags; } set { SetValue(ref preferExistingTags, value); } }
         public bool PreferExistingFeatures { get { return preferExistingFeatures; } set { SetValue(ref preferExistingFeatures, value); } }
@@ -731,6 +746,11 @@ namespace MetaDataIAPlugin
         {
             get { return existingMetadataMode; }
             set { SetValue(ref existingMetadataMode, NormalizeExistingMetadataModeValue(value)); }
+        }
+        public string LocalTermFallbackMode
+        {
+            get { return localTermFallbackMode; }
+            set { SetValue(ref localTermFallbackMode, NormalizeLocalTermFallbackModeValue(value)); }
         }
         public bool UseOfficialStoreContext { get { return useOfficialStoreContext; } set { SetValue(ref useOfficialStoreContext, value); } }
         public bool StrictCompanyAgeRegion { get { return strictCompanyAgeRegion; } set { SetValue(ref strictCompanyAgeRegion, value); } }
@@ -1168,7 +1188,26 @@ namespace MetaDataIAPlugin
             }
 
             ExistingMetadataMode = NormalizeExistingMetadataModeValue(ExistingMetadataMode);
+            LocalTermFallbackMode = NormalizeLocalTermFallbackModeValue(LocalTermFallbackMode);
+            EnsureKeptLoanwordsDefaults();
             EnsureProviderProfiles();
+        }
+
+        public void EnsureKeptLoanwordsDefaults()
+        {
+            if (KeptLoanwordsInitialized)
+            {
+                return;
+            }
+
+            KeptLoanwords = GamingLoanwordVocabulary.FormatDefaultList();
+            KeptLoanwordsInitialized = true;
+        }
+
+        public List<string> GetKeptLoanwordTerms()
+        {
+            EnsureKeptLoanwordsDefaults();
+            return GamingLoanwordVocabulary.ParseTerms(KeptLoanwords);
         }
 
         public void EnsureProviderProfiles()
@@ -1586,6 +1625,35 @@ namespace MetaDataIAPlugin
             return string.Equals(
                 NormalizeExistingMetadataModeValue(mode),
                 ExistingMetadataIgnore,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Stable persisted values: <see cref="LocalTermFallbackOff"/> or <see cref="LocalTermFallbackFromLocalText"/>.
+        /// </summary>
+        public static string NormalizeLocalTermFallbackModeValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return LocalTermFallbackOff;
+            }
+
+            var trimmed = value.Trim();
+            if (string.Equals(trimmed, LocalTermFallbackFromLocalText, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "fromlocaltext", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(trimmed, "local-text", StringComparison.OrdinalIgnoreCase))
+            {
+                return LocalTermFallbackFromLocalText;
+            }
+
+            return LocalTermFallbackOff;
+        }
+
+        public static bool AllowsLocalTermFallback(string mode)
+        {
+            return string.Equals(
+                NormalizeLocalTermFallbackModeValue(mode),
+                LocalTermFallbackFromLocalText,
                 StringComparison.OrdinalIgnoreCase);
         }
 
@@ -2140,7 +2208,64 @@ namespace MetaDataIAPlugin
 
         public List<string> GetBlacklistTerms()
         {
-            return SplitTerms(Blacklist);
+            return GetBlacklistRules().Select(x => x.Text).ToList();
+        }
+
+        public List<BlacklistTermRule> GetBlacklistRules()
+        {
+            if (string.IsNullOrWhiteSpace(Blacklist))
+            {
+                return new List<BlacklistTermRule>();
+            }
+
+            return Blacklist
+                .Replace("\r", string.Empty)
+                .Split(new[] { '\n', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(ParseBlacklistSegment)
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Text))
+                .GroupBy(x => x.Text, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .ToList();
+        }
+
+        public static bool IsBlockedByBlacklist(string value, BlacklistTermRule rule)
+        {
+            if (string.IsNullOrWhiteSpace(value) || rule == null || string.IsNullOrWhiteSpace(rule.Text))
+            {
+                return false;
+            }
+
+            if (rule.ExactMatch)
+            {
+                return string.Equals(value.Trim(), rule.Text.Trim(), StringComparison.OrdinalIgnoreCase);
+            }
+
+            return value.IndexOf(rule.Text, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static BlacklistTermRule ParseBlacklistSegment(string segment)
+        {
+            var trimmed = (segment ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            if (trimmed.Length >= 2)
+            {
+                var open = trimmed[0];
+                var close = trimmed[trimmed.Length - 1];
+                if ((open == '"' && close == '"') || (open == '\'' && close == '\''))
+                {
+                    var inner = trimmed.Substring(1, trimmed.Length - 2).Trim();
+                    if (!string.IsNullOrWhiteSpace(inner))
+                    {
+                        return new BlacklistTermRule { Text = inner, ExactMatch = true };
+                    }
+                }
+            }
+
+            return new BlacklistTermRule { Text = trimmed, ExactMatch = false };
         }
 
         public List<string> GetMediaExcludedSearchTerms(MediaKind kind)
@@ -2733,6 +2858,19 @@ namespace MetaDataIAPlugin
         }
 
         [DontSerialize]
+        public List<LocalizedOption> LocalTermFallbackModeOptions
+        {
+            get
+            {
+                return new List<LocalizedOption>
+                {
+                    Option(LocalTermFallbackOff, "MTDA_OptionLocalTermFallbackOff", "Leave empty"),
+                    Option(LocalTermFallbackFromLocalText, "MTDA_OptionLocalTermFallbackFromLocalText", "Derive from local game text")
+                };
+            }
+        }
+
+        [DontSerialize]
         public List<LocalizedOption> MediaProviderOptions
         {
             get { return new List<LocalizedOption> { Option("Varias fuentes", "MTDA_OptionMediaMultipleSources", "Multiple sources"), Option(MediaProviderSteamGridDb, "MTDA_OptionMediaSteamGridDb", "SteamGridDB") }; }
@@ -3276,5 +3414,11 @@ namespace MetaDataIAPlugin
 
             return errors.Count == 0;
         }
+    }
+
+    public sealed class BlacklistTermRule
+    {
+        public string Text { get; set; }
+        public bool ExactMatch { get; set; }
     }
 }

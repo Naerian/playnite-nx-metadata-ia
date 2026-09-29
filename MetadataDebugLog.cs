@@ -13,11 +13,18 @@ namespace MetaDataIAPlugin
         private static readonly object Gate = new object();
         private static string directory;
         private static string filePath;
+        private static string lastUserDataPath;
+        private static Func<string> userDataPathResolver;
         private const long MaxBytes = 8L * 1024L * 1024L;
 
         public static string FilePath
         {
             get { return filePath; }
+        }
+
+        public static void SetUserDataPathResolver(Func<string> resolver)
+        {
+            userDataPathResolver = resolver;
         }
 
         public static void Initialize(string userDataPath)
@@ -29,11 +36,19 @@ namespace MetaDataIAPlugin
 
             lock (Gate)
             {
+                lastUserDataPath = userDataPath;
                 directory = Path.Combine(userDataPath, "logs");
                 filePath = Path.Combine(directory, "organize-debug.log");
                 try
                 {
                     Directory.CreateDirectory(directory);
+                }
+                catch
+                {
+                }
+
+                try
+                {
                     WriteUnlocked(
                         "==== Metadata AI organize debug log ready ====\r\n" +
                         "File: " + filePath + "\r\n" +
@@ -41,13 +56,43 @@ namespace MetaDataIAPlugin
                 }
                 catch
                 {
-                    filePath = null;
                 }
+            }
+        }
+
+        private static void EnsureReady()
+        {
+            if (!string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            string path = null;
+            if (userDataPathResolver != null)
+            {
+                try
+                {
+                    path = userDataPathResolver();
+                }
+                catch
+                {
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = lastUserDataPath;
+            }
+
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                Initialize(path);
             }
         }
 
         public static void Write(string section, string details)
         {
+            EnsureReady();
             if (string.IsNullOrWhiteSpace(filePath))
             {
                 return;

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.29 — 2026-09-29
+- Organize is more reliable with small local models: messy JSON is repaired when possible, and English libraries still apply store/IGDB lists if the model puts labels in the wrong field or drops existing append tags.
+- Excluded terms work again after IGDB/organize, so blocked words are removed before saving.
+- Excluded terms: quotes mean exact match only (e.g. `"Death"`); without quotes, matching is still “contains” (Death also blocks Deathmatch).
+- Library → Kept terms: editable whitelist with defaults (Indie, Party, Roguelike, RPG, …). These stay in their industry form in every language and are not dropped as untranslated English.
+- If you add a keep-list entry like Action, known translations (Acción, Aktion, …) are rewritten to that spelling.
+- Optional “Derive from local game text” when genres/tags/features have no store/IGDB list (default: leave empty).
+- Short industry labels such as Party stay as Party (party-game sense), not everyday translations like Fiesta.
+- Organize debug log works again and includes store/IGDB tags in the context dump.
+- Title matching ignores accents, so library titles like Pokemon match store/IGDB Pokémon (Snap, Stadium 2, and similar ROM dumps).
+
 ## 1.4.28 — 2026-09-29
 - PlayStation Store works again for covers, backgrounds and official game info (description, genres, publisher, release date).
 - Epic Store works again for official description, companies, tags and hero artwork.

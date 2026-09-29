@@ -238,11 +238,6 @@ namespace MetaDataIAPlugin
             return TitleMatchingService.PlatformLabelsFit(names, specifications, ReadNames(match == null ? null : match["platforms"]));
         }
 
-        private static string NormalizeTitle(string value)
-        {
-            return new string((value ?? string.Empty).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-        }
-
         private static string Escape(string value)
         {
             return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");

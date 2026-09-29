@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -170,11 +171,33 @@ namespace MetaDataIAPlugin
             // Removing an apostrophe between letters maps those spellings to one key.
             var comparable = Regex.Replace(value, @"(?<=\p{L})['’`´](?=\p{L})", string.Empty);
             comparable = Regex.Replace(comparable, @"[®™©]", string.Empty);
+            // ROM dumps and library imports often drop accents (Pokemon vs Pokémon).
+            comparable = RemoveDiacritics(comparable);
             var chars = comparable
                 .ToLowerInvariant()
                 .Select(ch => char.IsLetterOrDigit(ch) ? ch : ' ')
                 .ToArray();
             return string.Join(" ", new string(chars).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        private static string RemoveDiacritics(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = value.Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+            foreach (var c in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return builder.ToString().Normalize(NormalizationForm.FormC);
         }
 
         private static bool HasOnlyAllowedStoreSuffix(string baseTitle, string fullTitle)

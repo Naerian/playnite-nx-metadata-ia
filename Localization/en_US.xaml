@@ -237,6 +237,11 @@
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Field generation and application rules</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorHelp">Choose which fields Metadata AI may generate, how each result is applied, and the maximum number of values allowed in list fields.</sys:String>
     <sys:String x:Key="MTDA_Maximum">Maximum</sys:String>
+    <sys:String x:Key="MTDA_LocalTermFallback">When genres, tags or features have no store/IGDB list</sys:String>
+    <sys:String x:Key="MTDA_LocalTermFallbackHelp">Leave empty (default) keeps those fields blank when Steam, IGDB and other sources return no list. Derive from local game text is optional: extract standardized labels only from the game’s existing description and local facts in Playnite — not from model memory. If that text is too thin, fields stay empty and the game is reported so you can improve the description first.</sys:String>
+    <sys:String x:Key="MTDA_OptionLocalTermFallbackOff">Leave empty</sys:String>
+    <sys:String x:Key="MTDA_OptionLocalTermFallbackFromLocalText">Derive from local game text</sys:String>
+    <sys:String x:Key="MTDA_ErrorLocalTermTextInsufficient">Could not derive genres, tags or features: no store/IGDB list was available and the local description/game text is too thin. Add or generate a richer description, then retry.</sys:String>
     <sys:String x:Key="MTDA_UseExistingPlayniteValues">Use Playnite values</sys:String>
     <sys:String x:Key="MTDA_UseExistingPlayniteValuesHelp">• Using Playnite values means that, when enabled, Metadata AI can only select values that already exist in your Playnite database for that field. This prevents nearly identical tags, genres, features, or categories from being created with different wording.</sys:String>
     <sys:String x:Key="MTDA_FieldAccuracyNotesTitle">Accuracy notes</sys:String>
@@ -263,7 +268,10 @@
     <sys:String x:Key="MTDA_CategoryPrefix">Category prefix</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Useful to group categories created by the plugin. Existing categories on the game are left unchanged. Example: Meta: Action.</sys:String>
     <sys:String x:Key="MTDA_Blacklist">Term blacklist</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">Enter words or phrases separated by commas, semicolons, or line breaks. Any generated tag, genre, feature, category, developer, publisher, age rating, or region containing one of these terms is discarded before it can be applied. Use it to block vague, unwanted, duplicated, or incorrectly translated vocabulary.</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">Enter words or phrases separated by commas, semicolons, or line breaks. Without quotes, a term blocks any value that contains that text (case-insensitive), e.g. Death also blocks Deathmatch. Wrap a word or phrase in double or single quotes for exact match only, e.g. &quot;Death&quot; blocks the tag Death but not Deathmatch. Applies to tags, genres, features, categories, developers, publishers, age ratings, and regions before they are saved.</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsTitle">Kept terms</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwords">Term whitelist</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsHelp">Words or phrases (commas, semicolons, or line breaks) that stay in their industry form in every language — exact match, case-insensitive. Defaults cover common store/IGDB loanwords and acronyms (Indie, Party, Roguelike, RPG, …). Add your own or remove entries you prefer translated. If you keep a store genre like Action, known translations (Acción, Aktion, …) are rewritten to that spelling. Used by organize prompts and by the plugin so these labels are not stripped as untranslated English.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">Enable automatic template rules</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">If disabled, the plugin always uses the selected template from the Templates tab. If enabled, source, platform or type rules can replace it automatically.</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">Template rules by game type</sys:String>

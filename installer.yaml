@@ -1,5 +1,20 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.29
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-29
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.29/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_29.pext
+    Changelog:
+      - 'Organize is more reliable with small local models: messy JSON is repaired when possible, and English libraries still apply store/IGDB lists if the model misplaces labels or drops existing append tags.'
+      - 'Excluded terms work again after IGDB/organize, so blocked words are removed before saving.'
+      - 'Excluded terms: quotes mean exact match only; without quotes, matching still uses contains (Death also blocks Deathmatch).'
+      - 'Library → Kept terms: editable whitelist with defaults (Indie, Party, Roguelike, RPG, …). These stay in industry form in every language.'
+      - 'Keep-list entries rewrite known translations to the kept spelling (e.g. Action turns Acción into Action).'
+      - 'Optional Derive from local game text when genres/tags/features have no store/IGDB list (default: leave empty).'
+      - 'Industry labels such as Party stay as Party (party-game sense), not everyday translations like Fiesta.'
+      - 'Organize debug log works again and includes store/IGDB tags in the context dump.'
+      - 'Title matching ignores accents, so Pokemon matches store/IGDB Pokémon (useful for ROM dumps).'
+
   - Version: 1.4.28
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-29
