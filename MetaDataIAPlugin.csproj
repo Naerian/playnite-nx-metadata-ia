@@ -68,6 +68,7 @@
     <Compile Include="MetadataGenerationService.cs" />
     <Compile Include="MetadataHistoryService.cs" />
     <Compile Include="IgdbMetadataContextService.cs" />
+    <Compile Include="RetroDatabaseMetadataServices.cs" />
     <Compile Include="IgnDataService.cs" />
     <Compile Include="LibraryNameMatching.cs" />
     <Compile Include="VocabularyTermNormalizer.cs" />

@@ -16,14 +16,14 @@
     <sys:String x:Key="MTDA_SourceHintSteamGridDb">Community covers, icons and heroes.</sys:String>
     <sys:String x:Key="MTDA_SourceHintPsn">PlayStation Store covers and backgrounds.</sys:String>
     <sys:String x:Key="MTDA_SourceHintXbox">Xbox / Microsoft Store artwork.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintEpic">Epic Store artwork when a public page is available.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintEpic">Official Epic Store artwork.</sys:String>
     <sys:String x:Key="MTDA_SourceHintRawg">RAWG covers, screenshots and backgrounds.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWallhaven">Optional SFW 16:9 wallpaper fallback.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWebSearch">Manual image search candidates for review.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintScreenScraper">Box art and media for emulated and retro games.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintScreenScraper">Genres, themes and factual context for emulated and retro games, plus box art and media.</sys:String>
     <sys:String x:Key="MTDA_SourceHintGiantBomb">Promotional art for obscure or delisted titles.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintMobyGames">Historical covers and screenshots.</sys:String>
-    <sys:String x:Key="MTDA_SourceHintTheGamesDb">Community art for retro and emulated games.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintMobyGames">Genres and release facts for classic games, plus historical covers and screenshots.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintTheGamesDb">Genres and overview text for retro titles, plus community art.</sys:String>
     <sys:String x:Key="MTDA_SourceHintIgn">Verified IGN metadata, covers and promo backgrounds.</sys:String>
     <sys:String x:Key="MTDA_SourceHintVndb">Specialist factual data for visual novels.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWikidata">Community factual fallback for release and companies.</sys:String>
@@ -534,7 +534,7 @@ What you can do without paying:
     <sys:String x:Key="MTDA_Select">Select</sys:String>
     <sys:String x:Key="MTDA_Selected">Selected</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidates">{0} responds, but did not return candidates for the test game ({1}). The connection seems to work, but this source did not find useful media with the current criteria.</sys:String>
-    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} did not return media candidates for the test game ({1}). Epic Store is a best-effort source: it usually needs an existing Epic Store link on the game and the website can block automated reads. Keep it enabled as a secondary source, but prefer SteamGridDB, Steam, RAWG, IGDB or MobyGames for reliable automatic media.</sys:String>
+    <sys:String x:Key="MTDA_TestMediaNoCandidatesEpic">{0} did not return media candidates for the test game ({1}). Epic Store needs a matching public product page (from an Epic link or the title). If this fails, the product may not be listed publicly or the title did not match.</sys:String>
     <sys:String x:Key="MTDA_TestMediaNoCandidatesXbox">{0} responded, but did not return useful media for the test game ({1}). The Microsoft Store search can be market-dependent and may return no usable images for some titles. This does not necessarily mean the configuration is wrong.</sys:String>
     <sys:String x:Key="MTDA_TestMediaSuccess">{0} is responding correctly.
 
@@ -1131,7 +1131,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableSteamGridDb">Enable SteamGridDB for covers, icons and heroes</sys:String>
     <sys:String x:Key="MTDA_EnableSteamGridDbBackgroundGrids">Enable SteamGridDB horizontal grids as backgrounds when there are not enough heroes</sys:String>
     <sys:String x:Key="MTDA_SteamGridDbApiKey">SteamGridDB API key</sys:String>
-    <sys:String x:Key="MTDA_PsnStoreHelp">PlayStation Store uses the public storefront to obtain covers, backgrounds and an official description. No API key is required, but results can vary by region or Sony site changes.</sys:String>
+    <sys:String x:Key="MTDA_PsnStoreHelp">PlayStation Store uses the public Store GraphQL API for search and the product page for description, genres, publisher, release date, covers and backgrounds. No API key is required, but results can vary by region or Sony API changes.</sys:String>
     <sys:String x:Key="MTDA_EnablePsnStoreMetadata">Enable PlayStation Store as a metadata source</sys:String>
     <sys:String x:Key="MTDA_EnablePsnStore">Enable PlayStation Store as a cover and background source</sys:String>
     <sys:String x:Key="MTDA_TestPsnStore">Test PlayStation Store</sys:String>
@@ -1139,7 +1139,7 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableXboxStoreMetadata">Enable Xbox Store as a metadata source</sys:String>
     <sys:String x:Key="MTDA_EnableXboxStore">Enable Xbox Store as a cover and background source</sys:String>
     <sys:String x:Key="MTDA_TestXboxStore">Test Xbox Store</sys:String>
-    <sys:String x:Key="MTDA_EpicStoreHelp">Epic Store is used as an auxiliary source when the game already has an Epic link or the store exposes public data. The website can block automated queries, so it is skipped if it does not respond cleanly.</sys:String>
+    <sys:String x:Key="MTDA_EpicStoreHelp">Epic Store provides official description, companies, tags and hero artwork. It works with an Epic Store link or by matching the title to the product page.</sys:String>
     <sys:String x:Key="MTDA_EnableEpicStoreMetadata">Enable Epic Store as a metadata source</sys:String>
     <sys:String x:Key="MTDA_EnableEpicStore">Enable Epic Store as an auxiliary media source</sys:String>
     <sys:String x:Key="MTDA_TestEpicStore">Test Epic Store</sys:String>
@@ -1153,6 +1153,9 @@ Backgrounds: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableMobyGames">Enable MobyGames as a source for historical covers and screenshots</sys:String>
     <sys:String x:Key="MTDA_MobyGamesApiKey">MobyGames API key</sys:String>
     <sys:String x:Key="MTDA_TheGamesDbApiKey">TheGamesDB API key</sys:String>
+    <sys:String x:Key="MTDA_EnableScreenScraperMetadata">Enable ScreenScraper as a metadata source (genres, themes and related facts)</sys:String>
+    <sys:String x:Key="MTDA_EnableMobyGamesMetadata">Enable MobyGames as a metadata source (genres and related facts)</sys:String>
+    <sys:String x:Key="MTDA_EnableTheGamesDbMetadata">Enable TheGamesDB as a metadata source (genres and overview)</sys:String>
     <sys:String x:Key="MTDA_EnableIgdbMetadata">Enable IGDB as a metadata source (genres, themes and related facts)</sys:String>
     <sys:String x:Key="MTDA_EnableIgdb">Enable IGDB as a source for covers, artworks and screenshots</sys:String>
     <sys:String x:Key="MTDA_IgdbClientId">IGDB client ID</sys:String>

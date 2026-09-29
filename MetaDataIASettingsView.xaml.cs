@@ -827,12 +827,12 @@ namespace MetaDataIAPlugin
             SetSourceStatus(RawgSourceStatusText, settings.MediaUseRawg, !string.IsNullOrWhiteSpace(settings.RawgApiKey));
             SetSourceStatus(WallhavenSourceStatusText, settings.MediaUseWallhaven, true);
             SetSourceStatus(WebSearchSourceStatusText, settings.MediaUseWebSearch, true);
-            SetSourceStatus(ScreenScraperSourceStatusText, settings.MediaUseScreenScraper,
+            SetSourceStatus(ScreenScraperSourceStatusText, settings.UseScreenScraperMetadata || settings.MediaUseScreenScraper,
                 !string.IsNullOrWhiteSpace(settings.ScreenScraperUserName) && !string.IsNullOrWhiteSpace(settings.ScreenScraperPassword) &&
                 !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperId) && !string.IsNullOrWhiteSpace(settings.ScreenScraperDeveloperPassword));
             SetSourceStatus(GiantBombSourceStatusText, settings.MediaUseGiantBomb, !string.IsNullOrWhiteSpace(settings.GiantBombApiKey));
-            SetSourceStatus(MobyGamesSourceStatusText, settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
-            SetSourceStatus(TheGamesDbSourceStatusText, settings.MediaUseTheGamesDb, !string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey));
+            SetSourceStatus(MobyGamesSourceStatusText, settings.UseMobyGamesMetadata || settings.MediaUseMobyGames, !string.IsNullOrWhiteSpace(settings.MobyGamesApiKey));
+            SetSourceStatus(TheGamesDbSourceStatusText, settings.UseTheGamesDbMetadata || settings.MediaUseTheGamesDb, !string.IsNullOrWhiteSpace(settings.TheGamesDbApiKey));
             SetSourceStatus(IgdbSourceStatusText, settings.UseIgdbMetadata || settings.MediaUseIgdb,
                 !string.IsNullOrWhiteSpace(settings.IgdbClientId) &&
                 (!string.IsNullOrWhiteSpace(settings.IgdbClientSecret) || !string.IsNullOrWhiteSpace(settings.IgdbAccessToken)));
@@ -1150,10 +1150,7 @@ namespace MetaDataIAPlugin
                 var mediaOnly = title.IndexOf("steamgrid", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("rawg", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("wallhaven", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                title.IndexOf("screen", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("giant bomb", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                title.IndexOf("mobygames", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                title.IndexOf("thegamesdb", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                 title.IndexOf("web", StringComparison.OrdinalIgnoreCase) >= 0;
                 var metadataOnly = title.IndexOf("vndb", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                    title.IndexOf("wikidata", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -3233,6 +3230,9 @@ namespace MetaDataIAPlugin
             testSettings.UseVndbMetadata = false;
             testSettings.UseWikidataMetadata = false;
             testSettings.UseIgdbMetadata = false;
+            testSettings.UseScreenScraperMetadata = false;
+            testSettings.UseMobyGamesMetadata = false;
+            testSettings.UseTheGamesDbMetadata = false;
             testSettings.UseSteamMetadata = false;
             testSettings.UsePsnStoreMetadata = false;
             testSettings.UseXboxStoreMetadata = false;

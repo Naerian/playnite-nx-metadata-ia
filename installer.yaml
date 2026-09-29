@@ -1,5 +1,16 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.28
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-09-29
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.28/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_28.pext
+    Changelog:
+      - 'PlayStation Store works again for covers, backgrounds and official game info (description, genres, publisher, release date).'
+      - 'Epic Store works again for official description, companies, tags and hero artwork.'
+      - 'Emulated and retro libraries: ScreenScraper, TheGamesDB and MobyGames can now supply genres and other factual lists for AI organize—not only cover art. Turn on the new metadata checkboxes under Sources.'
+      - 'ScreenScraper matches more reliably when the game has a console platform set in Playnite.'
+      - 'Existing installs that already used these sources for media keep metadata enabled automatically after update.'
+
   - Version: 1.4.27
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-28

@@ -1162,6 +1162,9 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_EnablePsnStoreMetadata">Enable PlayStation Store as a metadata source</sys:String>
     <sys:String x:Key="MTDA_EnableXboxStoreMetadata">Enable Xbox Store as a metadata source</sys:String>
     <sys:String x:Key="MTDA_EnableEpicStoreMetadata">Enable Epic Store as a metadata source</sys:String>
+    <sys:String x:Key="MTDA_EnableScreenScraperMetadata">Enable ScreenScraper as a metadata source (genres, themes and related facts)</sys:String>
+    <sys:String x:Key="MTDA_EnableMobyGamesMetadata">Enable MobyGames as a metadata source (genres and related facts)</sys:String>
+    <sys:String x:Key="MTDA_EnableTheGamesDbMetadata">Enable TheGamesDB as a metadata source (genres and overview)</sys:String>
     <sys:String x:Key="MTDA_EnableIgdbMetadata">Enable IGDB as a metadata source (genres, themes and related facts)</sys:String>
     <sys:String x:Key="MTDA_ErrorProviderEndpointNotFound">The configured endpoint returned HTTP 404 (not found).
 

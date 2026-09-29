@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.28 — 2026-09-29
+- PlayStation Store works again for covers, backgrounds and official game info (description, genres, publisher, release date).
+- Epic Store works again for official description, companies, tags and hero artwork.
+- Emulated and retro libraries: ScreenScraper, TheGamesDB and MobyGames can now supply genres and other factual lists for AI organize—not only cover art. Turn on the new metadata checkboxes under Sources.
+- ScreenScraper matches more reliably when the game has a console platform set in Playnite.
+- Existing installs that already used these sources for media keep metadata enabled automatically after update.
+
 ## 1.4.27 — 2026-09-28
 - History and provenance record the AI provider and model used for each field when Metadata AI writes or normalizes values. Older history entries without a model show “Not recorded” / “Sin definir”.
 - Ordered backup provider profiles replace free local LM Studio/Ollama fallback. Existing local fallback settings migrate once into the chain.

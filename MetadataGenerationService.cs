@@ -1678,6 +1678,33 @@ namespace MetaDataIAPlugin
             {
                 await TryAddOptionalContextAsync(() => new WikidataMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
+
+            if (settings.UseScreenScraperMetadata &&
+                ScreenScraperMetadataContextService.IsConfigured(settings) &&
+                !HasContextSource(MetaDataIASettings.SourceScreenScraper))
+            {
+                await TryAddOptionalContextAsync(
+                    () => new ScreenScraperMetadataContextService(settings).GetContextAsync(game, cancellationToken),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            if (settings.UseTheGamesDbMetadata &&
+                TheGamesDbMetadataContextService.IsConfigured(settings) &&
+                !HasContextSource(MetaDataIASettings.SourceTheGamesDb))
+            {
+                await TryAddOptionalContextAsync(
+                    () => new TheGamesDbMetadataContextService(settings).GetContextAsync(game, cancellationToken),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            if (settings.UseMobyGamesMetadata &&
+                MobyGamesMetadataContextService.IsConfigured(settings) &&
+                !HasContextSource(MetaDataIASettings.SourceMobyGames))
+            {
+                await TryAddOptionalContextAsync(
+                    () => new MobyGamesMetadataContextService(settings).GetContextAsync(game, cancellationToken),
+                    cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private Dictionary<string, string> BuildTokenLengths()

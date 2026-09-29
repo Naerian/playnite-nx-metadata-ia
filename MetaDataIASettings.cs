@@ -434,6 +434,7 @@ namespace MetaDataIAPlugin
         private bool originIntegrationPriorityMigrated = false;
         private bool ignSourcePriorityMigrated = false;
         private bool sourceMetadataMediaSplitMigrated = false;
+        private bool retroDatabaseMetadataSplitMigrated = false;
         private bool mediaUsePsnStore = false;
         private bool usePsnStoreMetadata = true;
         private bool mediaUseXboxStore = false;
@@ -448,6 +449,7 @@ namespace MetaDataIAPlugin
         private bool mediaUseWebSearch = true;
         private string mediaPickerViewMode = MediaPickerViewGrid;
         private bool mediaUseScreenScraper = false;
+        private bool useScreenScraperMetadata = true;
         private string screenScraperUserName = string.Empty;
         private string screenScraperPassword = string.Empty;
         private string screenScraperDeveloperId = string.Empty;
@@ -455,8 +457,10 @@ namespace MetaDataIAPlugin
         private bool mediaUseGiantBomb = false;
         private string giantBombApiKey = string.Empty;
         private bool mediaUseMobyGames = false;
+        private bool useMobyGamesMetadata = true;
         private string mobyGamesApiKey = string.Empty;
         private bool mediaUseTheGamesDb = false;
+        private bool useTheGamesDbMetadata = true;
         private string theGamesDbApiKey = string.Empty;
         private bool mediaUseIgdb = false;
         private bool useIgdbMetadata = true;
@@ -532,6 +536,9 @@ namespace MetaDataIAPlugin
         public const string SourceIgn = "IGN";
         public const string SourceVndb = "VNDB";
         public const string SourceWikidata = "Wikidata";
+        public const string SourceScreenScraper = "ScreenScraper";
+        public const string SourceMobyGames = "MobyGames";
+        public const string SourceTheGamesDb = "TheGamesDB";
         // These defaults favour game-specific artwork first. The user can still
         // override the order independently for each media type in the settings.
         public const string DefaultCoverSourcePriority = "Integracion de origen, SteamGridDB, Steam oficial, PlayStation Store, Xbox Store, Epic Store, IGDB, IGN, Giant Bomb, MobyGames, ScreenScraper, RAWG";
@@ -797,6 +804,7 @@ namespace MetaDataIAPlugin
         public bool OriginIntegrationPriorityMigrated { get { return originIntegrationPriorityMigrated; } set { SetValue(ref originIntegrationPriorityMigrated, value); } }
         public bool IgnSourcePriorityMigrated { get { return ignSourcePriorityMigrated; } set { SetValue(ref ignSourcePriorityMigrated, value); } }
         public bool SourceMetadataMediaSplitMigrated { get { return sourceMetadataMediaSplitMigrated; } set { SetValue(ref sourceMetadataMediaSplitMigrated, value); } }
+        public bool RetroDatabaseMetadataSplitMigrated { get { return retroDatabaseMetadataSplitMigrated; } set { SetValue(ref retroDatabaseMetadataSplitMigrated, value); } }
         public bool MediaUsePsnStore { get { return mediaUsePsnStore; } set { SetValue(ref mediaUsePsnStore, value); } }
         public bool UsePsnStoreMetadata { get { return usePsnStoreMetadata; } set { SetValue(ref usePsnStoreMetadata, value); } }
         public bool MediaUseXboxStore { get { return mediaUseXboxStore; } set { SetValue(ref mediaUseXboxStore, value); } }
@@ -821,6 +829,10 @@ namespace MetaDataIAPlugin
         }
         public bool MediaUseWebSearch { get { return mediaUseWebSearch; } set { SetValue(ref mediaUseWebSearch, value); } }
         public string MediaPickerViewMode { get { return mediaPickerViewMode; } set { SetValue(ref mediaPickerViewMode, value); } }
+        public bool UseScreenScraperMetadata { get { return useScreenScraperMetadata; } set { SetValue(ref useScreenScraperMetadata, value); } }
+        public bool UseMobyGamesMetadata { get { return useMobyGamesMetadata; } set { SetValue(ref useMobyGamesMetadata, value); } }
+        public bool UseTheGamesDbMetadata { get { return useTheGamesDbMetadata; } set { SetValue(ref useTheGamesDbMetadata, value); } }
+
         public bool MediaUseScreenScraper
         {
             get { return mediaUseScreenScraper; }
@@ -1435,6 +1447,18 @@ namespace MetaDataIAPlugin
                 UseIgdbMetadata = true;
                 UseIgnMetadata = MediaUseIgn;
                 SourceMetadataMediaSplitMigrated = true;
+            }
+
+            if (!RetroDatabaseMetadataSplitMigrated)
+            {
+                if (existingSettings)
+                {
+                    UseScreenScraperMetadata = MediaUseScreenScraper;
+                    UseMobyGamesMetadata = MediaUseMobyGames;
+                    UseTheGamesDbMetadata = MediaUseTheGamesDb;
+                }
+
+                RetroDatabaseMetadataSplitMigrated = true;
             }
         }
 

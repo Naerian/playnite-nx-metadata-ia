@@ -86,6 +86,18 @@ namespace MetaDataIAPlugin
 
         private static readonly HttpClient Client = CreateClient();
         private readonly MetaDataIASettings settings;
+        private StoreSearchMatch psnMatchCache;
+        private string psnMatchCacheKey;
+        private JObject epicProductCache;
+        private string epicProductCacheKey;
+
+        // Persisted GraphQL query used by the public PlayStation Store storefront (same approach as Universal PSN Metadata).
+        private const string PsnGraphqlSearchUrl = "https://web.np.playstation.com/api/graphql/v1//op";
+        private const string PsnSearchQueryHash = "4df6284f982e57bec70f23c77e2c219dc792eb19af7fb3d3a81767aa3f1958aa";
+        private const string PsnStoreApplicationName = "@sie-ppr-web-store/app";
+        private const string PsnStoreApplicationVersion = "0.113.0";
+        private const string PsnBrowserUserAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36";
 
         private static HttpClient CreateClient()
         {
@@ -733,33 +745,52 @@ namespace MetaDataIAPlugin
 
         private async Task<List<OfficialMediaCandidate>> GetPsnMediaCandidatesAsync(Game game, MediaKind kind, CancellationToken cancelToken)
         {
-            var metadata = await GetPsnMetadataAsync(game, cancelToken).ConfigureAwait(false);
-            return metadata == null || string.IsNullOrWhiteSpace(metadata.StoreUrl)
-                ? new List<OfficialMediaCandidate>()
-                : await GetPsnMediaCandidatesFromUrlAsync(metadata.StoreUrl, kind, cancelToken).ConfigureAwait(false);
+            var match = await ResolvePsnStoreMatchAsync(game, cancelToken).ConfigureAwait(false);
+            if (match == null || string.IsNullOrWhiteSpace(match.Url))
+            {
+                return new List<OfficialMediaCandidate>();
+            }
+
+            var fromSearch = GetPsnRoleCandidatesFromMedia(match.Media, kind);
+            if (fromSearch.Count > 0)
+            {
+                return fromSearch;
+            }
+
+            return await GetPsnMediaCandidatesFromUrlAsync(match.Url, kind, cancelToken).ConfigureAwait(false);
         }
 
         private async Task<OfficialStoreMetadata> GetPsnMetadataAsync(Game game, CancellationToken cancelToken)
         {
-            var result = await ResolvePsnStoreUrlAsync(game, cancelToken).ConfigureAwait(false);
+            var result = await ResolvePsnStoreMatchAsync(game, cancelToken).ConfigureAwait(false);
             if (result == null || string.IsNullOrWhiteSpace(result.Url))
             {
                 return null;
             }
 
-            var html = await GetStringAsync(result.Url, cancelToken).ConfigureAwait(false);
-            return new OfficialStoreMetadata
+            var html = await GetPsnStringAsync(result.Url, cancelToken).ConfigureAwait(false);
+            var description = ExtractPsnDescription(html);
+            var genres = ExtractPsnGenres(html);
+            var publishers = SplitCompanies(ExtractPsnPublisher(html));
+            var releaseDate = NormalizeReleaseDate(ExtractPsnReleaseDate(html));
+            var metadata = new OfficialStoreMetadata
             {
                 SourceName = SourcePsnStore,
                 StoreUrl = result.Url,
-                Title = result.Title,
-                Description = CleanText(GetMetaContent(html, "description"))
+                Title = string.IsNullOrWhiteSpace(result.Title) ? ExtractPsnTitle(html) : result.Title,
+                Description = description,
+                Genres = genres,
+                Publishers = publishers,
+                ReleaseDate = releaseDate,
+                ListsMatchPluginLanguage = true
             };
+            metadata.Links.Add(new Link("PlayStation Store", result.Url));
+            return metadata.HasUsefulData() || !string.IsNullOrWhiteSpace(metadata.StoreUrl) ? metadata : null;
         }
 
         private async Task<List<OfficialMediaCandidate>> GetPsnMediaCandidatesFromUrlAsync(string url, MediaKind kind, CancellationToken cancelToken)
         {
-            var html = await GetStringAsync(url, cancelToken).ConfigureAwait(false);
+            var html = await GetPsnStringAsync(url, cancelToken).ConfigureAwait(false);
             var roleCandidates = GetPsnRoleCandidates(html, kind);
             if (roleCandidates.Count > 0)
             {
@@ -792,26 +823,34 @@ namespace MetaDataIAPlugin
 
         private static List<OfficialMediaCandidate> GetPsnRoleCandidates(string html, MediaKind kind)
         {
-            var candidates = new List<OfficialMediaCandidate>();
             var mediaObjects = Regex.Matches(html ?? string.Empty, "\\{\\\"__typename\\\":\\\"Media\\\"[^{}]*\\}")
                 .Cast<Match>()
                 .Select(x => ParsePsnMediaObject(x.Value))
                 .Where(x => x != null)
+                .ToList();
+            return GetPsnRoleCandidatesFromMedia(mediaObjects, kind);
+        }
+
+        private static List<OfficialMediaCandidate> GetPsnRoleCandidatesFromMedia(IEnumerable<PsnMediaObject> mediaObjects, MediaKind kind)
+        {
+            var candidates = (mediaObjects ?? Enumerable.Empty<PsnMediaObject>())
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
                 .GroupBy(x => x.Url, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.OrderByDescending(y => PsnRolePriority(y.Role, kind)).First())
                 .Where(x => PsnRolePriority(x.Role, kind) > 0)
                 .OrderByDescending(x => PsnRolePriority(x.Role, kind))
                 .ToList();
 
-            foreach (var media in mediaObjects)
+            var result = new List<OfficialMediaCandidate>();
+            foreach (var media in candidates)
             {
                 var role = (media.Role ?? string.Empty).ToUpperInvariant();
                 var score = PsnRolePriority(role, kind);
                 var style = GetPsnRoleStyle(role, kind);
-                candidates.Add(CreateOfficialCandidate(media.Url, 0, 0, style, score, SourcePsnStore, 64, true));
+                result.Add(CreateOfficialCandidate(media.Url, 0, 0, style, score, SourcePsnStore, 64, true));
             }
 
-            return candidates;
+            return result;
         }
 
         private static PsnMediaObject ParsePsnMediaObject(string json)
@@ -845,6 +884,7 @@ namespace MetaDataIAPlugin
             {
                 if (role == "MASTER") return 100;
                 if (role == "GAMEHUB_COVER_ART") return 96;
+                if (role == "EDITION_KEY_ART") return 90;
                 if (role == "PORTRAIT_BANNER") return 84;
                 if (role == "FOUR_BY_THREE_BANNER") return 60;
                 return 0;
@@ -853,6 +893,7 @@ namespace MetaDataIAPlugin
             if (role == "GAMEHUB_COVER_ART") return 104;
             if (role == "BACKGROUND") return 100;
             if (role == "BACKGROUND_LAYER_ART") return 92;
+            if (role == "SIXTEEN_BY_NINE_BANNER") return 88;
             if (role == "SCREENSHOT") return 76;
             if (role == "FOUR_BY_THREE_BANNER") return 58;
             return 0;
@@ -866,72 +907,404 @@ namespace MetaDataIAPlugin
                 if (role == "GAMEHUB_COVER_ART") return "official game hub background no_logo";
                 if (role == "BACKGROUND") return "official background no_logo";
                 if (role == "BACKGROUND_LAYER_ART") return "official layered background";
+                if (role == "SIXTEEN_BY_NINE_BANNER") return "official wide banner";
                 if (role == "SCREENSHOT") return "official screenshot no_logo";
                 return "official banner";
             }
 
             if (role == "MASTER") return "official cover";
             if (role == "GAMEHUB_COVER_ART") return "official game hub cover";
+            if (role == "EDITION_KEY_ART") return "official edition key art";
             if (role == "PORTRAIT_BANNER") return "official portrait banner";
             return "official banner";
         }
 
-        private async Task<StoreSearchMatch> ResolvePsnStoreUrlAsync(Game game, CancellationToken cancelToken)
+        private async Task<StoreSearchMatch> ResolvePsnStoreMatchAsync(Game game, CancellationToken cancelToken)
         {
+            var cacheKey = (game == null ? string.Empty : game.Name ?? string.Empty) + "|" + GetPsnCulture();
+            if (psnMatchCache != null && string.Equals(psnMatchCacheKey, cacheKey, StringComparison.Ordinal))
+            {
+                return psnMatchCache;
+            }
+
+            StoreSearchMatch resolved = null;
             var direct = GetFirstLink(game, "store.playstation.com");
             if (!string.IsNullOrWhiteSpace(direct))
             {
-                return new StoreSearchMatch { Url = direct, Title = game == null ? null : game.Name };
-            }
-
-            if (game == null || string.IsNullOrWhiteSpace(game.Name))
-            {
-                return null;
-            }
-
-            var culture = GetPsnCulture();
-            foreach (var title in BuildTitleAliases(game.Name))
-            {
-                var html = await GetStringAsync("https://store.playstation.com/" + culture + "/search/" + Uri.EscapeDataString(title), cancelToken).ConfigureAwait(false);
-                var matches = Regex.Matches(html ?? string.Empty, "data-telemetry-meta=\\\"(?<meta>[^\\\"]+)\\\"(?:(?!data-telemetry-meta).)*?href=\\\"(?<href>[^\\\"]+)\\\"", RegexOptions.Singleline)
-                    .Cast<Match>()
-                    .Select(x => CreatePsnMatch(x.Groups["meta"].Value, x.Groups["href"].Value))
-                    .Where(x => x != null && !string.IsNullOrWhiteSpace(x.Url))
-                    .ToList();
-                var selected = PickBestMatch(title, matches);
-                if (selected != null)
+                resolved = new StoreSearchMatch
                 {
-                    return selected;
+                    Url = direct,
+                    Title = game == null ? null : game.Name,
+                    Classification = "FULL_GAME"
+                };
+            }
+            else if (game != null && !string.IsNullOrWhiteSpace(game.Name))
+            {
+                var culture = GetPsnCulture();
+                foreach (var title in BuildTitleAliases(game.Name))
+                {
+                    var json = await GetPsnStringAsync(BuildPsnSearchUrl(title, culture), cancelToken).ConfigureAwait(false);
+                    var matches = ParsePsnSearchResults(json, culture);
+                    var selected = PickBestPsnMatch(title, matches);
+                    if (selected != null)
+                    {
+                        resolved = selected;
+                        break;
+                    }
                 }
             }
 
-            return null;
+            psnMatchCacheKey = cacheKey;
+            psnMatchCache = resolved;
+            return resolved;
         }
 
-        private static StoreSearchMatch CreatePsnMatch(string encodedMeta, string href)
+        private static string BuildPsnSearchUrl(string searchTerm, string storeLocale)
         {
+            string countryCode;
+            string languageCode;
+            SplitPsnLocale(storeLocale, out countryCode, out languageCode);
+            var escapedSearchTerm = (searchTerm ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+            var variables = string.Format(
+                CultureInfo.InvariantCulture,
+                "{{\"countryCode\":\"{0}\",\"languageCode\":\"{1}\",\"nextCursor\":\"\",\"pageOffset\":0,\"pageSize\":24,\"searchTerm\":\"{2}\"}}",
+                countryCode,
+                languageCode,
+                escapedSearchTerm);
+            var extensions = string.Format(
+                CultureInfo.InvariantCulture,
+                "{{\"persistedQuery\":{{\"version\":1,\"sha256Hash\":\"{0}\"}}}}",
+                PsnSearchQueryHash);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}?operationName=getSearchResults&variables={1}&extensions={2}",
+                PsnGraphqlSearchUrl,
+                Uri.EscapeDataString(variables),
+                Uri.EscapeDataString(extensions));
+        }
+
+        private static void SplitPsnLocale(string storeLocale, out string countryCode, out string languageCode)
+        {
+            var locale = (storeLocale ?? "en-us").Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            languageCode = locale.Length > 0 ? locale[0].ToLowerInvariant() : "en";
+            countryCode = locale.Length > 1 ? locale[locale.Length - 1].ToUpperInvariant() : "US";
+            if (languageCode == "zh" && locale.Length > 2 &&
+                locale[1].Equals("hant", StringComparison.OrdinalIgnoreCase))
+            {
+                languageCode = "ch";
+            }
+        }
+
+        private static List<StoreSearchMatch> ParsePsnSearchResults(string response, string storeLocale)
+        {
+            var results = new List<StoreSearchMatch>();
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                return results;
+            }
+
             try
             {
-                var json = WebUtility.HtmlDecode(encodedMeta);
-                var meta = JObject.Parse(json);
-                var title = (string)meta["name"];
-                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(href))
+                var root = JObject.Parse(response);
+                var data = root["data"] as JObject;
+                var search = data == null ? null : data["universalSearch"] as JObject;
+                var items = search == null ? null : search["results"] as JArray;
+                if (items == null)
                 {
-                    return null;
+                    return results;
                 }
 
-                return new StoreSearchMatch
+                var locale = string.IsNullOrWhiteSpace(storeLocale) ? "en-us" : storeLocale.ToLowerInvariant();
+                foreach (var item in items.OfType<JObject>())
                 {
-                    Title = title,
-                    Url = href.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                        ? href
-                        : "https://store.playstation.com" + href
-                };
+                    var name = (string)item["name"];
+                    var id = (string)item["id"];
+                    var typeName = (string)item["__typename"];
+                    var classification = (string)item["storeDisplayClassification"];
+                    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id) || PsnClassificationScore(classification) < 0)
+                    {
+                        continue;
+                    }
+
+                    var media = ParsePsnSearchMedia(item["media"] as JArray);
+                    if (media.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var route = string.Equals(typeName, "Concept", StringComparison.OrdinalIgnoreCase) ? "concept" : "product";
+                    results.Add(new StoreSearchMatch
+                    {
+                        Id = id,
+                        Title = name,
+                        Classification = classification,
+                        Url = string.Format(CultureInfo.InvariantCulture, "https://store.playstation.com/{0}/{1}/{2}", locale, route, id),
+                        Media = media
+                    });
+                }
             }
             catch
             {
+            }
+
+            return results;
+        }
+
+        private static List<PsnMediaObject> ParsePsnSearchMedia(JArray media)
+        {
+            var result = new List<PsnMediaObject>();
+            if (media == null)
+            {
+                return result;
+            }
+
+            foreach (var item in media.OfType<JObject>())
+            {
+                var type = (string)item["type"];
+                var role = (string)item["role"];
+                var url = WebUtility.HtmlDecode((string)item["url"] ?? string.Empty).Split('?')[0];
+                if (!string.Equals(type, "IMAGE", StringComparison.OrdinalIgnoreCase) ||
+                    string.IsNullOrWhiteSpace(role) ||
+                    string.IsNullOrWhiteSpace(url) ||
+                    url.IndexOf("image.api.playstation.com", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                result.Add(new PsnMediaObject { Role = role, Url = url });
+            }
+
+            return result;
+        }
+
+        private static StoreSearchMatch PickBestPsnMatch(string gameName, List<StoreSearchMatch> matches)
+        {
+            if (matches == null || matches.Count == 0)
+            {
                 return null;
             }
+
+            return matches
+                .Where(x => IsReliableStoreTitleMatch(gameName, x.Title))
+                .OrderByDescending(x => PsnClassificationScore(x.Classification))
+                .ThenBy(x => x.Title, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+        }
+
+        private static int PsnClassificationScore(string classification)
+        {
+            switch ((classification ?? string.Empty).ToUpperInvariant())
+            {
+                case "FULL_GAME":
+                    return 100;
+                case "GAME_BUNDLE":
+                    return 40;
+                case "PREMIUM_EDITION":
+                    return 30;
+                case "ADD_ON":
+                case "ADD_ON_PACK":
+                case "CHARACTER":
+                case "COSTUME":
+                case "GAME_LEVEL":
+                case "ITEM":
+                case "VIRTUAL_CURRENCY":
+                case "DEMO":
+                    return -100;
+                default:
+                    return 10;
+            }
+        }
+
+        private static string ExtractPsnDescription(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var overview = Regex.Match(
+                html,
+                "data-qa=[\"']mfe-game-overview#description[\"'][^>]*>(?<value>.*?)</(?:div|p|section)>",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (overview.Success)
+            {
+                return CleanHtmlText(overview.Groups["value"].Value);
+            }
+
+            return CleanHtmlText(GetMetaContent(html, "description"));
+        }
+
+        private static List<string> ExtractPsnGenres(string html)
+        {
+            var genres = new List<string>();
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return genres;
+            }
+
+            var qa = Regex.Match(
+                html,
+                "data-qa=[\"']gameInfo#releaseInformation#genre-value[\"'][^>]*>(?<value>[^<]*)",
+                RegexOptions.IgnoreCase);
+            if (qa.Success)
+            {
+                genres.AddRange(
+                    qa.Groups["value"].Value
+                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(CleanText)
+                        .Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+
+            if (genres.Count == 0)
+            {
+                foreach (var match in Regex.Matches(html, "\"localizedGenres\"\\s*:\\s*\\[(?<arr>[^\\]]*)\\]", RegexOptions.IgnoreCase).Cast<Match>())
+                {
+                    foreach (var value in Regex.Matches(match.Groups["arr"].Value, "\"value\"\\s*:\\s*\"(?<v>[^\"]+)\"").Cast<Match>())
+                    {
+                        var genre = CleanText(value.Groups["v"].Value);
+                        if (!string.IsNullOrWhiteSpace(genre) &&
+                            !genres.Contains(genre, StringComparer.OrdinalIgnoreCase))
+                        {
+                            genres.Add(genre);
+                        }
+                    }
+
+                    if (genres.Count > 0)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return genres;
+        }
+
+        private static string ExtractPsnPublisher(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var qa = Regex.Match(
+                html,
+                "data-qa=[\"'](?:gameInfo#releaseInformation#publisher-value|mfe-game-title#publisher)[\"'][^>]*>(?<value>[^<]*)",
+                RegexOptions.IgnoreCase);
+            if (qa.Success)
+            {
+                return CleanText(qa.Groups["value"].Value);
+            }
+
+            var json = Regex.Match(html, "\"publisherName\"\\s*:\\s*\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
+            return json.Success ? CleanText(json.Groups["value"].Value) : string.Empty;
+        }
+
+        private static string ExtractPsnReleaseDate(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var json = Regex.Match(html, "\"releaseDate\"\\s*:\\s*\"(?<value>\\d{4}-\\d{2}-\\d{2})", RegexOptions.IgnoreCase);
+            if (json.Success)
+            {
+                return json.Groups["value"].Value;
+            }
+
+            var qa = Regex.Match(
+                html,
+                "data-qa=[\"']gameInfo#releaseInformation#releaseDate-value[\"'][^>]*>(?<value>[^<]*)",
+                RegexOptions.IgnoreCase);
+            return qa.Success ? CleanText(qa.Groups["value"].Value) : string.Empty;
+        }
+
+        private static string ExtractPsnTitle(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var og = GetMetaContent(html, "og:title");
+            if (!string.IsNullOrWhiteSpace(og))
+            {
+                return CleanText(og);
+            }
+
+            var json = Regex.Match(html, "\"invariantName\"\\s*:\\s*\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
+            return json.Success ? CleanText(json.Groups["value"].Value) : string.Empty;
+        }
+
+        private static string CleanHtmlText(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var text = WebUtility.HtmlDecode(value);
+            text = Regex.Replace(text, "<\\s*br\\s*/?\\s*>", "\n", RegexOptions.IgnoreCase);
+            text = Regex.Replace(text, "<[^>]+>", " ");
+            text = Regex.Replace(text, "\\s+", " ").Trim();
+            return text;
+        }
+
+        private async Task<string> GetPsnStringAsync(string url, CancellationToken cancelToken)
+        {
+            using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+            {
+                request.Headers.TryAddWithoutValidation("User-Agent", PsnBrowserUserAgent);
+                request.Headers.TryAddWithoutValidation("Accept", "application/json,text/html,application/xhtml+xml;q=0.9,*/*;q=0.8");
+                request.Headers.TryAddWithoutValidation("Origin", "https://store.playstation.com");
+                request.Headers.TryAddWithoutValidation("Referer", "https://store.playstation.com/");
+                // CSRF guard on the Store GraphQL endpoint requires a non-form content-type or Apollo op name.
+                request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
+                request.Headers.TryAddWithoutValidation("x-apollo-operation-name", "getSearchResults");
+                request.Headers.TryAddWithoutValidation("apollographql-client-name", PsnStoreApplicationName);
+                request.Headers.TryAddWithoutValidation("apollographql-client-version", PsnStoreApplicationVersion);
+                request.Headers.TryAddWithoutValidation(
+                    "X-PSN-App-Ver",
+                    string.Format(CultureInfo.InvariantCulture, "{0}/{1}-", PsnStoreApplicationName, PsnStoreApplicationVersion));
+                request.Headers.TryAddWithoutValidation("X-PSN-Correlation-ID", Guid.NewGuid().ToString());
+                request.Headers.TryAddWithoutValidation("X-PSN-Request-ID", Guid.NewGuid().ToString());
+                request.Headers.TryAddWithoutValidation("X-PSN-Store-Locale-Override", ToPsnLocaleHeader(GetPsnCulture()));
+
+                try
+                {
+                    using (var response = await Client.SendAsync(request, cancelToken).ConfigureAwait(false))
+                    {
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            return string.Empty;
+                        }
+
+                        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    return string.Empty;
+                }
+            }
+        }
+
+        private static string ToPsnLocaleHeader(string storeLocale)
+        {
+            var parts = (storeLocale ?? "en-us").Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            for (var i = 0; i < parts.Length; i++)
+            {
+                parts[i] = i == parts.Length - 1
+                    ? parts[i].ToUpperInvariant()
+                    : parts[i].ToLowerInvariant();
+            }
+
+            return string.Join("-", parts);
         }
 
         private async Task<List<OfficialMediaCandidate>> GetXboxMediaCandidatesAsync(Game game, MediaKind kind, CancellationToken cancelToken)
@@ -1088,57 +1461,459 @@ namespace MetaDataIAPlugin
 
         private async Task<List<OfficialMediaCandidate>> GetEpicMediaCandidatesAsync(Game game, MediaKind kind, CancellationToken cancelToken)
         {
-            var metadata = await GetEpicMetadataAsync(game, cancelToken).ConfigureAwait(false);
-            if (metadata == null || string.IsNullOrWhiteSpace(metadata.StoreUrl))
+            var product = await ResolveEpicProductAsync(game, cancelToken).ConfigureAwait(false);
+            if (product == null)
             {
                 return new List<OfficialMediaCandidate>();
             }
 
-            try
-            {
-                var html = await GetStringAsync(metadata.StoreUrl, cancelToken).ConfigureAwait(false);
-                if (LooksLikeCloudflareChallenge(html))
-                {
-                    return new List<OfficialMediaCandidate>();
-                }
-
-                var urls = Regex.Matches(html, "https://[^\\\"'<>\\\\]+(?:epicgames|akamai|cloudfront)[^\\\"'<>\\\\]+\\.(?:jpg|jpeg|png|webp)[^\\\"'<>\\\\]*", RegexOptions.IgnoreCase)
-                    .Cast<Match>()
-                    .Select(x => WebUtility.HtmlDecode(x.Value))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-                return urls
-                    .Take(kind == MediaKind.Background ? 12 : 6)
-                    .Select(x => CreateOfficialCandidate(x, kind == MediaKind.Background ? 1920 : 1200, kind == MediaKind.Background ? 1080 : 1200, kind == MediaKind.Background ? "store artwork" : "store image", 54, SourceEpicStore, 42, true))
-                    .ToList();
-            }
-            catch
-            {
-                return new List<OfficialMediaCandidate>();
-            }
+            return BuildEpicMediaCandidates(product, kind);
         }
 
         private async Task<OfficialStoreMetadata> GetEpicMetadataAsync(Game game, CancellationToken cancelToken)
         {
-            var direct = GetFirstLink(game, "store.epicgames.com", "epicgames.com/store");
-            if (string.IsNullOrWhiteSpace(direct))
+            var product = await ResolveEpicProductAsync(game, cancelToken).ConfigureAwait(false);
+            if (product == null)
             {
                 return null;
             }
 
-            var html = await GetStringAsync(direct, cancelToken).ConfigureAwait(false);
-            if (LooksLikeCloudflareChallenge(html))
-            {
-                return null;
-            }
+            var page = GetEpicHomePage(product);
+            var pageData = page == null ? null : page["data"] as JObject;
+            var about = pageData == null ? null : pageData["about"] as JObject;
+            var meta = pageData == null ? null : pageData["meta"] as JObject;
+            var title = CleanMarkdownText(FirstNonEmpty(
+                TokenText(about == null ? null : about["title"]),
+                TokenText(product["productName"]),
+                TokenText(product["_title"])));
+            var description = CleanHtmlText(FirstNonEmpty(
+                TokenText(about == null ? null : about["shortDescription"]),
+                TokenText(about == null ? null : about["description"])));
+            var developers = SplitCompanies(FirstNonEmpty(
+                TokenText(about == null ? null : about["developerAttribution"]),
+                TokenText(meta == null ? null : meta["developer"])));
+            var publishers = SplitCompanies(FirstNonEmpty(
+                TokenText(about == null ? null : about["publisherAttribution"]),
+                TokenText(meta == null ? null : meta["publisher"])));
+            var tags = ReadStringArray(meta == null ? null : meta["tags"]);
+            var genres = new List<string>();
+            var features = new List<string>();
+            MapEpicTags(tags, genres, features);
 
-            return new OfficialStoreMetadata
+            var storeUrl = TokenText(product["_metadataAiUrl"]);
+            var result = new OfficialStoreMetadata
             {
                 SourceName = SourceEpicStore,
-                StoreUrl = direct,
-                Title = CleanText(GetMetaContent(html, "og:title")),
-                Description = CleanText(GetMetaContent(html, "description") ?? GetMetaContent(html, "og:description"))
+                StoreUrl = storeUrl,
+                Title = title,
+                Description = description,
+                Developers = developers,
+                Publishers = publishers,
+                Genres = genres,
+                Features = features,
+                ReleaseDate = NormalizeReleaseDate(TokenText(meta == null ? null : meta["releaseDate"])),
+                ListsMatchPluginLanguage = false
             };
+            if (!string.IsNullOrWhiteSpace(storeUrl))
+            {
+                result.Links.Add(new Link("Epic Store", storeUrl));
+            }
+
+            return result.HasUsefulData() || !string.IsNullOrWhiteSpace(result.StoreUrl) ? result : null;
+        }
+
+        private async Task<JObject> ResolveEpicProductAsync(Game game, CancellationToken cancelToken)
+        {
+            var cacheKey = (game == null ? string.Empty : game.Name ?? string.Empty) + "|" + GetEpicLocale();
+            if (epicProductCache != null && string.Equals(epicProductCacheKey, cacheKey, StringComparison.Ordinal))
+            {
+                return epicProductCache;
+            }
+
+            JObject resolved = null;
+            var tried = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var slug in BuildEpicSlugCandidates(game))
+            {
+                if (string.IsNullOrWhiteSpace(slug) || !tried.Add(slug))
+                {
+                    continue;
+                }
+
+                var product = await GetEpicProductBySlugAsync(slug, cancelToken).ConfigureAwait(false);
+                if (product == null)
+                {
+                    continue;
+                }
+
+                var productName = (string)product["productName"] ?? (string)product["_title"];
+                if (game != null &&
+                    !string.IsNullOrWhiteSpace(game.Name) &&
+                    !string.IsNullOrWhiteSpace(productName) &&
+                    !IsReliableStoreTitleMatch(game.Name, productName) &&
+                    !HasEpicStoreLink(game))
+                {
+                    // Slug guess without a store link must still match the library title.
+                    continue;
+                }
+
+                product["_metadataAiUrl"] = "https://store.epicgames.com/p/" + slug;
+                resolved = product;
+                break;
+            }
+
+            epicProductCacheKey = cacheKey;
+            epicProductCache = resolved;
+            return resolved;
+        }
+
+        private async Task<JObject> GetEpicProductBySlugAsync(string slug, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return null;
+            }
+
+            var locale = GetEpicLocale();
+            var url = string.Format(
+                CultureInfo.InvariantCulture,
+                "https://store-content-ipv4.ak.epicgames.com/api/{0}/content/products/{1}",
+                locale,
+                Uri.EscapeDataString(slug));
+            try
+            {
+                var json = await GetStringAsync(url, cancelToken).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(json) || json.TrimStart().StartsWith("<", StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                var product = JObject.Parse(json);
+                if (product["productName"] == null && product["_title"] == null && product["pages"] == null)
+                {
+                    return null;
+                }
+
+                return product;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static List<OfficialMediaCandidate> BuildEpicMediaCandidates(JObject product, MediaKind kind)
+        {
+            var result = new List<OfficialMediaCandidate>();
+            var page = GetEpicHomePage(product);
+            var pageData = page == null ? null : page["data"] as JObject;
+            var hero = pageData == null ? null : pageData["hero"] as JObject;
+            if (hero != null)
+            {
+                if (kind == MediaKind.Cover || kind == MediaKind.Icon)
+                {
+                    AddEpicImage(result, (string)hero["portraitBackgroundImageUrl"], kind == MediaKind.Icon ? "epic portrait icon" : "epic portrait cover", 88);
+                    AddEpicImage(result, GetEpicImageUrl(hero["logoImage"]), "epic logo", 40);
+                }
+                else
+                {
+                    AddEpicImage(result, (string)hero["backgroundImageUrl"], "epic hero background", 90);
+                    AddEpicImage(result, (string)hero["portraitBackgroundImageUrl"], "epic portrait art", 70);
+                }
+            }
+
+            if (result.Count == 0)
+            {
+                // Fallback: collect CDN image URLs from the product JSON payload.
+                var urls = Regex.Matches(product == null ? string.Empty : product.ToString(Newtonsoft.Json.Formatting.None),
+                        "https://(?:cdn2\\.unrealengine\\.com|cdn1\\.epicgames\\.com|media-cdn\\.epicgames\\.com)[^\\\"'\\\\]+\\.(?:jpg|jpeg|png|webp)",
+                        RegexOptions.IgnoreCase)
+                    .Cast<Match>()
+                    .Select(x => WebUtility.HtmlDecode(x.Value).Split('?')[0])
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && !IsEpicRatingBadgeUrl(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(kind == MediaKind.Background ? 12 : 6)
+                    .ToList();
+                foreach (var url in urls)
+                {
+                    AddEpicImage(result, url, kind == MediaKind.Background ? "epic artwork" : "epic image", 54);
+                }
+            }
+
+            return result;
+        }
+
+        private static void AddEpicImage(List<OfficialMediaCandidate> result, string url, string style, int score)
+        {
+            if (string.IsNullOrWhiteSpace(url) || IsEpicRatingBadgeUrl(url))
+            {
+                return;
+            }
+
+            result.Add(CreateOfficialCandidate(
+                url.Split('?')[0],
+                0,
+                0,
+                style,
+                score,
+                SourceEpicStore,
+                48,
+                true));
+        }
+
+        private static bool IsEpicRatingBadgeUrl(string url)
+        {
+            return !string.IsNullOrWhiteSpace(url) &&
+                   (url.IndexOf("product/ratings", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    url.IndexOf("ESRB", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    url.IndexOf("PEGI", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    url.IndexOf("USK_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    url.IndexOf("CERO_", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static JObject GetEpicHomePage(JObject product)
+        {
+            var pages = product == null ? null : product["pages"] as JArray;
+            if (pages == null || pages.Count == 0)
+            {
+                return null;
+            }
+
+            foreach (var page in pages.OfType<JObject>())
+            {
+                if (string.Equals((string)page["_slug"], "home", StringComparison.OrdinalIgnoreCase))
+                {
+                    return page;
+                }
+            }
+
+            return pages.OfType<JObject>().FirstOrDefault();
+        }
+
+        private static IEnumerable<string> BuildEpicSlugCandidates(Game game)
+        {
+            var direct = GetFirstLink(game, "store.epicgames.com", "epicgames.com/store");
+            var fromLink = ExtractEpicProductSlug(direct);
+            if (!string.IsNullOrWhiteSpace(fromLink))
+            {
+                yield return fromLink;
+            }
+
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                yield break;
+            }
+
+            foreach (var title in BuildTitleAliases(game.Name))
+            {
+                var slug = SlugifyEpicProduct(title);
+                if (!string.IsNullOrWhiteSpace(slug))
+                {
+                    yield return slug;
+                }
+            }
+        }
+
+        private static string ExtractEpicProductSlug(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return null;
+            }
+
+            var match = Regex.Match(url, @"store\.epicgames\.com/(?:[a-z]{2}(?:-[a-z]{2})?/)?p/(?<slug>[^/?#]+)", RegexOptions.IgnoreCase);
+            if (!match.Success)
+            {
+                match = Regex.Match(url, @"epicgames\.com/store/(?:[a-z]{2}(?:-[a-z]{2})/)?product/(?<slug>[^/?#]+)", RegexOptions.IgnoreCase);
+            }
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            var slug = Uri.UnescapeDataString(match.Groups["slug"].Value).Trim().Trim('/');
+            var offerSeparator = slug.IndexOf("--", StringComparison.Ordinal);
+            if (offerSeparator > 0)
+            {
+                slug = slug.Substring(0, offerSeparator);
+            }
+
+            return string.IsNullOrWhiteSpace(slug) ? null : slug;
+        }
+
+        private static string SlugifyEpicProduct(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var text = value.ToLowerInvariant();
+            text = text.Replace("&", " and ");
+            text = Regex.Replace(text, @"['’]", string.Empty);
+            text = Regex.Replace(text, @"[^a-z0-9]+", "-");
+            text = Regex.Replace(text, @"-+", "-").Trim('-');
+            return string.IsNullOrWhiteSpace(text) ? null : text;
+        }
+
+        private static bool HasEpicStoreLink(Game game)
+        {
+            return !string.IsNullOrWhiteSpace(GetFirstLink(game, "store.epicgames.com", "epicgames.com/store"));
+        }
+
+        private static string GetEpicImageUrl(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return null;
+            }
+
+            if (token.Type == JTokenType.String)
+            {
+                return (string)token;
+            }
+
+            var obj = token as JObject;
+            if (obj == null)
+            {
+                return null;
+            }
+
+            return (string)obj["src"] ?? (string)obj["url"] ?? (string)obj["image"];
+        }
+
+        private static void MapEpicTags(IEnumerable<string> tags, List<string> genres, List<string> features)
+        {
+            if (tags == null)
+            {
+                return;
+            }
+
+            foreach (var raw in tags)
+            {
+                var tag = (raw ?? string.Empty).Trim().ToUpperInvariant().Replace(' ', '_');
+                if (string.IsNullOrWhiteSpace(tag))
+                {
+                    continue;
+                }
+
+                switch (tag)
+                {
+                    case "ACTION":
+                    case "ADVENTURE":
+                    case "RPG":
+                    case "STRATEGY":
+                    case "SIMULATION":
+                    case "SPORTS":
+                    case "RACING":
+                    case "HORROR":
+                    case "PUZZLE":
+                    case "SHOOTER":
+                    case "PLATFORMER":
+                    case "FIGHTING":
+                    case "STEALTH":
+                        AddUniqueString(genres, ToTitleCaseTag(tag));
+                        break;
+                    case "SINGLE_PLAYER":
+                        AddUniqueString(features, "Single-player");
+                        break;
+                    case "MULTI_PLAYER":
+                    case "MULTIPLAYER":
+                        AddUniqueString(features, "Multiplayer");
+                        break;
+                    case "CO_OP":
+                    case "COOP":
+                    case "ONLINE_CO_OP":
+                        AddUniqueString(features, "Co-op");
+                        break;
+                    case "CONTROLLER_SUPPORT":
+                        AddUniqueString(features, "Controller Support");
+                        break;
+                    case "CLOUD_SAVES":
+                        AddUniqueString(features, "Cloud Saves");
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        private static string ToTitleCaseTag(string tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                return string.Empty;
+            }
+
+            if (tag == "RPG")
+            {
+                return "RPG";
+            }
+
+            var words = tag.ToLowerInvariant().Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+            for (var i = 0; i < words.Length; i++)
+            {
+                var word = words[i];
+                words[i] = char.ToUpperInvariant(word[0]) + word.Substring(1);
+            }
+
+            return string.Join(" ", words);
+        }
+
+        private static void AddUniqueString(List<string> list, string value)
+        {
+            if (list == null || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            if (!list.Any(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase)))
+            {
+                list.Add(value);
+            }
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            if (values == null)
+            {
+                return string.Empty;
+            }
+
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string CleanMarkdownText(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var text = Regex.Replace(value, @"\*+", string.Empty);
+            return CleanText(text);
+        }
+
+        private string GetEpicLocale()
+        {
+            var language = settings == null ? "en" : settings.Language ?? "en";
+            var parts = language.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            var lang = parts.Length > 0 ? parts[0].ToLowerInvariant() : "en";
+            var country = parts.Length > 1 ? parts[1].ToUpperInvariant() : (lang == "es" ? "ES" : "US");
+            if (lang == "en" && parts.Length == 1)
+            {
+                country = "US";
+            }
+
+            return lang + "-" + country;
         }
 
         private static void AddXboxImage(List<OfficialMediaCandidate> result, JToken token, string style, int score)
@@ -1806,7 +2581,28 @@ namespace MetaDataIAPlugin
                 return null;
             }
 
-            return token.Type == JTokenType.String ? (string)token : token.ToString();
+            if (token.Type == JTokenType.String)
+            {
+                return (string)token;
+            }
+
+            if (token.Type == JTokenType.Array)
+            {
+                var parts = token
+                    .Children()
+                    .Select(TokenText)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                return parts.Count == 0 ? null : string.Join(", ", parts);
+            }
+
+            if (token.Type == JTokenType.Object)
+            {
+                return null;
+            }
+
+            return token.ToString();
         }
 
         private static List<string> ReadNameArray(JToken token)
@@ -2098,6 +2894,13 @@ namespace MetaDataIAPlugin
             public string Id { get; set; }
             public string Title { get; set; }
             public string Url { get; set; }
+            public string Classification { get; set; }
+            public List<PsnMediaObject> Media { get; set; }
+
+            public StoreSearchMatch()
+            {
+                Media = new List<PsnMediaObject>();
+            }
         }
 
         private class PsnMediaObject
