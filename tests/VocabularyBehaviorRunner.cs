@@ -738,6 +738,56 @@ internal static class VocabularyBehaviorRunner
             "a subtitle is not treated as a region tag",
             !TitleMatchingService.IsReliableMatch("Trine 4: The Nightmare Prince", "Trine 4"));
         AssertTrue(
+            "year-anchored Multiplayer matches the base release",
+            TitleMatchingService.IsReliableMatch(
+                "Call of Duty: Modern Warfare 3 (2011) - Multiplayer",
+                "Call of Duty: Modern Warfare 3 (2011)"));
+        AssertTrue(
+            "year-anchored Multiplayer is the same IGDB release as the base",
+            TitleMatchingService.IsSameReleaseTitle(
+                "Call of Duty: Modern Warfare 3 (2011) - Multiplayer",
+                "Call of Duty: Modern Warfare 3 (2011)"));
+        AssertEqual(
+            "play-mode suffix strips for the base title",
+            "Call of Duty: Modern Warfare 3 (2011)",
+            TitleMatchingService.WithoutPlayModeSuffix(
+                "Call of Duty: Modern Warfare 3 (2011) - Multiplayer"));
+        AssertTrue(
+            "year-anchored play-mode base may be searched",
+            TitleMatchingService.CanUsePlayModeBaseTitle(
+                "Call of Duty: Modern Warfare 3 (2011) - Multiplayer"));
+        AssertTrue(
+            "Medal of Honor Multiplayer without a year is not a safe base alias",
+            !TitleMatchingService.CanUsePlayModeBaseTitle("Medal of Honor(TM) Multiplayer"));
+        AssertTrue(
+            "Medal of Honor Multiplayer must not match a random sequel year",
+            !TitleMatchingService.IsReliableMatch(
+                "Medal of Honor(TM) Multiplayer",
+                "Medal of Honor (1999)"));
+        AssertTrue(
+            "Medal of Honor Multiplayer must not match bare franchise title",
+            !TitleMatchingService.IsReliableMatch(
+                "Medal of Honor(TM) Multiplayer",
+                "Medal of Honor"));
+        AssertTrue(
+            "year-anchored Medal of Honor Multiplayer matches that year",
+            TitleMatchingService.IsReliableMatch(
+                "Medal of Honor (2010) - Multiplayer",
+                "Medal of Honor (2010)"));
+        AssertTrue(
+            "IGDB queries include the year-anchored base for Multiplayer packages",
+            TitleMatchingService.IgdbSearchQueries(
+                "Call of Duty: Modern Warfare 3 (2011) - Multiplayer")
+                .Any(x => string.Equals(
+                    x,
+                    "Call of Duty: Modern Warfare 3 (2011)",
+                    StringComparison.OrdinalIgnoreCase)));
+        AssertTrue(
+            "IGDB queries do not add a bare Medal of Honor alias",
+            !TitleMatchingService.IgdbSearchQueries("Medal of Honor(TM) Multiplayer")
+                .Any(x => string.Equals(x, "Medal of Honor", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(x, "Medal of Honor(TM)", StringComparison.OrdinalIgnoreCase)));
+        AssertTrue(
             "Pokemon without accent matches IGDB Pokémon",
             TitleMatchingService.IsSameReleaseTitle("Pokemon Stadium 2", "Pokémon Stadium 2"));
         AssertTrue(

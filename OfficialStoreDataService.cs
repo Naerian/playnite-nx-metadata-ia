@@ -635,8 +635,120 @@ namespace MetaDataIAPlugin
             catch
             {
             }
+
+            if (metadata.Genres.Count == 0)
+            {
+                await TryFillSteamGenresFromRelatedAsync(metadata, data, game, appId, cancelToken).ConfigureAwait(false);
+            }
+
             OfficialStoreContextCache.SetSteam(game, GetStoreLanguage(), metadata);
             return metadata;
+        }
+
+        /// <summary>
+        /// Multiplayer / Single Player Steam packages often omit genres. Prefer the
+        /// store parent (fullgame), else a year-anchored base-title lookup.
+        /// </summary>
+        private async Task TryFillSteamGenresFromRelatedAsync(
+            OfficialStoreMetadata metadata,
+            JObject childData,
+            Game game,
+            string childAppId,
+            CancellationToken cancelToken)
+        {
+            if (metadata == null)
+            {
+                return;
+            }
+
+            var parentId = ReadSteamFullGameAppId(childData);
+            if (!string.IsNullOrWhiteSpace(parentId) &&
+                !string.Equals(parentId, childAppId, StringComparison.OrdinalIgnoreCase))
+            {
+                var parentGenres = await ReadSteamGenresForAppAsync(parentId, cancelToken).ConfigureAwait(false);
+                if (parentGenres.Count > 0)
+                {
+                    metadata.Genres = parentGenres;
+                    return;
+                }
+            }
+
+            if (game == null || !TitleMatchingService.CanUsePlayModeBaseTitle(game.Name))
+            {
+                return;
+            }
+
+            var baseTitle = TitleMatchingService.WithoutPlayModeSuffix(game.Name);
+            string baseAppId = null;
+            foreach (var title in TitleMatchingService.BuildAliases(baseTitle))
+            {
+                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) +
+                          "&cc=" + Uri.EscapeDataString(GetCountryCode()) +
+                          "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage());
+                var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
+                var items = json["items"] as JArray;
+                var matches = (items ?? new JArray())
+                    .OfType<JObject>()
+                    .Select(x => new StoreSearchMatch { Id = ((int?)x["id"] ?? 0).ToString(), Title = (string)x["name"] })
+                    .Where(x => x.Id != "0" && !IsNonGameSteamSearchTitle(x.Title))
+                    .ToList();
+                var selected = PickBestMatch(baseTitle, matches);
+                if (selected != null &&
+                    !string.Equals(selected.Id, childAppId, StringComparison.OrdinalIgnoreCase))
+                {
+                    baseAppId = selected.Id;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(baseAppId))
+            {
+                return;
+            }
+
+            var baseGenres = await ReadSteamGenresForAppAsync(baseAppId, cancelToken).ConfigureAwait(false);
+            if (baseGenres.Count > 0)
+            {
+                metadata.Genres = baseGenres;
+            }
+        }
+
+        private static string ReadSteamFullGameAppId(JObject data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            var fullgame = data["fullgame"] as JObject;
+            if (fullgame != null)
+            {
+                var id = TokenText(fullgame["appid"]);
+                if (!string.IsNullOrWhiteSpace(id) && Regex.IsMatch(id.Trim(), @"^\d+$"))
+                {
+                    return id.Trim();
+                }
+            }
+
+            // Some payloads expose only a numeric fullgame / parent field.
+            var raw = TokenText(data["fullgame"]);
+            if (!string.IsNullOrWhiteSpace(raw) && Regex.IsMatch(raw.Trim(), @"^\d+$"))
+            {
+                return raw.Trim();
+            }
+
+            return null;
+        }
+
+        private async Task<List<string>> ReadSteamGenresForAppAsync(string appId, CancellationToken cancelToken)
+        {
+            var data = await GetSteamAppDataAsync(appId, cancelToken).ConfigureAwait(false);
+            if (data == null || IsNonGameSteamApp(data))
+            {
+                return new List<string>();
+            }
+
+            return ReadNameArray(data["genres"]);
         }
 
         private async Task<JObject> GetSteamAppDataAsync(string appId, CancellationToken cancelToken)

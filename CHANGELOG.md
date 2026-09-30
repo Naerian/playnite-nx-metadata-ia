@@ -7,6 +7,7 @@
 - Organize asks the model not to glue two store genres with hyphen/slash (e.g. Acción-Aventura); split them into separate labels instead.
 - Translation retry after raw English leftovers restates distillation of compounds into natural target-language cores (keepLoanwords unchanged).
 - Genres-only / tags-only runs no longer copy the pre-organize genre pool into Features for the description template.
+- Year-anchored Multiplayer / Single Player / Campaign library titles can match the base release on Steam, Wikidata and IGDB; bare franchise stems without a year are not guessed.
 
 ## 1.4.30 — 2026-09-30
 - Descriptions now follow your Excluded terms and Kept terms settings.

@@ -20,9 +20,106 @@ namespace MetaDataIAPlugin
 
             var comparableLeft = WithoutLeadingArticle(left);
             var comparableRight = WithoutLeadingArticle(right);
-            return string.Equals(comparableLeft, comparableRight, StringComparison.OrdinalIgnoreCase) ||
-                   HasOnlyAllowedStoreSuffix(comparableLeft, comparableRight) ||
-                   HasOnlyAllowedStoreSuffix(comparableRight, comparableLeft);
+            if (string.Equals(comparableLeft, comparableRight, StringComparison.OrdinalIgnoreCase) ||
+                HasOnlyAllowedStoreSuffix(comparableLeft, comparableRight) ||
+                HasOnlyAllowedStoreSuffix(comparableRight, comparableLeft))
+            {
+                return true;
+            }
+
+            // Multiplayer / Single Player / Campaign packages of a year-anchored release
+            // (e.g. "MW3 (2011) - Multiplayer" ↔ "MW3 (2011)"). Bare franchise stems
+            // without a year (Medal of Honor Multiplayer) must not match every sequel.
+            return TryPlayModeBaseMatch(expected, candidate);
+        }
+
+        /// <summary>
+        /// Drops a trailing play-mode component: Multiplayer, Single Player, Campaign, Co-op.
+        /// Leaves the library title unchanged when no such suffix is present.
+        /// </summary>
+        public static string WithoutPlayModeSuffix(string value)
+        {
+            var title = SearchTitle(value);
+            if (title.Length == 0)
+            {
+                return title;
+            }
+
+            var stripped = Regex.Replace(
+                title,
+                @"[\s\-:–—]*\b(multiplayer|single\s*player|singleplayer|campaign|co[\s\-]*op)\s*$",
+                string.Empty,
+                RegexOptions.IgnoreCase).Trim();
+            stripped = Regex.Replace(stripped, @"[\s\-]+$", string.Empty).Trim();
+            return stripped.Length > 0 ? stripped : title;
+        }
+
+        /// <summary>
+        /// True when stripping a play-mode suffix still leaves a year in the title,
+        /// so the remaining name can identify one release (not a whole franchise).
+        /// </summary>
+        public static bool CanUsePlayModeBaseTitle(string value)
+        {
+            var baseTitle = WithoutPlayModeSuffix(value);
+            if (string.IsNullOrWhiteSpace(baseTitle) ||
+                string.Equals(baseTitle, SearchTitle(value), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return TitleContainsYear(baseTitle);
+        }
+
+        public static bool TitleContainsYear(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            return Regex.IsMatch(value, @"\((?:19|20)\d{2}\)") ||
+                   Regex.IsMatch(NormalizeTitle(value), @"\b(?:19|20)\d{2}\b");
+        }
+
+        private static bool TryPlayModeBaseMatch(string expected, string candidate)
+        {
+            var leftBase = WithoutPlayModeSuffix(expected);
+            var rightBase = WithoutPlayModeSuffix(candidate);
+            var leftStripped = !string.Equals(leftBase, SearchTitle(expected), StringComparison.OrdinalIgnoreCase);
+            var rightStripped = !string.Equals(rightBase, SearchTitle(candidate), StringComparison.OrdinalIgnoreCase);
+            if (!leftStripped && !rightStripped)
+            {
+                return false;
+            }
+
+            if (leftStripped && !TitleContainsYear(leftBase))
+            {
+                return false;
+            }
+
+            if (rightStripped && !TitleContainsYear(rightBase))
+            {
+                return false;
+            }
+
+            var left = WithoutLeadingArticle(NormalizeTitle(leftBase));
+            var right = WithoutLeadingArticle(NormalizeTitle(rightBase));
+            return string.Equals(left, right, StringComparison.OrdinalIgnoreCase) ||
+                   HasOnlyAllowedStoreSuffix(left, right) ||
+                   HasOnlyAllowedStoreSuffix(right, left);
+        }
+
+        public static List<string> BuildAliases(string value)
+        {
+            var result = new List<string>();
+            AddAlias(result, SearchTitle(value));
+            // Only when the base still carries a year — never bare "Medal of Honor".
+            if (CanUsePlayModeBaseTitle(value))
+            {
+                AddAlias(result, WithoutPlayModeSuffix(value));
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -87,13 +184,6 @@ namespace MetaDataIAPlugin
             return normalized;
         }
 
-        public static List<string> BuildAliases(string value)
-        {
-            var result = new List<string>();
-            AddAlias(result, SearchTitle(value));
-            return result;
-        }
-
         /// <summary>
         /// Search uses the library title as written. Edition, year, region and
         /// remaster words stay in the query so a shorter alias cannot select another release.
@@ -107,29 +197,41 @@ namespace MetaDataIAPlugin
         /// Up to four IGDB search strings. The library title is first.
         /// Later queries only change separators or fill a roman-numeral range
         /// (IV-VI and IV•V•VI are the same release). Words are not removed.
+        /// A year-anchored play-mode base (e.g. MW3 (2011) from … Multiplayer) may be added.
         /// </summary>
         public static List<string> IgdbSearchQueries(string value)
         {
             var queries = new List<string>();
             var title = SearchTitle(value);
             AddSearchQuery(queries, title);
+            if (CanUsePlayModeBaseTitle(value))
+            {
+                AddSearchQuery(queries, WithoutPlayModeSuffix(value));
+            }
+
             var spaced = Regex.Replace(title, @"[_‐‑‒–—―\-]+", " ");
             spaced = Regex.Replace(spaced, "\\s+", " ").Trim();
             AddSearchQuery(queries, spaced);
             AddSearchQuery(queries, ExpandRomanSeparators(title));
             AddSearchQuery(queries, ExpandRomanSeparators(spaced));
-            return queries;
+            return queries.Take(4).ToList();
         }
 
         /// <summary>
         /// Same release when the only differences are punctuation, a trailing year,
-        /// or how a roman range is written (IV-VI vs IV•V•VI).
+        /// how a roman range is written (IV-VI vs IV•V•VI), or a year-anchored
+        /// Multiplayer / Single Player / Campaign suffix.
         /// </summary>
         public static bool IsSameReleaseTitle(string expected, string candidate)
         {
-            var left = ReleaseKey(expected);
-            var right = ReleaseKey(candidate);
+            var left = ReleaseKey(PlayModeAwareReleaseTitle(expected));
+            var right = ReleaseKey(PlayModeAwareReleaseTitle(candidate));
             return left.Length > 0 && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string PlayModeAwareReleaseTitle(string value)
+        {
+            return CanUsePlayModeBaseTitle(value) ? WithoutPlayModeSuffix(value) : (value ?? string.Empty);
         }
 
         public static bool IsOrdinalVariant(string expected, string candidate)
