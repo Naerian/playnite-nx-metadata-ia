@@ -33,6 +33,8 @@ internal static class VocabularyBehaviorRunner
         Test_SteamAppTags_ReadsLocalizedLabels();
         Test_SteamAppDetails_ReadsDataWhenResponseKeyDiffers();
         Test_SteamAgeGate_IsRecognized();
+        Test_PcGamingWiki_ParsesInfoboxTaxonomy();
+        Test_PcGamingWiki_PageTitleFromWikiUrl();
         Test_TermResolve_AppendKeepsSpecificGenres();
         Test_TermResolve_AppendRejectsDroppingUnrelated();
         Test_TermResolve_LocalizedOverwriteSkipsModel();
@@ -232,6 +234,34 @@ internal static class VocabularyBehaviorRunner
         AssertTrue(
             "store page with tags is not an age gate",
             !OfficialStoreDataService.IsSteamAgeGate("InitAppTagModal(1583230, [{\"tagid\":1,\"name\":\"Comedia\"}], 1);"));
+    }
+
+    private static void Test_PcGamingWiki_ParsesInfoboxTaxonomy()
+    {
+        var wiki =
+            "{{Infobox game\n" +
+            "{{Infobox game/row/developer|Embark Studios}}\n" +
+            "{{Infobox game/row/publisher|Embark Studios}}\n" +
+            "{{Infobox game/row/date|Windows|October 30, 2025}}\n" +
+            "{{Infobox game/row/taxonomy/modes             | Multiplayer }}\n" +
+            "{{Infobox game/row/taxonomy/perspectives      | Third-person }}\n" +
+            "{{Infobox game/row/taxonomy/genres            | Action, Open world, Shooter, Survival, TPS }}\n" +
+            "}}";
+        var meta = PcGamingWikiMetadataService.BuildMetadata("ARC_Raiders", wiki);
+        AssertEqual("pcgw genres", "Action, Open world, Shooter, Survival, TPS", Join(meta.Genres));
+        AssertEqual("pcgw perspective tags", "Third-person", Join(meta.Tags));
+        AssertEqual("pcgw modes features", "Multiplayer", Join(meta.Features));
+        AssertEqual("pcgw developer", "Embark Studios", Join(meta.Developers));
+        AssertEqual("pcgw release", "October 30, 2025", meta.ReleaseDate);
+        AssertEqual("pcgw source", MetaDataIASettings.SourcePcGamingWiki, meta.SourceName);
+    }
+
+    private static void Test_PcGamingWiki_PageTitleFromWikiUrl()
+    {
+        AssertEqual(
+            "pcgw steam redirect title",
+            "ARC_Raiders",
+            PcGamingWikiMetadataService.PageTitleFromWikiUrl("https://www.pcgamingwiki.com/wiki/ARC_Raiders"));
     }
 
     private static void Test_TermResolve_AppendKeepsSpecificGenres()

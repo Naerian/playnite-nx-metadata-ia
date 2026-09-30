@@ -311,4 +311,299 @@ namespace MetaDataIAPlugin
             return null;
         }
     }
+
+    /// <summary>
+    /// Optional PCGamingWiki factual context. Cargo queries are restricted for anonymous
+    /// clients, so we resolve the page via Steam AppID redirect or title search, then
+    /// parse the Infobox game wikitext (genres, modes, perspectives, companies, date).
+    /// </summary>
+    public sealed class PcGamingWikiMetadataService
+    {
+        private const string Api = "https://www.pcgamingwiki.com/w/api.php";
+        private const string SteamRedirect = "https://www.pcgamingwiki.com/api/appid.php?appid=";
+        private const string UserAgent = "MetadataAIPlugin/1.0 (Playnite; https://github.com/Naerian/playnite-nx-metadata-ia)";
+
+        private static readonly Regex DeveloperRow = new Regex(
+            @"\{\{\s*Infobox game/row/developer\s*\|\s*([^}|]+)",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex PublisherRow = new Regex(
+            @"\{\{\s*Infobox game/row/publisher\s*\|\s*([^}|]+)",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex DateRow = new Regex(
+            @"\{\{\s*Infobox game/row/date\s*\|\s*([^}|]+)\s*\|\s*([^}|]+)",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex TaxonomyRow = new Regex(
+            @"\{\{\s*Infobox game/row/taxonomy/(?<kind>genres|modes|perspectives)\s*\|\s*(?<value>[^}]*)\}\}",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        public async Task<OfficialStoreMetadata> GetContextAsync(Game game, CancellationToken cancellationToken)
+        {
+            if (game == null || string.IsNullOrWhiteSpace(game.Name))
+            {
+                return null;
+            }
+
+            var pageTitle = await ResolvePageTitleAsync(game, cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(pageTitle))
+            {
+                return null;
+            }
+
+            if (!TitleMatchingService.IsReliableMatch(game.Name, pageTitle.Replace('_', ' ')))
+            {
+                return null;
+            }
+
+            var wikitext = await GetWikitextAsync(pageTitle, cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(wikitext) ||
+                wikitext.IndexOf("Infobox game", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return null;
+            }
+
+            return BuildMetadata(pageTitle, wikitext);
+        }
+
+        /// <summary>Public for unit tests: parse Infobox game rows from wikitext.</summary>
+        public static OfficialStoreMetadata BuildMetadata(string pageTitle, string wikitext)
+        {
+            var genres = new List<string>();
+            var tags = new List<string>();
+            var features = new List<string>();
+            foreach (Match match in TaxonomyRow.Matches(wikitext ?? string.Empty))
+            {
+                var kind = match.Groups["kind"].Value.Trim().ToLowerInvariant();
+                var values = SplitPipeList(match.Groups["value"].Value);
+                if (kind == "genres")
+                {
+                    AddUnique(genres, values);
+                }
+                else if (kind == "perspectives")
+                {
+                    AddUnique(tags, values);
+                }
+                else if (kind == "modes")
+                {
+                    AddUnique(features, values);
+                }
+            }
+
+            var developers = new List<string>();
+            foreach (Match match in DeveloperRow.Matches(wikitext ?? string.Empty))
+            {
+                AddUnique(developers, new[] { CleanCell(match.Groups[1].Value) });
+            }
+
+            var publishers = new List<string>();
+            foreach (Match match in PublisherRow.Matches(wikitext ?? string.Empty))
+            {
+                AddUnique(publishers, new[] { CleanCell(match.Groups[1].Value) });
+            }
+
+            var releaseDate = string.Empty;
+            var dateMatch = DateRow.Match(wikitext ?? string.Empty);
+            if (dateMatch.Success)
+            {
+                releaseDate = CleanCell(dateMatch.Groups[2].Value);
+            }
+
+            var displayTitle = (pageTitle ?? string.Empty).Replace('_', ' ').Trim();
+            var pageUrl = "https://www.pcgamingwiki.com/wiki/" + Uri.EscapeDataString(pageTitle ?? string.Empty).Replace("%2F", "/");
+            return new OfficialStoreMetadata
+            {
+                SourceName = MetaDataIASettings.SourcePcGamingWiki,
+                StoreUrl = pageUrl,
+                Title = displayTitle,
+                Genres = genres,
+                Tags = tags,
+                Features = features,
+                Developers = developers,
+                Publishers = publishers,
+                ReleaseDate = releaseDate,
+                Links = new List<Link> { new Link("PCGamingWiki", pageUrl) },
+                ListsMatchPluginLanguage = false,
+                IsExactMatch = true
+            };
+        }
+
+        private async Task<string> ResolvePageTitleAsync(Game game, CancellationToken cancellationToken)
+        {
+            var steamId = OfficialStoreDataService.TryGetSteamAppId(game);
+            if (!string.IsNullOrWhiteSpace(steamId))
+            {
+                var fromSteam = await ResolveTitleFromSteamAppIdAsync(steamId.Trim(), cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(fromSteam))
+                {
+                    return fromSteam;
+                }
+            }
+
+            return await ResolveTitleFromSearchAsync(game.Name, cancellationToken).ConfigureAwait(false);
+        }
+
+        private static async Task<string> ResolveTitleFromSteamAppIdAsync(string appId, CancellationToken cancellationToken)
+        {
+            EnsureTls12();
+            return await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var request = (HttpWebRequest)WebRequest.Create(SteamRedirect + Uri.EscapeDataString(appId));
+                request.Method = "GET";
+                request.AllowAutoRedirect = true;
+                request.UserAgent = UserAgent;
+                request.Timeout = 30000;
+                using (cancellationToken.Register(request.Abort))
+                using (var response = (HttpWebResponse)request.GetResponse())
+                {
+                    return PageTitleFromWikiUrl(response.ResponseUri == null ? null : response.ResponseUri.AbsoluteUri);
+                }
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
+        private static async Task<string> ResolveTitleFromSearchAsync(string gameName, CancellationToken cancellationToken)
+        {
+            var url = Api + "?action=opensearch&format=json&limit=8&search=" + Uri.EscapeDataString(TitleMatchingService.SearchTitle(gameName) ?? string.Empty);
+            var json = await GetJsonAsync(url, cancellationToken).ConfigureAwait(false) as JArray;
+            if (json == null || json.Count < 2)
+            {
+                return null;
+            }
+
+            var titles = json[1] as JArray;
+            if (titles == null)
+            {
+                return null;
+            }
+
+            foreach (var titleToken in titles)
+            {
+                var title = titleToken == null ? null : titleToken.ToString();
+                if (TitleMatchingService.IsReliableMatch(gameName, title))
+                {
+                    return (title ?? string.Empty).Trim().Replace(' ', '_');
+                }
+            }
+
+            return null;
+        }
+
+        private static async Task<string> GetWikitextAsync(string pageTitle, CancellationToken cancellationToken)
+        {
+            var url = Api + "?action=parse&format=json&prop=wikitext&page=" + Uri.EscapeDataString(pageTitle.Replace(' ', '_'));
+            var root = await GetJsonAsync(url, cancellationToken).ConfigureAwait(false) as JObject;
+            return root == null ? null : TokenText(root.SelectToken("parse.wikitext.*"));
+        }
+
+        private static async Task<JToken> GetJsonAsync(string url, CancellationToken cancellationToken)
+        {
+            EnsureTls12();
+            using (var client = new WebClient())
+            {
+                client.Headers[HttpRequestHeader.UserAgent] = UserAgent;
+                cancellationToken.ThrowIfCancellationRequested();
+                using (cancellationToken.Register(client.CancelAsync))
+                {
+                    var text = await client.DownloadStringTaskAsync(url).ConfigureAwait(false);
+                    return JToken.Parse(text);
+                }
+            }
+        }
+
+        private static void EnsureTls12()
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072 | (SecurityProtocolType)768 | SecurityProtocolType.Tls;
+            }
+            catch
+            {
+            }
+        }
+
+        public static string PageTitleFromWikiUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return null;
+            }
+
+            Uri uri;
+            if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
+            {
+                return null;
+            }
+
+            var path = uri.AbsolutePath ?? string.Empty;
+            const string marker = "/wiki/";
+            var index = path.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (index < 0)
+            {
+                return null;
+            }
+
+            var slug = path.Substring(index + marker.Length);
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return null;
+            }
+
+            return Uri.UnescapeDataString(slug);
+        }
+
+        private static IEnumerable<string> SplitPipeList(string raw)
+        {
+            return (raw ?? string.Empty)
+                .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(CleanCell)
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+        }
+
+        private static string CleanCell(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = Regex.Replace(value, @"\{\{[^}]*\}\}", string.Empty);
+            cleaned = Regex.Replace(cleaned, @"\[\[([^|\]]*\|)?([^\]]+)\]\]", "$2");
+            cleaned = Regex.Replace(cleaned, @"<ref\b[^>]*>.*?</ref>", string.Empty, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            cleaned = Regex.Replace(cleaned, @"['\[\]]+", string.Empty);
+            return cleaned.Trim();
+        }
+
+        private static void AddUnique(List<string> target, IEnumerable<string> values)
+        {
+            foreach (var value in values ?? Enumerable.Empty<string>())
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (target.Any(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                target.Add(value.Trim());
+            }
+        }
+
+        private static string TokenText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null || token.Type == JTokenType.Undefined)
+            {
+                return null;
+            }
+
+            if (token.Type == JTokenType.String || token.Type == JTokenType.Integer ||
+                token.Type == JTokenType.Float || token.Type == JTokenType.Boolean)
+            {
+                return token.ToString();
+            }
+
+            return null;
+        }
+    }
 }

@@ -1918,6 +1918,13 @@
                                 </StackPanel>
                             </Expander>
                             <Expander Style="{StaticResource MediaSourceExpander}">
+                                <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="PCGamingWiki" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="PcGamingWikiSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintPcGamingWiki}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border></StackPanel></Grid></Expander.Header>
+                                <StackPanel Margin="0">
+                                    <TextBlock Text="{DynamicResource MTDA_PcGamingWikiHelp}" Style="{StaticResource HintText}" TextWrapping="Wrap"/>
+                                    <CheckBox Content="{DynamicResource MTDA_EnablePcGamingWiki}" IsChecked="{Binding Settings.UsePcGamingWikiMetadata}" Margin="0,0,0,16"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Style="{StaticResource MediaSourceExpander}">
                                 <Expander.Header><Grid HorizontalAlignment="Stretch"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="IGDB" Style="{StaticResource MediaSourceHeaderText}"/><Border Style="{StaticResource SourceStatusBadge}"><TextBlock x:Name="IgdbSourceStatusText" VerticalAlignment="Center"/></Border></StackPanel><TextBlock Grid.Row="1" Text="{DynamicResource MTDA_SourceHintIgdb}" Style="{StaticResource MediaSourceHeaderHint}"/><StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0"><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMetadata}"/></Border><Border Style="{StaticResource SourceCapabilityBadge}"><TextBlock Text="{DynamicResource MTDA_SourceCapabilityMedia}"/></Border></StackPanel></Grid></Expander.Header>
                                 <StackPanel Margin="0">
                                     <TextBlock Text="{DynamicResource MTDA_IgdbHelp}" Style="{StaticResource HintText}"/>
@@ -2440,6 +2447,7 @@
                                 <Border Style="{StaticResource SectionHeaderBorder}">
                                     <TextBlock Text="{DynamicResource MTDA_LocalTermFallback}" Style="{StaticResource SectionHeaderText}"/>
                                 </Border>
+                                <TextBlock Text="{DynamicResource MTDA_LocalTermFallbackHelp}" Style="{StaticResource HintText}"/>
                                 <ComboBox ItemsSource="{Binding Settings.LocalTermFallbackModeOptions}"
                                           DisplayMemberPath="DisplayName"
                                           SelectedValuePath="Value"
@@ -2447,7 +2455,6 @@
                                           HorizontalAlignment="Left"
                                           MinWidth="280"
                                           Margin="0"/>
-                                <TextBlock Text="{DynamicResource MTDA_LocalTermFallbackHelp}" Style="{StaticResource HintText}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource SettingsCard}">

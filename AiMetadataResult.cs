@@ -252,8 +252,6 @@ namespace MetaDataIAPlugin
             AddFallback(fallback, PlayModes);
             AddFallback(fallback, Perspective);
             AddFallback(fallback, Setting);
-            fallback.AddRange(Genres);
-            fallback.AddRange(Tags);
 
             Features = fallback
                 .Where(x => !string.IsNullOrWhiteSpace(x))

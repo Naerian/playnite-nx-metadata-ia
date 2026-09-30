@@ -27,6 +27,7 @@
     <sys:String x:Key="MTDA_SourceHintIgn">Metadatos verificados de IGN, portadas y fondos promo.</sys:String>
     <sys:String x:Key="MTDA_SourceHintVndb">Datos factuales especializados para novelas visuales.</sys:String>
     <sys:String x:Key="MTDA_SourceHintWikidata">Fallback factual comunitario para fecha y compañías.</sys:String>
+    <sys:String x:Key="MTDA_SourceHintPcGamingWiki">Taxonomía de PCGamingWiki: géneros, modos, perspectiva, compañías y fecha.</sys:String>
     <sys:String x:Key="MTDA_SourceHintIgdb">Géneros, temas, series, portadas y artworks de IGDB.</sys:String>
     <sys:String x:Key="MTDA_TabImport">Importación</sys:String>
     <sys:String x:Key="MTDA_ImportPageHelp">Elige qué debe hacer Metadata AI automáticamente cuando Playnite detecte juegos nuevos en tu biblioteca.</sys:String>
@@ -237,8 +238,8 @@
     <sys:String x:Key="MTDA_FieldBehaviorTitle">Reglas de generación y aplicación por campo</sys:String>
     <sys:String x:Key="MTDA_FieldBehaviorHelp">Elige qué campos puede generar Metadata AI, cómo se aplica cada resultado y el número máximo de valores permitido en los campos de tipo listado.</sys:String>
     <sys:String x:Key="MTDA_Maximum">Máximo</sys:String>
-    <sys:String x:Key="MTDA_LocalTermFallback">Cuando géneros, etiquetas o características no tienen lista de tienda/IGDB</sys:String>
-    <sys:String x:Key="MTDA_LocalTermFallbackHelp">Dejar vacío (predeterminado) deja esos campos en blanco si Steam, IGDB u otras fuentes no devuelven lista. Derivar del texto local del juego es opcional: extrae etiquetas estandarizadas solo a partir de la descripción y datos ya presentes en Playnite — no de la memoria del modelo. Si ese texto es demasiado pobre, los campos quedan vacíos y se informa del juego para que puedas mejorar la descripción antes.</sys:String>
+    <sys:String x:Key="MTDA_LocalTermFallback">Completar géneros, etiquetas o características que no tienen valor en fuente</sys:String>
+    <sys:String x:Key="MTDA_LocalTermFallbackHelp">Qué hacer cuando esas listas no vienen de las fuentes. Dejar vacío no rellena. Derivar del texto local solo usa la descripción y datos ya presentes en Playnite.</sys:String>
     <sys:String x:Key="MTDA_OptionLocalTermFallbackOff">Dejar vacío</sys:String>
     <sys:String x:Key="MTDA_OptionLocalTermFallbackFromLocalText">Derivar del texto local del juego</sys:String>
     <sys:String x:Key="MTDA_ErrorLocalTermTextInsufficient">No se pudieron derivar géneros, etiquetas o características: no había lista de tienda/IGDB y la descripción/texto local es demasiado pobre. Añade o genera una descripción más completa y reinténtalo.</sys:String>
@@ -1105,6 +1106,8 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_EnableVndb">Activar VNDB como fuente opcional de metadatos para novelas visuales</sys:String>
     <sys:String x:Key="MTDA_WikidataHelp">Wikidata es una fuente comunitaria de respaldo para datos factuales como fecha, desarrolladora, editora, género y serie. Solo se usan entradas de videojuegos con coincidencia exacta.</sys:String>
     <sys:String x:Key="MTDA_EnableWikidata">Activar Wikidata como respaldo opcional de metadatos factuales</sys:String>
+    <sys:String x:Key="MTDA_PcGamingWikiHelp">PCGamingWiki aporta taxonomía de juegos de PC (géneros, modos, perspectiva), compañías y fecha. Se empareja por Steam AppID si existe, o por título exacto. No hace falta API key.</sys:String>
+    <sys:String x:Key="MTDA_EnablePcGamingWiki">Activar PCGamingWiki como fuente opcional de metadatos factuales</sys:String>
     <sys:String x:Key="MTDA_TestIgn">Probar IGN</sys:String>
     <sys:String x:Key="MTDA_ExpandSectionHint">Despliega para configurar esta sección.</sys:String>
     <sys:String x:Key="MTDA_NotePrefix">Nota: </sys:String>

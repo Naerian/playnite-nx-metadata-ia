@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.31 — unpublished
+- Library field rules: clearer title and shorter help for filling genres/tags/features when sources leave them empty (hint under the title).
+- Organize adapts genres/tags/features to natural store wording; compound subgenres may distill to the distinctive core (e.g. extraction shooter -> Extracción) when a full calque would sound forced.
+- Optional PCGamingWiki factual source (Steam AppID or exact title): genres, modes, perspective, companies and release date.
+- Organize asks the model not to glue two store genres with hyphen/slash (e.g. Acción-Aventura); split them into separate labels instead.
+- Translation retry after raw English leftovers restates distillation of compounds into natural target-language cores (keepLoanwords unchanged).
+- Genres-only / tags-only runs no longer copy the pre-organize genre pool into Features for the description template.
+
 ## 1.4.30 — 2026-09-30
 - Descriptions now follow your Excluded terms and Kept terms settings.
 - If you exclude a word like Action, that English spelling is blocked — the description can still say the same idea in your language (for example acción).

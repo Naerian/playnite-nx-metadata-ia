@@ -208,16 +208,24 @@ namespace MetaDataIAPlugin
             "If target language IS English: keep standard canonical English labels. " +
             "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
             "(except keepLoanwords entries, which win over everyday translations). " +
-            "4. Canonical label and Deduplication: Exactly one label per concept. " +
-            "Never mix synonyms or languages for the same concept (pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
-            "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
-            "Do not repeat the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
+            "4. Canonical label, Deduplication & Distillation: Exactly one label per concept. " +
+            "Never mix synonyms or languages for the same concept. Labels should sound like store/library metadata (concise, no final punctuation). " +
+            "Distill compounds for naturalness: If an incoming compound genre (e.g., 'extraction shooter', 'looter shooter', 'survival horror') becomes unnaturally long, clunky, or sounds like a forced calque in the target language, distill it down to its core distinctive mechanic or theme (e.g., 'extraction shooter' becomes just 'Extracción'; 'looter shooter' becomes 'Botín' or 'Loot'). " +
+            "Drop the generic umbrella term (like 'shooter' or 'game') if the native community identifies the subgenre by its core word alone. Extreme brevity and natural gamer phrasing always win over strict word-by-word structural parity. " +
+            "Subsume generic terms: If you distill a compound by dropping the generic part, rely on other incoming labels (like 'Shooter' or 'Acción') to cover that base, or assume it is implied. Do not generate a 4-word label just to preserve both concepts. " +
+            "Never join two independent store genres with a hyphen, slash or similar (never Acción-Aventura / Action-Adventure / Action/Adventure). " +
+            "If incoming already joins them that way, split into separate labels (Acción and Aventura). " +
+            "When tags are also in this request, prefer putting bare camera perspective there if it arrived as a separate idea; when the compound is already in genres incoming, adapt it naturally in genres (or keepLoanwords spelling such as TPS when listed). " +
+            "Never invent a sibling perspective. Do not repeat the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
             "5. Handling mode: " +
             "overwrite: terms must contain only normalized concepts from incoming. " +
             "append: merge unique concepts from existing and incoming; if a concept already exists in existing, do not add a translated/synonym duplicate from incoming. " +
             "empty: if existing already has items, return existing unchanged; if existing is empty, populate from incoming. " +
             "Item caps are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.";
 
+        // Used when genres/tags/features have no store/IGDB list and Library
+        // "Derive from local game text" is on with enough description/facts.
+        // Separate call from SystemPrompt (which organizes existing incoming lists).
         public const string KnowledgePrompt =
             "No store returned a list for the fields in this request. Extract short, accurate metadata labels only from the provided game facts and description. " +
             "Return ONLY one JSON object. The response must start with { and end with }. No markdown fences, no prose, no JSON wrapped inside a string. " +
@@ -235,13 +243,16 @@ namespace MetaDataIAPlugin
             "If English: keep standard English labels. " +
             "2. Strict Concept Normalization: Exactly one label per concept. Never output mixed languages or synonyms " +
             "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
-            "Concise labels: 1 to 3 words max. Never repeat the same concept across multiple fields. " +
+            "Store-style labels (concise, no final punctuation). " +
+            "Distill compounds for naturalness: if an extracted compound becomes clunky or a forced calque in the target language, extract its distinctive core " +
+            "(e.g. extraction shooter -> Extracción; looter shooter -> Botín or Loot). Make sure to also output the base generic genre (e.g., Disparos, Acción) as a separate label if it's not already covered. " +
+            "Never invent a sibling perspective. Never join two independent store genres with a hyphen or slash; if the extracted concept implies both, split them into separate labels. " +
             "3. Local-text grounding (Zero Hallucination): Anchor labels strictly to phrases and facts in the provided description and release fields. " +
             "Do NOT use outside knowledge of the title beyond those supplied facts. " +
             "Do NOT extrapolate features or genres from modern remakes or subsequent ports. " +
             "For retro releases, never invent modern technical features (e.g., no cloud saves or online co-op for 8/16-bit console titles). " +
             "If the description/facts are insufficient to support a label with high confidence, omit it. If the game cannot be identified from the supplied facts, return an empty terms array. " +
-            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, and gameplay mechanics clearly supported by the text. " +
+            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, gameplay mechanics, and camera perspectives (e.g., First-person, Third-person) clearly supported by the text. " +
             "features: Functional gameplay traits for this specific platform release only when the text states them explicitly (player count, local co-op, controller support). " +
             "At most 4 concise feature items. Never put player counts or features into genres or tags. " +
             "5. Handling mode: overwrite: terms must contain only new normalized labels. " +

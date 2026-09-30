@@ -705,7 +705,7 @@ namespace MetaDataIAPlugin
                 settings.MediaUseEpicStore, settings.MediaUseRawg, settings.MediaUseWallhaven, settings.MediaUseScreenScraper,
                 settings.MediaUseGiantBomb, settings.MediaUseMobyGames,
                 settings.MediaUseIgdb, settings.MediaUseIgn, settings.MediaUseWebSearch,
-                settings.UseVndbMetadata, settings.UseWikidataMetadata
+                settings.UseVndbMetadata, settings.UseWikidataMetadata, settings.UsePcGamingWikiMetadata
             }.Count(x => x);
             ConfigurationMediaSummaryText.Text = string.Format(
                 Loc("MTDA_MediaEnabledSummary", "{0} media types · {1} sources"),
@@ -839,6 +839,7 @@ namespace MetaDataIAPlugin
             SetSourceStatus(IgnSourceStatusText, settings.UseIgnMetadata || settings.MediaUseIgn, true);
             SetSourceStatus(VndbSourceStatusText, settings.UseVndbMetadata, true);
             SetSourceStatus(WikidataSourceStatusText, settings.UseWikidataMetadata, true);
+            SetSourceStatus(PcGamingWikiSourceStatusText, settings.UsePcGamingWikiMetadata, true);
         }
 
         private static void SetSourceStatus(TextBlock target, bool enabled, bool configured)
@@ -3229,6 +3230,7 @@ namespace MetaDataIAPlugin
             testSettings.UseIgnMetadata = false;
             testSettings.UseVndbMetadata = false;
             testSettings.UseWikidataMetadata = false;
+            testSettings.UsePcGamingWikiMetadata = false;
             testSettings.UseIgdbMetadata = false;
             testSettings.UseScreenScraperMetadata = false;
             testSettings.UseMobyGamesMetadata = false;

@@ -1396,9 +1396,15 @@ namespace MetaDataIAPlugin
                     "If target language IS English: keep standard canonical English labels. " +
                     "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
                     "(except keepLoanwords entries, which win over everyday translations). " +
-                    "Exactly one label per concept. Never mix synonyms or languages for the same concept " +
-                    "(pick only one: e.g., \"Aventura\" and never \"Adventure\"; \"Rol\" and never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\" and never \"Puzzle\" / \"Rompecabezas\"). " +
-                    "Keep labels concise (1-3 words max for genres/tags; features 1-5 words, Steam-style, no full sentences, no final punctuation). " +
+                    "Exactly one label per concept. Never mix synonyms or languages for the same concept. " +
+                    "Labels should sound like store/library metadata (concise, no final punctuation). " +
+                    "Distill compounds for naturalness: If an incoming compound genre (e.g., 'extraction shooter', 'looter shooter', 'survival horror') becomes unnaturally long, clunky, or sounds like a forced calque in the target language, distill it down to its core distinctive mechanic or theme (e.g., 'extraction shooter' becomes just 'Extracción'; 'looter shooter' becomes 'Botín' or 'Loot'). " +
+                    "Drop the generic umbrella term (like 'shooter' or 'game') if the native community identifies the subgenre by its core word alone. Extreme brevity and natural gamer phrasing always win over strict word-by-word structural parity. " +
+                    "Subsume generic terms: If you distill a compound by dropping the generic part, rely on other incoming labels (like 'Shooter' or 'Acción') to cover that base, or assume it is implied. Do not generate a 4-word label just to preserve both concepts. " +
+                    "Never join two independent store genres with a hyphen, slash or similar (never Acción-Aventura / Action-Adventure / Action/Adventure). " +
+                    "If incoming already joins them that way, split into separate labels (Acción and Aventura). " +
+                    "When tags are also requested, prefer putting bare camera perspective there if it arrived as a separate idea; when the compound is already in genres incoming, adapt it naturally in genres (or keepLoanwords spelling such as TPS when listed). " +
+                    "Never invent a sibling perspective. " +
                     "3. Field Sorting Logic: features: Player count, input devices, co-op modes, achievements, and controller support. " +
                     "Populate between 3 and " + settings.MaxFeatures + " items if evidence exists; if evidence is weaker, return only verified items. " +
                     "genres: Core video game store genres only. " +
@@ -1691,6 +1697,12 @@ namespace MetaDataIAPlugin
                 !HasContextSource(MetaDataIASettings.SourceWikidata))
             {
                 await TryAddOptionalContextAsync(() => new WikidataMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
+            }
+
+            if (settings.UsePcGamingWikiMetadata &&
+                !HasContextSource(MetaDataIASettings.SourcePcGamingWiki))
+            {
+                await TryAddOptionalContextAsync(() => new PcGamingWikiMetadataService().GetContextAsync(game, cancellationToken), cancellationToken).ConfigureAwait(false);
             }
 
             if (settings.UseScreenScraperMetadata &&
@@ -3106,6 +3118,29 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            // Drop pollution from Normalize()'s description fallback when this run
+            // did not resolve that field.
+            if (!settings.GenerateFeatures &&
+                (result.ResolvedTermFields == null ||
+                 !result.ResolvedTermFields.Any(x => string.Equals(x, "features", StringComparison.OrdinalIgnoreCase))))
+            {
+                result.Features = new List<string>();
+            }
+
+            if (!settings.GenerateTags &&
+                (result.ResolvedTermFields == null ||
+                 !result.ResolvedTermFields.Any(x => string.Equals(x, "tags", StringComparison.OrdinalIgnoreCase))))
+            {
+                result.Tags = new List<string>();
+            }
+
+            if (!settings.GenerateCategories &&
+                (result.ResolvedTermFields == null ||
+                 !result.ResolvedTermFields.Any(x => string.Equals(x, "categories", StringComparison.OrdinalIgnoreCase))))
+            {
+                result.Categories = new List<string>();
+            }
+
             result.ApplyTermBlacklist(settings);
             result.ApplyKeptLoanwords(settings);
 
@@ -3336,14 +3371,19 @@ namespace MetaDataIAPlugin
                     {
                         translationRetried = true;
                         var knowledgeHint = fields.Any(f => f != null && f.FromKnowledge)
-                            ? "This was a knowledge guess with no store list: every common noun MUST be in the target language " +
-                              "(e.g. Shooter -> Disparos in Spanish). "
+                            ? "This was a knowledge guess with no store list: every common noun MUST be in the target language. "
                             : string.Empty;
                         var retryJson = userJson +
                             "\n\nRETRY: Your previous answer still copied raw store/IGDB labels that are not in the target language. " +
                             knowledgeHint +
-                            "Translate EVERY common noun (Shooter, Adventure, Puzzle, Action, …). " +
+                            "Rewrite EVERY ordinary store label into natural target-language wording players and stores actually use " +
+                            "(e.g. Shooter -> Disparos in Spanish, Adventure -> Aventura). " +
                             "Do not mix languages in the same terms array. " +
+                            "Distill compounds for naturalness: if a compound is clunky or a forced calque, keep the distinctive core in the target language " +
+                            "(e.g. extraction shooter -> Extracción; looter shooter -> Botín or Loot) and let other incoming labels cover the generic base (Shooter/Disparos). " +
+                            "Prefer keepLoanwords spelling when listed (e.g. TPS for third-person shooter). " +
+                            "Never invent a sibling perspective. " +
+                            "Never join two independent store genres with hyphen/slash; split them if incoming did. " +
                             "Keep labels listed in keepLoanwords unchanged (and acronyms UPPERCASE). " +
                             "Return the full JSON object again.";
                         content = await SendConstrainedPromptAsync(systemPrompt, retryJson, 700, cancellationToken).ConfigureAwait(false);

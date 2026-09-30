@@ -473,6 +473,7 @@ namespace MetaDataIAPlugin
         private bool useIgnMetadata = true;
         private bool useVndbMetadata = false;
         private bool useWikidataMetadata = false;
+        private bool usePcGamingWikiMetadata = false;
         private string igdbClientId = string.Empty;
         private string igdbClientSecret = string.Empty;
         private string igdbAccessToken = string.Empty;
@@ -541,6 +542,7 @@ namespace MetaDataIAPlugin
         public const string SourceIgn = "IGN";
         public const string SourceVndb = "VNDB";
         public const string SourceWikidata = "Wikidata";
+        public const string SourcePcGamingWiki = "PCGamingWiki";
         public const string SourceScreenScraper = "ScreenScraper";
         public const string SourceMobyGames = "MobyGames";
         public const string SourceTheGamesDb = "TheGamesDB";
@@ -895,6 +897,7 @@ namespace MetaDataIAPlugin
         public bool UseIgnMetadata { get { return useIgnMetadata; } set { SetValue(ref useIgnMetadata, value); } }
         public bool UseVndbMetadata { get { return useVndbMetadata; } set { SetValue(ref useVndbMetadata, value); } }
         public bool UseWikidataMetadata { get { return useWikidataMetadata; } set { SetValue(ref useWikidataMetadata, value); } }
+        public bool UsePcGamingWikiMetadata { get { return usePcGamingWikiMetadata; } set { SetValue(ref usePcGamingWikiMetadata, value); } }
         public string IgdbClientId { get { return igdbClientId; } set { SetValue(ref igdbClientId, value); } }
         public string IgdbClientSecret { get { return igdbClientSecret; } set { SetValue(ref igdbClientSecret, value); } }
         public string IgdbAccessToken { get { return igdbAccessToken; } set { SetValue(ref igdbAccessToken, value); } }

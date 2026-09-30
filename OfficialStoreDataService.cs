@@ -2054,6 +2054,11 @@ namespace MetaDataIAPlugin
                 RegexOptions.IgnoreCase);
         }
 
+        public static string TryGetSteamAppId(Game game)
+        {
+            return ExtractSteamAppIdFromGame(game);
+        }
+
         private static string ExtractSteamAppIdFromGame(Game game)
         {
             if (game == null)
