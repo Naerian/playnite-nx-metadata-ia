@@ -147,6 +147,35 @@ namespace MetaDataIAPlugin
             Categories = CleanList(Categories, settings.MaxCategories, blacklist, string.Empty);
         }
 
+        /// <summary>
+        /// Rewrite locale aliases of keep-list terms (e.g. JcJ → PvP) on final lists,
+        /// including DirectTerms paths that never went through organize.
+        /// </summary>
+        public void ApplyKeptLoanwords(MetaDataIASettings settings)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            var keep = settings.GetKeptLoanwordTerms();
+            Genres = GamingLoanwordVocabulary.EnforceKeepListSpelling(Genres, null, keep)
+                .Take(Math.Max(1, settings.MaxGenres))
+                .ToList();
+            Tags = GamingLoanwordVocabulary.EnforceKeepListSpelling(Tags, null, keep)
+                .Take(Math.Max(1, settings.MaxTags))
+                .ToList();
+            Features = GamingLoanwordVocabulary.EnforceKeepListSpelling(Features, null, keep)
+                .Select(CleanFeature)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(Math.Max(1, settings.MaxFeatures))
+                .ToList();
+            Categories = GamingLoanwordVocabulary.EnforceKeepListSpelling(Categories, null, keep)
+                .Take(Math.Max(1, settings.MaxCategories))
+                .ToList();
+        }
+
         public void ApplyConfiguredPrefixes(
             MetaDataIASettings settings,
             IEnumerable<string> existingTags = null,

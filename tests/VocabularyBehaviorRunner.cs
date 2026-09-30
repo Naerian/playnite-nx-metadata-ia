@@ -1087,6 +1087,17 @@ internal static class VocabularyBehaviorRunner
                 "{\"fields\":[{\"field\":\"genres\",\"terms\":[\"Acción\",\"Disparos\",\"Indie\"]}]}",
                 new List<TermFieldRequest> { arcRaiders },
                 keepWithAction));
+
+        var featureSettings = CreateSettings("es");
+        featureSettings.EnsureKeptLoanwordsDefaults();
+        featureSettings.KeptLoanwords = string.Join(", ", featureSettings.GetKeptLoanwordTerms().Concat(new[] { "PvP", "PvE" }));
+        var features = CreateResult(new[] { "Action" }, new[] { "multiplayer" });
+        features.Features = new List<string> { "Multijugador", "JcJ", "JcJ en línea" };
+        features.ApplyKeptLoanwords(featureSettings);
+        AssertEqual(
+            "keep-list PvP rewrites Steam JcJ features",
+            "Multijugador, PvP",
+            Join(features.Features));
     }
 
     private static void Test_ModesAndLanguages()

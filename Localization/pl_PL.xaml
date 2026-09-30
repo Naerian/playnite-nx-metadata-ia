@@ -243,8 +243,11 @@
     <sys:String x:Key="MTDA_TagPrefixHelp">Jesli wpiszesz prefiks, zostanie dodany przed kazdym nowym tagiem. Przyklad: AI: Otwarty swiat.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">Prefiks kategorii</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">Przydatne do grupowania kategorii tworzonych przez plugin. Przyklad: Meta: Akcja.</sys:String>
-    <sys:String x:Key="MTDA_Blacklist">Czarna lista terminow</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">Wpisz sÅ‚owa lub frazy oddzielone przecinkami, Å›rednikami lub nowymi liniami. KaÅ¼dy wygenerowany tag, gatunek, cecha, kategoria, deweloper, wydawca, ocena wiekowa lub region zawierajÄ…cy ktÃ³rykolwiek z tych terminÃ³w zostanie odrzucony przed zastosowaniem. UÅ¼yj tego, aby blokowaÄ‡ niejasne, niechciane, powielone lub bÅ‚Ä™dnie przetÅ‚umaczone sÅ‚ownictwo.</sys:String>
+    <sys:String x:Key="MTDA_Blacklist">Czarna lista terminów</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">Słowa lub wyrażenia, których nie chcesz zapisywać jako etykiet. Oddzielaj je przecinkami, średnikami lub nowymi liniami. Bez cudzysłowów usuwana jest każda wartość zawierająca ten tekst (Death usuwa też Deathmatch). W cudzysłowach liczy się tylko cała wartość (&quot;Death&quot; usuwa Death, nie Deathmatch). Dotyczy tagów, gatunków, funkcji, kategorii, deweloperów, wydawców, ocen wiekowych i regionów. W opisach wtyczka unika tych dokładnych zapisów, ale nadal może przekazać tę samą ideę w Twoim języku (zablokuj Action → napisz akcja).</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsTitle">Zachowane terminy</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwords">Biała lista terminów</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsHelp">Słowa, które chcesz zachować w zwykłej formie branżowej (Indie, Party, Roguelike, RPG, PvP…). Oddzielaj przecinkami, średnikami lub nowymi liniami. W gatunkach, tagach, funkcjach i kategoriach zostają w tej pisowni w każdym języku, a znane tłumaczenia są przepisywane na Twoją formę (zachowaj Action → Acción staje się Action). W opisie zostają tylko naturalne zapożyczenia i skróty (PvP, Indie); reszta jest pisana w Twoim języku (gra akcji, nie « juego de Action »). Są wartości domyślne — dodaj własne lub usuń te, które wolisz tłumaczyć.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">Wlacz automatyczne reguly szablonow</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">Jesli wylaczone, plugin zawsze uzywa wybranego szablonu z karty Szablony. Jesli wlaczone, reguly zrodla, platformy lub typu moga zastapic go automatycznie.</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">Reguly szablonow wedlug typu gry</sys:String>

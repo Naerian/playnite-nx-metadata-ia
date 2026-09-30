@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.30 — 2026-09-30
+- Descriptions now follow your Excluded terms and Kept terms settings.
+- If you exclude a word like Action, that English spelling is blocked — the description can still say the same idea in your language (for example acción).
+- Kept terms stay in their usual gaming form on genres, tags and features (Action, Indie, PvP). In description text, everyday words are still translated; only natural loanwords and acronyms stay as-is.
+- Feature labels from the store are normalized to your kept spelling when needed (for example JcJ becomes PvP if PvP is on the keep list).
+- Clearer on-screen help for both lists in Library, in all plugin languages.
+
 ## 1.4.29 — 2026-09-29
 - Organize is more reliable with small local models: messy JSON is repaired when possible, and English libraries still apply store/IGDB lists if the model puts labels in the wrong field or drops existing append tags.
 - Excluded terms work again after IGDB/organize, so blocked words are removed before saving.

@@ -63,7 +63,9 @@ namespace MetaDataIAPlugin
             new[] { "Fighting", "Lucha", "Kampf", "Picchiaduro", "Luta", "Bijatyka", "Vechtspel", "Файтинг", "対戦格闘", "격투", "格斗", "格鬥" },
             new[] { "Platform", "Plataformas", "Platformer", "Platform", "Plataforma", "Platformówka", "Platform", "Платформер", "プラットフォーマー", "플랫포머", "平台", "平臺" },
             new[] { "Horror", "Terror", "Horror", "Horror", "Terror", "Horror", "Horror", "Хоррор", "ホラー", "호러", "恐怖" },
-            new[] { "Casual", "Casual", "Casual", "Casual", "Casual", "Casual", "Casual", "Казуальная", "カジュアル", "캐주얼", "休闲", "休閒" }
+            new[] { "Casual", "Casual", "Casual", "Casual", "Casual", "Casual", "Casual", "Казуальная", "カジュアル", "캐주얼", "休闲", "休閒" },
+            new[] { "PvP", "JcJ", "JcJ en línea", "JcJ en linea", "JcJ en LAN", "Player vs Player", "Player versus Player", "Jugador contra jugador" },
+            new[] { "PvE", "JcE", "JcE en línea", "JcE en linea", "Player vs Environment", "Player versus Environment", "Jugador contra el entorno", "Jugador contra entorno" }
         };
 
         public static string FormatDefaultList()

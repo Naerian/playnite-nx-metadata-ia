@@ -243,8 +243,11 @@
     <sys:String x:Key="MTDA_TagPrefixHelp">ì ‘ë‘ì‚¬ë¥¼ ìž…ë ¥í•˜ë©´ ê° ìƒˆ íƒœê·¸ ì•žì— ì¶”ê°€ë©ë‹ˆë‹¤. ì˜ˆ: AI: ì˜¤í”ˆ ì›”ë“œ.</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">ì¹´í…Œê³ ë¦¬ ì ‘ë‘ì–´</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">í”ŒëŸ¬ê·¸ì¸ìœ¼ë¡œ ìƒì„±ëœ ì¹´í…Œê³ ë¦¬ë¥¼ ê·¸ë£¹í™”í•˜ëŠ” ë° ìœ ìš©í•©ë‹ˆë‹¤. ì˜ˆ: ë©”íƒ€: ì•¡ì…˜.</sys:String>
-    <sys:String x:Key="MTDA_Blacklist">ìš©ì–´ ë¸”ëž™ë¦¬ìŠ¤íŠ¸</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">ë‹¨ì–´ ë˜ëŠ” êµ¬ë¥¼ ì‰¼í‘œ, ì„¸ë¯¸ì½œë¡  ë˜ëŠ” ì¤„ ë°”ê¿ˆìœ¼ë¡œ êµ¬ë¶„í•˜ì—¬ ìž…ë ¥í•˜ì„¸ìš”. ìƒì„±ëœ íƒœê·¸, ìž¥ë¥´, ê¸°ëŠ¥, ì¹´í…Œê³ ë¦¬, ê°œë°œìž, í¼ë¸”ë¦¬ì…”, ì—°ë ¹ ë“±ê¸‰ ë˜ëŠ” ì§€ì—­ì— ì´ ìš©ì–´ê°€ í¬í•¨ë˜ë©´ ì ìš© ì „ì— íê¸°ë©ë‹ˆë‹¤. ëª¨í˜¸í•˜ê±°ë‚˜ ì›ì¹˜ ì•ŠëŠ”, ì¤‘ë³µë˜ì—ˆê±°ë‚˜ ìž˜ëª» ë²ˆì—­ëœ ìš©ì–´ë¥¼ ì°¨ë‹¨í•˜ëŠ” ë° ì‚¬ìš©í•˜ì„¸ìš”.</sys:String>
+    <sys:String x:Key="MTDA_Blacklist">용어 블랙리스트</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">레이블로 저장하고 싶지 않은 단어나 구문입니다. 쉼표, 세미콜론 또는 줄 바꿈으로 구분하세요. 따옴표 없이 입력하면 그 텍스트가 포함된 값은 모두 제거됩니다(Death는 Deathmatch도 제거). 따옴표로 감싸면 전체 값만 일치합니다(&quot;Death&quot;는 Death만 제거하고 Deathmatch는 남김). 태그, 장르, 기능, 카테고리, 개발사, 퍼블리셔, 연령 등급, 지역에 적용됩니다. 설명에서는 그 정확한 표기를 피하되, 같은 내용은 사용 언어로 쓸 수 있습니다(Action 차단 → acción/액션으로 작성).</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsTitle">유지할 용어</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwords">용어 화이트리스트</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsHelp">업계에서 쓰는 형태 그대로 두고 싶은 단어입니다(Indie, Party, Roguelike, RPG, PvP…). 쉼표, 세미콜론 또는 줄 바꿈으로 구분하세요. 장르, 태그, 기능, 카테고리에서는 모든 언어에서 그 표기로 유지되고, 알려진 번역은 지정한 형태로 다시 씁니다(Action 유지 → Acción이 Action이 됨). 설명에서는 자연스러운 외래어·약어만 그대로 두고(PvP, Indie), 일반 단어는 사용 언어로 씁니다(액션 게임이지 «juego de Action»이 아님). 기본값이 포함되어 있습니다. 추가하거나 번역하고 싶은 항목은 지우세요.</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">ìžë™ í…œí”Œë¦¿ ê·œì¹™ í™œì„±í™”</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">ë¹„í™œì„±í™”ëœ ê²½ìš° í”ŒëŸ¬ê·¸ì¸ì€ í•­ìƒ í…œí”Œë¦¿ íƒ­ì—ì„œ ì„ íƒí•œ í…œí”Œë¦¿ì„ ì‚¬ìš©í•©ë‹ˆë‹¤. í™œì„±í™”ë˜ë©´ ì†ŒìŠ¤, í”Œëž«í¼ ë˜ëŠ” ìœ í˜• ê·œì¹™ì´ ì´ë¥¼ ìžë™ìœ¼ë¡œ ëŒ€ì²´í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">ê²Œìž„ ìœ í˜•ë³„ í…œí”Œë¦¿ ê·œì¹™</sys:String>

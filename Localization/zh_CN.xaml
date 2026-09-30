@@ -243,8 +243,11 @@
     <sys:String x:Key="MTDA_TagPrefixHelp">å¦‚æžœæ‚¨è¾“å…¥å‰ç¼€ï¼Œåˆ™ä¼šå°†å…¶æ·»åŠ åˆ°æ¯ä¸ªæ–°æ ‡ç­¾ä¹‹å‰ã€‚ç¤ºä¾‹ï¼šäººå·¥æ™ºèƒ½ï¼šå¼€æ”¾ä¸–ç•Œã€‚</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefix">ç±»åˆ«å‰ç¼€</sys:String>
     <sys:String x:Key="MTDA_CategoryPrefixHelp">å¯¹æ’ä»¶åˆ›å»ºçš„ç±»åˆ«è¿›è¡Œåˆ†ç»„å¾ˆæœ‰ç”¨ã€‚ç¤ºä¾‹ï¼šå…ƒï¼šæ“ä½œã€‚</sys:String>
-    <sys:String x:Key="MTDA_Blacklist">æœ¯è¯­é»‘åâ€‹â€‹å•</sys:String>
-    <sys:String x:Key="MTDA_BlacklistHelp">è¾“å…¥ç”¨é€—å·ã€åˆ†å·æˆ–æ¢è¡Œåˆ†éš”çš„è¯è¯­æˆ–çŸ­è¯­ã€‚ä»»ä½•ç”Ÿæˆçš„æ ‡ç­¾ã€ç±»åž‹ã€ç‰¹æ€§ã€åˆ†ç±»ã€å¼€å‘å•†ã€å‘è¡Œå•†ã€å¹´é¾„åˆ†çº§æˆ–åœ°åŒºåŒ…å«è¿™äº›è¯æ±‡çš„éƒ½ä¼šåœ¨åº”ç”¨å‰è¢«ä¸¢å¼ƒã€‚ç”¨äºŽå±è”½æ¨¡ç³Šã€ä¸éœ€è¦ã€é‡å¤æˆ–ç¿»è¯‘é”™è¯¯çš„è¯æ±‡ã€‚</sys:String>
+    <sys:String x:Key="MTDA_Blacklist">术语黑名单</sys:String>
+    <sys:String x:Key="MTDA_BlacklistHelp">不想保存为标签的词语或短语。用逗号、分号或换行分隔。不加引号时，凡包含该文本的值都会被移除（Death 也会移除 Deathmatch）。加引号则只匹配完整值（&quot;Death&quot; 移除 Death，不移除 Deathmatch）。适用于标签、类型、特性、分类、开发商、发行商、年龄分级和地区。在简介中会避开这些精确写法，但仍可用你的语言表达同一意思（屏蔽 Action → 写成“动作”）。</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsTitle">保留术语</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwords">术语白名单</sys:String>
+    <sys:String x:Key="MTDA_KeptLoanwordsHelp">希望保持游戏圈常用写法的词（Indie、Party、Roguelike、RPG、PvP…）。用逗号、分号或换行分隔。在类型、标签、特性和分类中，无论何种语言都保持该拼写，已知译名会改写成你指定的形式（保留 Action → Acción 变为 Action）。在简介中只保留自然的外来词和缩写（PvP、Indie）；日常用语仍用你的语言书写（动作游戏，而不是「juego de Action」）。已含默认项——可自行添加，或删掉你更想翻译的条目。</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRules">å¯ç”¨è‡ªåŠ¨æ¨¡æ¿è§„åˆ™</sys:String>
     <sys:String x:Key="MTDA_EnableTemplateRulesHelp">å¦‚æžœç¦ç”¨ï¼Œæ’ä»¶å°†å§‹ç»ˆä½¿ç”¨â€œæ¨¡æ¿â€é€‰é¡¹å¡ä¸­é€‰å®šçš„æ¨¡æ¿ã€‚å¦‚æžœå¯ç”¨ï¼Œæºã€å¹³å°æˆ–ç±»åž‹è§„åˆ™å¯ä»¥è‡ªåŠ¨æ›¿æ¢å®ƒã€‚</sys:String>
     <sys:String x:Key="MTDA_GenreTemplateRules">æŒ‰æ¸¸æˆç±»åž‹åˆ’åˆ†çš„æ¨¡æ¿è§„åˆ™</sys:String>

@@ -1338,7 +1338,15 @@ namespace MetaDataIAPlugin
                 "If officialStoreContextEnabled is true and officialStoreContext is missing, be conservative and leave uncertain factual fields empty. " +
                 "3. Source Priority: If officialStoreContext is present, treat it as the primary factual source for descriptions, companies, ratings, and links. " +
                 "If existing metadata is included, treat it as secondary context only — do not copy it blindly over trusted store data. " +
-                "4. Constraints and Schema Types: Obey tone, length, tokenLengths, blacklist, and prefixes. " +
+                "4. Constraints and Schema Types: Obey tone, length, tokenLengths, blacklist, keepLoanwords, and prefixes. " +
+                "blacklist: do not use those exact words or phrases (case-insensitive) as labels or as leftover English spelling in prose. " +
+                "Blacklist blocks the listed spelling, not the idea: if Action is blacklisted and the target language is Spanish, write acción — never leave the English word Action. " +
+                "keepLoanwords (list fields: genres, tags, features, categories): always use the exact keepLoanwords spelling for matching labels " +
+                "(e.g. Action stays Action; PvP stays PvP — never JcJ). " +
+                "keepLoanwords (description prose: short, synopsis, and other text fields): only keep the listed spelling when it reads naturally as an industry loanword or acronym in the target language " +
+                "(e.g. PvP, Roguelike, Indie). Do NOT force ordinary English nouns from keepLoanwords into translated sentences " +
+                "(e.g. if Action is kept for lists, Spanish prose must still say \"juego de acción…\", never \"juego de Action…\"). " +
+                "If the same term appears in both lists, blacklist wins. " +
                 "Respond with a JSON object that contains only the keys listed in jsonShape. " +
                 "Strings: short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, similarGames, notes, recommendedFor. " +
                 "ISO date string or empty: releaseDate. " +
@@ -1353,10 +1361,15 @@ namespace MetaDataIAPlugin
                     "Ensure the JSON output is valid: format multi-paragraph text fields using standard escaped newlines (\\n\\n). Never output invalid unescaped control characters. " +
                     "2. Editorial Scope and Game Focus: Focus exclusively on the current game. Never reference, compare to, or recommend other games, franchises, or unrelated studios inside text fields (short, synopsis, premise, gameplay, tone, setting, perspective, playModes, estimatedLength, notes, recommendedFor). " +
                     "\"short\" vs \"synopsis\": \"short\" is a concise editorial hook defining what the game is. \"synopsis\" expands on premise, setting, and narrative without literally duplicating \"short\". " +
-                    "3. Array and Placeholder Handling: similarGamesList: If requested, provide 3 to 6 comparable game titles as an array of strings (names only, no sentences). Do not mention them in the narrative text fields. " +
+                    "3. Terminology from settings: Obey blacklist and keepLoanwords. " +
+                    "Blacklist: never output those exact spellings; still describe the idea in natural target-language wording when needed. " +
+                    "keepLoanwords in features arrays: use the keep-list spelling (PvP not JcJ; Action not Acción when Action is kept). " +
+                    "keepLoanwords in narrative text (short, synopsis, etc.): keep only when the industry form is natural in that language (PvP, Roguelike, Indie). " +
+                    "Never write awkward mixed phrases like \"juego de Action\" — use \"juego de acción\" even if Action is on the keep-list for tags/features. " +
+                    "4. Array and Placeholder Handling: similarGamesList: If requested, provide 3 to 6 comparable game titles as an array of strings (names only, no sentences). Do not mention them in the narrative text fields. " +
                     "features: Populate as an array of short feature strings. NEVER create dynamic keys like \"feature_1\" or \"similar_game_1\". " +
                     "System Requirements: Do NOT return minimumSystemRequirements or recommendedSystemRequirements (handled externally by the plugin). " +
-                    "4. Length Mapping (tokenLengths): " +
+                    "5. Length Mapping (tokenLengths): " +
                     "short: Short = 1 sentence | Medium = 2-3 sentences | Long = 1 paragraph | Extra long = 2 paragraphs. " +
                     "synopsis: Short = 1 paragraph (4-6 sentences) | Medium = 2 paragraphs | Long = 3 paragraphs | Extra long = 4-5 paragraphs. Paragraphs must be substantial and separated by \\n\\n. " +
                     "other text fields: Short = 1 sentence | Medium = 1 paragraph (3-5 sentences) | Long = 2 paragraphs | Extra long = 3 paragraphs. " +
@@ -2998,6 +3011,7 @@ namespace MetaDataIAPlugin
 
             if (modelFields.Count == 0)
             {
+                FinishTermFieldLists(result, game);
                 return;
             }
 
@@ -3081,11 +3095,22 @@ namespace MetaDataIAPlugin
             }
 
             // Organize / DirectTerms / English FailedOrganizeTerms assign raw store+IGDB
-            // lists after Normalize, so blacklist must run again here.
+            // lists after Normalize, so blacklist and keep-list must run again here.
+            FinishTermFieldLists(result, game);
+        }
+
+        private void FinishTermFieldLists(AiMetadataResult result, Game game)
+        {
+            if (result == null || settings == null)
+            {
+                return;
+            }
+
             result.ApplyTermBlacklist(settings);
+            result.ApplyKeptLoanwords(settings);
 
             MetadataDebugLog.Write(
-                "term-final | " + (game.Name ?? string.Empty),
+                "term-final | " + (game == null ? string.Empty : game.Name ?? string.Empty),
                 "genres=[" + string.Join(", ", result.Genres ?? new List<string>()) + "]\n" +
                 "tags=[" + string.Join(", ", result.Tags ?? new List<string>()) + "]\n" +
                 "features=[" + string.Join(", ", result.Features ?? new List<string>()) + "]\n" +
