@@ -1,13 +1,13 @@
 # Changelog
 
-## 1.4.31 — unpublished
-- Library field rules: clearer title and shorter help for filling genres/tags/features when sources leave them empty (hint under the title).
-- Organize adapts genres/tags/features to natural store wording; compound subgenres may distill to the distinctive core (e.g. extraction shooter -> Extracción) when a full calque would sound forced.
-- Optional PCGamingWiki factual source (Steam AppID or exact title): genres, modes, perspective, companies and release date.
-- Organize asks the model not to glue two store genres with hyphen/slash (e.g. Acción-Aventura); split them into separate labels instead.
-- Translation retry after raw English leftovers restates distillation of compounds into natural target-language cores (keepLoanwords unchanged).
-- Genres-only / tags-only runs no longer copy the pre-organize genre pool into Features for the description template.
-- Year-anchored Multiplayer / Single Player / Campaign library titles can match the base release on Steam, Wikidata and IGDB; bare franchise stems without a year are not guessed.
+## 1.4.31 — 2026-09-30
+- Clearer Library help for filling empty genres, tags and features.
+- Genres, tags and features use more natural wording in your language instead of awkward word-for-word translations.
+- Compound genres can be shortened to the distinctive part when that reads better (for example extraction shooter → Extracción), without inventing extra labels.
+- Optional PCGamingWiki source: genres, play modes, camera perspective, companies and release date (by Steam AppID or exact title).
+- Two store genres joined with a hyphen or slash (like Acción-Aventura) are split into separate labels.
+- Setting only genres no longer copies those terms into Features by mistake.
+- Library titles such as “… (2011) - Multiplayer” (also Single Player / Campaign) can reuse genres from the main game when the year is in the name; titles without a year are not guessed from a vague franchise name.
 
 ## 1.4.30 — 2026-09-30
 - Descriptions now follow your Excluded terms and Kept terms settings.

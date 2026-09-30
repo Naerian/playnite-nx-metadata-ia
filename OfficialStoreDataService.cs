@@ -126,7 +126,13 @@ namespace MetaDataIAPlugin
             List<OfficialStoreMetadata> cached;
             if (OfficialStoreContextCache.TryGetOfficial(game, GetStoreLanguage(), out cached))
             {
-                return cached;
+                var playModeNeedsGenres = game != null &&
+                    TitleMatchingService.CanUsePlayModeBaseTitle(game.Name) &&
+                    (cached == null || !cached.Any(x => x != null && x.Genres != null && x.Genres.Count > 0));
+                if (!playModeNeedsGenres)
+                {
+                    return cached;
+                }
             }
 
             var result = new List<OfficialStoreMetadata>();
@@ -589,7 +595,14 @@ namespace MetaDataIAPlugin
             OfficialStoreMetadata cached;
             if (OfficialStoreContextCache.TryGetSteam(game, GetStoreLanguage(), out cached))
             {
-                return cached;
+                // Play-mode packages may have been cached with empty genres before
+                // parent/base-title fill existed; refresh those once.
+                if ((cached.Genres != null && cached.Genres.Count > 0) ||
+                    game == null ||
+                    !TitleMatchingService.CanUsePlayModeBaseTitle(game.Name))
+                {
+                    return cached;
+                }
             }
 
             var appId = await ResolveSteamAppIdAsync(game, cancelToken).ConfigureAwait(false);
@@ -636,9 +649,24 @@ namespace MetaDataIAPlugin
             {
             }
 
-            if (metadata.Genres.Count == 0)
+            if (metadata.Genres.Count == 0 &&
+                game != null &&
+                TitleMatchingService.CanUsePlayModeBaseTitle(game.Name))
             {
-                await TryFillSteamGenresFromRelatedAsync(metadata, data, game, appId, cancelToken).ConfigureAwait(false);
+                try
+                {
+                    await TryFillSteamGenresFromRelatedAsync(metadata, data, game, appId, cancelToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                }
+                catch
+                {
+                }
             }
 
             OfficialStoreContextCache.SetSteam(game, GetStoreLanguage(), metadata);
@@ -680,12 +708,17 @@ namespace MetaDataIAPlugin
 
             var baseTitle = TitleMatchingService.WithoutPlayModeSuffix(game.Name);
             string baseAppId = null;
-            foreach (var title in TitleMatchingService.BuildAliases(baseTitle))
+            foreach (var alias in TitleMatchingService.BuildAliases(baseTitle))
             {
-                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) +
+                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(alias) +
                           "&cc=" + Uri.EscapeDataString(GetCountryCode()) +
                           "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage());
                 var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
+                if (json == null)
+                {
+                    continue;
+                }
+
                 var items = json["items"] as JArray;
                 var matches = (items ?? new JArray())
                     .OfType<JObject>()
@@ -2072,6 +2105,19 @@ namespace MetaDataIAPlugin
 
         private async Task<string> ResolveSteamAppIdAsync(Game game, CancellationToken cancelToken)
         {
+            // Year-anchored Multiplayer / Single Player packages: prefer the base
+            // store app (has genres) over the mode-specific AppID when searchable.
+            if (game != null && TitleMatchingService.CanUsePlayModeBaseTitle(game.Name))
+            {
+                var baseId = await ResolveSteamAppIdByTitleSearchAsync(
+                    TitleMatchingService.WithoutPlayModeSuffix(game.Name),
+                    cancelToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(baseId))
+                {
+                    return baseId;
+                }
+            }
+
             if (game != null && IsSteamLibrarySource(game) &&
                 !string.IsNullOrWhiteSpace(game.GameId) &&
                 Regex.IsMatch(game.GameId.Trim(), @"^\d+$"))
@@ -2107,12 +2153,27 @@ namespace MetaDataIAPlugin
                 return null;
             }
 
-            foreach (var title in BuildTitleAliases(game.Name))
+            return await ResolveSteamAppIdByTitleSearchAsync(game.Name, cancelToken).ConfigureAwait(false);
+        }
+
+        private async Task<string> ResolveSteamAppIdByTitleSearchAsync(string title, CancellationToken cancelToken)
+        {
+            if (string.IsNullOrWhiteSpace(title))
             {
-                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(title) +
+                return null;
+            }
+
+            foreach (var alias in BuildTitleAliases(title))
+            {
+                var url = "https://store.steampowered.com/api/storesearch/?term=" + Uri.EscapeDataString(alias) +
                           "&cc=" + Uri.EscapeDataString(GetCountryCode()) +
                           "&l=" + Uri.EscapeDataString(GetSteamStoreLanguage());
                 var json = await GetJsonAsync(url, cancelToken).ConfigureAwait(false);
+                if (json == null)
+                {
+                    continue;
+                }
+
                 var items = json["items"] as JArray;
                 var matches = (items ?? new JArray())
                     .OfType<JObject>()
@@ -2120,13 +2181,15 @@ namespace MetaDataIAPlugin
                     .Where(x => x.Id != "0" && !IsNonGameSteamSearchTitle(x.Title))
                     .ToList();
                 var selected = PickBestMatch(title, matches);
-                if (selected != null)
+                if (selected == null)
                 {
-                    var data = await GetSteamAppDataAsync(selected.Id, cancelToken).ConfigureAwait(false);
-                    if (data != null && !IsNonGameSteamApp(data))
-                    {
-                        return selected.Id;
-                    }
+                    continue;
+                }
+
+                var data = await GetSteamAppDataAsync(selected.Id, cancelToken).ConfigureAwait(false);
+                if (data != null && !IsNonGameSteamApp(data))
+                {
+                    return selected.Id;
                 }
             }
 

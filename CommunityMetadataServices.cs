@@ -130,6 +130,14 @@ namespace MetaDataIAPlugin
             if (game == null || string.IsNullOrWhiteSpace(game.Name)) return null;
             var title = TitleMatchingService.SearchTitle(game.Name);
             var metadata = await FindVideoGameAsync(game, title, cancellationToken).ConfigureAwait(false);
+            if (metadata == null && TitleMatchingService.CanUsePlayModeBaseTitle(game.Name))
+            {
+                metadata = await FindVideoGameAsync(
+                    game,
+                    TitleMatchingService.WithoutPlayModeSuffix(game.Name),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
             if (metadata != null || title.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
             {
                 return metadata;
