@@ -18,6 +18,11 @@ namespace MetaDataIAPlugin
             public IList<ProviderProfile> Chain { get; set; }
             public int ChainIndex { get; set; }
             public ProviderProfile ActiveProfile { get; set; }
+            /// <summary>
+            /// Provider endpoints that already failed probe or hard StopBatch in this run.
+            /// Skipped on later failover so a hung/exhausted free tier is not probed again.
+            /// </summary>
+            public HashSet<string> FailedProviderKeys { get; set; }
         }
 
         private void GenerateAndApplyWithProviderFailover(List<Game> games, MetaDataIASettings activeSettings, bool silent = false)
@@ -51,7 +56,8 @@ namespace MetaDataIAPlugin
             {
                 TemplateSettings = template,
                 Chain = chain,
-                ChainIndex = FindStartingProviderIndex(chain, template)
+                ChainIndex = FindStartingProviderIndex(chain, template),
+                FailedProviderKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             };
             runtime.ActiveProfile = runtime.Chain[runtime.ChainIndex];
             runtime.ActiveSettings = BindSettingsToProfile(template, runtime.ActiveProfile);
@@ -72,9 +78,10 @@ namespace MetaDataIAPlugin
                 var progressResult = RunPluginProgress(PluginTitle, progress =>
                 {
                     progress.ProgressMaxValue = games.Count;
-                    const int maxParallel = 2;
+                    const int maxParallel = 1;
                     var pending = new Queue<Game>(games);
                     var inFlight = new List<Task<MetadataBatchItemResult>>();
+                    var batchSessionCache = new BatchTermSessionCache();
                     var actionLabel = DescribeMetadataProgressAction(runtime.ActiveSettings);
                     string focusGameName = null;
 
@@ -87,7 +94,17 @@ namespace MetaDataIAPlugin
 
                     Action refreshProgress = () =>
                     {
-                        progress.MainDispatcher.Invoke(new Action(() =>
+                        // BeginInvoke: never block the batch STA on the UI frame (sync Invoke
+                        // can deadlock when the last game finishes and Close() is pending).
+                        // Skip once every game is accounted for so a late paint cannot keep
+                        // the spinner looking alive after FinishOperation.
+                        var doneCount = processed + CountDistinctFailureGames(failureReasons, updatedGameIds);
+                        if (cancelled || batchStopped || doneCount >= games.Count)
+                        {
+                            return;
+                        }
+
+                        progress.MainDispatcher.BeginInvoke(new Action(() =>
                         {
                             progress.Text = BuildParallelBatchProgressText(
                                 actionLabel,
@@ -108,11 +125,12 @@ namespace MetaDataIAPlugin
                             var game = pending.Dequeue();
                             focusGameName = game.Name;
                             var settingsForTask = runtime.ActiveSettings;
+                            var sessionCache = batchSessionCache;
                             var task = Task.Run(() =>
                             {
                                 try
                                 {
-                                    var result = new MetadataGenerationService(settingsForTask, PlayniteApi)
+                                    var result = new MetadataGenerationService(settingsForTask, PlayniteApi, sessionCache)
                                         .GenerateAsync(game, progress.CancelToken)
                                         .GetAwaiter()
                                         .GetResult();
@@ -249,6 +267,8 @@ namespace MetaDataIAPlugin
                                 var providerException = ex as AiProviderException;
                                 if (providerException != null && providerException.StopBatch)
                                 {
+                                    MarkProviderFailed(runtime, item.UsedSettings);
+
                                     // A parallel call may still finish on the previous provider after
                                     // failover already moved the chain; requeue that game instead of
                                     // advancing again or stopping the batch.
@@ -276,15 +296,23 @@ namespace MetaDataIAPlugin
                         else
                         {
                             var applySettings = runtime.ActiveSettings;
-                            progress.MainDispatcher.Invoke(new Action(() =>
-                            {
-                                var resultToApply = PrepareResultForDirectBatchApply(item.Result, applySettings, games.Count > 1 || silent);
-                                var before = history.Capture(game, historyOperation, false);
-                                MetadataApplyService.Apply(PlayniteApi, game, resultToApply, applySettings);
-                                var after = history.Capture(game, historyOperation, false);
-                                history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
-                                LearnVocabulary(applySettings, resultToApply);
-                            }));
+                            MetadataDebugLog.Write(
+                                "batch-apply | " + (game == null ? string.Empty : game.Name ?? string.Empty),
+                                "start");
+                            RunOnProgressDispatcher(
+                                progress,
+                                () =>
+                                {
+                                    var resultToApply = PrepareResultForDirectBatchApply(item.Result, applySettings, games.Count > 1 || silent);
+                                    var before = history.Capture(game, historyOperation, false);
+                                    MetadataApplyService.Apply(PlayniteApi, game, resultToApply, applySettings);
+                                    var after = history.Capture(game, historyOperation, false);
+                                    history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
+                                    LearnVocabulary(applySettings, resultToApply);
+                                });
+                            MetadataDebugLog.Write(
+                                "batch-apply | " + (game == null ? string.Empty : game.Name ?? string.Empty),
+                                "done");
                             processed++;
                             updatedGameIds.Add(game.Id);
                             failureReasons.Remove(game.Id);
@@ -306,6 +334,13 @@ namespace MetaDataIAPlugin
                         startNext();
                         refreshProgress();
                     }
+
+                    MetadataDebugLog.Write(
+                        "batch-complete",
+                        "processed=" + processed +
+                        " failed=" + CountDistinctFailureGames(failureReasons, updatedGameIds) +
+                        " cancelled=" + cancelled +
+                        " stopped=" + batchStopped);
                 }, null, runtime.ActiveSettings);
 
                 if (progressResult != null && progressResult.Error != null)
@@ -466,12 +501,28 @@ namespace MetaDataIAPlugin
                     return false;
                 }
 
+                if (IsProviderMarkedFailed(runtime, runtime.ActiveSettings))
+                {
+                    var skippedName = runtime.ActiveProfile == null
+                        ? (runtime.ActiveSettings.ProviderPreset ?? string.Empty)
+                        : runtime.ActiveProfile.ListLabel;
+                    MetadataDebugLog.Write(
+                        "provider-skip-failed",
+                        "profile=" + skippedName + " reason=already-failed-this-batch");
+                    if (!TryMoveToNextProvider(runtime, refreshFooter))
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
                 try
                 {
-                    progress.MainDispatcher.Invoke(new Action(() =>
+                    RunOnProgressDispatcher(progress, () =>
                     {
                         progress.Text = Loc("MTDA_ProgressProbingProvider", "Checking AI provider…");
-                    }));
+                    });
                     refreshFooter();
                     new MetadataGenerationService(runtime.ActiveSettings, PlayniteApi)
                         .ProbeProviderAsync(progress.CancelToken)
@@ -486,6 +537,7 @@ namespace MetaDataIAPlugin
                 catch (Exception ex)
                 {
                     lastError = ex;
+                    MarkProviderFailed(runtime, runtime.ActiveSettings);
                     logger.Error(ex, "AI provider probe failed for " + (runtime.ActiveSettings.ProviderPreset ?? string.Empty));
                     var failedName = runtime.ActiveProfile == null
                         ? (runtime.ActiveSettings.ProviderPreset ?? string.Empty)
@@ -502,10 +554,10 @@ namespace MetaDataIAPlugin
             if (lastError != null && !silent)
             {
                 var message = UserError(lastError);
-                progress.MainDispatcher.Invoke(new Action(() =>
+                RunOnProgressDispatcher(progress, () =>
                 {
                     PlayniteApi.Dialogs.ShowErrorMessage(message, PluginTitle);
-                }));
+                });
             }
 
             return false;
@@ -543,10 +595,10 @@ namespace MetaDataIAPlugin
 
                 try
                 {
-                    progress.MainDispatcher.Invoke(new Action(() =>
+                    RunOnProgressDispatcher(progress, () =>
                     {
                         progress.Text = Loc("MTDA_ProgressProbingProvider", "Checking AI provider…");
-                    }));
+                    });
                     new MetadataGenerationService(runtime.ActiveSettings, PlayniteApi)
                         .ProbeProviderAsync(progress.CancelToken)
                         .GetAwaiter()
@@ -559,6 +611,7 @@ namespace MetaDataIAPlugin
                 }
                 catch (Exception probeEx)
                 {
+                    MarkProviderFailed(runtime, runtime.ActiveSettings);
                     logger.Error(probeEx, "Failover probe failed for " + toLabel);
                     reason = UserError(probeEx);
                     fromLabel = toLabel;
@@ -566,6 +619,105 @@ namespace MetaDataIAPlugin
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Runs work on the progress UI dispatcher without a synchronous Invoke.
+        /// Sync Invoke from the batch STA can deadlock with the progress PushFrame
+        /// when the batch is finishing and Close() is about to run.
+        /// </summary>
+        private static void RunOnProgressDispatcher(PluginProgressHandle progress, Action action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            if (progress == null || progress.MainDispatcher == null)
+            {
+                action();
+                return;
+            }
+
+            if (progress.MainDispatcher.CheckAccess())
+            {
+                action();
+                return;
+            }
+
+            var done = new ManualResetEventSlim(false);
+            Exception error = null;
+            progress.MainDispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                finally
+                {
+                    done.Set();
+                }
+            }));
+
+            while (!done.Wait(200))
+            {
+                if (progress.CancelToken.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException(progress.CancelToken);
+                }
+            }
+
+            if (error != null)
+            {
+                throw new AggregateException(error);
+            }
+        }
+
+        private static void MarkProviderFailed(BatchProviderRuntime runtime, MetaDataIASettings providerSettings)
+        {
+            if (runtime == null || runtime.FailedProviderKeys == null || providerSettings == null)
+            {
+                return;
+            }
+
+            var key = ProviderEndpointKey(providerSettings);
+            if (string.IsNullOrEmpty(key))
+            {
+                return;
+            }
+
+            if (runtime.FailedProviderKeys.Add(key))
+            {
+                MetadataDebugLog.Write(
+                    "provider-mark-failed",
+                    "key=" + key);
+            }
+        }
+
+        private static bool IsProviderMarkedFailed(BatchProviderRuntime runtime, MetaDataIASettings providerSettings)
+        {
+            if (runtime == null || runtime.FailedProviderKeys == null || providerSettings == null)
+            {
+                return false;
+            }
+
+            return runtime.FailedProviderKeys.Contains(ProviderEndpointKey(providerSettings));
+        }
+
+        private static string ProviderEndpointKey(MetaDataIASettings providerSettings)
+        {
+            if (providerSettings == null)
+            {
+                return string.Empty;
+            }
+
+            return (providerSettings.ProviderPreset ?? string.Empty).Trim() + "|" +
+                   (providerSettings.Model ?? string.Empty).Trim() + "|" +
+                   (providerSettings.Endpoint ?? string.Empty).Trim();
         }
 
         private static int CountDistinctFailureGames(
@@ -588,9 +740,19 @@ namespace MetaDataIAPlugin
                 var profile = runtime.Chain[next];
                 if (profile != null && profile.Enabled && !string.IsNullOrWhiteSpace(profile.ProviderPreset))
                 {
+                    var candidateSettings = BindSettingsToProfile(runtime.TemplateSettings, profile);
+                    if (IsProviderMarkedFailed(runtime, candidateSettings))
+                    {
+                        MetadataDebugLog.Write(
+                            "provider-skip-failed",
+                            "profile=" + (profile.ListLabel ?? profile.ProviderPreset) + " reason=already-failed-this-batch");
+                        next++;
+                        continue;
+                    }
+
                     runtime.ChainIndex = next;
                     runtime.ActiveProfile = profile;
-                    runtime.ActiveSettings = BindSettingsToProfile(runtime.TemplateSettings, profile);
+                    runtime.ActiveSettings = candidateSettings;
                     if (refreshFooter != null)
                     {
                         refreshFooter();
@@ -612,9 +774,7 @@ namespace MetaDataIAPlugin
                 return ReferenceEquals(left, right);
             }
 
-            return string.Equals(left.ProviderPreset, right.ProviderPreset, StringComparison.OrdinalIgnoreCase) &&
-                   string.Equals((left.Model ?? string.Empty).Trim(), (right.Model ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase) &&
-                   string.Equals((left.Endpoint ?? string.Empty).Trim(), (right.Endpoint ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
+            return string.Equals(ProviderEndpointKey(left), ProviderEndpointKey(right), StringComparison.OrdinalIgnoreCase);
         }
 
         private static void RequeueGameFront(Queue<Game> pending, Game game)

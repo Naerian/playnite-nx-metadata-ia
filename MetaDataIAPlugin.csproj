@@ -72,7 +72,11 @@
     <Compile Include="IgnDataService.cs" />
     <Compile Include="LibraryNameMatching.cs" />
     <Compile Include="VocabularyTermNormalizer.cs" />
+    <Compile Include="StoreTermSanitizer.cs" />
+    <Compile Include="BatchTermSessionCache.cs" />
+    <Compile Include="ScopedTermVocabulary.cs" />
     <Compile Include="TermFieldResolver.cs" />
+    <Compile Include="TermFieldPrompts.cs" />
     <Compile Include="GamingLoanwordVocabulary.cs" />
     <Compile Include="TextCapitalization.cs" />
     <Compile Include="CommunityMetadataServices.cs" />

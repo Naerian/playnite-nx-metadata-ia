@@ -3611,6 +3611,7 @@ namespace MetaDataIAPlugin
         private TextBlock modelText;
         private bool completed;
         private bool ownerHitTestVisible;
+        private DispatcherFrame activeFrame;
 
         public Exception Error { get; private set; }
         public bool Cancelled { get; private set; }
@@ -3705,17 +3706,7 @@ namespace MetaDataIAPlugin
             cancelButton.MinWidth = 110;
             cancelButton.HorizontalAlignment = HorizontalAlignment.Right;
             MetadataTrustUi.StyleSecondaryButton(cancelButton);
-            cancelButton.Click += (s, e) =>
-            {
-                Cancelled = true;
-                cancelButton.IsEnabled = false;
-                if (messageText != null)
-                {
-                    messageText.Text = plugin.Loc("MTDA_Cancelling", "Cancelling…");
-                }
-
-                cancellation.Cancel();
-            };
+            cancelButton.Click += (s, e) => RequestCancelClose();
             Grid.SetRow(cancelButton, 4);
             root.Children.Add(cancelButton);
             shell.Child = root;
@@ -3736,24 +3727,34 @@ namespace MetaDataIAPlugin
                 if (e.Key == Key.Escape)
                 {
                     e.Handled = true;
-                    Cancelled = true;
-                    cancelButton.IsEnabled = false;
-                    if (messageText != null)
-                    {
-                        messageText.Text = plugin.Loc("MTDA_Cancelling", "Cancelling…");
-                    }
-
-                    cancellation.Cancel();
+                    RequestCancelClose();
                 }
             };
             Loaded += RunOperation;
             Closing += (s, e) =>
             {
-                if (completed) return;
-                e.Cancel = true;
+                if (completed)
+                {
+                    return;
+                }
+
+                // Do not block the close on hung HTTP probes: cancel and let the
+                // background STA worker wind down after the dialog is gone.
                 Cancelled = true;
-                cancelButton.IsEnabled = false;
-                cancellation.Cancel();
+                if (cancelButton != null)
+                {
+                    cancelButton.IsEnabled = false;
+                }
+
+                try
+                {
+                    cancellation.Cancel();
+                }
+                catch
+                {
+                }
+
+                completed = true;
             };
             Closed += (s, e) =>
             {
@@ -3765,6 +3766,50 @@ namespace MetaDataIAPlugin
                 if (operationOwner != null && operationOwner.IsVisible) operationOwner.IsHitTestVisible = ownerHitTestVisible;
                 ReleaseModalOwners(owner);
             };
+        }
+
+        private void RequestCancelClose()
+        {
+            Cancelled = true;
+            if (cancelButton != null)
+            {
+                cancelButton.IsEnabled = false;
+            }
+
+            if (messageText != null)
+            {
+                messageText.Text = plugin.Loc("MTDA_Cancelling", "Cancelling…");
+            }
+
+            try
+            {
+                cancellation.Cancel();
+            }
+            catch
+            {
+            }
+
+            if (completed)
+            {
+                return;
+            }
+
+            completed = true;
+            if (activeFrame != null)
+            {
+                activeFrame.Continue = false;
+            }
+
+            if (IsVisible)
+            {
+                try
+                {
+                    Close();
+                }
+                catch
+                {
+                }
+            }
         }
 
         public void UpdateProviderFooter(string providerName, string modelName)
@@ -3825,12 +3870,15 @@ namespace MetaDataIAPlugin
         // block only hit testing on its owner while a nested dispatcher frame waits.
         public void ShowUntilCompleted()
         {
-            var frame = new DispatcherFrame();
+            activeFrame = new DispatcherFrame();
             EventHandler closed = null;
             closed = (s, e) =>
             {
                 Closed -= closed;
-                frame.Continue = false;
+                if (activeFrame != null)
+                {
+                    activeFrame.Continue = false;
+                }
             };
             Closed += closed;
             try
@@ -3841,59 +3889,105 @@ namespace MetaDataIAPlugin
                     operationOwner.IsHitTestVisible = false;
                 }
                 Show();
-                Dispatcher.PushFrame(frame);
+                Dispatcher.PushFrame(activeFrame);
             }
             finally
             {
+                activeFrame = null;
                 if (operationOwner != null && operationOwner.IsVisible) operationOwner.IsHitTestVisible = ownerHitTestVisible;
             }
         }
 
-        private async void RunOperation(object sender, RoutedEventArgs e)
+        private void RunOperation(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Playnite's own global progress invokes extension work from an
-                // STA worker. Keep the same requirement for this custom progress:
-                // metadata integrations and database-backed models can otherwise
-                // throw when accessed from a thread-pool MTA worker.
-                await RunStaOperation(() => operation(cancellation.Token, UpdateMessage));
-            }
-            catch (OperationCanceledException)
-            {
-                Cancelled = true;
-            }
-            catch (Exception ex)
-            {
-                Error = ex;
-            }
-
-            completed = true;
-            if (IsVisible)
-            {
-                Close();
-            }
-        }
-
-        private static Task RunStaOperation(Action action)
-        {
-            var completion = new TaskCompletionSource<bool>();
+            // Do not async/await the STA worker: after the batch finishes, the UI
+            // continuation can fail to resume and leave this spinner stuck at N/N.
+            // Always bounce completion back through BeginInvoke and force the frame down.
+            var ui = Dispatcher;
             var worker = new Thread(() =>
             {
+                Exception error = null;
+                var cancelled = false;
                 try
                 {
-                    action();
-                    completion.SetResult(true);
+                    // Playnite's own global progress invokes extension work from an
+                    // STA worker. Keep the same requirement for this custom progress:
+                    // metadata integrations and database-backed models can otherwise
+                    // throw when accessed from a thread-pool MTA worker.
+                    operation(cancellation.Token, UpdateMessage);
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelled = true;
                 }
                 catch (Exception ex)
                 {
-                    completion.SetException(ex);
+                    error = ex;
+                }
+
+                try
+                {
+                    ui.BeginInvoke(DispatcherPriority.Send, new Action(() => FinishOperation(cancelled, error)));
+                }
+                catch
+                {
+                    try
+                    {
+                        ui.BeginInvoke(new Action(() => FinishOperation(cancelled, error)));
+                    }
+                    catch
+                    {
+                        // Dispatcher may already be shutting down; nothing else we can do.
+                    }
                 }
             });
             worker.IsBackground = true;
             worker.SetApartmentState(ApartmentState.STA);
             worker.Start();
-            return completion.Task;
+        }
+
+        private void FinishOperation(bool cancelled, Exception error)
+        {
+            if (cancelled)
+            {
+                Cancelled = true;
+            }
+
+            if (error != null)
+            {
+                Error = error;
+            }
+
+            completed = true;
+            if (elapsedTimer != null)
+            {
+                elapsedTimer.Stop();
+            }
+
+            if (activeFrame != null)
+            {
+                activeFrame.Continue = false;
+                activeFrame = null;
+            }
+
+            try
+            {
+                if (IsVisible || IsLoaded)
+                {
+                    Close();
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                Hide();
+            }
+            catch
+            {
+            }
         }
 
         private void UpdateMessage(string value)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.32 — 2026-10-01
+- Genres, tags and features stay more consistent across a full library fill: store brand noise is stripped, and each game can reuse spellings already in Playnite.
+- Batches run one game at a time and switch AI providers faster when a free tier hits limits.
+- The progress window closes reliably when a batch finishes or you cancel.
+
 ## 1.4.31 — 2026-09-30
 - Clearer Library help for filling empty genres, tags and features.
 - Genres, tags and features use more natural wording in your language instead of awkward word-for-word translations.

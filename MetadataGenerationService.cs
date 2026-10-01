@@ -19,6 +19,8 @@ namespace MetaDataIAPlugin
         private const int ProviderRateLimitRetries = 3;
         private const int OrganizeProviderRetries = 1;
         private const int OrganizeProviderRetryDelaySeconds = 8;
+        // Failover probes must not sit on a hung free-tier endpoint for the full SharedHttpClient timeout.
+        private const int ProviderProbeTimeoutSeconds = 20;
         private static readonly HttpClient SharedHttpClient = CreateSharedHttpClient();
 
         private readonly MetaDataIASettings settings;
@@ -26,10 +28,20 @@ namespace MetaDataIAPlugin
         private List<OfficialStoreMetadata> officialContextForCurrentRequest = new List<OfficialStoreMetadata>();
         private bool termsOrganizedByMainCall;
 
-        public MetadataGenerationService(MetaDataIASettings settings, IPlayniteAPI playniteApi = null)
+        /// <summary>
+        /// Optional intra-batch cache of localized official-store spellings. Set by the
+        /// batch runner; null for single-game / probe / simulation calls.
+        /// </summary>
+        public BatchTermSessionCache SessionCache { get; set; }
+
+        public MetadataGenerationService(
+            MetaDataIASettings settings,
+            IPlayniteAPI playniteApi = null,
+            BatchTermSessionCache sessionCache = null)
         {
             this.settings = settings;
             this.playniteApi = playniteApi;
+            SessionCache = sessionCache;
         }
 
         private static HttpClient CreateSharedHttpClient()
@@ -45,33 +57,56 @@ namespace MetaDataIAPlugin
                 "provider-probe | " + (settings.ProviderPreset ?? string.Empty),
                 "model=" + (settings.Model ?? string.Empty));
 
-            string content;
-            if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
+            using (var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                content = await SendAnthropicTextAsync(
-                    "Reply with the single word OK.",
-                    "ping",
-                    8,
-                    cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                content = await SendOpenAICompatibleTextAsync(
-                    "Reply with the single word OK.",
-                    "ping",
-                    8,
-                    false,
-                    false,
-                    cancellationToken).ConfigureAwait(false);
-            }
+                timeoutCts.CancelAfter(TimeSpan.FromSeconds(ProviderProbeTimeoutSeconds));
+                var probeToken = timeoutCts.Token;
 
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                throw new InvalidOperationException(
-                    Loc("MTDA_ErrorAiNoUsefulText", "The AI provider did not return useful text."));
-            }
+                try
+                {
+                    string content;
+                    if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
+                    {
+                        content = await SendAnthropicTextAsync(
+                            "Reply with the single word OK.",
+                            "ping",
+                            8,
+                            probeToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        content = await SendOpenAICompatibleTextAsync(
+                            "Reply with the single word OK.",
+                            "ping",
+                            8,
+                            false,
+                            false,
+                            probeToken).ConfigureAwait(false);
+                    }
 
-            MetadataDebugLog.Write("provider-probe-ok", (content ?? string.Empty).Trim());
+                    if (string.IsNullOrWhiteSpace(content))
+                    {
+                        throw new InvalidOperationException(
+                            Loc("MTDA_ErrorAiNoUsefulText", "The AI provider did not return useful text."));
+                    }
+
+                    MetadataDebugLog.Write("provider-probe-ok", (content ?? string.Empty).Trim());
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+
+                    MetadataDebugLog.Write(
+                        "provider-probe-timeout | " + (settings.ProviderPreset ?? string.Empty),
+                        "model=" + (settings.Model ?? string.Empty) +
+                        " timeoutSeconds=" + ProviderProbeTimeoutSeconds);
+                    throw CreateConnectionException(new TimeoutException(
+                        "The AI provider probe timed out after " + ProviderProbeTimeoutSeconds + " seconds."));
+                }
+            }
         }
 
         public async Task<AiMetadataResult> GenerateAsync(Game game, CancellationToken cancellationToken = default(CancellationToken))
@@ -355,34 +390,65 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            var genresLibrary = playniteApi != null && playniteApi.Database != null
-                ? playniteApi.Database.Genres.Select(x => x.Name)
-                : Enumerable.Empty<string>();
-            var tagsLibrary = playniteApi != null && playniteApi.Database != null
-                ? playniteApi.Database.Tags.Select(x => x.Name)
-                : Enumerable.Empty<string>();
-            var featuresLibrary = playniteApi != null && playniteApi.Database != null
-                ? playniteApi.Database.Features.Select(x => x.Name)
-                : Enumerable.Empty<string>();
-            var categoriesLibrary = playniteApi != null && playniteApi.Database != null
-                ? playniteApi.Database.Categories.Select(x => x.Name)
-                : Enumerable.Empty<string>();
+            var genresLibrary = MergePreferredNames(
+                playniteApi != null && playniteApi.Database != null
+                    ? playniteApi.Database.Genres.Select(x => x.Name)
+                    : Enumerable.Empty<string>(),
+                SessionCache == null ? null : SessionCache.GetPreferred("genres"));
+            var tagsLibrary = MergePreferredNames(
+                playniteApi != null && playniteApi.Database != null
+                    ? playniteApi.Database.Tags.Select(x => x.Name)
+                    : Enumerable.Empty<string>(),
+                SessionCache == null ? null : SessionCache.GetPreferred("tags"));
+            var featuresLibrary = MergePreferredNames(
+                playniteApi != null && playniteApi.Database != null
+                    ? playniteApi.Database.Features.Select(x => x.Name)
+                    : Enumerable.Empty<string>(),
+                SessionCache == null ? null : SessionCache.GetPreferred("features"));
+            var categoriesLibrary = MergePreferredNames(
+                playniteApi != null && playniteApi.Database != null
+                    ? playniteApi.Database.Categories.Select(x => x.Name)
+                    : Enumerable.Empty<string>(),
+                SessionCache == null ? null : SessionCache.GetPreferred("categories"));
 
             result.Genres = VocabularyTermNormalizer.NormalizeField(
-                result.Genres, "genres", settings.Language, genresLibrary, null,
+                StoreTermSanitizer.Sanitize(result.Genres), "genres", settings.Language, genresLibrary, null,
                 settings.MaxGenres, false);
 
             result.Tags = VocabularyTermNormalizer.NormalizeField(
-                result.Tags, "tags", settings.Language, tagsLibrary, null,
+                StoreTermSanitizer.Sanitize(result.Tags), "tags", settings.Language, tagsLibrary, null,
                 settings.MaxTags, false);
 
             result.Features = VocabularyTermNormalizer.NormalizeField(
-                result.Features, "features", settings.Language, featuresLibrary, null,
+                StoreTermSanitizer.Sanitize(result.Features), "features", settings.Language, featuresLibrary, null,
                 settings.MaxFeatures, false);
 
             result.Categories = VocabularyTermNormalizer.NormalizeField(
-                result.Categories, "categories", settings.Language, categoriesLibrary, null,
+                StoreTermSanitizer.Sanitize(result.Categories), "categories", settings.Language, categoriesLibrary, null,
                 settings.MaxCategories, settings.PreferExistingCategories);
+        }
+
+        private static IEnumerable<string> MergePreferredNames(
+            IEnumerable<string> libraryNames,
+            IEnumerable<string> sessionNames)
+        {
+            // Library first so FindExisting prefers Playnite spellings over session.
+            var byKey = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var name in (libraryNames ?? Enumerable.Empty<string>())
+                .Concat(sessionNames ?? Enumerable.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim()))
+            {
+                var key = LibraryNameMatching.NormalizeKey(name);
+                if (key.Length == 0 || byKey.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                byKey[key] = name;
+            }
+
+            return byKey.Values;
         }
 
         private void ApplyTrustedFactualFields(AiMetadataResult result, Game game)
@@ -1332,6 +1398,8 @@ namespace MetaDataIAPlugin
                 "If playniteLibraryVocabulary is provided for a field: choose values ONLY from that exact list. " +
                 "If both a translated term and an English term exist in that list for the same concept (e.g., \"Aventura\" vs \"Adventure\"), ALWAYS pick the one matching targetLanguage. " +
                 "If no value in playniteLibraryVocabulary fits the concept, omit the item. " +
+                "If preferredSpellings lists a spelling for a concept already grounded in officialStoreContext or termCandidates, reuse that exact spelling. " +
+                "Never invent labels from preferredSpellings alone. " +
                 "2. Factual Grounding (No Hallucinations): Normalize, translate, and structure only facts present in officialStoreContext, existing metadata, game source, platforms, termCandidates, or game identity. " +
                 "Do NOT invent companies, dates, or tags. If uncertain, leave the field empty. " +
                 "Exception: similarGamesList may suggest well-known titles if requested. " +
@@ -1378,42 +1446,8 @@ namespace MetaDataIAPlugin
 
             if (NeedsTermOrganizeInMainCall())
             {
-                // Keep in sync with TermFieldResolver.SystemPrompt (same organize policy; different JSON shape).
                 // keepLoanwords is supplied in the request JSON from GamingLoanwordVocabulary / settings.
-                parts.Add(
-                    "Field Categorization Rules (genres, tags, features): " +
-                    "1. Source and Grounding: When termCandidates is present, organize genres, tags, and features strictly from each field's existing and incoming lists. " +
-                    "Never invent concepts absent from those lists. If an incoming list is empty, return an empty array for that field. " +
-                    "2. Language and Terminology: Read target language from targetLanguage / targetLanguageName. " +
-                    "If target language is NOT English: translate all common descriptive nouns and generic store terms completely into the target language " +
-                    "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or equivalent). " +
-                    "Keeplist: keep any incoming label that appears in keepLoanwords exactly as written (prefer keepLoanwords spelling). " +
-                    "Do not translate, synonymize, or replace those labels (e.g. Action never becomes Acción). Uppercase acronyms in keepLoanwords stay UPPERCASE. " +
-                    "For other industry labels not in keepLoanwords: translate into the target language like ordinary store terms. " +
-                    "Gaming-domain sense: translate within the video game context. Never replace an industry genre or tag with a literal, non-gaming everyday definition " +
-                    "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
-                    "Consistency: never output synonyms, mixed languages, or both localized and raw English variants for the same concept. " +
-                    "If target language IS English: keep standard canonical English labels. " +
-                    "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
-                    "(except keepLoanwords entries, which win over everyday translations). " +
-                    "Exactly one label per concept. Never mix synonyms or languages for the same concept. " +
-                    "Labels should sound like store/library metadata (concise, no final punctuation). " +
-                    "Distill compounds for naturalness: If an incoming compound genre (e.g., 'extraction shooter', 'looter shooter', 'survival horror') becomes unnaturally long, clunky, or sounds like a forced calque in the target language, distill it down to its core distinctive mechanic or theme (e.g., 'extraction shooter' becomes just 'Extracción'; 'looter shooter' becomes 'Botín' or 'Loot'). " +
-                    "Drop the generic umbrella term (like 'shooter' or 'game') if the native community identifies the subgenre by its core word alone. Extreme brevity and natural gamer phrasing always win over strict word-by-word structural parity. " +
-                    "Subsume generic terms: If you distill a compound by dropping the generic part, rely on other incoming labels (like 'Shooter' or 'Acción') to cover that base, or assume it is implied. Do not generate a 4-word label just to preserve both concepts. " +
-                    "Never join two independent store genres with a hyphen, slash or similar (never Acción-Aventura / Action-Adventure / Action/Adventure). " +
-                    "If incoming already joins them that way, split into separate labels (Acción and Aventura). " +
-                    "When tags are also requested, prefer putting bare camera perspective there if it arrived as a separate idea; when the compound is already in genres incoming, adapt it naturally in genres (or keepLoanwords spelling such as TPS when listed). " +
-                    "Never invent a sibling perspective. " +
-                    "3. Field Sorting Logic: features: Player count, input devices, co-op modes, achievements, and controller support. " +
-                    "Populate between 3 and " + settings.MaxFeatures + " items if evidence exists; if evidence is weaker, return only verified items. " +
-                    "genres: Core video game store genres only. " +
-                    "tags: Setting, theme, artistic style, perspective, and gameplay mechanics. " +
-                    "Do not duplicate the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
-                    "4. Handling mode: overwrite: Output only normalized concepts derived from incoming. " +
-                    "append: Keep existing labels and append unique concepts from incoming; if a concept already exists in existing, do not add a translated/synonym duplicate from incoming. " +
-                    "empty: If existing already has items, return existing unchanged; if existing is empty, populate from incoming. " +
-                    "Item caps (MaxGenres / MaxTags / MaxFeatures) are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.");
+                parts.Add(TermFieldPrompts.MainCallFieldCategorizationRules(settings.MaxFeatures));
             }
             else if (settings.GenerateFeatures && settings.GenerateDescription)
             {
@@ -1513,6 +1547,8 @@ namespace MetaDataIAPlugin
             context["maxPublishers"] = settings.MaxPublishers;
             context["knownSeriesCandidates"] = BuildKnownSeriesCandidates(game);
             context["playniteLibraryVocabulary"] = BuildPlayniteLibraryVocabulary();
+            // Soft scoped preferredSpellings only — do not dump the full sessionVocabulary
+            // into the model (snowball / conformity trap). Session still feeds preferredSpellings.
             context["blacklist"] = settings.GetBlacklistTerms();
             context["keepLoanwords"] = settings.GetKeptLoanwordTerms();
             context["tagPrefix"] = settings.TagPrefix;
@@ -1521,6 +1557,7 @@ namespace MetaDataIAPlugin
             context["requestedDescriptionTokens"] = requestedTokens;
             context["officialStoreContextEnabled"] = true;
             await LoadOfficialContextAsync(game, cancellationToken).ConfigureAwait(false);
+            context["preferredSpellings"] = BuildPreferredSpellingsForMainCall(game);
 
             if (!MetaDataIASettings.IsExistingMetadataIgnored(settings.ExistingMetadataMode))
             {
@@ -2212,6 +2249,58 @@ namespace MetaDataIAPlugin
             }
 
             return vocabulary.Count == 0 ? null : vocabulary;
+        }
+
+        private Dictionary<string, List<string>> BuildPreferredSpellingsForFields(IList<TermFieldRequest> fields)
+        {
+            var built = ScopedTermVocabulary.BuildForFields(fields, GetPlayniteNamesForField, SessionCache);
+            return built == null || built.Count == 0 ? null : built;
+        }
+
+        private Dictionary<string, List<string>> BuildPreferredSpellingsForMainCall(Game game)
+        {
+            if (!NeedsTermOrganizeInMainCall())
+            {
+                return null;
+            }
+
+            var fields = new List<TermFieldRequest>
+            {
+                BuildTermRequest(game, "genres", settings.GenerateGenres, settings.GenresApplyMode, Names(game.Genres), null, settings.MaxGenres, x => x.Genres),
+                BuildTermRequest(game, "features", settings.GenerateFeatures, settings.FeaturesApplyMode, Names(game.Features), null, settings.MaxFeatures, x => x.Features),
+                BuildTermRequest(game, "tags", settings.GenerateTags, settings.TagsApplyMode, Names(game.Tags), null, settings.MaxTags, x => x.Tags)
+            };
+            return BuildPreferredSpellingsForFields(fields.Where(x => !string.Equals(x.Mode, "skip", StringComparison.OrdinalIgnoreCase)).ToList());
+        }
+
+        private IEnumerable<string> GetPlayniteNamesForField(string field)
+        {
+            if (playniteApi == null || playniteApi.Database == null || string.IsNullOrWhiteSpace(field))
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase))
+            {
+                return Names(playniteApi.Database.Genres);
+            }
+
+            if (string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase))
+            {
+                return Names(playniteApi.Database.Tags);
+            }
+
+            if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
+            {
+                return Names(playniteApi.Database.Features);
+            }
+
+            if (string.Equals(field, "categories", StringComparison.OrdinalIgnoreCase))
+            {
+                return Names(playniteApi.Database.Categories);
+            }
+
+            return Enumerable.Empty<string>();
         }
 
         private Dictionary<string, List<string>> BuildCanonicalTerms()
@@ -3054,7 +3143,9 @@ namespace MetaDataIAPlugin
                     settings.Language,
                     PlatformLabels(game),
                     organizeFields,
-                    settings.GetKeptLoanwordTerms());
+                    settings.GetKeptLoanwordTerms(),
+                    null,
+                    BuildPreferredSpellingsForFields(organizeFields));
                 foreach (var pair in await AskTermModelAsync(
                     TermFieldResolver.SystemPrompt,
                     userJson,
@@ -3144,6 +3235,16 @@ namespace MetaDataIAPlugin
             result.ApplyTermBlacklist(settings);
             result.ApplyKeptLoanwords(settings);
 
+            // Harvest only final labels for this game (not raw Steam dumps) so the
+            // next sequential game can prefer spellings already chosen/applied.
+            if (SessionCache != null)
+            {
+                SessionCache.RememberLocalizedStoreTerms("genres", result.Genres);
+                SessionCache.RememberLocalizedStoreTerms("tags", result.Tags);
+                SessionCache.RememberLocalizedStoreTerms("features", result.Features);
+                SessionCache.RememberLocalizedStoreTerms("categories", result.Categories);
+            }
+
             MetadataDebugLog.Write(
                 "term-final | " + (game == null ? string.Empty : game.Name ?? string.Empty),
                 "genres=[" + string.Join(", ", result.Genres ?? new List<string>()) + "]\n" +
@@ -3213,6 +3314,7 @@ namespace MetaDataIAPlugin
             var nonLocalizedIncoming = storeSelector == null
                 ? new List<string>()
                 : CollectNonLocalizedStoreTerms(storeSelector, target, filterFeatures, game);
+
             var fromStore = incoming.Count > 0;
             var isTermListField = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
@@ -3373,19 +3475,7 @@ namespace MetaDataIAPlugin
                         var knowledgeHint = fields.Any(f => f != null && f.FromKnowledge)
                             ? "This was a knowledge guess with no store list: every common noun MUST be in the target language. "
                             : string.Empty;
-                        var retryJson = userJson +
-                            "\n\nRETRY: Your previous answer still copied raw store/IGDB labels that are not in the target language. " +
-                            knowledgeHint +
-                            "Rewrite EVERY ordinary store label into natural target-language wording players and stores actually use " +
-                            "(e.g. Shooter -> Disparos in Spanish, Adventure -> Aventura). " +
-                            "Do not mix languages in the same terms array. " +
-                            "Distill compounds for naturalness: if a compound is clunky or a forced calque, keep the distinctive core in the target language " +
-                            "(e.g. extraction shooter -> Extracción; looter shooter -> Botín or Loot) and let other incoming labels cover the generic base (Shooter/Disparos). " +
-                            "Prefer keepLoanwords spelling when listed (e.g. TPS for third-person shooter). " +
-                            "Never invent a sibling perspective. " +
-                            "Never join two independent store genres with hyphen/slash; split them if incoming did. " +
-                            "Keep labels listed in keepLoanwords unchanged (and acronyms UPPERCASE). " +
-                            "Return the full JSON object again.";
+                        var retryJson = userJson + TermFieldPrompts.TranslationRetrySuffix(knowledgeHint);
                         content = await SendConstrainedPromptAsync(systemPrompt, retryJson, 700, cancellationToken).ConfigureAwait(false);
                         MetadataDebugLog.Write(callKind + " retry-response | " + gameTitle, content ?? string.Empty);
                     }
@@ -3789,7 +3879,12 @@ namespace MetaDataIAPlugin
 
                 foreach (var value in values ?? new List<string>())
                 {
-                    var cleaned = VocabularyTermNormalizer.CleanTerm(value);
+                    var cleaned = StoreTermSanitizer.SanitizeOne(value);
+                    if (string.IsNullOrWhiteSpace(cleaned))
+                    {
+                        continue;
+                    }
+
                     var key = LibraryNameMatching.NormalizeKey(cleaned);
                     if (key.Length == 0 || !seen.Add(key))
                     {

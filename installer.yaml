@@ -1,5 +1,14 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.32
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-10-01
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.32/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_32.pext
+    Changelog:
+      - 'Genres, tags and features stay more consistent across a full library fill: store brand noise is stripped, and each game can reuse spellings already in Playnite.'
+      - 'Batches run one game at a time and switch AI providers faster when a free tier hits limits.'
+      - 'The progress window closes reliably when a batch finishes or you cancel.'
+
   - Version: 1.4.31
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-09-30

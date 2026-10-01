@@ -179,6 +179,29 @@ namespace MetaDataIAPlugin
             }
             finally
             {
+                try
+                {
+                    if (window != null && (window.IsVisible || window.IsLoaded))
+                    {
+                        window.Dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(() =>
+                        {
+                            try
+                            {
+                                if (window.IsVisible || window.IsLoaded)
+                                {
+                                    window.Close();
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }));
+                    }
+                }
+                catch
+                {
+                }
+
                 RestoreWindowActivation(progressOwner);
             }
 

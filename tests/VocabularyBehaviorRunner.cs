@@ -55,6 +55,9 @@ internal static class VocabularyBehaviorRunner
         Test_ModesAndLanguages();
         Test_Uppercase_UsesLanguageRules();
         Test_TagPrefix_PreservesBracketsAndCasing();
+        Test_StoreTermSanitizer_NoiseAndBrands();
+        Test_BatchTermSessionCache_PrefersFirstStoreSpelling();
+        Test_ScopedTermVocabulary_KeyMatchesOnly_PlayniteWins();
 
         if (failures == 0)
         {
@@ -1341,6 +1344,126 @@ internal static class VocabularyBehaviorRunner
             "prefix skips tags that already existed on the game",
             "Fantasy, [MAI] Extraction Shooter, [MAI] Sci-Fi",
             Join(append.Tags));
+    }
+
+    private static void Test_StoreTermSanitizer_NoiseAndBrands()
+    {
+        AssertTrue("ROM dump is noise", StoreTermSanitizer.IsTechnicalNoise("ROM dump"));
+        AssertTrue("JAMMA PCB is noise", StoreTermSanitizer.IsTechnicalNoise("JAMMA PCB"));
+        AssertTrue("Arcade genre is not noise", !StoreTermSanitizer.IsTechnicalNoise("Arcade"));
+
+        AssertEqual("strip Steam prefix", "Achievements", StoreTermSanitizer.StripStoreBrand("Steam Achievements"));
+        AssertEqual("strip Steam Spanish suffix", "Logros", StoreTermSanitizer.StripStoreBrand("Logros de Steam"));
+        AssertEqual("strip Steam Cloud", "Cloud", StoreTermSanitizer.StripStoreBrand("Steam Cloud"));
+        AssertEqual("keep Workshop after strip", "Workshop", StoreTermSanitizer.StripStoreBrand("Steam Workshop"));
+
+        var sanitized = StoreTermSanitizer.Sanitize(new[]
+        {
+            "Steam Achievements",
+            "Logros de Steam",
+            "JAMMA PCB",
+            "ROM dump",
+            "Un jugador",
+            "Steam Achievements"
+        });
+        AssertEqual(
+            "sanitize drops noise and brand duplicates by key",
+            "Achievements, Logros, Un jugador",
+            Join(sanitized));
+    }
+
+    private static void Test_BatchTermSessionCache_PrefersFirstStoreSpelling()
+    {
+        var cache = new BatchTermSessionCache();
+        cache.RememberLocalizedStoreTerms("features", new[] { "Logros", "Nube", "Compatibilidad total con mando" });
+        // Later brand-wrapped form of Logros must not overwrite the first session spelling.
+        cache.RememberLocalizedStoreTerms("features", new[] { "Logros de Steam" });
+
+        AssertEqual(
+            "session keeps first localized store spelling",
+            "Logros, Nube, Compatibilidad total con mando",
+            Join(cache.GetPreferred("features")));
+
+        var preferred = cache.PreferSpellings(
+            "features",
+            new[] { "logros", "nube", "Soporte total para mando" });
+        AssertEqual(
+            "prefer remaps matching keys to session spelling",
+            "Logros, Nube, Soporte total para mando",
+            Join(preferred));
+
+        var json = TermFieldResolver.BuildUserJson(
+            "es",
+            new[] { "PC" },
+            new List<TermFieldRequest>
+            {
+                new TermFieldRequest
+                {
+                    Field = "features",
+                    Mode = "overwrite",
+                    Language = "es",
+                    Incoming = new List<string> { "Steam Achievements" },
+                    MaxItems = 8
+                }
+            },
+            null,
+            null,
+            new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "features", new List<string> { "Logros" } }
+            });
+        AssertTrue("organize JSON omits full session dump by default", !json.Contains("sessionVocabulary"));
+        AssertTrue("organize JSON includes preferredSpellings", json.Contains("preferredSpellings"));
+        AssertTrue("organize JSON carries preferred Logros", json.Contains("Logros"));
+    }
+
+    private static void Test_ScopedTermVocabulary_KeyMatchesOnly_PlayniteWins()
+    {
+        var preferred = ScopedTermVocabulary.BuildPreferredSpellings(
+            new[] { "Steam Achievements", "Cloud", "Full Controller Support", "Unrelated ignore" },
+            playniteLibraryNames: new[] { "Logros", "Nube", "Soporte total para mando", "Simulador de vuelo" },
+            sessionNames: new[] { "Achievements", "Cloud", "Compatibilidad total con mando" });
+
+        // Achievements key matches session Achievements (Playnite has Logros — different key, no cross-lang merge).
+        // Cloud matches Playnite Nube? No — different keys. Cloud matches session Cloud.
+        // Full Controller Support key != Soporte total... — no match; session Compatibilidad... different key.
+        // Simulador de vuelo not in incoming keys — excluded.
+        AssertEqual(
+            "scoped prefers key matches only; Playnite wins when same key",
+            "Achievements, Cloud",
+            Join(preferred));
+
+        var playniteWins = ScopedTermVocabulary.BuildPreferredSpellings(
+            new[] { "logros", "nube" },
+            new[] { "Logros", "Nube" },
+            new[] { "LOGROS", "Steam Cloud" });
+        AssertEqual(
+            "Playnite spelling wins over session on same key",
+            "Logros, Nube",
+            Join(playniteWins));
+
+        var json = TermFieldResolver.BuildUserJson(
+            "es",
+            new[] { "PC" },
+            new List<TermFieldRequest>
+            {
+                new TermFieldRequest
+                {
+                    Field = "features",
+                    Mode = "overwrite",
+                    Language = "es",
+                    Incoming = new List<string> { "logros" },
+                    MaxItems = 8
+                }
+            },
+            null,
+            null,
+            new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "features", new List<string> { "Logros" } }
+            });
+        AssertTrue("organize JSON includes preferredSpellings", json.Contains("preferredSpellings"));
+        AssertTrue("organize JSON carries preferred Logros", json.Contains("Logros"));
     }
 
     private static MetaDataIASettings CreateSettings(string language)

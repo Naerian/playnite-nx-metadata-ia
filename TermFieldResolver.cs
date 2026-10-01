@@ -182,82 +182,18 @@ namespace MetaDataIAPlugin
 
     public static class TermFieldResolver
     {
-        // Keep policy in sync with MetadataGenerationService.BuildSystemPrompt Field Categorization Rules
-        // (same organize rules; this call uses language/languageName + fields[].terms JSON shape).
-        // keepLoanwords is supplied in the user JSON from GamingLoanwordVocabulary / settings.
-        public const string SystemPrompt =
-            "You edit short game metadata labels. Return ONLY one JSON object. " +
-            "The response must start with { and end with }. No markdown fences, no prose before/after, no JSON wrapped inside a string. " +
-            "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
-            "Rules: " +
-            "1. Output format: Echo each input field once. In \"terms\", return only the final normalized labels as a flat string array (not nested arrays). " +
-            "2. Source and Grounding: Organize strictly from each field's existing and incoming lists. " +
-            "Never invent concepts absent from those lists. If an incoming list is empty, return an empty terms array for that field. " +
-            "3. Language and Terminology: " +
-            "Read target language from \"language\" and \"languageName\". " +
-            "If target language is NOT English: " +
-            "Translate all common descriptive nouns and generic store terms completely into the target language " +
-            "(e.g., Adventure -> Aventura, Shooter -> Disparos, Strategy -> Estrategia, Puzzle -> Puzle, or equivalent). " +
-            "Keeplist: keep any incoming label that appears in keepLoanwords exactly as written (prefer the spelling from keepLoanwords). " +
-            "Do not translate, synonymize, or replace those labels (e.g. if keepLoanwords contains Action, output Action — never Acción/Aktion). " +
-            "Uppercase acronyms in keepLoanwords stay UPPERCASE. " +
-            "For other industry labels not in keepLoanwords: translate into the target language like ordinary store terms. " +
-            "Gaming-domain sense: translate within the video game context. Never replace an industry genre or tag with a literal, non-gaming everyday definition " +
-            "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
-            "Consistency: never output synonyms, mixed languages, or both localized and raw English variants for the same concept. " +
-            "If target language IS English: keep standard canonical English labels. " +
-            "Vocabulary priority: if playniteLibraryVocabulary defines a preferred spelling for a concept, reuse that exact spelling " +
-            "(except keepLoanwords entries, which win over everyday translations). " +
-            "4. Canonical label, Deduplication & Distillation: Exactly one label per concept. " +
-            "Never mix synonyms or languages for the same concept. Labels should sound like store/library metadata (concise, no final punctuation). " +
-            "Distill compounds for naturalness: If an incoming compound genre (e.g., 'extraction shooter', 'looter shooter', 'survival horror') becomes unnaturally long, clunky, or sounds like a forced calque in the target language, distill it down to its core distinctive mechanic or theme (e.g., 'extraction shooter' becomes just 'Extracción'; 'looter shooter' becomes 'Botín' or 'Loot'). " +
-            "Drop the generic umbrella term (like 'shooter' or 'game') if the native community identifies the subgenre by its core word alone. Extreme brevity and natural gamer phrasing always win over strict word-by-word structural parity. " +
-            "Subsume generic terms: If you distill a compound by dropping the generic part, rely on other incoming labels (like 'Shooter' or 'Acción') to cover that base, or assume it is implied. Do not generate a 4-word label just to preserve both concepts. " +
-            "Never join two independent store genres with a hyphen, slash or similar (never Acción-Aventura / Action-Adventure / Action/Adventure). " +
-            "If incoming already joins them that way, split into separate labels (Acción and Aventura). " +
-            "When tags are also in this request, prefer putting bare camera perspective there if it arrived as a separate idea; when the compound is already in genres incoming, adapt it naturally in genres (or keepLoanwords spelling such as TPS when listed). " +
-            "Never invent a sibling perspective. Do not repeat the same concept across multiple fields (player count/modes belong to features; store genres stay in genres; theme/style stay in tags). " +
-            "5. Handling mode: " +
-            "overwrite: terms must contain only normalized concepts from incoming. " +
-            "append: merge unique concepts from existing and incoming; if a concept already exists in existing, do not add a translated/synonym duplicate from incoming. " +
-            "empty: if existing already has items, return existing unchanged; if existing is empty, populate from incoming. " +
-            "Item caps are applied by the plugin after your response — return the full normalized set from incoming; do not pretuncate.";
+        // Policy lives in TermFieldPrompts (shared with the main metadata system prompt).
+        public static string SystemPrompt
+        {
+            get { return TermFieldPrompts.OrganizeSystemPrompt; }
+        }
 
         // Used when genres/tags/features have no store/IGDB list and Library
         // "Derive from local game text" is on with enough description/facts.
-        // Separate call from SystemPrompt (which organizes existing incoming lists).
-        public const string KnowledgePrompt =
-            "No store returned a list for the fields in this request. Extract short, accurate metadata labels only from the provided game facts and description. " +
-            "Return ONLY one JSON object. The response must start with { and end with }. No markdown fences, no prose, no JSON wrapped inside a string. " +
-            "Output shape: {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} " +
-            "Rules: " +
-            "1. Language and Terminology: Echo each input field once. In \"terms\", return a flat string array. " +
-            "Read target language from \"language\" and \"languageName\". " +
-            "If language is NOT English: translate all common descriptive nouns into the requested language " +
-            "(e.g., Shooter -> Disparos, Action -> Acción, Adventure -> Aventura, Puzzle -> Puzle, or the equivalent). " +
-            "Keeplist: keep any label that appears in keepLoanwords exactly as written (prefer keepLoanwords spelling; acronyms stay UPPERCASE). " +
-            "Do not translate or replace keepLoanwords entries (e.g. Action stays Action, never Acción). Other labels not in keepLoanwords: translate like ordinary terms. " +
-            "Gaming-domain sense: translate within the video game context; never a literal non-gaming everyday definition " +
-            "(e.g., Party as party-game, not celebration — when Party is in keepLoanwords, keep \"Party\"). " +
-            "Consistency: never mix languages or synonyms for the same concept. " +
-            "If English: keep standard English labels. " +
-            "2. Strict Concept Normalization: Exactly one label per concept. Never output mixed languages or synonyms " +
-            "(pick one: \"Aventura\", never \"Adventure\"; \"Rol\", never \"Role-playing (rpg)\" when Rol is the chosen native form; \"Puzle\", never \"Puzzle\" or \"Rompecabezas\"). " +
-            "Store-style labels (concise, no final punctuation). " +
-            "Distill compounds for naturalness: if an extracted compound becomes clunky or a forced calque in the target language, extract its distinctive core " +
-            "(e.g. extraction shooter -> Extracción; looter shooter -> Botín or Loot). Make sure to also output the base generic genre (e.g., Disparos, Acción) as a separate label if it's not already covered. " +
-            "Never invent a sibling perspective. Never join two independent store genres with a hyphen or slash; if the extracted concept implies both, split them into separate labels. " +
-            "3. Local-text grounding (Zero Hallucination): Anchor labels strictly to phrases and facts in the provided description and release fields. " +
-            "Do NOT use outside knowledge of the title beyond those supplied facts. " +
-            "Do NOT extrapolate features or genres from modern remakes or subsequent ports. " +
-            "For retro releases, never invent modern technical features (e.g., no cloud saves or online co-op for 8/16-bit console titles). " +
-            "If the description/facts are insufficient to support a label with high confidence, omit it. If the game cannot be identified from the supplied facts, return an empty terms array. " +
-            "4. Field Categorization: genres: Core video game store genres only. tags: Setting, theme, gameplay mechanics, and camera perspectives (e.g., First-person, Third-person) clearly supported by the text. " +
-            "features: Functional gameplay traits for this specific platform release only when the text states them explicitly (player count, local co-op, controller support). " +
-            "At most 4 concise feature items. Never put player counts or features into genres or tags. " +
-            "5. Handling mode: overwrite: terms must contain only new normalized labels. " +
-            "append: preserve existing labels and add missing unique labels for this release without adding synonyms or language duplicates. " +
-            "empty: if existing already has items, return existing unchanged; otherwise populate.";
+        public static string KnowledgePrompt
+        {
+            get { return TermFieldPrompts.KnowledgePrompt; }
+        }
 
         public static bool ResponseIsParseableJson(string content)
         {
@@ -265,13 +201,31 @@ namespace MetaDataIAPlugin
             return TryParseObject(content, out unused);
         }
 
-        public static string BuildUserJson(string language, IList<string> platforms, IList<TermFieldRequest> fields, IEnumerable<string> keepLoanwords = null)
+        public static string BuildUserJson(
+            string language,
+            IList<string> platforms,
+            IList<TermFieldRequest> fields,
+            IEnumerable<string> keepLoanwords = null,
+            IDictionary<string, List<string>> sessionVocabulary = null,
+            IDictionary<string, List<string>> preferredSpellings = null)
         {
             var payload = new JObject();
             payload["language"] = language ?? "en";
             payload["languageName"] = LanguageDisplayName(language);
             payload["platform"] = new JArray(platforms ?? new List<string>());
             payload["keepLoanwords"] = new JArray(NormalizeKeepList(keepLoanwords));
+            var session = BuildVocabularyObject(sessionVocabulary, fields);
+            if (session != null)
+            {
+                payload["sessionVocabulary"] = session;
+            }
+
+            var preferred = BuildVocabularyObject(preferredSpellings, fields);
+            if (preferred != null)
+            {
+                payload["preferredSpellings"] = preferred;
+            }
+
             payload["fields"] = new JArray((fields ?? new List<TermFieldRequest>()).Select(field =>
             {
                 var item = new JObject();
@@ -283,6 +237,39 @@ namespace MetaDataIAPlugin
                 return item;
             }));
             return payload.ToString(Newtonsoft.Json.Formatting.None);
+        }
+
+        private static JObject BuildVocabularyObject(
+            IDictionary<string, List<string>> vocabulary,
+            IList<TermFieldRequest> fields)
+        {
+            if (vocabulary == null || vocabulary.Count == 0)
+            {
+                return null;
+            }
+
+            var requested = new HashSet<string>(
+                (fields ?? new List<TermFieldRequest>()).Select(x => x.Field ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase);
+            var obj = new JObject();
+            foreach (var pair in vocabulary)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key) ||
+                    pair.Value == null ||
+                    pair.Value.Count == 0 ||
+                    (requested.Count > 0 && !requested.Contains(pair.Key)))
+                {
+                    continue;
+                }
+
+                obj[pair.Key] = new JArray(
+                    pair.Value
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase));
+            }
+
+            return obj.Count == 0 ? null : obj;
         }
 
         public static string BuildKnowledgeJson(string language, JObject game, IList<TermFieldRequest> fields, IEnumerable<string> keepLoanwords = null)
