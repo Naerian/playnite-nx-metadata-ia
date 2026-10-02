@@ -53,9 +53,11 @@ namespace MetaDataIAPlugin
 
         public async Task ProbeProviderAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            MetadataDebugLog.Write(
-                "provider-probe | " + (settings.ProviderPreset ?? string.Empty),
-                "model=" + (settings.Model ?? string.Empty));
+            var provider = settings.ProviderPreset ?? string.Empty;
+            var model = settings.Model ?? string.Empty;
+            MetadataDebugLog.Info(
+                "provider.probe",
+                "provider=" + provider + " model=" + model);
 
             using (var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
@@ -90,7 +92,7 @@ namespace MetaDataIAPlugin
                             Loc("MTDA_ErrorAiNoUsefulText", "The AI provider did not return useful text."));
                     }
 
-                    MetadataDebugLog.Write("provider-probe-ok", (content ?? string.Empty).Trim());
+                    MetadataDebugLog.Info("provider.probe", "ok reply=" + (content ?? string.Empty).Trim());
                 }
                 catch (OperationCanceledException)
                 {
@@ -99,9 +101,10 @@ namespace MetaDataIAPlugin
                         throw;
                     }
 
-                    MetadataDebugLog.Write(
-                        "provider-probe-timeout | " + (settings.ProviderPreset ?? string.Empty),
-                        "model=" + (settings.Model ?? string.Empty) +
+                    MetadataDebugLog.Error(
+                        "provider.probe",
+                        "timeout provider=" + provider +
+                        " model=" + model +
                         " timeoutSeconds=" + ProviderProbeTimeoutSeconds);
                     throw CreateConnectionException(new TimeoutException(
                         "The AI provider probe timed out after " + ProviderProbeTimeoutSeconds + " seconds."));
@@ -113,7 +116,35 @@ namespace MetaDataIAPlugin
         {
             // Provider failover is owned by the batch runner (ordered ProviderProfiles).
             // Per-game local LM Studio/Ollama fallback is no longer used.
-            return await GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
+            MetadataDebugLog.GameBegin(game);
+            MetadataDebugLog.Verbose = settings != null && settings.VerboseOrganizeLog;
+            var ok = false;
+            string failReason = null;
+            try
+            {
+                var result = await GenerateCurrentAsync(game, cancellationToken).ConfigureAwait(false);
+                ok = true;
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                failReason = "cancelled";
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failReason = ex.Message;
+                throw;
+            }
+            finally
+            {
+                // In a metadata batch, keep the game scope open until after Apply so
+                // apply lines stay inside GAME begin/end. Solo generate closes here.
+                if (!ok || string.IsNullOrEmpty(MetadataDebugLog.CurrentBatchId))
+                {
+                    MetadataDebugLog.GameEnd(game, ok, failReason);
+                }
+            }
         }
 
         private async Task<AiMetadataResult> GenerateCurrentAsync(Game game, CancellationToken cancellationToken)
@@ -170,6 +201,7 @@ namespace MetaDataIAPlugin
         private async Task<AiMetadataResult> GenerateTermFieldsOnlyAsync(Game game, CancellationToken cancellationToken)
         {
             await LoadOfficialContextAsync(game, cancellationToken).ConfigureAwait(false);
+            LogOfficialSources(game);
             var result = new AiMetadataResult();
             ApplyTrustedFactualFields(result, game);
             result.Normalize(settings, game);
@@ -252,11 +284,17 @@ namespace MetaDataIAPlugin
         private async Task<AiMetadataResult> GenerateOpenAICompatibleAsync(Game game, CancellationToken cancellationToken)
         {
             var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
+            LogOfficialSources(game);
+            LogMetadataRequest(game, userPrompt);
             var result = await SendOpenAICompatibleRequestAsync(userPrompt, cancellationToken).ConfigureAwait(false);
             PrepareResult(result, game);
 
             if (RequiresGeneratedDescription() && !HasRequestedDescriptionContent(result, game))
             {
+                MetadataDebugLog.Warn(
+                    game,
+                    "metadata.response",
+                    "description empty for active template → retry");
                 var requestedTokens = ExtractTemplateTokens(settings.ResolveTemplate(game));
                 var retryPrompt = userPrompt +
                     "\n\nRETRY REQUIREMENT: The previous response left every token used by the active description template empty. " +
@@ -264,6 +302,7 @@ namespace MetaDataIAPlugin
                     string.Join(", ", requestedTokens) + ". " +
                     "Keep the exact JSON shape, do not add headings, and do not invent unsupported facts. If reliable context is genuinely insufficient, keep the values empty.";
 
+                LogMetadataRequest(game, retryPrompt, "metadata.request-retry");
                 result = await SendOpenAICompatibleRequestAsync(retryPrompt, cancellationToken).ConfigureAwait(false);
                 PrepareResult(result, game);
 
@@ -277,6 +316,7 @@ namespace MetaDataIAPlugin
             }
 
             await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
+            LogMetadataResultSummary(game, result);
             await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
             result.ApplyConfiguredPrefixes(settings, Names(game == null ? null : game.Tags), Names(game == null ? null : game.Categories));
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
@@ -1267,6 +1307,8 @@ namespace MetaDataIAPlugin
         private async Task<AiMetadataResult> GenerateAnthropicAsync(Game game, CancellationToken cancellationToken)
         {
             var userPrompt = await BuildUserPromptAsync(game, cancellationToken).ConfigureAwait(false);
+            LogOfficialSources(game);
+            LogMetadataRequest(game, userPrompt);
             var request = new
             {
                 model = settings.Model,
@@ -1330,6 +1372,7 @@ namespace MetaDataIAPlugin
                 var result = ParseResult(content);
                 PrepareResult(result, game);
                 await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
+                LogMetadataResultSummary(game, result);
                 await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
                 result.ApplyConfiguredPrefixes(settings, Names(game == null ? null : game.Tags), Names(game == null ? null : game.Categories));
                 await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
@@ -3105,9 +3148,10 @@ namespace MetaDataIAPlugin
                     continue;
                 }
 
-                MetadataDebugLog.Write(
-                    "direct-apply | " + (game.Name ?? string.Empty),
-                    field.Field + "=[" + string.Join(", ", applied ?? new List<string>()) + "] (no model)");
+                MetadataDebugLog.Info(
+                    game,
+                    "terms.direct",
+                    field.Field + "=" + MetadataDebugLog.FormatTermList(applied) + " (no model)");
             }
 
             if (modelFields.Count == 0)
@@ -3123,8 +3167,7 @@ namespace MetaDataIAPlugin
 
             var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
             var insufficientLocalFields = active.Where(x => x.SkippedInsufficientLocalText).ToList();
-            var gameTitle = game.Name ?? string.Empty;
-            LogTermOrganizeContext(gameTitle, organizeFields, knowledgeFields);
+            LogTermOrganizeContext(game, organizeFields, knowledgeFields);
 
             if (insufficientLocalFields.Count > 0 &&
                 organizeFields.Count == 0 &&
@@ -3150,7 +3193,7 @@ namespace MetaDataIAPlugin
                     TermFieldResolver.SystemPrompt,
                     userJson,
                     organizeFields,
-                    gameTitle,
+                    game,
                     "organize",
                     cancellationToken).ConfigureAwait(false))
                 {
@@ -3169,7 +3212,7 @@ namespace MetaDataIAPlugin
                     TermFieldResolver.KnowledgePrompt,
                     knowledgeJson,
                     knowledgeFields,
-                    gameTitle,
+                    game,
                     "knowledge",
                     cancellationToken).ConfigureAwait(false))
                 {
@@ -3245,14 +3288,186 @@ namespace MetaDataIAPlugin
                 SessionCache.RememberLocalizedStoreTerms("categories", result.Categories);
             }
 
-            MetadataDebugLog.Write(
-                "term-final | " + (game == null ? string.Empty : game.Name ?? string.Empty),
-                "genres=[" + string.Join(", ", result.Genres ?? new List<string>()) + "]\n" +
-                "tags=[" + string.Join(", ", result.Tags ?? new List<string>()) + "]\n" +
-                "features=[" + string.Join(", ", result.Features ?? new List<string>()) + "]\n" +
-                "categories=[" + string.Join(", ", result.Categories ?? new List<string>()) + "]");
+            if (settings.GenerateGenres || settings.GenerateTags ||
+                settings.GenerateFeatures || settings.GenerateCategories)
+            {
+                MetadataDebugLog.Info(
+                    game,
+                    "terms.final",
+                    "genres=" + MetadataDebugLog.FormatTermList(result.Genres) + "\n" +
+                    "tags=" + MetadataDebugLog.FormatTermList(result.Tags) + "\n" +
+                    "features=" + MetadataDebugLog.FormatTermList(result.Features) + "\n" +
+                    "categories=" + MetadataDebugLog.FormatTermList(result.Categories));
+            }
 
             result.RefreshDescription(settings, game);
+        }
+
+        private void LogOfficialSources(Game game)
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.SourceName))
+                .ToList();
+            if (sources.Count == 0)
+            {
+                MetadataDebugLog.Info(game, "metadata.sources", "(none returned for this game)");
+                return;
+            }
+
+            if (!MetadataDebugLog.Verbose)
+            {
+                MetadataDebugLog.Info(
+                    game,
+                    "metadata.sources",
+                    string.Join(", ", sources.Select(x => x.SourceName).Distinct(StringComparer.OrdinalIgnoreCase)));
+                return;
+            }
+
+            var details = new StringBuilder();
+            foreach (var source in sources)
+            {
+                details.Append("  - ")
+                    .Append(source.SourceName ?? "?")
+                    .Append(" title=")
+                    .Append(source.Title ?? string.Empty)
+                    .Append(" exactMatch=")
+                    .Append(source.IsExactMatch)
+                    .Append(" matchLanguage=")
+                    .Append(source.ListsMatchPluginLanguage)
+                    .Append(" descriptionChars=")
+                    .Append(string.IsNullOrEmpty(source.Description) ? 0 : source.Description.Length)
+                    .Append(" genres=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Genres))
+                    .Append(" tags=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Tags))
+                    .Append(" features=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Features))
+                    .AppendLine();
+            }
+
+            MetadataDebugLog.Info(game, "metadata.sources", details.ToString().TrimEnd());
+        }
+
+        private void LogMetadataRequest(Game game, string userPrompt, string topic = "metadata.request")
+        {
+            if (game == null || settings == null)
+            {
+                return;
+            }
+
+            var fields = new List<string>();
+            if (settings.GenerateDescription) fields.Add("description");
+            if (settings.GenerateGenres) fields.Add("genres");
+            if (settings.GenerateTags) fields.Add("tags");
+            if (settings.GenerateFeatures) fields.Add("features");
+            if (settings.GenerateCategories) fields.Add("categories");
+            if (settings.GenerateDevelopers) fields.Add("developers");
+            if (settings.GeneratePublishers) fields.Add("publishers");
+            if (settings.GenerateAgeRatings) fields.Add("ageRatings");
+            if (settings.GenerateRegions) fields.Add("regions");
+            if (settings.GenerateLinks) fields.Add("links");
+            if (settings.GenerateReleaseDate) fields.Add("releaseDate");
+            if (settings.GenerateSeries) fields.Add("series");
+            if (settings.GenerateSortingName) fields.Add("sortingName");
+
+            var summary =
+                "model=" + (settings.Model ?? string.Empty) +
+                " language=" + (settings.Language ?? string.Empty) +
+                " provider=" + (settings.ProviderPreset ?? string.Empty) +
+                " fields=" + (fields.Count == 0 ? "(none)" : string.Join(",", fields)) +
+                " promptChars=" + (userPrompt == null ? 0 : userPrompt.Length) +
+                " verbose=" + MetadataDebugLog.Verbose;
+
+            MetadataDebugLog.Info(
+                game,
+                topic,
+                summary,
+                userPrompt ?? string.Empty);
+        }
+
+        private void LogMetadataResultSummary(Game game, AiMetadataResult result)
+        {
+            if (game == null || settings == null)
+            {
+                return;
+            }
+
+            var summary = new StringBuilder();
+            string descriptionDump = null;
+
+            if (settings.GenerateDescription)
+            {
+                var description = result == null ? null : result.Description;
+                summary.Append("descriptionChars=")
+                    .Append(string.IsNullOrEmpty(description) ? 0 : description.Length);
+                summary.AppendLine();
+                summary.Append("description=");
+                summary.Append(MetadataDebugLog.DescriptionForLog(description));
+                if (MetadataDebugLog.Verbose && !string.IsNullOrEmpty(description))
+                {
+                    descriptionDump = description;
+                }
+            }
+
+            if (settings.GenerateDevelopers)
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("developers=")
+                    .Append(MetadataDebugLog.FormatTermList(result == null ? null : result.Developers));
+            }
+
+            if (settings.GeneratePublishers)
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("publishers=")
+                    .Append(MetadataDebugLog.FormatTermList(result == null ? null : result.Publishers));
+            }
+
+            if (settings.GenerateAgeRatings)
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("ageRatings=")
+                    .Append(MetadataDebugLog.FormatTermList(result == null ? null : result.AgeRatings));
+            }
+
+            if (settings.GenerateSeries)
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("series=")
+                    .Append(MetadataDebugLog.FormatTermList(result == null ? null : result.Series));
+            }
+
+            if (settings.GenerateReleaseDate && result != null && !string.IsNullOrWhiteSpace(result.ReleaseDate))
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("releaseDate=").Append(result.ReleaseDate);
+            }
+
+            if (settings.GenerateSortingName && result != null && !string.IsNullOrWhiteSpace(result.SortingName))
+            {
+                if (summary.Length > 0) summary.AppendLine();
+                summary.Append("sortingName=").Append(result.SortingName);
+            }
+
+            var sources = (officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(x.SourceName))
+                .Select(x => x.SourceName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (summary.Length > 0) summary.AppendLine();
+            summary.Append("sources=")
+                .Append(sources.Count == 0 ? "(none)" : string.Join(",", sources));
+
+            MetadataDebugLog.Info(
+                game,
+                "metadata.result",
+                summary.ToString().TrimEnd(),
+                descriptionDump);
         }
 
         private static List<string> PlatformLabels(Game game)
@@ -3424,20 +3639,30 @@ namespace MetaDataIAPlugin
             string systemPrompt,
             string userJson,
             List<TermFieldRequest> fields,
-            string gameTitle,
+            Game game,
             string callKind,
             CancellationToken cancellationToken)
         {
             Exception lastError = null;
             var keepLoanwords = settings.GetKeptLoanwordTerms();
+            var topic = (callKind ?? "organize") + ".response";
+            var requestTopic = (callKind ?? "organize") + ".request";
+            var prettyRequest = MetadataDebugLog.PrettyJsonOrRaw(userJson);
+            var requestSummary =
+                "model=" + (settings.Model ?? string.Empty) +
+                " language=" + (settings.Language ?? string.Empty) +
+                " systemPromptChars=" + (systemPrompt == null ? 0 : systemPrompt.Length);
+
             for (var attempt = 0; attempt <= OrganizeProviderRetries; attempt++)
             {
+                var responseTrail = new StringBuilder();
                 try
                 {
                     if (attempt > 0)
                     {
-                        MetadataDebugLog.Write(
-                            callKind + " provider-retry | " + gameTitle,
+                        MetadataDebugLog.Warn(
+                            game,
+                            (callKind ?? "organize") + ".provider-retry",
                             "attempt=" + (attempt + 1) +
                             " delaySeconds=" + OrganizeProviderRetryDelaySeconds);
                         await Task.Delay(
@@ -3445,39 +3670,43 @@ namespace MetaDataIAPlugin
                             cancellationToken).ConfigureAwait(false);
                     }
 
-                    MetadataDebugLog.Write(
-                        callKind + " request | " + gameTitle,
-                        "model=" + (settings.Model ?? string.Empty) +
-                        "\nlanguage=" + (settings.Language ?? string.Empty) +
-                        "\nsystemPromptChars=" + (systemPrompt == null ? 0 : systemPrompt.Length) +
-                        "\nuserJson=\n" + (userJson ?? string.Empty));
+                    MetadataDebugLog.Info(
+                        game,
+                        requestTopic,
+                        requestSummary,
+                        "userJson:\r\n" + prettyRequest);
 
                     var content = await SendConstrainedPromptAsync(systemPrompt, userJson, 700, cancellationToken).ConfigureAwait(false);
-                    MetadataDebugLog.Write(callKind + " response | " + gameTitle, content ?? string.Empty);
+                    responseTrail.AppendLine("response#1:");
+                    responseTrail.AppendLine(MetadataDebugLog.PrettyJsonOrRaw(content));
 
                     var jsonRetried = false;
                     if (!TermFieldResolver.ResponseIsParseableJson(content))
                     {
                         jsonRetried = true;
+                        MetadataDebugLog.Warn(game, topic, "not-json → json-retry");
                         var jsonRetry = userJson +
                             "\n\nRETRY: Your previous answer was not valid JSON. " +
                             "Return ONLY one JSON object that starts with { and ends with }. " +
                             "No markdown fences, no commentary, no JSON wrapped inside a string. " +
                             "Use shape {\"fields\":[{\"field\":\"genres\",\"terms\":[\"...\"]}]} with flat string arrays in \"terms\".";
                         content = await SendConstrainedPromptAsync(systemPrompt, jsonRetry, 700, cancellationToken).ConfigureAwait(false);
-                        MetadataDebugLog.Write(callKind + " json-retry-response | " + gameTitle, content ?? string.Empty);
+                        responseTrail.AppendLine("response#json-retry:");
+                        responseTrail.AppendLine(MetadataDebugLog.PrettyJsonOrRaw(content));
                     }
 
                     var translationRetried = false;
                     if (TermFieldResolver.ResponseNeedsTranslationRetry(content, fields, keepLoanwords))
                     {
                         translationRetried = true;
+                        MetadataDebugLog.Warn(game, topic, "needs-translation → translation-retry");
                         var knowledgeHint = fields.Any(f => f != null && f.FromKnowledge)
                             ? "This was a knowledge guess with no store list: every common noun MUST be in the target language. "
                             : string.Empty;
                         var retryJson = userJson + TermFieldPrompts.TranslationRetrySuffix(knowledgeHint);
                         content = await SendConstrainedPromptAsync(systemPrompt, retryJson, 700, cancellationToken).ConfigureAwait(false);
-                        MetadataDebugLog.Write(callKind + " retry-response | " + gameTitle, content ?? string.Empty);
+                        responseTrail.AppendLine("response#translation-retry:");
+                        responseTrail.AppendLine(MetadataDebugLog.PrettyJsonOrRaw(content));
                     }
 
                     Dictionary<string, List<string>> resolved;
@@ -3489,6 +3718,7 @@ namespace MetaDataIAPlugin
                     if (!accepted)
                     {
                         shapeRetried = true;
+                        MetadataDebugLog.Warn(game, topic, "unusable-shape → shape-retry");
                         var fieldShape = string.Join(
                             ",",
                             (fields ?? new List<TermFieldRequest>()).Select(f =>
@@ -3502,25 +3732,55 @@ namespace MetaDataIAPlugin
                             "For append mode, you may return only new incoming labels; existing labels are preserved by the plugin. " +
                             "Organize strictly from each field's existing and incoming lists. Do not invent labels.";
                         content = await SendConstrainedPromptAsync(systemPrompt, shapeRetry, 700, cancellationToken).ConfigureAwait(false);
-                        MetadataDebugLog.Write(callKind + " shape-retry-response | " + gameTitle, content ?? string.Empty);
+                        responseTrail.AppendLine("response#shape-retry:");
+                        responseTrail.AppendLine(MetadataDebugLog.PrettyJsonOrRaw(content));
                         accepted = TermFieldResolver.TryApplyResponse(content, fields, keepLoanwords, out resolved);
                     }
 
                     resolved = resolved ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-                    MetadataDebugLog.Write(
-                        callKind + " resolved | " + gameTitle,
+                    var resolvedSummary =
                         "accepted=" + accepted +
-                        " jsonRetried=" + jsonRetried +
-                        " translationRetried=" + translationRetried +
-                        " shapeRetried=" + shapeRetried +
-                        "\n" + FormatResolvedTerms(resolved, fields));
+                        " retries=json:" + (jsonRetried ? "1" : "0") +
+                        " translate:" + (translationRetried ? "1" : "0") +
+                        " shape:" + (shapeRetried ? "1" : "0") +
+                        "\n" + FormatResolvedTerms(resolved, fields);
 
                     if (!accepted)
                     {
+                        var failDump =
+                            "request.userJson:\r\n" + prettyRequest +
+                            "\r\n\r\n" + responseTrail +
+                            "\r\nresolved:\r\n" + resolvedSummary;
+                        MetadataDebugLog.Error(
+                            game,
+                            (callKind ?? "organize") + ".failed",
+                            "accepted=false",
+                            null,
+                            failDump);
                         throw new InvalidOperationException(
                             Loc(
                                 "MTDA_ErrorOrganizeFailed",
                                 "The AI could not organize genres, tags or features for this game. No incomplete store-only list was applied. You can retry this game from the batch results."));
+                    }
+
+                    var payload =
+                        "request.userJson:\r\n" + prettyRequest +
+                        "\r\n\r\n" + responseTrail.ToString().TrimEnd();
+                    if (jsonRetried || translationRetried || shapeRetried)
+                    {
+                        MetadataDebugLog.Warn(
+                            game,
+                            topic,
+                            resolvedSummary.TrimEnd(),
+                            payload);
+                    }
+                    else
+                    {
+                        MetadataDebugLog.Info(
+                            game,
+                            topic,
+                            resolvedSummary.TrimEnd(),
+                            payload);
                     }
 
                     return resolved;
@@ -3536,29 +3796,66 @@ namespace MetaDataIAPlugin
                         Loc(
                             "MTDA_ErrorProviderTimeout",
                             "The request timed out or was interrupted before completion. Check your network connection and AI provider, then try again."));
-                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, lastError.ToString());
+                    var timeoutDump = "request.userJson:\r\n" + prettyRequest + "\r\n\r\n" + responseTrail;
                     if (attempt >= OrganizeProviderRetries)
                     {
+                        MetadataDebugLog.Error(
+                            game,
+                            (callKind ?? "organize") + ".error",
+                            lastError.Message,
+                            lastError,
+                            timeoutDump);
                         throw lastError;
                     }
+
+                    MetadataDebugLog.Warn(
+                        game,
+                        (callKind ?? "organize") + ".error",
+                        "timeout → provider-retry | " + lastError.Message,
+                        timeoutDump);
                 }
                 catch (AiProviderException ex)
                 {
                     lastError = ex;
-                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, ex.ToString());
-                    if (!IsTransientOrganizeProviderFailure(ex) || attempt >= OrganizeProviderRetries)
+                    var providerDump = "request.userJson:\r\n" + prettyRequest + "\r\n\r\n" + responseTrail;
+                    var canRetry = IsTransientOrganizeProviderFailure(ex) && attempt < OrganizeProviderRetries;
+                    if (!canRetry)
                     {
+                        MetadataDebugLog.Error(
+                            game,
+                            (callKind ?? "organize") + ".error",
+                            ex.Message,
+                            ex,
+                            providerDump);
                         throw;
                     }
+
+                    MetadataDebugLog.Warn(
+                        game,
+                        (callKind ?? "organize") + ".error",
+                        "transient → provider-retry | " + ex.Message,
+                        providerDump);
                 }
                 catch (HttpRequestException ex)
                 {
                     lastError = ex;
-                    MetadataDebugLog.Write(callKind + " error | " + gameTitle, ex.ToString());
+                    var httpDump = "request.userJson:\r\n" + prettyRequest + "\r\n\r\n" + responseTrail;
                     if (attempt >= OrganizeProviderRetries)
                     {
+                        MetadataDebugLog.Error(
+                            game,
+                            (callKind ?? "organize") + ".error",
+                            ex.Message,
+                            ex,
+                            httpDump);
                         throw;
                     }
+
+                    MetadataDebugLog.Warn(
+                        game,
+                        (callKind ?? "organize") + ".error",
+                        "http → provider-retry | " + ex.Message,
+                        httpDump);
                 }
                 catch (InvalidOperationException)
                 {
@@ -3588,13 +3885,13 @@ namespace MetaDataIAPlugin
                    text.IndexOf("429", StringComparison.Ordinal) >= 0;
         }
 
-        private void LogTermOrganizeContext(string gameTitle, List<TermFieldRequest> organizeFields, List<TermFieldRequest> knowledgeFields)
+        private void LogTermOrganizeContext(Game game, List<TermFieldRequest> organizeFields, List<TermFieldRequest> knowledgeFields)
         {
-            var details = new System.Text.StringBuilder();
+            var details = new StringBuilder();
             details.AppendLine("language=" + (settings.Language ?? string.Empty));
             details.AppendLine("model=" + (settings.Model ?? string.Empty));
             details.AppendLine("provider=" + (settings.ProviderPreset ?? string.Empty));
-            details.AppendLine("metadataSources=");
+            details.AppendLine("sources:");
             var anySource = false;
             foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
             {
@@ -3608,13 +3905,12 @@ namespace MetaDataIAPlugin
                     .Append(source.SourceName ?? "?")
                     .Append(" matchLanguage=")
                     .Append(source.ListsMatchPluginLanguage)
-                    .Append(" genres=[")
-                    .Append(string.Join(", ", source.Genres ?? new List<string>()))
-                    .Append("] features=[")
-                    .Append(string.Join(", ", source.Features ?? new List<string>()))
-                    .Append("] tags=[")
-                    .Append(string.Join(", ", source.Tags ?? new List<string>()))
-                    .Append("]");
+                    .Append(" genres=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Genres))
+                    .Append(" features=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Features))
+                    .Append(" tags=")
+                    .Append(MetadataDebugLog.FormatTermList(source.Tags));
                 if (string.Equals(source.SourceName, "IGDB", StringComparison.OrdinalIgnoreCase))
                 {
                     details.Append(" (themes+keywords)");
@@ -3631,21 +3927,26 @@ namespace MetaDataIAPlugin
             foreach (var field in (organizeFields ?? new List<TermFieldRequest>())
                 .Concat(knowledgeFields ?? new List<TermFieldRequest>()))
             {
-                details.AppendLine("field=" + field.Field + " mode=" + field.Mode + " needsModel=" + field.NeedsModel + " fromKnowledge=" + field.FromKnowledge + " skippedInsufficientLocal=" + field.SkippedInsufficientLocalText);
-                details.AppendLine("  existing=[" + string.Join(", ", field.Existing ?? new List<string>()) + "]");
-                details.AppendLine("  incoming=[" + string.Join(", ", field.Incoming ?? new List<string>()) + "]");
-                details.AppendLine("  localizedIncoming=[" + string.Join(", ", field.LocalizedIncoming ?? new List<string>()) + "]");
-                details.AppendLine("  nonLocalizedIncoming=[" + string.Join(", ", field.NonLocalizedIncoming ?? new List<string>()) + "]");
-                details.AppendLine("  rawForeign=[" + string.Join(", ", TermFieldResolver.RawForeignIncomingKeys(field)) + "]");
-                details.AppendLine("  preferredFallback=[" + string.Join(", ", field.FallbackTerms()) + "]");
+                details.AppendLine(
+                    "field=" + field.Field +
+                    " mode=" + field.Mode +
+                    " needsModel=" + field.NeedsModel +
+                    " fromKnowledge=" + field.FromKnowledge +
+                    " skippedInsufficientLocal=" + field.SkippedInsufficientLocalText);
+                details.AppendLine("  existing=" + MetadataDebugLog.FormatTermList(field.Existing));
+                details.AppendLine("  incoming=" + MetadataDebugLog.FormatTermList(field.Incoming));
+                details.AppendLine("  localizedIncoming=" + MetadataDebugLog.FormatTermList(field.LocalizedIncoming));
+                details.AppendLine("  nonLocalizedIncoming=" + MetadataDebugLog.FormatTermList(field.NonLocalizedIncoming));
+                details.AppendLine("  rawForeign=" + MetadataDebugLog.FormatTermList(TermFieldResolver.RawForeignIncomingKeys(field)));
+                details.AppendLine("  preferredFallback=" + MetadataDebugLog.FormatTermList(field.FallbackTerms()));
             }
 
-            MetadataDebugLog.Write("term-context | " + gameTitle, details.ToString());
+            MetadataDebugLog.Info(game, "terms.context", details.ToString().TrimEnd());
         }
 
         private static string FormatResolvedTerms(Dictionary<string, List<string>> resolved, List<TermFieldRequest> fields)
         {
-            var details = new System.Text.StringBuilder();
+            var details = new StringBuilder();
             foreach (var field in fields ?? new List<TermFieldRequest>())
             {
                 List<string> terms;
@@ -3654,7 +3955,7 @@ namespace MetaDataIAPlugin
                     terms = new List<string>();
                 }
 
-                details.AppendLine(field.Field + "=[" + string.Join(", ", terms ?? new List<string>()) + "]");
+                details.AppendLine(field.Field + "=" + MetadataDebugLog.FormatTermList(terms));
             }
 
             return details.ToString();

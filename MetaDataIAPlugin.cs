@@ -312,6 +312,10 @@ namespace MetaDataIAPlugin
             maintenanceState = new MetadataMaintenanceStateService(GetPluginUserDataPath());
             MetadataDebugLog.SetUserDataPathResolver(() => GetPluginUserDataPath());
             MetadataDebugLog.Initialize(GetPluginUserDataPath());
+            if (settings != null && settings.Settings != null)
+            {
+                MetadataDebugLog.Verbose = settings.Settings.VerboseOrganizeLog;
+            }
             Properties = new MetadataPluginProperties
             {
                 HasSettings = true

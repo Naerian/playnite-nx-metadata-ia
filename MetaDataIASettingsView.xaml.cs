@@ -1395,6 +1395,73 @@ namespace MetaDataIAPlugin
             }
         }
 
+        private void OpenOrganizeDebugLog_OnClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                MetadataDebugLog.EnsureInitialized();
+                var path = MetadataDebugLog.FilePath;
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    MessageBox.Show(
+                        Loc("MTDA_OrganizeDebugLogMissing", "The organize debug log is not available yet. Run a metadata generate or apply once to create it."),
+                        PluginTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                if (!File.Exists(path))
+                {
+                    MetadataDebugLog.Clear();
+                }
+
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    Loc("MTDA_OrganizeDebugLogOpenFailed", "Could not open the organize debug log.") + "\n\n" +
+                    MetadataGenerationService.SanitizeForUser(ex.Message),
+                    PluginTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        private void ClearOrganizeDebugLog_OnClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var confirm = MessageBox.Show(
+                    Loc("MTDA_OrganizeDebugLogClearConfirm", "Clear the debug log? This cannot be undone."),
+                    PluginTitle,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (confirm != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                MetadataDebugLog.EnsureInitialized();
+                MetadataDebugLog.Clear();
+                MessageBox.Show(
+                    Loc("MTDA_OrganizeDebugLogCleared", "Debug log cleared."),
+                    PluginTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    Loc("MTDA_OrganizeDebugLogClearFailed", "Could not clear the debug log.") + "\n\n" +
+                    MetadataGenerationService.SanitizeForUser(ex.Message),
+                    PluginTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
         private static string BuildDiagnosticsReport(MetaDataIASettingsViewModel viewModel)
         {
             var settings = viewModel.Settings;
@@ -1414,6 +1481,8 @@ namespace MetaDataIAPlugin
             builder.AppendLine("- Model: " + settings.Model);
             builder.AppendLine("- Output language: " + settings.Language);
             builder.AppendLine("- Configured: " + settings.IsConfigured);
+            builder.AppendLine("- Verbose organize log: " + settings.VerboseOrganizeLog);
+            builder.AppendLine("- Organize debug log: " + (MetadataDebugLog.FilePath ?? string.Empty));
             builder.AppendLine("- Strict factual mode: " + settings.StrictCompanyAgeRegion);
             builder.AppendLine("- Official/source context: " + settings.UseOfficialStoreContext);
             builder.AppendLine("- Origin integration as AI context: " + settings.UseOriginIntegrationAsAiContext);

@@ -2610,6 +2610,17 @@
                                 <Border Style="{StaticResource SectionHeaderBorder}"><TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsTitle}" Style="{StaticResource SectionHeaderText}"/></Border>
                                 <TextBlock Text="{DynamicResource MTDA_MaintenanceDiagnosticsHelp}" Style="{StaticResource HintText}"/>
                                 <Button Content="{DynamicResource MTDA_ExportDiagnostics}" HorizontalAlignment="Left" MinWidth="240" Click="ExportDiagnostics_OnClick"/>
+                                <Border Style="{StaticResource SectionHeaderBorder}" Margin="0,18,0,0">
+                                    <TextBlock Text="{DynamicResource MTDA_OrganizeDebugLogTitle}" Style="{StaticResource SectionHeaderText}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_OrganizeDebugLogHelp}" Style="{StaticResource HintText}"/>
+                                <CheckBox Content="{DynamicResource MTDA_VerboseOrganizeLog}"
+                                          IsChecked="{Binding Settings.VerboseOrganizeLog}"
+                                          Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="{DynamicResource MTDA_OpenOrganizeDebugLog}" MinWidth="160" Margin="0,0,8,0" Click="OpenOrganizeDebugLog_OnClick"/>
+                                    <Button Content="{DynamicResource MTDA_ClearOrganizeDebugLog}" MinWidth="160" Click="ClearOrganizeDebugLog_OnClick"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                         <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource AdvancedSettingsCard}">

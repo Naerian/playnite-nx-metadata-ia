@@ -832,6 +832,16 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_MediaRankMeetsTarget">ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÐµÑ‚ Ð½Ð°ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ð¾Ð¼Ñƒ Ñ€Ð°Ð·Ð¼ÐµÑ€Ñƒ Ð²Ñ‹Ð²Ð¾Ð´Ð°</sys:String>
     <sys:String x:Key="MTDA_MediaRankLogoPreference">ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÐµÑ‚ Ð¿Ñ€ÐµÐ´Ð¿Ð¾Ñ‡Ñ‚ÐµÐ½Ð¸ÑŽ Ð»Ð¾Ð³Ð¾Ñ‚Ð¸Ð¿Ð°</sys:String>
     <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">Ð”Ð¸Ð°Ð³Ð½Ð¾ÑÑ‚Ð¸ÐºÐ° Ð´Ð»Ñ Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ¸</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogTitle">Debug log</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogHelp">Keeps a simple record of what Metadata AI did for each game. Enough to see what happened; turn on detailed logging below only if you need to dig into a problem (the file will grow faster).</sys:String>
+    <sys:String x:Key="MTDA_VerboseOrganizeLog">Detailed logging (larger file)</sys:String>
+    <sys:String x:Key="MTDA_OpenOrganizeDebugLog">Open log</sys:String>
+    <sys:String x:Key="MTDA_ClearOrganizeDebugLog">Clear log</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogMissing">The organize debug log is not available yet. Run a metadata generate or apply once to create it.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogOpenFailed">Could not open the organize debug log.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogCleared">Debug log cleared.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearConfirm">Clear the debug log? This cannot be undone.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearFailed">Could not clear the debug log.</sys:String>
     <sys:String x:Key="MTDA_MediaRankUsablePixels">Ð¿Ð¾Ð»ÐµÐ·Ð½Ñ‹Ñ… Ð¿Ð¸ÐºÑÐµÐ»ÐµÐ¹ {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ°</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ ÑÐºÑÐ¿Ð¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð´Ð¸Ð°Ð³Ð½Ð¾ÑÑ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ Ð¾Ñ‚Ñ‡Ñ‘Ñ‚.</sys:String>

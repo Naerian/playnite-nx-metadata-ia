@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.33 — 2026-10-02
+- Organize debug log is easier to scan: batch/game markers, INFO/WARN/ERROR lines, game and batch ids, and chronological steps.
+- Default log stays compact (summaries + short description preview). Optional Verbose organize log stores full prompts and responses.
+- Advanced → Maintenance can open or clear the organize debug log, and toggle verbose mode.
+
 ## 1.4.32 — 2026-10-01
 - Genres, tags and features stay more consistent across a full library fill: store brand noise is stripped, and each game can reuse spellings already in Playnite.
 - Batches run one game at a time and switch AI providers faster when a free tier hits limits.

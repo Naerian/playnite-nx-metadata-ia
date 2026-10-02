@@ -22,16 +22,24 @@ namespace MetaDataIAPlugin
                 !string.IsNullOrWhiteSpace(result.Description) &&
                 ShouldApplyScalar(settings.DescriptionApplyMode, game.Description))
             {
+                MetadataDebugLog.Info(
+                    game,
+                    "apply",
+                    "description mode=" + (settings.DescriptionApplyMode ?? string.Empty) +
+                    " chars=" + result.Description.Length + "\n" +
+                    "description=" + MetadataDebugLog.DescriptionForLog(result.Description),
+                    MetadataDebugLog.Verbose ? result.Description : null);
                 game.Description = result.Description;
             }
 
             if (settings.GenerateGenres && settings.GenresApplyMode != MetaDataIASettings.ApplySkip)
             {
                 var limited = Limit(result.Genres, settings.MaxGenres).ToList();
-                MetadataDebugLog.Write(
-                    "apply-genres | " + (game.Name ?? string.Empty),
-                    "mode=" + TermApplyMode(result, "genres", settings.GenresApplyMode) +
-                    "\nwriting=[" + string.Join(", ", limited) + "]");
+                MetadataDebugLog.Info(
+                    game,
+                    "apply",
+                    "genres mode=" + TermApplyMode(result, "genres", settings.GenresApplyMode) +
+                    " writing=" + MetadataDebugLog.FormatTermList(limited));
                 game.GenreIds = MergeIds(
                     api.Database.Genres,
                     game.GenreIds,
@@ -44,10 +52,16 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateTags && settings.TagsApplyMode != MetaDataIASettings.ApplySkip)
             {
+                var limited = Limit(result.Tags, settings.MaxTags).ToList();
+                MetadataDebugLog.Info(
+                    game,
+                    "apply",
+                    "tags mode=" + TermApplyMode(result, "tags", settings.TagsApplyMode) +
+                    " writing=" + MetadataDebugLog.FormatTermList(limited));
                 game.TagIds = MergeIds(
                     api.Database.Tags,
                     game.TagIds,
-                    Ensure(api.Database.Tags, Limit(result.Tags, settings.MaxTags), false, false),
+                    Ensure(api.Database.Tags, limited, false, false),
                     TermApplyMode(result, "tags", settings.TagsApplyMode),
                     settings.MaxTags,
                     "tags",
@@ -56,10 +70,16 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateFeatures && settings.FeaturesApplyMode != MetaDataIASettings.ApplySkip)
             {
+                var limited = Limit(result.Features, settings.MaxFeatures).ToList();
+                MetadataDebugLog.Info(
+                    game,
+                    "apply",
+                    "features mode=" + TermApplyMode(result, "features", settings.FeaturesApplyMode) +
+                    " writing=" + MetadataDebugLog.FormatTermList(limited));
                 game.FeatureIds = MergeIds(
                     api.Database.Features,
                     game.FeatureIds,
-                    Ensure(api.Database.Features, Limit(result.Features, settings.MaxFeatures), false, false),
+                    Ensure(api.Database.Features, limited, false, false),
                     TermApplyMode(result, "features", settings.FeaturesApplyMode),
                     settings.MaxFeatures,
                     "features",
@@ -88,10 +108,16 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateCategories && settings.CategoriesApplyMode != MetaDataIASettings.ApplySkip)
             {
+                var limited = Limit(result.Categories, settings.MaxCategories).ToList();
+                MetadataDebugLog.Info(
+                    game,
+                    "apply",
+                    "categories mode=" + TermApplyMode(result, "categories", settings.CategoriesApplyMode) +
+                    " writing=" + MetadataDebugLog.FormatTermList(limited));
                 game.CategoryIds = MergeIds(
                     api.Database.Categories,
                     game.CategoryIds,
-                    Ensure(api.Database.Categories, Limit(result.Categories, settings.MaxCategories), false, true),
+                    Ensure(api.Database.Categories, limited, false, true),
                     TermApplyMode(result, "categories", settings.CategoriesApplyMode),
                     settings.MaxCategories,
                     "categories",

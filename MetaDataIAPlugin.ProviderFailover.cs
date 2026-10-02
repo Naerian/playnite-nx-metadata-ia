@@ -62,15 +62,26 @@ namespace MetaDataIAPlugin
             runtime.ActiveProfile = runtime.Chain[runtime.ChainIndex];
             runtime.ActiveSettings = BindSettingsToProfile(template, runtime.ActiveProfile);
 
+            var processed = 0;
+            var cancelled = false;
+            var batchStopped = false;
+            var probeAborted = false;
+            var errors = new List<string>();
+            var updatedGameIds = new HashSet<Guid>();
+            var failureReasons = new Dictionary<Guid, string>();
+            string batchId = null;
+            System.Diagnostics.Stopwatch batchWatch = null;
             try
             {
-                var processed = 0;
-                var cancelled = false;
-                var batchStopped = false;
-                var probeAborted = false;
-                var errors = new List<string>();
-                var updatedGameIds = new HashSet<Guid>();
-                var failureReasons = new Dictionary<Guid, string>();
+                batchId = MetadataDebugLog.NewBatchId();
+                batchWatch = System.Diagnostics.Stopwatch.StartNew();
+                MetadataDebugLog.Verbose = runtime.ActiveSettings != null && runtime.ActiveSettings.VerboseOrganizeLog;
+                MetadataDebugLog.BatchBegin(
+                    batchId,
+                    games.Count,
+                    runtime.ActiveSettings == null ? null : runtime.ActiveSettings.ProviderPreset,
+                    runtime.ActiveSettings == null ? null : runtime.ActiveSettings.Model,
+                    runtime.ActiveSettings == null ? null : runtime.ActiveSettings.Language);
                 var historyOperation = history.BeginOperation(silent
                     ? Loc("MTDA_HistoryAutoImportMetadata", "Automatic metadata import")
                     : Loc("MTDA_HistoryApplyMetadata", "Apply AI metadata"));
@@ -296,26 +307,29 @@ namespace MetaDataIAPlugin
                         else
                         {
                             var applySettings = runtime.ActiveSettings;
-                            MetadataDebugLog.Write(
-                                "batch-apply | " + (game == null ? string.Empty : game.Name ?? string.Empty),
-                                "start");
-                            RunOnProgressDispatcher(
-                                progress,
-                                () =>
-                                {
-                                    var resultToApply = PrepareResultForDirectBatchApply(item.Result, applySettings, games.Count > 1 || silent);
-                                    var before = history.Capture(game, historyOperation, false);
-                                    MetadataApplyService.Apply(PlayniteApi, game, resultToApply, applySettings);
-                                    var after = history.Capture(game, historyOperation, false);
-                                    history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
-                                    LearnVocabulary(applySettings, resultToApply);
-                                });
-                            MetadataDebugLog.Write(
-                                "batch-apply | " + (game == null ? string.Empty : game.Name ?? string.Empty),
-                                "done");
-                            processed++;
-                            updatedGameIds.Add(game.Id);
-                            failureReasons.Remove(game.Id);
+                            try
+                            {
+                                RunOnProgressDispatcher(
+                                    progress,
+                                    () =>
+                                    {
+                                        var resultToApply = PrepareResultForDirectBatchApply(item.Result, applySettings, games.Count > 1 || silent);
+                                        var before = history.Capture(game, historyOperation, false);
+                                        MetadataApplyService.Apply(PlayniteApi, game, resultToApply, applySettings);
+                                        var after = history.Capture(game, historyOperation, false);
+                                        history.AddGame(historyOperation, game, before, after, resultToApply.Provenance);
+                                        LearnVocabulary(applySettings, resultToApply);
+                                    });
+                                MetadataDebugLog.GameEnd(game, true);
+                                processed++;
+                                updatedGameIds.Add(game.Id);
+                                failureReasons.Remove(game.Id);
+                            }
+                            catch (Exception applyEx)
+                            {
+                                MetadataDebugLog.GameEnd(game, false, applyEx.Message);
+                                throw;
+                            }
                         }
 
                         if (cancelled || batchStopped)
@@ -335,12 +349,7 @@ namespace MetaDataIAPlugin
                         refreshProgress();
                     }
 
-                    MetadataDebugLog.Write(
-                        "batch-complete",
-                        "processed=" + processed +
-                        " failed=" + CountDistinctFailureGames(failureReasons, updatedGameIds) +
-                        " cancelled=" + cancelled +
-                        " stopped=" + batchStopped);
+                    // batch-complete is written by BatchEnd after the progress scope
                 }, null, runtime.ActiveSettings);
 
                 if (progressResult != null && progressResult.Error != null)
@@ -417,6 +426,24 @@ namespace MetaDataIAPlugin
                 if (!silent)
                 {
                     PlayniteApi.Dialogs.ShowErrorMessage(UserError(ex), PluginTitle);
+                }
+            }
+            finally
+            {
+                if (batchWatch != null)
+                {
+                    var failedCount = CountDistinctFailureGames(failureReasons, updatedGameIds);
+                    var cancelledCount = cancelled || probeAborted
+                        ? Math.Max(0, games.Count - processed - failedCount)
+                        : 0;
+                    batchWatch.Stop();
+                    MetadataDebugLog.BatchEnd(
+                        batchId,
+                        processed,
+                        failedCount,
+                        cancelledCount,
+                        batchStopped || probeAborted,
+                        batchWatch.Elapsed);
                 }
             }
         }
@@ -506,8 +533,8 @@ namespace MetaDataIAPlugin
                     var skippedName = runtime.ActiveProfile == null
                         ? (runtime.ActiveSettings.ProviderPreset ?? string.Empty)
                         : runtime.ActiveProfile.ListLabel;
-                    MetadataDebugLog.Write(
-                        "provider-skip-failed",
+                    MetadataDebugLog.Warn(
+                        "provider.skip-failed",
                         "profile=" + skippedName + " reason=already-failed-this-batch");
                     if (!TryMoveToNextProvider(runtime, refreshFooter))
                     {
@@ -581,9 +608,10 @@ namespace MetaDataIAPlugin
             {
                 var toLabel = runtime.ActiveProfile.ListLabel;
                 logger.Warn("Metadata AI provider failover: " + fromLabel + " → " + toLabel + " (" + reason + ")");
-                MetadataDebugLog.Write(
-                    "provider-failover",
-                    "from=" + fromLabel + " to=" + toLabel + " game=" + (failedGame == null ? string.Empty : failedGame.Name));
+                MetadataDebugLog.Warn(
+                    failedGame,
+                    "provider.failover",
+                    "from=" + fromLabel + " to=" + toLabel);
 
                 if (!requeued && failedGame != null)
                 {
@@ -692,9 +720,7 @@ namespace MetaDataIAPlugin
 
             if (runtime.FailedProviderKeys.Add(key))
             {
-                MetadataDebugLog.Write(
-                    "provider-mark-failed",
-                    "key=" + key);
+                MetadataDebugLog.Warn("provider.mark-failed", "key=" + key);
             }
         }
 
@@ -743,8 +769,8 @@ namespace MetaDataIAPlugin
                     var candidateSettings = BindSettingsToProfile(runtime.TemplateSettings, profile);
                     if (IsProviderMarkedFailed(runtime, candidateSettings))
                     {
-                        MetadataDebugLog.Write(
-                            "provider-skip-failed",
+                        MetadataDebugLog.Warn(
+                            "provider.skip-failed",
                             "profile=" + (profile.ListLabel ?? profile.ProviderPreset) + " reason=already-failed-this-batch");
                         next++;
                         continue;

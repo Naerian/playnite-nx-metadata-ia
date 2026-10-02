@@ -1,5 +1,14 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.33
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-10-02
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.33/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_33.pext
+    Changelog:
+      - 'Organize debug log is easier to scan: batch/game markers, INFO/WARN/ERROR lines, game and batch ids, and chronological steps.'
+      - 'Default log stays compact (summaries + short description preview). Optional Verbose organize log stores full prompts and responses.'
+      - 'Advanced → Maintenance can open or clear the organize debug log, and toggle verbose mode.'
+
   - Version: 1.4.32
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-10-01

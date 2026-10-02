@@ -291,6 +291,7 @@ namespace MetaDataIAPlugin
         private string model = "llama-3.1-8b-instant";
         private string language = "es";
         private bool showAdvancedOptions = false;
+        private bool verboseOrganizeLog = false;
         private string descriptionTemplate = DefaultMediumTemplate;
         private ObservableCollection<TemplateProfile> templates;
         private string activeTemplateName = "Media";
@@ -625,6 +626,21 @@ namespace MetaDataIAPlugin
 
                 SetValue(ref showAdvancedOptions, value);
                 OnPropertyChanged("ShowEndpointEditor");
+            }
+        }
+
+        public bool VerboseOrganizeLog
+        {
+            get { return verboseOrganizeLog; }
+            set
+            {
+                if (verboseOrganizeLog == value)
+                {
+                    return;
+                }
+
+                SetValue(ref verboseOrganizeLog, value);
+                MetadataDebugLog.Verbose = value;
             }
         }
 

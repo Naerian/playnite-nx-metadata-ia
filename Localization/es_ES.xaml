@@ -902,6 +902,16 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_MediaRankMeetsTarget">cumple el tamaño de salida configurado</sys:String>
     <sys:String x:Key="MTDA_MediaRankLogoPreference">coincide con la preferencia de logo</sys:String>
     <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">Diagnóstico para soporte</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogTitle">Registro de depuración</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogHelp">Guarda un registro sencillo de lo que hizo Metadata AI en cada juego. Con eso suele bastar para ver qué pasó; activa el registro detallado solo si necesitas investigar un fallo (el archivo crecerá más rápido).</sys:String>
+    <sys:String x:Key="MTDA_VerboseOrganizeLog">Registro detallado (archivo más grande)</sys:String>
+    <sys:String x:Key="MTDA_OpenOrganizeDebugLog">Abrir registro</sys:String>
+    <sys:String x:Key="MTDA_ClearOrganizeDebugLog">Vaciar registro</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogMissing">El log de organize aún no está disponible. Genera o aplica metadatos una vez para crearlo.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogOpenFailed">No se pudo abrir el log de organize.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogCleared">Registro de depuración vaciado.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearConfirm">¿Vaciar el registro de depuración? Esta acción no se puede deshacer.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearFailed">No se pudo vaciar el registro de depuración.</sys:String>
     <sys:String x:Key="MTDA_MediaRankUsablePixels">píxeles útiles {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">Validación</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">No se pudo exportar el informe de diagnóstico.</sys:String>

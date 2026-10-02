@@ -832,6 +832,16 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_MediaRankMeetsTarget">ç¬¦åˆé…ç½®çš„è¾“å‡ºå°ºå¯¸</sys:String>
     <sys:String x:Key="MTDA_MediaRankLogoPreference">ç¬¦åˆ Logo åå¥½</sys:String>
     <sys:String x:Key="MTDA_MaintenanceDiagnosticsTitle">æ”¯æŒè¯Šæ–­</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogTitle">Debug log</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogHelp">Keeps a simple record of what Metadata AI did for each game. Enough to see what happened; turn on detailed logging below only if you need to dig into a problem (the file will grow faster).</sys:String>
+    <sys:String x:Key="MTDA_VerboseOrganizeLog">Detailed logging (larger file)</sys:String>
+    <sys:String x:Key="MTDA_OpenOrganizeDebugLog">Open log</sys:String>
+    <sys:String x:Key="MTDA_ClearOrganizeDebugLog">Clear log</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogMissing">The organize debug log is not available yet. Run a metadata generate or apply once to create it.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogOpenFailed">Could not open the organize debug log.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogCleared">Debug log cleared.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearConfirm">Clear the debug log? This cannot be undone.</sys:String>
+    <sys:String x:Key="MTDA_OrganizeDebugLogClearFailed">Could not clear the debug log.</sys:String>
     <sys:String x:Key="MTDA_MediaRankUsablePixels">å¯ç”¨åƒç´  {0}</sys:String>
     <sys:String x:Key="MTDA_MediaDiagValidation">éªŒè¯</sys:String>
     <sys:String x:Key="MTDA_DiagnosticsExportFailed">æ— æ³•å¯¼å‡ºè¯Šæ–­æŠ¥å‘Šã€‚</sys:String>
