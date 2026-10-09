@@ -53,7 +53,7 @@ namespace MetaDataIAPlugin
                 return string.Empty;
             }
 
-            var allGames = api == null ? new List<Game>() : api.Database.Games.GetClone().ToList();
+            var allGames = GetLibraryGames(api);
             var hasSequels = allGames
                 .Where(x => x != null && x.Id != game.Id)
                 .Select(x => Analyze(x.Name))
@@ -81,7 +81,7 @@ namespace MetaDataIAPlugin
                 return current.BaseName;
             }
 
-            var allGames = api == null ? new List<Game>() : api.Database.Games.GetClone().ToList();
+            var allGames = GetLibraryGames(api);
             var hasNumberedEntry = allGames
                 .Where(x => x != null && x.Id != game.Id)
                 .Select(x => Analyze(x.Name))
@@ -108,7 +108,7 @@ namespace MetaDataIAPlugin
             }
 
             var current = Analyze(game.Name);
-            var related = api.Database.Games.GetClone()
+            var related = GetLibraryGames(api)
                 .Where(x => x != null && x.Id != game.Id)
                 .Select(x => Analyze(x.Name))
                 .Where(x => SameBase(x.BaseName, current.BaseName))
@@ -135,13 +135,31 @@ namespace MetaDataIAPlugin
                 return firstSeries.Name.Trim();
             }
 
-            if (api == null)
+            if (api == null || api.Database == null || api.Database.Series == null)
             {
                 return string.Empty;
             }
 
             var series = api.Database.Series.Get(game.SeriesIds[0]);
             return series == null || string.IsNullOrWhiteSpace(series.Name) ? string.Empty : series.Name.Trim();
+        }
+
+        private static List<Game> GetLibraryGames(IPlayniteAPI api)
+        {
+            if (api == null || api.Database == null || api.Database.Games == null)
+            {
+                return new List<Game>();
+            }
+
+            try
+            {
+                var clone = api.Database.Games.GetClone();
+                return clone == null ? new List<Game>() : clone.ToList();
+            }
+            catch
+            {
+                return api.Database.Games.Where(x => x != null).ToList();
+            }
         }
 
         private static string Format(IPlayniteAPI api, Game game, string baseName, int number, string gameName)

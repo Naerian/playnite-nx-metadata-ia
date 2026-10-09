@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -654,7 +655,8 @@ namespace MetaDataIAPlugin
 
                 if (generationError != null)
                 {
-                    throw generationError;
+                    // Preserve the original stack; a bare "throw ex" resets it to this line.
+                    ExceptionDispatchInfo.Capture(generationError).Throw();
                 }
 
                 if (result == null)

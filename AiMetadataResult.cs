@@ -213,6 +213,11 @@ namespace MetaDataIAPlugin
 
         private void AddLinkIfMissing(string name, string url)
         {
+            if (Links == null)
+            {
+                Links = new List<AiMetadataLink>();
+            }
+
             if (string.IsNullOrWhiteSpace(url) ||
                 Links.Any(x => string.Equals(x.Url, url, StringComparison.OrdinalIgnoreCase)))
             {
@@ -224,6 +229,11 @@ namespace MetaDataIAPlugin
 
         private void EnsureFeatureFallback(MetaDataIASettings settings, Playnite.SDK.Models.Game game)
         {
+            if (Features == null)
+            {
+                Features = new List<string>();
+            }
+
             if (Features.Count > 0)
             {
                 return;
@@ -301,9 +311,10 @@ namespace MetaDataIAPlugin
             description = ReplaceHtmlListToken(description, "categories", Categories);
             description = ReplaceHtmlListToken(description, "features", Features);
 
-            for (int i = 0; i < Features.Count; i++)
+            var features = Features ?? new List<string>();
+            for (int i = 0; i < features.Count; i++)
             {
-                description = ReplaceHtmlTextToken(description, "feature_" + (i + 1), Features[i]);
+                description = ReplaceHtmlTextToken(description, "feature_" + (i + 1), features[i]);
             }
             description = Regex.Replace(description, @"<li\b[^>]*>\s*\{feature_\d+\}\s*</li>\s*", string.Empty, RegexOptions.IgnoreCase);
             description = Regex.Replace(description, @"\{feature_\d+\}", string.Empty, RegexOptions.IgnoreCase);

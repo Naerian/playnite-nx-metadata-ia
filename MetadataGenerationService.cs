@@ -321,6 +321,7 @@ namespace MetaDataIAPlugin
 
             await LocalizeSystemRequirementsAsync(result, game, cancellationToken).ConfigureAwait(false);
             LogMetadataResultSummary(game, result);
+            EnsureResultCollections(result);
             await ResolveTermFieldsAsync(result, game, cancellationToken).ConfigureAwait(false);
             result.ApplyConfiguredPrefixes(settings, Names(game == null ? null : game.Tags), Names(game == null ? null : game.Categories));
             await ApplyVerifiedSeriesOrderAsync(result, game, cancellationToken).ConfigureAwait(false);
@@ -435,24 +436,16 @@ namespace MetaDataIAPlugin
             }
 
             var genresLibrary = MergePreferredNames(
-                playniteApi != null && playniteApi.Database != null
-                    ? playniteApi.Database.Genres.Select(x => x.Name)
-                    : Enumerable.Empty<string>(),
+                DatabaseNames(playniteApi == null || playniteApi.Database == null ? null : playniteApi.Database.Genres),
                 SessionCache == null ? null : SessionCache.GetPreferred("genres"));
             var tagsLibrary = MergePreferredNames(
-                playniteApi != null && playniteApi.Database != null
-                    ? playniteApi.Database.Tags.Select(x => x.Name)
-                    : Enumerable.Empty<string>(),
+                DatabaseNames(playniteApi == null || playniteApi.Database == null ? null : playniteApi.Database.Tags),
                 SessionCache == null ? null : SessionCache.GetPreferred("tags"));
             var featuresLibrary = MergePreferredNames(
-                playniteApi != null && playniteApi.Database != null
-                    ? playniteApi.Database.Features.Select(x => x.Name)
-                    : Enumerable.Empty<string>(),
+                DatabaseNames(playniteApi == null || playniteApi.Database == null ? null : playniteApi.Database.Features),
                 SessionCache == null ? null : SessionCache.GetPreferred("features"));
             var categoriesLibrary = MergePreferredNames(
-                playniteApi != null && playniteApi.Database != null
-                    ? playniteApi.Database.Categories.Select(x => x.Name)
-                    : Enumerable.Empty<string>(),
+                DatabaseNames(playniteApi == null || playniteApi.Database == null ? null : playniteApi.Database.Categories),
                 SessionCache == null ? null : SessionCache.GetPreferred("categories"));
 
             result.Genres = VocabularyTermNormalizer.NormalizeField(
@@ -1391,6 +1384,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            EnsureResultCollections(result);
             var verified = await new SeriesOrderLookupService(settings).ResolveAsync(game, cancellationToken).ConfigureAwait(false);
             if (settings.GenerateSortingName)
             {
@@ -1404,7 +1398,8 @@ namespace MetaDataIAPlugin
 
             if (settings.GenerateSeries && verified.HasSeries)
             {
-                result.Series = ResolveKnownSeries(new[] { verified.SeriesName }, game, settings.MaxSeries);
+                result.Series = ResolveKnownSeries(new[] { verified.SeriesName }, game, settings.MaxSeries)
+                    ?? new List<string>();
                 result.Conflicts.RemoveAll(x => string.Equals(x.Field, "series", StringComparison.OrdinalIgnoreCase));
             }
 
@@ -1421,7 +1416,7 @@ namespace MetaDataIAPlugin
                 });
             }
 
-            if (settings.GenerateSeries && verified.HasSeries && result.Series.Count > 0)
+            if (settings.GenerateSeries && verified.HasSeries && result.Series != null && result.Series.Count > 0)
             {
                 result.Provenance.RemoveAll(x => string.Equals(x.Field, "series", StringComparison.OrdinalIgnoreCase));
                 result.Provenance.Add(new MetadataFieldProvenance
@@ -2330,22 +2325,22 @@ namespace MetaDataIAPlugin
 
             if (string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase))
             {
-                return Names(playniteApi.Database.Genres);
+                return DatabaseNames(playniteApi.Database.Genres);
             }
 
             if (string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase))
             {
-                return Names(playniteApi.Database.Tags);
+                return DatabaseNames(playniteApi.Database.Tags);
             }
 
             if (string.Equals(field, "features", StringComparison.OrdinalIgnoreCase))
             {
-                return Names(playniteApi.Database.Features);
+                return DatabaseNames(playniteApi.Database.Features);
             }
 
             if (string.Equals(field, "categories", StringComparison.OrdinalIgnoreCase))
             {
-                return Names(playniteApi.Database.Categories);
+                return DatabaseNames(playniteApi.Database.Categories);
             }
 
             return Enumerable.Empty<string>();
@@ -3148,6 +3143,7 @@ namespace MetaDataIAPlugin
                 return;
             }
 
+            EnsureResultCollections(result);
             var requests = new List<TermFieldRequest>
             {
                 BuildTermRequest(game, "genres", settings.GenerateGenres, settings.GenresApplyMode, Names(game.Genres), result.Genres, settings.MaxGenres, x => x.Genres),
@@ -3156,7 +3152,7 @@ namespace MetaDataIAPlugin
                 BuildTermRequest(game, "categories", settings.GenerateCategories, settings.CategoriesApplyMode, Names(game.Categories), result.Categories, settings.MaxCategories, null)
             };
 
-            var active = requests.Where(x => !string.Equals(x.Mode, "skip", StringComparison.OrdinalIgnoreCase)).ToList();
+            var active = requests.Where(x => x != null && !string.Equals(x.Mode, "skip", StringComparison.OrdinalIgnoreCase)).ToList();
             var direct = active.Where(x => !x.NeedsModel).ToList();
             var modelFields = active.Where(x => x.NeedsModel).ToList();
             foreach (var field in direct)
@@ -3164,7 +3160,8 @@ namespace MetaDataIAPlugin
                 // Localized overwrite/append-empty and filled empty-only apply store lists
                 // without a model call; keep those values on the result.
                 List<string> applied;
-                if (string.Equals(field.Mode, "empty", StringComparison.OrdinalIgnoreCase) && field.Existing.Count > 0)
+                var existingCount = field.Existing == null ? 0 : field.Existing.Count;
+                if (string.Equals(field.Mode, "empty", StringComparison.OrdinalIgnoreCase) && existingCount > 0)
                 {
                     applied = field.DirectTerms();
                     AssignTermField(result, field.Field, applied);
@@ -4363,6 +4360,36 @@ namespace MetaDataIAPlugin
             }
 
             return text.Length > 700 ? text.Substring(0, 700).Trim() + "..." : text;
+        }
+
+        private static void EnsureResultCollections(AiMetadataResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            if (result.Provenance == null) result.Provenance = new List<MetadataFieldProvenance>();
+            if (result.Conflicts == null) result.Conflicts = new List<MetadataFieldConflict>();
+            if (result.ResolvedTermFields == null) result.ResolvedTermFields = new List<string>();
+            if (result.Features == null) result.Features = new List<string>();
+            if (result.Genres == null) result.Genres = new List<string>();
+            if (result.Tags == null) result.Tags = new List<string>();
+            if (result.Developers == null) result.Developers = new List<string>();
+            if (result.Publishers == null) result.Publishers = new List<string>();
+            if (result.AgeRatings == null) result.AgeRatings = new List<string>();
+            if (result.Regions == null) result.Regions = new List<string>();
+            if (result.Categories == null) result.Categories = new List<string>();
+            if (result.Links == null) result.Links = new List<AiMetadataLink>();
+            if (result.Series == null) result.Series = new List<string>();
+            if (result.SimilarGamesList == null) result.SimilarGamesList = new List<string>();
+        }
+
+        private static IEnumerable<string> DatabaseNames(IEnumerable<DatabaseObject> items)
+        {
+            return items == null
+                ? Enumerable.Empty<string>()
+                : items.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name)).Select(x => x.Name);
         }
 
         private static List<string> Names<T>(IEnumerable<T> items) where T : DatabaseObject

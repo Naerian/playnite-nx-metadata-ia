@@ -1,6 +1,12 @@
 # Changelog
 
 
+
+## 1.4.35 — 2026-10-09
+- Fix NullReferenceException after a successful metadata.result that marked the game as failed before apply.
+- Preserve original exception stacks when GenerateAndReview rethrows, so Playnite logs point at the real failure site.
+- Harden sorting-name library scans and term-field/result collection null guards.
+
 ## 1.4.34 — 2026-10-09
 - Custom OpenAI-compatible providers (e.g. ClinePass): unwrap responses wrapped in data, raise the provider probe token budget, request JSON mode, and parse string-shaped errors.
 - Switching to Custom no longer keeps the previous preset endpoint/model; the last Custom connection is remembered across preset changes.

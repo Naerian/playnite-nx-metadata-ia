@@ -52,6 +52,8 @@ namespace MetaDataIAPlugin
         {
             get
             {
+                var existing = Existing ?? new List<string>();
+                var incoming = Incoming ?? new List<string>();
                 if (string.Equals(Mode, "skip", StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
@@ -59,7 +61,7 @@ namespace MetaDataIAPlugin
 
                 if (FromKnowledge)
                 {
-                    if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
+                    if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && existing.Count > 0)
                     {
                         return false;
                     }
@@ -69,13 +71,13 @@ namespace MetaDataIAPlugin
                            string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase);
                 }
 
-                if (Incoming.Count == 0)
+                if (incoming.Count == 0)
                 {
                     return false;
                 }
 
                 // Empty-only with a filled field: keep current labels, no model.
-                if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
+                if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && existing.Count > 0)
                 {
                     return false;
                 }
@@ -88,7 +90,7 @@ namespace MetaDataIAPlugin
                     return true;
                 }
 
-                if (string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
+                if (string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) && existing.Count > 0)
                 {
                     return true;
                 }
@@ -102,17 +104,18 @@ namespace MetaDataIAPlugin
 
         public List<string> DirectTerms()
         {
-            if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count > 0)
+            var existing = Existing ?? new List<string>();
+            if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && existing.Count > 0)
             {
-                return Take(Existing);
+                return Take(existing);
             }
 
-            if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && Existing.Count == 0)
+            if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase) && existing.Count == 0)
             {
                 return Take(PreferredIncoming());
             }
 
-            if (string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) && Existing.Count == 0)
+            if (string.Equals(Mode, "append", StringComparison.OrdinalIgnoreCase) && existing.Count == 0)
             {
                 return Take(PreferredIncoming());
             }
@@ -122,11 +125,12 @@ namespace MetaDataIAPlugin
                 return Take(PreferredIncoming());
             }
 
-            return Take(Existing);
+            return Take(existing);
         }
 
         public List<string> FallbackTerms()
         {
+            var existing = Existing ?? new List<string>();
             if (string.Equals(Mode, "overwrite", StringComparison.OrdinalIgnoreCase))
             {
                 return Take(PreferredIncoming());
@@ -134,10 +138,10 @@ namespace MetaDataIAPlugin
 
             if (string.Equals(Mode, "empty", StringComparison.OrdinalIgnoreCase))
             {
-                return Existing.Count > 0 ? Take(Existing) : Take(PreferredIncoming());
+                return existing.Count > 0 ? Take(existing) : Take(PreferredIncoming());
             }
 
-            return Take(Existing.Concat(PreferredIncoming()));
+            return Take(existing.Concat(PreferredIncoming()));
         }
 
         private IEnumerable<string> PreferredIncoming()
