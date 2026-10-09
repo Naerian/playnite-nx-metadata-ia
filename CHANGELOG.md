@@ -2,6 +2,11 @@
 
 
 
+
+## 1.4.36 — 2026-10-10
+- Fix NullReferenceException when categories come from the model but have no store selector: fromStore no longer confuses model fallback with official store lists.
+- Local knowledge fallback for genres/tags/features works again when the store list is empty.
+
 ## 1.4.35 — 2026-10-09
 - Fix NullReferenceException after a successful metadata.result that marked the game as failed before apply.
 - Preserve original exception stacks when GenerateAndReview rethrows, so Playnite logs point at the real failure site.
