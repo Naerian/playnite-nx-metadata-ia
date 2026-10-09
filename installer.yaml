@@ -1,5 +1,13 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.36
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-10-09
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.36/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_36.pext
+    Changelog:
+      - 'Fix NullReferenceException when categories come from the model but have no store selector: fromStore no longer confuses model fallback with official store lists.'
+      - 'Local knowledge fallback for genres/tags/features works again when the store list is empty.'
+
   - Version: 1.4.35
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-10-09

@@ -3545,13 +3545,16 @@ namespace MetaDataIAPlugin
                 ? 20
                 : TermPoolSize(maxItems);
             var filterFeatures = string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
-            var incoming = storeSelector == null
+            // Keep store-derived "fromStore" separate from the model/current fallback.
+            // Mixing them made categories (null storeSelector) look store-backed when the
+            // model returned labels, then AlreadyInLanguage called StoreTermsAreInPluginLanguage(null).
+            var storeIncoming = storeSelector == null
                 ? new List<string>()
                 : CollectStoreTerms(storeSelector, target, filterFeatures, game, false);
-            if (incoming.Count == 0)
-            {
-                incoming = TermFieldResolver.DistinctTerms(current).Take(Math.Min(20, Math.Max(maxItems, 1) * 2)).ToList();
-            }
+            var fromStore = storeIncoming.Count > 0;
+            var incoming = fromStore
+                ? storeIncoming
+                : TermFieldResolver.DistinctTerms(current).Take(Math.Min(20, Math.Max(maxItems, 1) * 2)).ToList();
 
             var localizedIncoming = storeSelector == null
                 ? new List<string>()
@@ -3560,7 +3563,6 @@ namespace MetaDataIAPlugin
                 ? new List<string>()
                 : CollectNonLocalizedStoreTerms(storeSelector, target, filterFeatures, game);
 
-            var fromStore = incoming.Count > 0;
             var isTermListField = string.Equals(field, "genres", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(field, "tags", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(field, "features", StringComparison.OrdinalIgnoreCase);
@@ -3577,7 +3579,9 @@ namespace MetaDataIAPlugin
                 LocalizedIncoming = localizedIncoming,
                 NonLocalizedIncoming = nonLocalizedIncoming,
                 MaxItems = Math.Max(1, maxItems),
-                AlreadyInLanguage = !fromStore || StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
+                AlreadyInLanguage = storeSelector == null ||
+                                    !fromStore ||
+                                    StoreTermsAreInPluginLanguage(storeSelector, target, filterFeatures, game),
                 Organize = isTermListField,
                 FromKnowledge = wantsLocalFallback && hasLocalEvidence,
                 SkippedInsufficientLocalText = wantsLocalFallback && !hasLocalEvidence
@@ -4235,6 +4239,11 @@ namespace MetaDataIAPlugin
 
         private bool StoreTermsAreInPluginLanguage(Func<OfficialStoreMetadata, List<string>> selector, int targetCount, bool filterFeatures, Game game)
         {
+            if (selector == null)
+            {
+                return true;
+            }
+
             var saw = false;
             foreach (var source in officialContextForCurrentRequest ?? new List<OfficialStoreMetadata>())
             {
