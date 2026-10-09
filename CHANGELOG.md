@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 1.4.34 — 2026-10-09
+- Custom OpenAI-compatible providers (e.g. ClinePass): unwrap responses wrapped in data, raise the provider probe token budget, request JSON mode, and parse string-shaped errors.
+- Switching to Custom no longer keeps the previous preset endpoint/model; the last Custom connection is remembered across preset changes.
+- Transient HTTP 500/502/503 responses are retried with the same backoff as 429, so a single upstream hiccup is less likely to abort a batch.
+- Custom providers no longer show a usage refresh that cannot return limit headers; check limits in the provider dashboard instead.
+- API keys stored on provider profiles are now DPAPI-protected like other secrets, including in exported configuration backups.
+
 ## 1.4.33 — 2026-10-02
 - Organize debug log is easier to scan: batch/game markers, INFO/WARN/ERROR lines, game and batch ids, and chronological steps.
 - Default log stays compact (summaries + short description preview). Optional Verbose organize log stores full prompts and responses.

@@ -79,7 +79,11 @@ namespace MetaDataIAPlugin
         {
             return settings != null &&
                    (settings.ProviderPreset == MetaDataIASettings.ProviderGemini ||
-                    settings.ProviderPreset == MetaDataIASettings.ProviderMistral);
+                    settings.ProviderPreset == MetaDataIASettings.ProviderMistral ||
+                    // Custom OpenAI-compatible gateways (ClinePass, etc.) rarely expose
+                    // portable rate-limit headers; the usage refresh would burn a request
+                    // for nothing.
+                    settings.ProviderPreset == MetaDataIASettings.ProviderCustom);
         }
 
         public static ProviderUsageSnapshot GetCached(MetaDataIASettings settings)

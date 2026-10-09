@@ -67,12 +67,16 @@ namespace MetaDataIAPlugin
                 try
                 {
                     string content;
+                    // Some OpenAI-compatible proxies reject tiny max_tokens budgets
+                    // (empty content / upstream minimums). 512 clears the thresholds
+                    // measured against ClinePass and similar gateways.
+                    const int probeMaxTokens = 512;
                     if (settings.ProviderPreset == MetaDataIASettings.ProviderClaude)
                     {
                         content = await SendAnthropicTextAsync(
                             "Reply with the single word OK.",
                             "ping",
-                            8,
+                            probeMaxTokens,
                             probeToken).ConfigureAwait(false);
                     }
                     else
@@ -80,7 +84,7 @@ namespace MetaDataIAPlugin
                         content = await SendOpenAICompatibleTextAsync(
                             "Reply with the single word OK.",
                             "ping",
-                            8,
+                            probeMaxTokens,
                             false,
                             false,
                             probeToken).ConfigureAwait(false);
@@ -2031,7 +2035,8 @@ namespace MetaDataIAPlugin
                    preset == MetaDataIASettings.ProviderGemini ||
                    preset == MetaDataIASettings.ProviderGroq ||
                    preset == MetaDataIASettings.ProviderMistral ||
-                   preset == MetaDataIASettings.ProviderCerebras;
+                   preset == MetaDataIASettings.ProviderCerebras ||
+                   preset == MetaDataIASettings.ProviderCustom;
         }
 
         private static bool ContainsToken(IList<string> tokens, string name)
@@ -2386,8 +2391,13 @@ namespace MetaDataIAPlugin
         private static string ExtractAssistantContent(string responseText)
         {
             var json = JObject.Parse(responseText);
-            var choices = json["choices"] as JArray;
-            var content = choices == null || choices.Count == 0 ? null : choices[0]["message"]["content"].ToString();
+            // Prefer root choices (OpenAI shape). Some gateways (e.g. ClinePass)
+            // wrap the same payload under a "data" object.
+            var root = json["choices"] != null ? json : json["data"] as JObject;
+            var choices = root == null ? null : root["choices"] as JArray;
+            var content = choices == null || choices.Count == 0 || choices[0]["message"] == null || choices[0]["message"]["content"] == null
+                ? null
+                : choices[0]["message"]["content"].ToString();
             if (string.IsNullOrWhiteSpace(content))
             {
                 throw new InvalidOperationException(Loc("MTDA_ErrorAiNoUsefulContent", "The AI provider did not return useful content."));
@@ -2884,9 +2894,9 @@ namespace MetaDataIAPlugin
                 }
 
                 var statusCode = (int)response.StatusCode;
-                // Only 429 is retried here. 503 is soft-failed to the caller so organize/knowledge
-                // can do a single delayed retry without stacking multi-minute backoff in a batch.
-                if (statusCode != 429 || attempt >= ProviderRateLimitRetries)
+                // Retry rate limits and common transient gateway failures. Organize/knowledge
+                // may still do one extra delayed retry after these attempts are exhausted.
+                if (!ShouldRetryProviderStatus(statusCode) || attempt >= ProviderRateLimitRetries)
                 {
                     return response;
                 }
@@ -2896,6 +2906,14 @@ namespace MetaDataIAPlugin
             }
 
             return response;
+        }
+
+        private static bool ShouldRetryProviderStatus(int statusCode)
+        {
+            return statusCode == 429 ||
+                   statusCode == 500 ||
+                   statusCode == 502 ||
+                   statusCode == 503;
         }
 
         private static int? ResolveRetryAfterSeconds(HttpResponseMessage response)
@@ -2921,8 +2939,23 @@ namespace MetaDataIAPlugin
             try
             {
                 var json = JObject.Parse(responseText);
-                providerMessage = json["error"] == null || json["error"]["message"] == null ? string.Empty : json["error"]["message"].ToString();
-                providerCode = json["error"] == null || json["error"]["code"] == null ? string.Empty : json["error"]["code"].ToString();
+                var errorToken = json["error"];
+                if (errorToken == null)
+                {
+                    providerMessage = string.Empty;
+                    providerCode = string.Empty;
+                }
+                else if (errorToken.Type == JTokenType.String)
+                {
+                    // Gateways like ClinePass return {"error":"...", "success":false}.
+                    providerMessage = errorToken.ToString();
+                    providerCode = string.Empty;
+                }
+                else
+                {
+                    providerMessage = errorToken["message"] == null ? string.Empty : errorToken["message"].ToString();
+                    providerCode = errorToken["code"] == null ? string.Empty : errorToken["code"].ToString();
+                }
             }
             catch
             {

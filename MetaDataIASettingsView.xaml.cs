@@ -1596,6 +1596,14 @@ namespace MetaDataIAPlugin
                 viewModel.Settings.RememberApiKeyForProvider(lastAppliedProviderPreset);
             }
 
+            if (string.Equals(
+                    lastAppliedProviderPreset,
+                    MetaDataIASettings.ProviderCustom,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                viewModel.Settings.RememberCustomConnection();
+            }
+
             var selectedProvider = viewModel.Settings.ProviderPreset;
             var previousModel = viewModel.Settings.Model;
             var preserveCustomModel = string.Equals(

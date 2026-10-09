@@ -1,5 +1,16 @@
 AddonId: MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83
 Packages:
+  - Version: 1.4.34
+    RequiredApiVersion: 6.15.0
+    ReleaseDate: 2026-10-09
+    PackageUrl: https://github.com/Naerian/playnite-nx-metadata-ia/releases/download/v1.4.34/MetaDataIAPlugin_2f42c46c-9e3f-48cb-99b6-7f41f12d9b83_1_4_34.pext
+    Changelog:
+      - 'Custom OpenAI-compatible providers (e.g. ClinePass): unwrap responses wrapped in data, raise the provider probe token budget, request JSON mode, and parse string-shaped errors.'
+      - 'Switching to Custom no longer keeps the previous preset endpoint/model; the last Custom connection is remembered across preset changes.'
+      - 'Transient HTTP 500/502/503 responses are retried with the same backoff as 429, so a single upstream hiccup is less likely to abort a batch.'
+      - 'Custom providers no longer show a usage refresh that cannot return limit headers; check limits in the provider dashboard instead.'
+      - 'API keys stored on provider profiles are now DPAPI-protected like other secrets, including in exported configuration backups.'
+
   - Version: 1.4.33
     RequiredApiVersion: 6.15.0
     ReleaseDate: 2026-10-02

@@ -288,6 +288,8 @@ namespace MetaDataIAPlugin
         private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
         private Dictionary<string, string> providerApiKeys;
+        private string customEndpoint = string.Empty;
+        private string customModel = string.Empty;
         private string model = "llama-3.1-8b-instant";
         private string language = "es";
         private bool showAdvancedOptions = false;
@@ -612,6 +614,24 @@ namespace MetaDataIAPlugin
                 EnsureProviderApiKeysStorage();
             }
         }
+
+        /// <summary>
+        /// Last Custom OpenAI-compatible endpoint/model. Built-in presets overwrite
+        /// Endpoint/Model on switch; without this, returning to Custom would keep
+        /// the previous preset's URL (and POST the Custom key there).
+        /// </summary>
+        public string CustomEndpoint
+        {
+            get { return customEndpoint ?? string.Empty; }
+            set { SetValue(ref customEndpoint, value ?? string.Empty); }
+        }
+
+        public string CustomModel
+        {
+            get { return customModel ?? string.Empty; }
+            set { SetValue(ref customModel, value ?? string.Empty); }
+        }
+
         public string Model { get { return model; } set { SetValue(ref model, value); } }
         public string Language { get { return language; } set { SetValue(ref language, value); } }
         public bool ShowAdvancedOptions
@@ -934,6 +954,7 @@ namespace MetaDataIAPlugin
             IgdbClientId = SecretProtectionService.Protect(IgdbClientId);
             IgdbClientSecret = SecretProtectionService.Protect(IgdbClientSecret);
             IgdbAccessToken = SecretProtectionService.Protect(IgdbAccessToken);
+            ProtectProviderProfileApiKeys();
         }
 
         public bool UnprotectSecretsAfterLoad()
@@ -968,6 +989,38 @@ namespace MetaDataIAPlugin
             IgdbClientSecret = plainText;
             succeeded = SecretProtectionService.TryUnprotect(IgdbAccessToken, out plainText) && succeeded;
             IgdbAccessToken = plainText;
+            succeeded = UnprotectProviderProfileApiKeys() && succeeded;
+
+            return succeeded;
+        }
+
+        private void ProtectProviderProfileApiKeys()
+        {
+            EnsureProviderProfilesStorage();
+            foreach (var profile in ProviderProfiles)
+            {
+                if (profile != null)
+                {
+                    profile.ApiKey = SecretProtectionService.Protect(profile.ApiKey);
+                }
+            }
+        }
+
+        private bool UnprotectProviderProfileApiKeys()
+        {
+            EnsureProviderProfilesStorage();
+            var succeeded = true;
+            string plainText;
+            foreach (var profile in ProviderProfiles)
+            {
+                if (profile == null)
+                {
+                    continue;
+                }
+
+                succeeded = SecretProtectionService.TryUnprotect(profile.ApiKey, out plainText) && succeeded;
+                profile.ApiKey = plainText;
+            }
 
             return succeeded;
         }
@@ -1063,6 +1116,24 @@ namespace MetaDataIAPlugin
             if (!providerApiKeys.TryGetValue(ProviderPreset, out existing) || string.IsNullOrWhiteSpace(existing))
             {
                 providerApiKeys[ProviderPreset] = key;
+            }
+        }
+
+        private void MigrateCurrentCustomConnection()
+        {
+            if (ProviderPreset != ProviderCustom)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(CustomEndpoint) && !string.IsNullOrWhiteSpace(Endpoint))
+            {
+                CustomEndpoint = Endpoint;
+            }
+
+            if (string.IsNullOrWhiteSpace(CustomModel) && !string.IsNullOrWhiteSpace(Model))
+            {
+                CustomModel = Model;
             }
         }
 
@@ -1182,6 +1253,7 @@ namespace MetaDataIAPlugin
             UseOfficialStoreContext = true;
             StrictCompanyAgeRegion = true;
             MigrateCurrentApiKeyIntoProviderMap();
+            MigrateCurrentCustomConnection();
 
             if (Templates == null || Templates.Count == 0)
             {
@@ -2307,6 +2379,14 @@ namespace MetaDataIAPlugin
             return SplitTerms(MediaBackgroundExcludedSearchTerms);
         }
 
+        public void RememberCustomConnection()
+        {
+            // Caller decides when the live Endpoint/Model belong to Custom
+            // (e.g. right before leaving the Custom preset).
+            CustomEndpoint = Endpoint ?? string.Empty;
+            CustomModel = Model ?? string.Empty;
+        }
+
         public void ApplyProviderPreset()
         {
             if (ProviderPreset == ProviderOpenAI)
@@ -2358,6 +2438,13 @@ namespace MetaDataIAPlugin
             {
                 Endpoint = "https://api.mistral.ai/v1/chat/completions";
                 Model = "mistral-small-latest";
+            }
+            else if (ProviderPreset == ProviderCustom)
+            {
+                // Never inherit another preset's URL/model. Restore the last Custom
+                // connection when available; otherwise leave blanks for the user.
+                Endpoint = CustomEndpoint ?? string.Empty;
+                Model = CustomModel ?? string.Empty;
             }
         }
 
@@ -3251,6 +3338,11 @@ namespace MetaDataIAPlugin
             SyncSelectedTemplate();
             if (Settings != null)
             {
+                if (Settings.ProviderPreset == MetaDataIASettings.ProviderCustom)
+                {
+                    Settings.RememberCustomConnection();
+                }
+
                 Settings.SyncPrimaryIntoProfileZero();
             }
 
