@@ -953,7 +953,8 @@ Fondos: {4}</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummary">Resumen de configuración</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Comprueba de un vistazo el proveedor activo, los campos habilitados y la configuración de medios.</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Apariencia</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Solo colores. Tipografía, espaciado y tamaños de control no cambian.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">Los presets solo cambian colores. Layout, tipografía y espaciado se mantienen. Por defecto usa texto/acento de Playnite y adapta las superficies del tema cuando puede.</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">Por defecto</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

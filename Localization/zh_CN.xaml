@@ -875,7 +875,8 @@ Ollama: http://localhost:11434/v1/chat/completions
     <sys:String x:Key="MTDA_ConfigurationSummary">é…ç½®æ¦‚è§ˆ</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">å¿«é€ŸæŸ¥çœ‹å½“å‰æä¾›å•†ã€å·²å¯ç”¨çš„å…ƒæ•°æ®å­—æ®µå’Œåª’ä½“é…ç½®ã€‚</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">预设只改变颜色。布局、字号和间距保持固定。默认使用 Playnite 文字色/强调色，并在可能时适配主题表面。</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">默认</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

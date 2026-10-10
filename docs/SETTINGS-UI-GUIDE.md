@@ -13,7 +13,7 @@ Sistema visual unificado para paneles de configuración de plugins Narian. Chrom
 1. **Chrome propio.** El panel pinta fondo, texto, bordes, acentos, inputs, botones, tabs, nav, cards, badges y scrollbar.
 2. **Estructura fija, color variable.** Tipografía, espaciado, radios y tamaños de control son iguales en todos los presets. Solo cambian los colores.
 3. **El host conserva su tema.** El root del settings view rellena únicamente el área asignada al plugin. En el diálogo compartido de Complementos no se repintan la ventana, la navegación ni los botones Guardar/Cancelar de Playnite. Las ventanas independientes propiedad del plugin sí aplican el preset a toda su superficie.
-4. **Presets solo de color.** Midnight · Paper · OLED · Ocean · Ember. Persistidos en settings (`AppearancePreset`).
+4. **Presets solo de color.** Default · Midnight · Paper · OLED · Ocean · Ember. Persistidos en settings (`AppearancePreset`). Default adapta texto/acento/superficies del tema Playnite.
 5. **Default:** Midnight (hasta detectar tema claro del host y sugerir Paper).
 
 ---
@@ -270,13 +270,11 @@ El bloque Field (label + control + hint) **no** lleva un rectángulo `surface` p
 - Icono Path/Viewbox **16×16**, stroke `text`.
 - `ToolTip` obligatorio si no hay texto.
 
-### Chips de Appearance preset
+### Appearance preset (Overview)
 
-- Alto **36**, radio **4**, padding horizontal **12**.
-- Inactivo: fondo `badgeBg`, texto `text`, borde `border`.
-- Activo: fondo `accent`, texto `accentOn`, borde `accent`.
-- Hover inactivo: `hover`. Activo **no** cambia en hover.
-- Solo cambian colores; tipografía/spacing fijos.
+- ComboBox dropdown (mismo patrón que Audio Switcher), ancho **280**, alineado a la izquierda.
+- `DisplayMemberPath=DisplayName`, `SelectedValuePath=Value`.
+- Solo cambian colores del chrome; tipografía/spacing fijos.
 
 ### Inputs (TextBox, PasswordBox, ComboBox, ListBox, DatePicker)
 

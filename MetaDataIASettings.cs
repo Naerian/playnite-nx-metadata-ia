@@ -284,7 +284,13 @@ namespace MetaDataIAPlugin
         public const string ProviderCustom = "Personalizado compatible con OpenAI";
 
         private string providerPreset = ProviderGroq;
-        private string appearancePreset = SettingsAppearance.Midnight;
+        private string appearancePreset = SettingsAppearance.Default;
+        private double settingsWindowWidth;
+        private double settingsWindowHeight;
+        private double settingsWindowLeft;
+        private double settingsWindowTop;
+        private bool settingsWindowMaximized;
+        private bool settingsWindowPlacementSaved;
         private string endpoint = "https://api.groq.com/openai/v1/chat/completions";
         private string apiKey = string.Empty;
         private Dictionary<string, string> providerApiKeys;
@@ -593,6 +599,48 @@ namespace MetaDataIAPlugin
 
                 SetValue(ref appearancePreset, normalized);
             }
+        }
+
+        /// <summary>Last restored/normal width of the settings host window.</summary>
+        public double SettingsWindowWidth
+        {
+            get { return settingsWindowWidth; }
+            set { SetValue(ref settingsWindowWidth, value); }
+        }
+
+        /// <summary>Last restored/normal height of the settings host window.</summary>
+        public double SettingsWindowHeight
+        {
+            get { return settingsWindowHeight; }
+            set { SetValue(ref settingsWindowHeight, value); }
+        }
+
+        /// <summary>Last restored/normal left of the settings host window.</summary>
+        public double SettingsWindowLeft
+        {
+            get { return settingsWindowLeft; }
+            set { SetValue(ref settingsWindowLeft, value); }
+        }
+
+        /// <summary>Last restored/normal top of the settings host window.</summary>
+        public double SettingsWindowTop
+        {
+            get { return settingsWindowTop; }
+            set { SetValue(ref settingsWindowTop, value); }
+        }
+
+        /// <summary>Whether the settings host window was maximized when last closed.</summary>
+        public bool SettingsWindowMaximized
+        {
+            get { return settingsWindowMaximized; }
+            set { SetValue(ref settingsWindowMaximized, value); }
+        }
+
+        /// <summary>True once a settings window placement has been persisted.</summary>
+        public bool SettingsWindowPlacementSaved
+        {
+            get { return settingsWindowPlacementSaved; }
+            set { SetValue(ref settingsWindowPlacementSaved, value); }
         }
         public string Endpoint { get { return endpoint; } set { SetValue(ref endpoint, value); } }
         public string ApiKey { get { return apiKey; } set { SetValue(ref apiKey, value); } }
@@ -2601,6 +2649,7 @@ namespace MetaDataIAPlugin
             {
                 return new List<LocalizedOption>
                 {
+                    Option(SettingsAppearance.Default, "MTDA_PresetDefault", "Default"),
                     Option(SettingsAppearance.Midnight, "MTDA_PresetMidnight", "Midnight"),
                     Option(SettingsAppearance.Paper, "MTDA_PresetPaper", "Paper"),
                     Option(SettingsAppearance.Oled, "MTDA_PresetOled", "OLED"),
@@ -3331,6 +3380,44 @@ namespace MetaDataIAPlugin
             Settings = editingClone;
             RefreshOriginLibraryIntegrations();
             SelectedTemplate = Settings == null ? null : Settings.GetActiveTemplate();
+        }
+
+        /// <summary>
+        /// Persists settings-window size/position/maximize independently of OK/Cancel,
+        /// so CancelEdit does not discard chrome layout and mid-edit Save does not flush
+        /// unrelated unsaved fields.
+        /// </summary>
+        public void PersistSettingsWindowLayout(
+            double width,
+            double height,
+            double left,
+            double top,
+            bool maximized)
+        {
+            ApplySettingsWindowLayout(Settings, width, height, left, top, maximized);
+            ApplySettingsWindowLayout(editingClone, width, height, left, top, maximized);
+            plugin.PatchSavedSettingsWindowLayout(width, height, left, top, maximized);
+        }
+
+        private static void ApplySettingsWindowLayout(
+            MetaDataIASettings target,
+            double width,
+            double height,
+            double left,
+            double top,
+            bool maximized)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.SettingsWindowWidth = width;
+            target.SettingsWindowHeight = height;
+            target.SettingsWindowLeft = left;
+            target.SettingsWindowTop = top;
+            target.SettingsWindowMaximized = maximized;
+            target.SettingsWindowPlacementSaved = true;
         }
 
         public void EndEdit()

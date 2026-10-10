@@ -13,6 +13,7 @@ namespace MetaDataIAPlugin
     /// </summary>
     public static class SettingsAppearance
     {
+        public const string Default = "Default";
         public const string Midnight = "Midnight";
         public const string Paper = "Paper";
         public const string Oled = "OLED";
@@ -21,7 +22,7 @@ namespace MetaDataIAPlugin
 
         public static readonly string[] AllPresets =
         {
-            Midnight, Paper, Oled, Ocean, Ember
+            Default, Midnight, Paper, Oled, Ocean, Ember
         };
 
         public sealed class Palette
@@ -182,7 +183,7 @@ namespace MetaDataIAPlugin
         {
             if (string.IsNullOrWhiteSpace(preset))
             {
-                return Midnight;
+                return Default;
             }
 
             foreach (var id in AllPresets)
@@ -193,13 +194,289 @@ namespace MetaDataIAPlugin
                 }
             }
 
-            return Midnight;
+            return Default;
         }
 
         public static Palette GetPalette(string preset)
         {
             preset = Normalize(preset);
+            if (string.Equals(preset, Default, StringComparison.OrdinalIgnoreCase))
+            {
+                return SampleThemePalette();
+            }
+
             return Palettes[preset];
+        }
+
+        /// <summary>
+        /// Default preset: Playnite TextBrush / HighlightGlyphBrush, plus a bg/surface pair
+        /// from the theme when available (or a derived equivalent when only one exists).
+        /// </summary>
+        private static Palette SampleThemePalette()
+        {
+            var midnight = Palettes[Midnight];
+            var text = ColorFromTheme("TextBrush", midnight.Text);
+            var accent = ColorFromTheme("HighlightGlyphBrush", midnight.Accent);
+            Color bg;
+            Color surface;
+            ResolveThemeSurfaces(midnight, out bg, out surface);
+
+            var hover = Mix(surface, text, 0.08);
+            var border = Mix(surface, text, 0.14);
+            var selected = Mix(surface, accent, 0.18);
+            var isLight = RelativeLuminance(bg) >= 0.55;
+
+            return new Palette
+            {
+                Bg = bg,
+                Surface = surface,
+                Hover = hover,
+                Selected = selected,
+                Border = border,
+                RowOdd = Mix(bg, surface, 0.35),
+                RowEven = surface,
+                TableHeader = Mix(surface, text, 0.06),
+                BadgeBg = hover,
+                BadgeSuccessBg = Mix(surface, midnight.Success, 0.22),
+                BadgeWarningBg = Mix(surface, midnight.Warning, 0.22),
+                BadgeMutedBg = Mix(surface, border, 0.35),
+                Success = midnight.Success,
+                Warning = midnight.Warning,
+                IsLight = isLight,
+                Text = text,
+                TextMuted = Mix(text, midnight.TextMuted, 0.55),
+                Accent = accent,
+                AccentHover = Mix(accent, text, 0.18),
+                AccentOn = ContrastOn(accent)
+            };
+        }
+
+        /// <summary>
+        /// Picks page bg + raised surface from the theme.
+        /// Desktop usually has WindowBackgourndBrush (Playnite typo) + PopupBackgroundBrush;
+        /// ControlBackgroundBrush is often Transparent and is skipped.
+        /// If only one opaque color exists, derive the missing level. If none, use Midnight.
+        /// </summary>
+        private static void ResolveThemeSurfaces(Palette midnight, out Color bg, out Color surface)
+        {
+            Color windowBg;
+            Color popup;
+            Color control;
+            Color controlDark;
+            var hasWindow = TryGetOpaqueThemeColor("WindowBackgourndBrush", out windowBg)
+                || TryGetOpaqueThemeColor("WindowBackBrush", out windowBg);
+            var hasPopup = TryGetOpaqueThemeColor("PopupBackgroundBrush", out popup);
+            var hasControl = TryGetOpaqueThemeColor("ControlBackgroundBrush", out control);
+            var hasControlDark = TryGetOpaqueThemeColor("ControlBackgroundDarkBrush", out controlDark);
+
+            // Ideal Desktop pair.
+            if (hasWindow && hasPopup && !ColorsTooSimilar(windowBg, popup))
+            {
+                OrderSurfacePair(windowBg, popup, out bg, out surface);
+                return;
+            }
+
+            // Ideal Fullscreen pair.
+            if (hasControlDark && hasControl && !ColorsTooSimilar(controlDark, control))
+            {
+                OrderSurfacePair(controlDark, control, out bg, out surface);
+                return;
+            }
+
+            if (hasPopup && hasControl && !ColorsTooSimilar(popup, control))
+            {
+                OrderSurfacePair(popup, control, out bg, out surface);
+                return;
+            }
+
+            // Single opaque color → derive the other level so cards still separate from page bg.
+            if (hasPopup)
+            {
+                DeriveSurfacePair(popup, out bg, out surface);
+                return;
+            }
+
+            if (hasWindow)
+            {
+                DeriveSurfacePair(windowBg, out bg, out surface);
+                return;
+            }
+
+            if (hasControlDark)
+            {
+                DeriveSurfacePair(controlDark, out bg, out surface);
+                return;
+            }
+
+            if (hasControl)
+            {
+                DeriveSurfacePair(control, out bg, out surface);
+                return;
+            }
+
+            bg = midnight.Bg;
+            surface = midnight.Surface;
+        }
+
+        private static void OrderSurfacePair(Color a, Color b, out Color bg, out Color surface)
+        {
+            // Darker = page bg, lighter = raised surface (works for light themes too via luminance).
+            if (RelativeLuminance(a) <= RelativeLuminance(b))
+            {
+                bg = a;
+                surface = b;
+            }
+            else
+            {
+                bg = b;
+                surface = a;
+            }
+        }
+
+        private static void DeriveSurfacePair(Color seed, out Color bg, out Color surface)
+        {
+            var black = Hex("#000000");
+            var white = Hex("#FFFFFF");
+            if (RelativeLuminance(seed) >= 0.55)
+            {
+                // Light theme seed: page a bit darker, surface = seed.
+                bg = Mix(seed, black, 0.08);
+                surface = seed;
+                if (ColorsTooSimilar(bg, surface))
+                {
+                    bg = Mix(seed, black, 0.14);
+                }
+            }
+            else
+            {
+                // Dark theme seed: page darker, surface lifted.
+                bg = Mix(seed, black, 0.22);
+                surface = Mix(seed, white, 0.08);
+                if (ColorsTooSimilar(bg, surface))
+                {
+                    surface = Mix(seed, white, 0.14);
+                }
+            }
+        }
+
+        private static bool TryGetOpaqueThemeColor(string key, out Color color)
+        {
+            color = default(Color);
+            try
+            {
+                var app = Application.Current;
+                if (app == null || !TryExtractColor(app.TryFindResource(key), out color))
+                {
+                    return false;
+                }
+
+                // Desktop themes often set ControlBackgroundBrush to Transparent.
+                return color.A >= 220;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool ColorsTooSimilar(Color a, Color b)
+        {
+            var dr = a.R - b.R;
+            var dg = a.G - b.G;
+            var db = a.B - b.B;
+            return ((dr * dr) + (dg * dg) + (db * db)) < (28 * 28);
+        }
+
+        private static Color ColorFromTheme(string key, Color fallback)
+        {
+            try
+            {
+                var app = Application.Current;
+                if (app == null)
+                {
+                    return fallback;
+                }
+
+                Color color;
+                return TryExtractColor(app.TryFindResource(key), out color) && color.A >= 32
+                    ? color
+                    : fallback;
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
+        private static bool TryExtractColor(object resource, out Color color)
+        {
+            color = default(Color);
+            var solid = resource as SolidColorBrush;
+            if (solid != null)
+            {
+                color = solid.Color;
+                return true;
+            }
+
+            var gradient = resource as GradientBrush;
+            if (gradient != null && gradient.GradientStops != null && gradient.GradientStops.Count > 0)
+            {
+                // Prefer the most opaque stop (window gradients often start transparent).
+                var bestA = -1;
+                foreach (var stop in gradient.GradientStops)
+                {
+                    if (stop == null)
+                    {
+                        continue;
+                    }
+
+                    if (stop.Color.A > bestA)
+                    {
+                        bestA = stop.Color.A;
+                        color = stop.Color;
+                    }
+                }
+
+                return bestA >= 0;
+            }
+
+            if (resource is Color)
+            {
+                color = (Color)resource;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static Color ContrastOn(Color background)
+        {
+            return RelativeLuminance(background) >= 0.55
+                ? Hex("#0B0D12")
+                : Hex("#FFFFFF");
+        }
+
+        private static double RelativeLuminance(Color color)
+        {
+            return (0.2126 * LuminanceChannel(color.R))
+                + (0.7152 * LuminanceChannel(color.G))
+                + (0.0722 * LuminanceChannel(color.B));
+        }
+
+        private static double LuminanceChannel(byte channel)
+        {
+            var s = channel / 255.0;
+            return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+        }
+
+        private static Color Mix(Color from, Color to, double amount)
+        {
+            amount = Math.Max(0, Math.Min(1, amount));
+            return Color.FromArgb(
+                (byte)Math.Round(from.A + ((to.A - from.A) * amount)),
+                (byte)Math.Round(from.R + ((to.R - from.R) * amount)),
+                (byte)Math.Round(from.G + ((to.G - from.G) * amount)),
+                (byte)Math.Round(from.B + ((to.B - from.B) * amount)));
         }
 
         public static void Apply(Control root, string preset)

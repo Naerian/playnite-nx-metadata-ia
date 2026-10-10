@@ -3184,12 +3184,6 @@ namespace MetaDataIAPlugin
                     field.Field + "=" + MetadataDebugLog.FormatTermList(applied) + " (no model)");
             }
 
-            if (modelFields.Count == 0)
-            {
-                FinishTermFieldLists(result, game);
-                return;
-            }
-
             var organizeFields = modelFields.Where(x => !x.FromKnowledge).ToList();
             // Always keep the dedicated organize pass for genres/tags/features, even after the
             // main metadata call: that call's termCandidates wording is weaker and often leaves
@@ -3197,8 +3191,13 @@ namespace MetaDataIAPlugin
 
             var knowledgeFields = modelFields.Where(x => x.FromKnowledge).ToList();
             var insufficientLocalFields = active.Where(x => x.SkippedInsufficientLocalText).ToList();
-            LogTermOrganizeContext(game, organizeFields, knowledgeFields);
+            // Log before the early return so thin games that only set skippedInsufficientLocal
+            // (NeedsModel=false when incoming is empty) still emit field= diagnostic lines.
+            LogTermOrganizeContext(game, organizeFields, knowledgeFields, insufficientLocalFields);
 
+            // When every active field wanted local-text fallback, evidence was thin, and nothing
+            // remains for organize/knowledge (empty incoming ⇒ NeedsModel=false), fail clearly
+            // instead of finishing silently. Must run before the modelFields.Count == 0 return.
             if (insufficientLocalFields.Count > 0 &&
                 organizeFields.Count == 0 &&
                 knowledgeFields.Count == 0)
@@ -3207,6 +3206,12 @@ namespace MetaDataIAPlugin
                     Loc(
                         "MTDA_ErrorLocalTermTextInsufficient",
                         "Could not derive genres, tags or features: no store/IGDB list was available and the local description/game text is too thin. Add or generate a richer description, then retry."));
+            }
+
+            if (modelFields.Count == 0)
+            {
+                FinishTermFieldLists(result, game);
+                return;
             }
 
             var resolved = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -3919,7 +3924,11 @@ namespace MetaDataIAPlugin
                    text.IndexOf("429", StringComparison.Ordinal) >= 0;
         }
 
-        private void LogTermOrganizeContext(Game game, List<TermFieldRequest> organizeFields, List<TermFieldRequest> knowledgeFields)
+        private void LogTermOrganizeContext(
+            Game game,
+            List<TermFieldRequest> organizeFields,
+            List<TermFieldRequest> knowledgeFields,
+            List<TermFieldRequest> skippedInsufficientFields = null)
         {
             var details = new StringBuilder();
             details.AppendLine("language=" + (settings.Language ?? string.Empty));
@@ -3958,9 +3967,16 @@ namespace MetaDataIAPlugin
                 details.AppendLine("  (none returned for this game)");
             }
 
+            var logged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var field in (organizeFields ?? new List<TermFieldRequest>())
-                .Concat(knowledgeFields ?? new List<TermFieldRequest>()))
+                .Concat(knowledgeFields ?? new List<TermFieldRequest>())
+                .Concat(skippedInsufficientFields ?? new List<TermFieldRequest>()))
             {
+                if (field == null || string.IsNullOrWhiteSpace(field.Field) || !logged.Add(field.Field))
+                {
+                    continue;
+                }
+
                 details.AppendLine(
                     "field=" + field.Field +
                     " mode=" + field.Mode +

@@ -875,7 +875,8 @@ LM Studio: http://localhost:1234/v1/chat/completions
     <sys:String x:Key="MTDA_ConfigurationSummary">ÐžÐ±Ð·Ð¾Ñ€ ÐºÐ¾Ð½Ñ„Ð¸Ð³ÑƒÑ€Ð°Ñ†Ð¸Ð¸</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Ð‘Ñ‹ÑÑ‚Ñ€Ð¾ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑŒÑ‚Ðµ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð³Ð¾ Ð¿Ð¾ÑÑ‚Ð°Ð²Ñ‰Ð¸ÐºÐ°, Ð²ÐºÐ»ÑŽÑ‡Ñ‘Ð½Ð½Ñ‹Ðµ Ð¿Ð¾Ð»Ñ Ð¸ Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ¸ Ð¼ÐµÐ´Ð¸Ð°.</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">Пресеты меняют только цвета. Макет, масштаб текста и отступы остаются неизменными. «По умолчанию» берёт текст/акцент Playnite и подстраивает поверхности темы, когда это возможно.</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">По умолчанию</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

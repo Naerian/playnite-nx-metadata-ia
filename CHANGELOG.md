@@ -3,6 +3,12 @@
 
 
 
+## 1.4.37 — 2026-10-10
+- Overview: Appearance preset uses a dropdown selector (Audio Switcher pattern) instead of chips.
+- Settings window remembers size, position and maximized state between openings.
+- Term fields: `MTDA_ErrorLocalTermTextInsufficient` can fire again when local-text fallback is on, store lists are empty, and description/facts are too thin; `terms.context` logs those `skippedInsufficientLocal` fields before the early return.
+- Appearance: new Default preset follows Playnite text/accent and adapts theme surfaces when possible; new installs start on Default, existing Midnight/Paper/etc. settings are unchanged.
+
 ## 1.4.36 — 2026-10-10
 - Fix NullReferenceException when categories come from the model but have no store selector: fromStore no longer confuses model fallback with official store lists.
 - Local knowledge fallback for genres/tags/features works again when the store list is empty.

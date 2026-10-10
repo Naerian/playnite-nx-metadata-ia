@@ -331,7 +331,7 @@ namespace MetaDataIAPlugin
         public string GetAppearancePreset()
         {
             return settings == null || settings.Settings == null
-                ? SettingsAppearance.Midnight
+                ? SettingsAppearance.Default
                 : SettingsAppearance.Normalize(settings.Settings.AppearancePreset);
         }
 
@@ -3702,6 +3702,38 @@ namespace MetaDataIAPlugin
             var storedSettings = Serialization.GetClone(currentSettings);
             storedSettings.ProtectSecretsForStorage();
             SavePluginSettings(storedSettings);
+        }
+
+        /// <summary>
+        /// Writes only settings-window placement to disk without re-encrypting secrets
+        /// or flushing an in-progress settings edit.
+        /// </summary>
+        public void PatchSavedSettingsWindowLayout(
+            double width,
+            double height,
+            double left,
+            double top,
+            bool maximized)
+        {
+            try
+            {
+                var disk = LoadPluginSettings<MetaDataIASettings>();
+                if (disk == null)
+                {
+                    return;
+                }
+
+                disk.SettingsWindowWidth = width;
+                disk.SettingsWindowHeight = height;
+                disk.SettingsWindowLeft = left;
+                disk.SettingsWindowTop = top;
+                disk.SettingsWindowMaximized = maximized;
+                disk.SettingsWindowPlacementSaved = true;
+                SavePluginSettings(disk);
+            }
+            catch
+            {
+            }
         }
 
         private string UserError(Exception ex)

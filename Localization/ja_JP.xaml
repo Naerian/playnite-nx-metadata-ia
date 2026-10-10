@@ -875,7 +875,8 @@ If you are using Gemini, this can happen even if you have Gemini Pro/Google AI P
     <sys:String x:Key="MTDA_ConfigurationSummary">è¨­å®šã®æ¦‚è¦</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">æœ‰åŠ¹ãªãƒ—ãƒ­ãƒã‚¤ãƒ€ãƒ¼ã€ãƒ¡ã‚¿ãƒ‡ãƒ¼ã‚¿é …ç›®ã€ãƒ¡ãƒ‡ã‚£ã‚¢è¨­å®šã‚’ã²ã¨ç›®ã§ç¢ºèªã§ãã¾ã™ã€‚</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">プリセットは色のみを変更します。レイアウト、文字サイズ、間隔は固定です。デフォルトは Playnite の文字色/アクセントを使い、可能ならテーマの面も合わせます。</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">デフォルト</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

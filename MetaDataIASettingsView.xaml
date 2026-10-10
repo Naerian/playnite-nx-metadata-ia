@@ -786,11 +786,18 @@
                             </Border>
                             <TextBlock Text="{DynamicResource MTDA_ConfigurationSummaryHelp}" Style="{StaticResource SectionSubtitleText}"/>
                         </StackPanel>
-                        <Border Style="{StaticResource SettingsCard}" Margin="0,0,0,24">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource MTDA_AppearancePreset}" Style="{StaticResource FieldLabelText}"/>
-                                <TextBlock Text="{DynamicResource MTDA_AppearancePresetHelp}" Style="{StaticResource FieldHintText}" Margin="0,0,0,8"/>
-                                <WrapPanel x:Name="AppearancePresetChips" Orientation="Horizontal"/>
+                        <Border Style="{StaticResource SummaryCard}" Margin="0,0,0,16">
+                            <StackPanel Margin="0">
+                                <Border Style="{StaticResource SummaryTitleSeparator}">
+                                    <TextBlock Text="{DynamicResource MTDA_AppearancePreset}" Style="{StaticResource SummaryCardTitle}"/>
+                                </Border>
+                                <TextBlock Text="{DynamicResource MTDA_AppearancePresetHelp}" Style="{StaticResource SummaryCardDetail}" Margin="0,0,0,8"/>
+                                <ComboBox x:Name="AppearancePresetSelector"
+                                          Width="280"
+                                          HorizontalAlignment="Left"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Value"
+                                          SelectionChanged="AppearancePresetSelector_OnSelectionChanged"/>
                             </StackPanel>
                         </Border>
                         <Grid>

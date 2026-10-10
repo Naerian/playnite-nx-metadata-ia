@@ -875,7 +875,8 @@ Geminië¥¼ ì‚¬ìš©í•˜ëŠ” ê²½ìš° ì•±ì— Gemini Pro/
     <sys:String x:Key="MTDA_ConfigurationSummary">ì„¤ì • ìš”ì•½</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">í™œì„± ê³µê¸‰ìž, í™œì„±í™”ëœ ë©”íƒ€ë°ì´í„° í•„ë“œ ë° ë¯¸ë””ì–´ ì„¤ì •ì„ í•œëˆˆì— í™•ì¸í•©ë‹ˆë‹¤.</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">프리셋은 색상만 변경합니다. 레이아웃, 글자 크기, 간격은 고정됩니다. 기본값은 Playnite 텍스트/액센트를 쓰고, 가능하면 테마 표면도 맞춥니다.</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">기본</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

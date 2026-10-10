@@ -878,7 +878,8 @@ Sfondi: {4}</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummary">Riepilogo configurazione</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">Controlla rapidamente il provider attivo, i campi abilitati e la configurazione dei media.</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">I preset cambiano solo i colori. Layout, scala del testo e spaziatura restano fissi. Predefinito usa testo/accento Playnite e adatta le superfici del tema quando possibile.</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">Predefinito</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>

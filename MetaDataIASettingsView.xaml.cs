@@ -73,6 +73,8 @@ namespace MetaDataIAPlugin
 
         private ScrollViewer hostScrollViewer;
         private Window hostWindow;
+        private Window windowLayoutWindow;
+        private bool applyingWindowLayout;
 
         public MetaDataIASettingsView()
             : this(false)
@@ -108,7 +110,7 @@ namespace MetaDataIAPlugin
                     viewModel.RefreshOriginLibraryIntegrations();
                     LoadPasswordBoxes(viewModel.Settings);
                     ApplyAppearancePreset();
-                    BuildAppearancePresetChips();
+                    BindAppearancePresetSelector();
                     RefreshConfigurationSummary();
                     RefreshBackupProvidersList();
                     Dispatcher.BeginInvoke(new Action(() => RefreshProviderUsageDisplay(null)));
@@ -131,7 +133,7 @@ namespace MetaDataIAPlugin
         private void OnSettingsHostLoaded(object sender, RoutedEventArgs e)
         {
             ApplyAppearancePreset();
-            BuildAppearancePresetChips();
+            BindAppearancePresetSelector();
             ApplyPreferredWindowSize();
             AttachToHost();
             Dispatcher.BeginInvoke(new Action(AttachToHost), DispatcherPriority.Loaded);
@@ -140,150 +142,82 @@ namespace MetaDataIAPlugin
             Dispatcher.BeginInvoke(new Action(FillSelectedContentHosts), DispatcherPriority.ApplicationIdle);
         }
 
+        private bool suppressAppearancePresetChange;
+
         private void ApplyAppearancePreset()
         {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
             var preset = viewModel != null && viewModel.Settings != null
                 ? viewModel.Settings.AppearancePreset
-                : SettingsAppearance.Midnight;
+                : SettingsAppearance.Default;
             SettingsAppearance.Apply(this, preset);
             if (themeStandaloneWindow)
             {
                 SettingsAppearance.ApplyWindow(Window.GetWindow(this), preset);
             }
-            RefreshAppearancePresetChips();
+            SyncAppearancePresetSelector(preset);
         }
 
-        private void BuildAppearancePresetChips()
+        private void BindAppearancePresetSelector()
         {
-            if (AppearancePresetChips == null)
+            if (AppearancePresetSelector == null)
             {
                 return;
             }
 
-            AppearancePresetChips.Children.Clear();
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            var options = viewModel != null && viewModel.Settings != null
-                ? viewModel.Settings.AppearancePresetOptions
-                : null;
-            if (options == null)
+            var settings = viewModel == null ? null : viewModel.Settings;
+            suppressAppearancePresetChange = true;
+            try
+            {
+                AppearancePresetSelector.ItemsSource = settings != null
+                    ? settings.AppearancePresetOptions
+                    : null;
+                SyncAppearancePresetSelector(settings != null
+                    ? settings.AppearancePreset
+                    : SettingsAppearance.Default);
+            }
+            finally
+            {
+                suppressAppearancePresetChange = false;
+            }
+        }
+
+        private void SyncAppearancePresetSelector(string preset)
+        {
+            if (AppearancePresetSelector == null)
             {
                 return;
             }
 
-            foreach (var option in options)
-            {
-                if (option == null || string.IsNullOrWhiteSpace(option.Value))
-                {
-                    continue;
-                }
-
-                var button = new Button
-                {
-                    Content = option.DisplayName,
-                    Tag = option.Value,
-                    MinHeight = 36,
-                    Height = 36,
-                    MinWidth = 88,
-                    Padding = new Thickness(12, 0, 12, 0),
-                    Margin = new Thickness(0, 0, 8, 8),
-                    Cursor = Cursors.Hand,
-                    Focusable = true,
-                    BorderThickness = new Thickness(1),
-                    FontSize = 14,
-                    Template = CreateAppearanceChipTemplate()
-                };
-                button.Click += AppearancePresetChip_OnClick;
-                button.MouseEnter += AppearancePresetChip_OnMouseEnter;
-                button.MouseLeave += AppearancePresetChip_OnMouseLeave;
-                AppearancePresetChips.Children.Add(button);
-            }
-
-            RefreshAppearancePresetChips();
-        }
-
-        private static ControlTemplate CreateAppearanceChipTemplate()
-        {
-            var template = new ControlTemplate(typeof(Button));
-            var border = new FrameworkElementFactory(typeof(Border));
-            border.Name = "Bd";
-            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
-            border.SetValue(Border.SnapsToDevicePixelsProperty, true);
-            border.SetBinding(Border.BackgroundProperty, new System.Windows.Data.Binding("Background")
-            {
-                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
-            });
-            border.SetBinding(Border.BorderBrushProperty, new System.Windows.Data.Binding("BorderBrush")
-            {
-                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
-            });
-            border.SetBinding(Border.BorderThicknessProperty, new System.Windows.Data.Binding("BorderThickness")
-            {
-                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
-            });
-            border.SetBinding(Border.PaddingProperty, new System.Windows.Data.Binding("Padding")
-            {
-                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
-            });
-            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            presenter.SetBinding(TextElement.ForegroundProperty, new System.Windows.Data.Binding("Foreground")
-            {
-                RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
-            });
-            border.AppendChild(presenter);
-            template.VisualTree = border;
-            return template;
-        }
-
-        private void AppearancePresetChip_OnMouseEnter(object sender, MouseEventArgs e)
-        {
-            var button = sender as Button;
-            if (button == null || IsAppearanceChipSelected(button))
+            var normalized = SettingsAppearance.Normalize(preset);
+            if (Equals(AppearancePresetSelector.SelectedValue, normalized))
             {
                 return;
             }
 
-            var palette = GetCurrentAppearancePalette();
-            button.Background = new SolidColorBrush(palette.Hover);
+            suppressAppearancePresetChange = true;
+            try
+            {
+                AppearancePresetSelector.SelectedValue = normalized;
+            }
+            finally
+            {
+                suppressAppearancePresetChange = false;
+            }
         }
 
-        private void AppearancePresetChip_OnMouseLeave(object sender, MouseEventArgs e)
+        private void AppearancePresetSelector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var button = sender as Button;
-            if (button == null || IsAppearanceChipSelected(button))
+            if (suppressAppearancePresetChange)
             {
                 return;
             }
 
-            var palette = GetCurrentAppearancePalette();
-            button.Background = new SolidColorBrush(palette.BadgeBg);
-        }
-
-        private bool IsAppearanceChipSelected(Button button)
-        {
             var viewModel = DataContext as MetaDataIASettingsViewModel;
-            var selected = viewModel != null && viewModel.Settings != null
-                ? SettingsAppearance.Normalize(viewModel.Settings.AppearancePreset)
-                : SettingsAppearance.Midnight;
-            return string.Equals(button.Tag as string, selected, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private SettingsAppearance.Palette GetCurrentAppearancePalette()
-        {
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
-            var selected = viewModel != null && viewModel.Settings != null
-                ? viewModel.Settings.AppearancePreset
-                : SettingsAppearance.Midnight;
-            return SettingsAppearance.GetPalette(selected);
-        }
-
-        private void AppearancePresetChip_OnClick(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            var preset = button == null ? null : button.Tag as string;
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            var preset = AppearancePresetSelector == null
+                ? null
+                : AppearancePresetSelector.SelectedValue as string;
             if (viewModel == null || viewModel.Settings == null || string.IsNullOrWhiteSpace(preset))
             {
                 return;
@@ -291,45 +225,6 @@ namespace MetaDataIAPlugin
 
             viewModel.Settings.AppearancePreset = preset;
             ApplyAppearancePreset();
-        }
-
-        private void RefreshAppearancePresetChips()
-        {
-            if (AppearancePresetChips == null)
-            {
-                return;
-            }
-
-            var viewModel = DataContext as MetaDataIASettingsViewModel;
-            var selected = viewModel != null && viewModel.Settings != null
-                ? SettingsAppearance.Normalize(viewModel.Settings.AppearancePreset)
-                : SettingsAppearance.Midnight;
-            var palette = SettingsAppearance.GetPalette(selected);
-            var accent = new SolidColorBrush(palette.Accent);
-            var accentOn = new SolidColorBrush(palette.AccentOn);
-            var badgeBg = new SolidColorBrush(palette.BadgeBg);
-            var text = new SolidColorBrush(palette.Text);
-            accent.Freeze();
-            accentOn.Freeze();
-            badgeBg.Freeze();
-            text.Freeze();
-
-            foreach (var child in AppearancePresetChips.Children)
-            {
-                var button = child as Button;
-                if (button == null)
-                {
-                    continue;
-                }
-
-                var isSelected = string.Equals(button.Tag as string, selected, StringComparison.OrdinalIgnoreCase);
-                button.Background = isSelected ? accent : badgeBg;
-                button.Foreground = isSelected ? accentOn : text;
-                button.BorderBrush = isSelected ? accent : new SolidColorBrush(palette.Border);
-                button.BorderThickness = new Thickness(1);
-                button.FontWeight = isSelected ? FontWeights.SemiBold : FontWeights.Normal;
-                // Active chip keeps accent on hover (no alternate hover fill).
-            }
         }
 
         private void AttachToHost()
@@ -560,27 +455,200 @@ namespace MetaDataIAPlugin
                 return;
             }
 
-            window.SizeToContent = SizeToContent.Manual;
-            if (window.MinWidth < 1000)
+            HookWindowLayoutPersistence(window);
+
+            const double minWidth = 1000;
+            const double minHeight = 700;
+            const double defaultWidth = 1100;
+            const double defaultHeight = 780;
+
+            applyingWindowLayout = true;
+            try
             {
-                window.MinWidth = 1000;
+                window.SizeToContent = SizeToContent.Manual;
+                if (window.MinWidth < minWidth)
+                {
+                    window.MinWidth = minWidth;
+                }
+                if (window.MinHeight < minHeight)
+                {
+                    window.MinHeight = minHeight;
+                }
+
+                var viewModel = DataContext as MetaDataIASettingsViewModel;
+                var settings = viewModel == null ? null : viewModel.Settings;
+                var savedWidth = settings == null ? 0 : settings.SettingsWindowWidth;
+                var savedHeight = settings == null ? 0 : settings.SettingsWindowHeight;
+                var hasSavedSize = savedWidth >= minWidth && savedHeight >= minHeight;
+                var restoreMaximized = settings != null && settings.SettingsWindowMaximized;
+
+                if (window.WindowState == WindowState.Maximized || window.WindowState == WindowState.Minimized)
+                {
+                    window.WindowState = WindowState.Normal;
+                }
+
+                var targetWidth = hasSavedSize ? savedWidth : defaultWidth;
+                var targetHeight = hasSavedSize ? savedHeight : defaultHeight;
+                if (hasSavedSize || (window.ActualWidth < targetWidth && window.Width < targetWidth))
+                {
+                    window.Width = targetWidth;
+                }
+                if (hasSavedSize || (window.ActualHeight < targetHeight && window.Height < targetHeight))
+                {
+                    window.Height = targetHeight;
+                }
+
+                if (settings != null && settings.SettingsWindowPlacementSaved)
+                {
+                    window.WindowStartupLocation = WindowStartupLocation.Manual;
+                    var left = settings.SettingsWindowLeft;
+                    var top = settings.SettingsWindowTop;
+                    if (IsPlacementOnScreen(left, top, targetWidth, targetHeight))
+                    {
+                        window.Left = left;
+                        window.Top = top;
+                    }
+                }
+
+                if (restoreMaximized)
+                {
+                    window.WindowState = WindowState.Maximized;
+                }
             }
-            if (window.MinHeight < 700)
+            finally
             {
-                window.MinHeight = 700;
+                applyingWindowLayout = false;
             }
-            if (window.ActualWidth < 1100 && window.Width < 1100)
+        }
+
+        private void HookWindowLayoutPersistence(Window window)
+        {
+            if (window == null || object.ReferenceEquals(windowLayoutWindow, window))
             {
-                window.Width = 1100;
+                return;
             }
-            if (window.ActualHeight < 780 && window.Height < 780)
+
+            UnhookWindowLayoutPersistence();
+            windowLayoutWindow = window;
+            windowLayoutWindow.Closing += OnSettingsWindowClosing;
+            windowLayoutWindow.Closed += OnSettingsWindowClosed;
+        }
+
+        private void UnhookWindowLayoutPersistence()
+        {
+            if (windowLayoutWindow == null)
             {
-                window.Height = 780;
+                return;
             }
+
+            windowLayoutWindow.Closing -= OnSettingsWindowClosing;
+            windowLayoutWindow.Closed -= OnSettingsWindowClosed;
+            windowLayoutWindow = null;
+        }
+
+        private void OnSettingsWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            PersistWindowLayout();
+        }
+
+        private void OnSettingsWindowClosed(object sender, EventArgs e)
+        {
+            PersistWindowLayout();
+            UnhookWindowLayoutPersistence();
+        }
+
+        private void PersistWindowLayout()
+        {
+            if (applyingWindowLayout)
+            {
+                return;
+            }
+
+            var window = windowLayoutWindow ?? hostWindow ?? Window.GetWindow(this);
+            if (window == null)
+            {
+                return;
+            }
+
+            if (window.WindowState == WindowState.Minimized)
+            {
+                return;
+            }
+
+            var viewModel = DataContext as MetaDataIASettingsViewModel;
+            if (viewModel == null)
+            {
+                return;
+            }
+
+            double width;
+            double height;
+            double left;
+            double top;
+            var maximized = window.WindowState == WindowState.Maximized;
+            if (maximized)
+            {
+                var bounds = window.RestoreBounds;
+                if (bounds.Width < 8 || bounds.Height < 8)
+                {
+                    return;
+                }
+
+                width = bounds.Width;
+                height = bounds.Height;
+                left = bounds.Left;
+                top = bounds.Top;
+            }
+            else
+            {
+                width = window.Width;
+                height = window.Height;
+                left = window.Left;
+                top = window.Top;
+            }
+
+            if (double.IsNaN(width) || double.IsNaN(height) || width < 8 || height < 8)
+            {
+                return;
+            }
+
+            if (double.IsNaN(left) || double.IsNaN(top))
+            {
+                return;
+            }
+
+            viewModel.PersistSettingsWindowLayout(width, height, left, top, maximized);
+        }
+
+        private static bool IsPlacementOnScreen(double left, double top, double width, double height)
+        {
+            if (double.IsNaN(left) || double.IsNaN(top) || double.IsNaN(width) || double.IsNaN(height))
+            {
+                return false;
+            }
+
+            if (width < 8 || height < 8)
+            {
+                return false;
+            }
+
+            var virtualLeft = SystemParameters.VirtualScreenLeft;
+            var virtualTop = SystemParameters.VirtualScreenTop;
+            var virtualRight = virtualLeft + SystemParameters.VirtualScreenWidth;
+            var virtualBottom = virtualTop + SystemParameters.VirtualScreenHeight;
+
+            // Require a usable chunk of the title bar area to remain reachable.
+            var visibleLeft = Math.Max(left, virtualLeft);
+            var visibleTop = Math.Max(top, virtualTop);
+            var visibleRight = Math.Min(left + width, virtualRight);
+            var visibleBottom = Math.Min(top + 48, virtualBottom);
+            return visibleRight - visibleLeft >= 80 && visibleBottom - visibleTop >= 24;
         }
 
         private void MetaDataIASettingsView_OnUnloaded(object sender, RoutedEventArgs e)
         {
+            PersistWindowLayout();
+            UnhookWindowLayoutPersistence();
             DetachFromHost();
             ObserveSettings(null);
             CancelTestOperation(providerTestOperation, false);

@@ -108,7 +108,7 @@ namespace MetaDataIAPlugin
             }
 
             var preset = SettingsAppearance.Normalize(
-                string.IsNullOrWhiteSpace(appearancePreset) ? SettingsAppearance.Midnight : appearancePreset);
+                string.IsNullOrWhiteSpace(appearancePreset) ? SettingsAppearance.Default : appearancePreset);
             var usePlayniteChrome = playniteChrome && window.WindowStyle != WindowStyle.None;
             var playniteHost = IsPlayniteWindowBase(window);
             SettingsAppearance.ApplyWindow(window, preset, true, !playniteHost);

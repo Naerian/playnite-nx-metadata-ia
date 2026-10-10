@@ -880,7 +880,8 @@ ArriÃ¨re-plansÂ :Â {4}</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummary">RÃ©sumÃ© de la configuration</sys:String>
     <sys:String x:Key="MTDA_ConfigurationSummaryHelp">VÃ©rifiez en un coup dâ€™Å“il le fournisseur actif, les champs activÃ©s et la configuration des mÃ©dias.</sys:String>
     <sys:String x:Key="MTDA_AppearancePreset">Appearance preset</sys:String>
-    <sys:String x:Key="MTDA_AppearancePresetHelp">Colors only. Type, spacing and control sizes stay fixed.</sys:String>
+    <sys:String x:Key="MTDA_AppearancePresetHelp">Les préréglages changent uniquement les couleurs. La mise en page, l'échelle du texte et les espacements restent fixes. Par défaut utilise texte/accent Playnite et adapte les surfaces du thème si possible.</sys:String>
+    <sys:String x:Key="MTDA_PresetDefault">Par défaut</sys:String>
     <sys:String x:Key="MTDA_PresetMidnight">Midnight</sys:String>
     <sys:String x:Key="MTDA_PresetPaper">Paper</sys:String>
     <sys:String x:Key="MTDA_PresetOled">OLED</sys:String>
